@@ -26,7 +26,7 @@
         <field name="name">cargas.estacion.kanban</field>
         <field name="model">cargas.estacion</field>
         <field name="arch" type="xml">
-            <kanban class="o_kanban_dashboard">
+            <kanban class="kanban">
                 <field name="codigo"/>
                 <field name="name"/>
                 <field name="en_linea"/>
@@ -35,25 +35,29 @@
                 <field name="cargas_hoy"/>
                 <field name="currency_id"/>
                 <templates>
-                    <t t-name="kanban-box">
+                    <t t-name="card">
                         <div class="oe_kanban_card oe_kanban_global_click">
-                            <div class="o_kanban_card_header">
-                                <div class="o_kanban_card_header_title">
-                                    <div class="o_primary">
-                                        <field name="name"/>
-                                    </div>
-                                    <div class="o_secondary">
-                                        <field name="codigo"/>
-                                    </div>
+                          <div class="o_kanban_record_top">
+                              <div class="o_kanban_record_headings">
+                                  <strong class="o_kanban_record_title">
+                                      <small class="o_kanban_record_subtitle">
+                                        <div class="o_primary">
+                                            <field name="name"/>
+                                        </div>
+                                        <div class="o_secondary">
+                                            <field name="codigo"/>
+                                        </div>
+                                      </small>
+                                    </strong>
                                 </div>
                                 <div class="o_kanban_manage_button_section">
-                                    <span t-if="record.en_bateria.raw_value" class="badge text-bg-warning">
+                                    <span t-if="record.en_bateria.raw_value" class="badge bg-warning">
                                         ⚡ Apagón
                                     </span>
-                                    <span t-if="!record.en_linea.raw_value" class="badge text-bg-danger">
+                                    <span t-if="!record.en_linea.raw_value" class="badge bg-danger">
                                         Offline
                                     </span>
-                                    <span t-if="record.en_linea.raw_value" class="badge text-bg-success">
+                                    <span t-if="record.en_linea.raw_value" class="badge bg-success">
                                         Online
                                     </span>
                                 </div>
