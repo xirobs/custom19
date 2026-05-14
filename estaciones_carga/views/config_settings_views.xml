@@ -1,0 +1,77 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="view_config_settings" model="ir.ui.view">
+        <field name="name">res.config.settings.cargas</field>
+        <field name="model">res.config.settings</field>
+        <field name="inherit_id" ref="base.res_config_settings_view_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//form" position="inside">
+                <app data-string="Estaciones de Carga" string="Estaciones de Carga"
+                     name="estaciones_carga" groups="estaciones_carga.group_cargas_admin">
+
+                    <block title="Precios" name="precios_block">
+                        <setting string="Precio de carga estándar"
+                                 help="Precio base para una carga de 60 minutos">
+                            <field name="cargas_precio_estandar" widget="monetary"/>
+                        </setting>
+                        <setting string="Precio de carga rápida"
+                                 help="Precio base para una carga de 30 minutos con QC/PD">
+                            <field name="cargas_precio_rapida" widget="monetary"/>
+                        </setting>
+                        <setting string="Multiplicador de surge"
+                                 help="Cuánto se multiplica el precio durante apagones">
+                            <field name="cargas_surge_multiplier"/>
+                        </setting>
+                        <setting string="Tasa BCV actual"
+                                 help="Tasa Bs/USD usada para mostrar precios al cliente">
+                            <field name="cargas_tasa_bcv"/>
+                        </setting>
+                    </block>
+
+                    <block title="Operación" name="operacion_block">
+                        <setting string="Timeout de heartbeat (segundos)"
+                                 help="Si no llega un heartbeat en este tiempo, la estación se marca offline">
+                            <field name="cargas_heartbeat_timeout_seg"/>
+                        </setting>
+                        <setting string="Crear factura por cada carga"
+                                 help="Si está activo, cada transacción pagada genera una factura simplificada">
+                            <field name="cargas_crear_factura_por_transaccion"/>
+                        </setting>
+                    </block>
+
+                    <block title="Datos de Pago Móvil" name="pago_movil_block">
+                        <setting string="Banco">
+                            <field name="cargas_pago_movil_banco"/>
+                        </setting>
+                        <setting string="Teléfono">
+                            <field name="cargas_pago_movil_telefono"/>
+                        </setting>
+                        <setting string="Cédula">
+                            <field name="cargas_pago_movil_cedula"/>
+                        </setting>
+                    </block>
+
+                    <block title="Otros métodos de pago" name="otros_pagos_block">
+                        <setting string="Email Zelle">
+                            <field name="cargas_zelle_email"/>
+                        </setting>
+                        <setting string="Dirección USDT TRC20">
+                            <field name="cargas_usdt_direccion"/>
+                        </setting>
+                    </block>
+
+                </app>
+            </xpath>
+        </field>
+    </record>
+
+    <record id="action_config_settings" model="ir.actions.act_window">
+        <field name="name">Configuración</field>
+        <field name="res_model">res.config.settings</field>
+        <field name="view_mode">form</field>
+        <field name="target">current</field>
+        <field name="context">{'module': 'estaciones_carga'}</field>
+    </record>
+
+</odoo>

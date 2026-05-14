@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <data noupdate="1">
+
+        <!-- Partner para consumidor final -->
+        <record id="partner_consumidor_final" model="res.partner">
+            <field name="name">Consumidor Final</field>
+            <field name="company_type">person</field>
+        </record>
+
+        <!-- Categoría de productos -->
+        <record id="product_category_cargas" model="product.category">
+            <field name="name">Servicios de Carga</field>
+        </record>
+
+        <!-- Producto: Carga estándar -->
+        <record id="product_carga_estandar" model="product.product">
+            <field name="name">Carga estándar (60 min)</field>
+            <field name="type">service</field>
+            <field name="categ_id" ref="product_category_cargas"/>
+            <field name="list_price">0.50</field>
+            <field name="sale_ok">True</field>
+            <field name="purchase_ok">False</field>
+        </record>
+
+        <!-- Producto: Carga rápida -->
+        <record id="product_carga_rapida" model="product.product">
+            <field name="name">Carga rápida (30 min)</field>
+            <field name="type">service</field>
+            <field name="categ_id" ref="product_category_cargas"/>
+            <field name="list_price">1.00</field>
+            <field name="sale_ok">True</field>
+            <field name="purchase_ok">False</field>
+        </record>
+
+    </data>
+</odoo>

@@ -1,0 +1,217 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <!-- Vista de Lista -->
+    <record id="view_estacion_list" model="ir.ui.view">
+        <field name="name">cargas.estacion.list</field>
+        <field name="model">cargas.estacion</field>
+        <field name="arch" type="xml">
+            <list string="Estaciones">
+                <field name="codigo"/>
+                <field name="name"/>
+                <field name="ciudad"/>
+                <field name="num_puertos"/>
+                <field name="operador_id"/>
+                <field name="en_linea" widget="boolean_toggle" readonly="1"/>
+                <field name="en_bateria" widget="boolean_toggle" readonly="1"/>
+                <field name="ingresos_hoy" widget="monetary"/>
+                <field name="cargas_hoy"/>
+                <field name="currency_id" column_invisible="1"/>
+            </list>
+        </field>
+    </record>
+
+    <!-- Vista Kanban (para dashboard visual) -->
+    <record id="view_estacion_kanban" model="ir.ui.view">
+        <field name="name">cargas.estacion.kanban</field>
+        <field name="model">cargas.estacion</field>
+        <field name="arch" type="xml">
+            <kanban class="o_kanban_dashboard">
+                <field name="codigo"/>
+                <field name="name"/>
+                <field name="en_linea"/>
+                <field name="en_bateria"/>
+                <field name="ingresos_hoy"/>
+                <field name="cargas_hoy"/>
+                <field name="currency_id"/>
+                <templates>
+                    <t t-name="kanban-box">
+                        <div class="oe_kanban_card oe_kanban_global_click">
+                            <div class="o_kanban_card_header">
+                                <div class="o_kanban_card_header_title">
+                                    <div class="o_primary">
+                                        <field name="name"/>
+                                    </div>
+                                    <div class="o_secondary">
+                                        <field name="codigo"/>
+                                    </div>
+                                </div>
+                                <div class="o_kanban_manage_button_section">
+                                    <span t-if="record.en_bateria.raw_value" class="badge text-bg-warning">
+                                        ⚡ Apagón
+                                    </span>
+                                    <span t-if="!record.en_linea.raw_value" class="badge text-bg-danger">
+                                        Offline
+                                    </span>
+                                    <span t-if="record.en_linea.raw_value" class="badge text-bg-success">
+                                        Online
+                                    </span>
+                                </div>
+                            </div>
+                            <div class="container o_kanban_card_content">
+                                <div class="row mb8">
+                                    <div class="col-6">
+                                        <span class="o_label">Ingresos hoy</span>
+                                        <h4>
+                                            <field name="ingresos_hoy" widget="monetary"/>
+                                        </h4>
+                                    </div>
+                                    <div class="col-6">
+                                        <span class="o_label">Cargas hoy</span>
+                                        <h4>
+                                            <field name="cargas_hoy"/>
+                                        </h4>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </t>
+                </templates>
+            </kanban>
+        </field>
+    </record>
+
+    <!-- Vista de Formulario -->
+    <record id="view_estacion_form" model="ir.ui.view">
+        <field name="name">cargas.estacion.form</field>
+        <field name="model">cargas.estacion</field>
+        <field name="arch" type="xml">
+            <form string="Estación">
+                <header>
+                    <button name="action_regenerar_credenciales"
+                            type="object"
+                            string="Regenerar credenciales"
+                            class="btn-warning"
+                            confirm="¿Estás seguro? El ESP32 dejará de funcionar hasta que actualices las claves."/>
+                </header>
+                <sheet>
+                    <div class="oe_button_box" name="button_box">
+                        <button name="action_ver_transacciones"
+                                type="object"
+                                class="oe_stat_button"
+                                icon="fa-list">
+                            <field name="cargas_mes" string="Cargas este mes" widget="statinfo"/>
+                        </button>
+                    </div>
+
+                    <widget name="web_ribbon"
+                            title="Apagón en curso"
+                            bg_color="text-bg-warning"
+                            invisible="not en_bateria"/>
+
+                    <div class="oe_title">
+                        <label for="name"/>
+                        <h1><field name="name" placeholder="Ej: Plaza Bolívar - Caracas"/></h1>
+                    </div>
+
+                    <group>
+                        <group string="Identificación">
+                            <field name="codigo" placeholder="Ej: EST-001"/>
+                            <field name="active"/>
+                            <field name="num_puertos"/>
+                        </group>
+                        <group string="Estado">
+                            <field name="en_linea" widget="boolean_toggle" readonly="1"/>
+                            <field name="en_bateria" widget="boolean_toggle" readonly="1"/>
+                            <field name="ultimo_heartbeat" readonly="1"/>
+                        </group>
+                    </group>
+
+                    <notebook>
+                        <page string="Ubicación">
+                            <group>
+                                <field name="direccion"/>
+                                <field name="ciudad"/>
+                                <field name="estado_geo"/>
+                                <field name="latitud"/>
+                                <field name="longitud"/>
+                            </group>
+                        </page>
+                        <page string="Operador y comisiones">
+                            <group>
+                                <field name="operador_id"/>
+                                <field name="comision_operador"/>
+                            </group>
+                        </page>
+                        <page string="Facturación">
+                            <group>
+                                <field name="journal_id"/>
+                                <field name="product_carga_estandar_id"/>
+                                <field name="product_carga_rapida_id"/>
+                            </group>
+                        </page>
+                        <page string="Credenciales API (para el ESP32)">
+                            <div class="alert alert-warning" role="alert">
+                                <strong>⚠️ Información sensible.</strong>
+                                Copia estos valores al firmware del ESP32.
+                                No los compartas y regenéralos si sospechas que se filtraron.
+                            </div>
+                            <group>
+                                <field name="api_key" widget="copy_to_clipboard" readonly="1"/>
+                                <field name="hmac_secret" widget="copy_to_clipboard" readonly="1"/>
+                            </group>
+                        </page>
+                        <page string="Estadísticas">
+                            <group>
+                                <group>
+                                    <field name="ingresos_hoy" widget="monetary"/>
+                                    <field name="ingresos_mes" widget="monetary"/>
+                                </group>
+                                <group>
+                                    <field name="cargas_hoy"/>
+                                    <field name="cargas_mes"/>
+                                </group>
+                            </group>
+                        </page>
+                    </notebook>
+
+                    <field name="currency_id" invisible="1"/>
+                </sheet>
+
+                <chatter/>
+            </form>
+        </field>
+    </record>
+
+    <!-- Vista de búsqueda con filtros -->
+    <record id="view_estacion_search" model="ir.ui.view">
+        <field name="name">cargas.estacion.search</field>
+        <field name="model">cargas.estacion</field>
+        <field name="arch" type="xml">
+            <search>
+                <field name="codigo"/>
+                <field name="name"/>
+                <field name="ciudad"/>
+                <field name="operador_id"/>
+                <filter string="Archivadas" name="archived" domain="[('active', '=', False)]"/>
+            </search>
+        </field>
+    </record>
+
+    <!-- Acción -->
+    <record id="action_estacion" model="ir.actions.act_window">
+        <field name="name">Estaciones</field>
+        <field name="res_model">cargas.estacion</field>
+        <field name="view_mode">kanban,list,form</field>
+        <field name="search_view_id" ref="view_estacion_search"/>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">
+                Crea tu primera estación de carga
+            </p>
+            <p>
+                Cada estación corresponde a un dispositivo físico con ESP32 instalado en un local.
+            </p>
+        </field>
+    </record>
+
+</odoo>

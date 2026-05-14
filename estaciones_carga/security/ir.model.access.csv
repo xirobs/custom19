@@ -1,0 +1,11 @@
+id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink
+access_estacion_operador,Estacion Operador,model_cargas_estacion,group_cargas_operador,1,1,0,0
+access_estacion_admin,Estacion Admin,model_cargas_estacion,group_cargas_admin,1,1,1,1
+access_transaccion_operador,Transaccion Operador,model_cargas_transaccion,group_cargas_operador,1,1,0,0
+access_transaccion_admin,Transaccion Admin,model_cargas_transaccion,group_cargas_admin,1,1,1,1
+access_heartbeat_operador,Heartbeat Operador,model_cargas_heartbeat,group_cargas_operador,1,0,0,0
+access_heartbeat_admin,Heartbeat Admin,model_cargas_heartbeat,group_cargas_admin,1,1,1,1
+access_codigo_offline_operador,Codigo Offline Operador,model_cargas_codigo_offline,group_cargas_operador,1,1,0,0
+access_codigo_offline_admin,Codigo Offline Admin,model_cargas_codigo_offline,group_cargas_admin,1,1,1,1
+access_lote_codigos_operador,Lote Codigos Operador,model_cargas_lote_codigos,group_cargas_operador,1,0,0,0
+access_lote_codigos_admin,Lote Codigos Admin,model_cargas_lote_codigos,group_cargas_admin,1,1,1,1

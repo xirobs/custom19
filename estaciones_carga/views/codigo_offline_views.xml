@@ -1,0 +1,99 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="view_codigo_offline_list" model="ir.ui.view">
+        <field name="name">cargas.codigo_offline.list</field>
+        <field name="model">cargas.codigo_offline</field>
+        <field name="arch" type="xml">
+            <list string="Códigos Offline">
+                <field name="codigo"/>
+                <field name="estacion_id"/>
+                <field name="tipo_carga"/>
+                <field name="minutos"/>
+                <field name="usado" widget="boolean_toggle"/>
+                <field name="usado_en"/>
+                <field name="puerto_usado"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_codigo_offline_form" model="ir.ui.view">
+        <field name="name">cargas.codigo_offline.form</field>
+        <field name="model">cargas.codigo_offline</field>
+        <field name="arch" type="xml">
+            <form string="Código Offline">
+                <sheet>
+                    <group>
+                        <field name="codigo" readonly="1"/>
+                        <field name="estacion_id"/>
+                        <field name="tipo_carga"/>
+                        <field name="minutos"/>
+                        <field name="usado"/>
+                        <field name="usado_en"/>
+                        <field name="puerto_usado"/>
+                        <field name="lote_id"/>
+                    </group>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="view_lote_codigos_list" model="ir.ui.view">
+        <field name="name">cargas.lote_codigos.list</field>
+        <field name="model">cargas.lote_codigos</field>
+        <field name="arch" type="xml">
+            <list string="Lotes de Códigos">
+                <field name="create_date"/>
+                <field name="name"/>
+                <field name="estacion_id"/>
+                <field name="tipo_carga"/>
+                <field name="cantidad"/>
+                <field name="codigos_usados"/>
+                <field name="codigos_disponibles"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_lote_codigos_form" model="ir.ui.view">
+        <field name="name">cargas.lote_codigos.form</field>
+        <field name="model">cargas.lote_codigos</field>
+        <field name="arch" type="xml">
+            <form string="Lote de Códigos">
+                <sheet>
+                    <group>
+                        <field name="name"/>
+                        <field name="estacion_id"/>
+                        <field name="tipo_carga"/>
+                        <field name="cantidad"/>
+                        <field name="codigos_usados"/>
+                        <field name="codigos_disponibles"/>
+                    </group>
+                    <notebook>
+                        <page string="Códigos">
+                            <field name="codigo_ids">
+                                <list>
+                                    <field name="codigo"/>
+                                    <field name="usado" widget="boolean_toggle"/>
+                                    <field name="usado_en"/>
+                                </list>
+                            </field>
+                        </page>
+                    </notebook>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="action_codigo_offline" model="ir.actions.act_window">
+        <field name="name">Códigos Offline</field>
+        <field name="res_model">cargas.codigo_offline</field>
+        <field name="view_mode">list,form</field>
+    </record>
+
+    <record id="action_lote_codigos" model="ir.actions.act_window">
+        <field name="name">Lotes de Códigos</field>
+        <field name="res_model">cargas.lote_codigos</field>
+        <field name="view_mode">list,form</field>
+    </record>
+
+</odoo>

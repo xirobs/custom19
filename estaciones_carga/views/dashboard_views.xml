@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <!-- Acción que muestra la vista kanban de estaciones como dashboard principal -->
+    <record id="action_dashboard" model="ir.actions.act_window">
+        <field name="name">Dashboard</field>
+        <field name="res_model">cargas.estacion</field>
+        <field name="view_mode">kanban,list,form</field>
+        <field name="context">{'search_default_en_linea': 1}</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">
+                Tu panel de estaciones
+            </p>
+            <p>
+                Aquí ves el estado en tiempo real de todas tus estaciones, ingresos del día,
+                y alertas de las que están en apagón o desconectadas.
+            </p>
+        </field>
+    </record>
+
+</odoo>

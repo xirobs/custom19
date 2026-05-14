@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <data noupdate="1">
+
+        <!-- Grupo: Operador (ve solo sus estaciones) -->
+        <record id="group_cargas_operador" model="res.groups">
+            <field name="name">Estaciones Carga - Operador</field>
+            <field name="comment">Operador de una o varias estaciones. Ve solo sus datos.</field>
+        </record>
+
+        <!-- Grupo: Administrador (ve todo) -->
+        <record id="group_cargas_admin" model="res.groups">
+            <field name="name">Estaciones Carga - Administrador</field>
+            <field name="implied_ids" eval="[(4, ref('estaciones_carga.group_cargas_operador'))]"/>
+        </record>
+
+    </data>
+</odoo>

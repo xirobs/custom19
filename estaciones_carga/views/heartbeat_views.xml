@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="view_heartbeat_list" model="ir.ui.view">
+        <field name="name">cargas.heartbeat.list</field>
+        <field name="model">cargas.heartbeat</field>
+        <field name="arch" type="xml">
+            <list string="Heartbeats" create="0" edit="0">
+                <field name="timestamp"/>
+                <field name="estacion_id"/>
+                <field name="puertos_activos"/>
+                <field name="voltaje_ac"/>
+                <field name="en_bateria" widget="boolean_toggle"/>
+                <field name="rssi_wifi"/>
+                <field name="firmware_version"/>
+                <field name="ip_address"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_heartbeat_search" model="ir.ui.view">
+        <field name="name">cargas.heartbeat.search</field>
+        <field name="model">cargas.heartbeat</field>
+        <field name="arch" type="xml">
+            <search>
+                <field name="estacion_id"/>
+                <filter string="En batería" name="bateria" domain="[('en_bateria','=',True)]"/>
+                <filter string="Última hora" name="ultima_hora"
+                        domain="[('timestamp','&gt;=', (context_today() - relativedelta(hours=1)).strftime('%Y-%m-%d %H:%M:%S'))]"/>
+            </search>
+        </field>
+    </record>
+
+    <record id="action_heartbeat" model="ir.actions.act_window">
+        <field name="name">Heartbeats</field>
+        <field name="res_model">cargas.heartbeat</field>
+        <field name="view_mode">list</field>
+        <field name="search_view_id" ref="view_heartbeat_search"/>
+    </record>
+
+</odoo>

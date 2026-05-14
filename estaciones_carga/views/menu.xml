@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <!-- Menú raíz -->
+    <menuitem id="menu_root"
+              name="Estaciones de Carga"
+              sequence="50"
+              web_icon="estaciones_carga,static/description/icon.png"/>
+
+    <!-- Submenús -->
+    <menuitem id="menu_dashboard"
+              name="Dashboard"
+              parent="menu_root"
+              action="action_dashboard"
+              sequence="10"/>
+
+    <menuitem id="menu_estaciones"
+              name="Estaciones"
+              parent="menu_root"
+              action="action_estacion"
+              sequence="20"/>
+
+    <menuitem id="menu_transacciones"
+              name="Transacciones"
+              parent="menu_root"
+              action="action_transaccion"
+              sequence="30"/>
+
+    <!-- Sub-menú Códigos Offline -->
+    <menuitem id="menu_offline_root"
+              name="Códigos Offline"
+              parent="menu_root"
+              sequence="40"/>
+
+    <menuitem id="menu_offline_lotes"
+              name="Lotes generados"
+              parent="menu_offline_root"
+              action="action_lote_codigos"
+              sequence="10"/>
+
+    <menuitem id="menu_offline_codigos"
+              name="Códigos individuales"
+              parent="menu_offline_root"
+              action="action_codigo_offline"
+              sequence="20"/>
+
+    <!-- Sub-menú Diagnóstico -->
+    <menuitem id="menu_diagnostico_root"
+              name="Diagnóstico"
+              parent="menu_root"
+              sequence="50"
+              groups="estaciones_carga.group_cargas_admin"/>
+
+    <menuitem id="menu_heartbeats"
+              name="Heartbeats"
+              parent="menu_diagnostico_root"
+              action="action_heartbeat"
+              sequence="10"/>
+
+    <!-- Configuración -->
+    <menuitem id="menu_configuracion"
+              name="Configuración"
+              parent="menu_root"
+              action="action_config_settings"
+              sequence="100"
+              groups="estaciones_carga.group_cargas_admin"/>
+
+</odoo>
