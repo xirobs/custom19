@@ -1,0 +1,170 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<odoo>
+    <data noupdate="1">
+
+        <record id="calendar_default" model="mierp.gantt.calendar">
+            <field name="name">Standard Mon-Fri 8h</field>
+            <field name="code">STD_MF8</field>
+            <field name="workdays">0,1,2,3,4</field>
+            <field name="daily_hours">8.0</field>
+        </record>
+
+        <record id="calendar_es" model="mierp.gantt.calendar">
+            <field name="name">España (Mon-Fri, festivos nacionales)</field>
+            <field name="code">ES</field>
+            <field name="country_id" ref="base.es"/>
+            <field name="workdays">0,1,2,3,4</field>
+            <field name="daily_hours">8.0</field>
+        </record>
+
+        <record id="calendar_co" model="mierp.gantt.calendar">
+            <field name="name">Colombia (Lun-Vie, festivos lunes)</field>
+            <field name="code">CO</field>
+            <field name="country_id" ref="base.co"/>
+            <field name="workdays">0,1,2,3,4</field>
+            <field name="daily_hours">8.0</field>
+        </record>
+
+        <record id="calendar_ve" model="mierp.gantt.calendar">
+            <field name="name">Venezuela (Lun-Vie, feriados nacionales)</field>
+            <field name="code">VE</field>
+            <field name="country_id" ref="base.ve"/>
+            <field name="workdays">0,1,2,3,4</field>
+            <field name="daily_hours">8.0</field>
+        </record>
+
+        <!-- Festivos Colombia 2026 -->
+        <record id="holiday_co_year_new" model="mierp.gantt.holiday">
+            <field name="calendar_id" ref="calendar_co"/>
+            <field name="date">2026-01-01</field>
+            <field name="name">Año Nuevo</field>
+            <field name="is_recurring">True</field>
+        </record>
+        <record id="holiday_co_reyes" model="mierp.gantt.holiday">
+            <field name="calendar_id" ref="calendar_co"/>
+            <field name="date">2026-01-12</field>
+            <field name="name">Día de los Reyes Magos</field>
+        </record>
+        <record id="holiday_co_san_jose" model="mierp.gantt.holiday">
+            <field name="calendar_id" ref="calendar_co"/>
+            <field name="date">2026-03-23</field>
+            <field name="name">Día de San José</field>
+        </record>
+        <record id="holiday_co_jueves_santo" model="mierp.gantt.holiday">
+            <field name="calendar_id" ref="calendar_co"/>
+            <field name="date">2026-04-02</field>
+            <field name="name">Jueves Santo</field>
+        </record>
+        <record id="holiday_co_viernes_santo" model="mierp.gantt.holiday">
+            <field name="calendar_id" ref="calendar_co"/>
+            <field name="date">2026-04-03</field>
+            <field name="name">Viernes Santo</field>
+        </record>
+        <record id="holiday_co_trabajo" model="mierp.gantt.holiday">
+            <field name="calendar_id" ref="calendar_co"/>
+            <field name="date">2026-05-01</field>
+            <field name="name">Día del Trabajo</field>
+            <field name="is_recurring">True</field>
+        </record>
+        <record id="holiday_co_independencia" model="mierp.gantt.holiday">
+            <field name="calendar_id" ref="calendar_co"/>
+            <field name="date">2026-07-20</field>
+            <field name="name">Día de la Independencia</field>
+            <field name="is_recurring">True</field>
+        </record>
+        <record id="holiday_co_boyaca" model="mierp.gantt.holiday">
+            <field name="calendar_id" ref="calendar_co"/>
+            <field name="date">2026-08-07</field>
+            <field name="name">Batalla de Boyacá</field>
+            <field name="is_recurring">True</field>
+        </record>
+        <record id="holiday_co_raza" model="mierp.gantt.holiday">
+            <field name="calendar_id" ref="calendar_co"/>
+            <field name="date">2026-10-12</field>
+            <field name="name">Día de la Raza</field>
+            <field name="is_recurring">True</field>
+        </record>
+        <record id="holiday_co_navidad" model="mierp.gantt.holiday">
+            <field name="calendar_id" ref="calendar_co"/>
+            <field name="date">2026-12-25</field>
+            <field name="name">Navidad</field>
+            <field name="is_recurring">True</field>
+        </record>
+
+        <!-- Festivos España 2026 -->
+        <record id="holiday_es_year_new" model="mierp.gantt.holiday">
+            <field name="calendar_id" ref="calendar_es"/>
+            <field name="date">2026-01-01</field>
+            <field name="name">Año Nuevo</field>
+            <field name="is_recurring">True</field>
+        </record>
+        <record id="holiday_es_reyes" model="mierp.gantt.holiday">
+            <field name="calendar_id" ref="calendar_es"/>
+            <field name="date">2026-01-06</field>
+            <field name="name">Día de Reyes</field>
+            <field name="is_recurring">True</field>
+        </record>
+        <record id="holiday_es_trabajo" model="mierp.gantt.holiday">
+            <field name="calendar_id" ref="calendar_es"/>
+            <field name="date">2026-05-01</field>
+            <field name="name">Día del Trabajador</field>
+            <field name="is_recurring">True</field>
+        </record>
+        <record id="holiday_es_hispanidad" model="mierp.gantt.holiday">
+            <field name="calendar_id" ref="calendar_es"/>
+            <field name="date">2026-10-12</field>
+            <field name="name">Fiesta Nacional de España</field>
+            <field name="is_recurring">True</field>
+        </record>
+        <record id="holiday_es_constitucion" model="mierp.gantt.holiday">
+            <field name="calendar_id" ref="calendar_es"/>
+            <field name="date">2026-12-06</field>
+            <field name="name">Día de la Constitución</field>
+            <field name="is_recurring">True</field>
+        </record>
+        <record id="holiday_es_navidad" model="mierp.gantt.holiday">
+            <field name="calendar_id" ref="calendar_es"/>
+            <field name="date">2026-12-25</field>
+            <field name="name">Navidad</field>
+            <field name="is_recurring">True</field>
+        </record>
+
+        <!-- Festivos Venezuela 2026 -->
+        <record id="holiday_ve_year_new" model="mierp.gantt.holiday">
+            <field name="calendar_id" ref="calendar_ve"/>
+            <field name="date">2026-01-01</field>
+            <field name="name">Año Nuevo</field>
+            <field name="is_recurring">True</field>
+        </record>
+        <record id="holiday_ve_carnaval" model="mierp.gantt.holiday">
+            <field name="calendar_id" ref="calendar_ve"/>
+            <field name="date">2026-02-16</field>
+            <field name="name">Lunes de Carnaval</field>
+        </record>
+        <record id="holiday_ve_independencia_19a" model="mierp.gantt.holiday">
+            <field name="calendar_id" ref="calendar_ve"/>
+            <field name="date">2026-04-19</field>
+            <field name="name">19 de Abril</field>
+            <field name="is_recurring">True</field>
+        </record>
+        <record id="holiday_ve_trabajo" model="mierp.gantt.holiday">
+            <field name="calendar_id" ref="calendar_ve"/>
+            <field name="date">2026-05-01</field>
+            <field name="name">Día del Trabajador</field>
+            <field name="is_recurring">True</field>
+        </record>
+        <record id="holiday_ve_independencia_5j" model="mierp.gantt.holiday">
+            <field name="calendar_id" ref="calendar_ve"/>
+            <field name="date">2026-07-05</field>
+            <field name="name">Día de la Independencia</field>
+            <field name="is_recurring">True</field>
+        </record>
+        <record id="holiday_ve_navidad" model="mierp.gantt.holiday">
+            <field name="calendar_id" ref="calendar_ve"/>
+            <field name="date">2026-12-25</field>
+            <field name="name">Navidad</field>
+            <field name="is_recurring">True</field>
+        </record>
+
+    </data>
+</odoo>

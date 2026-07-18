@@ -1,0 +1,121 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<odoo>
+    <data noupdate="0">
+        <record id="crm_lead_3d_cost_extension" model="ir.ui.view">
+            <field name="name">crm.lead.3d.cost.extension</field>
+            <field name="model">crm.lead</field>
+            <field name="inherit_id" ref="crm_extended_3D.view_crm_lead_form_extended"/>
+
+            <field name="arch" type="xml">
+
+                <xpath expr="//page[@name='finanzas']/group" position="after">
+
+                    <group string="Producción impresión 3D">
+
+                        <group>
+                            <field name="print_time_dead"/>
+                            <field name="print_hours"/>
+                            <field name="units"/>
+                            <field name="filament_id"/>
+                            <field name="printer_id"/>
+                            <field name="filament_color"/>
+                            <field name="material_grams"/>
+                            <field name="material_cost_kg"/>
+
+                        </group>
+
+                        <group>
+
+                            <field name="mo_concept_hours"/>
+                            <field name="mo_design_hours"/>
+                            <field name="mo_operation_hours"/>
+                            <field name="mo_postprocess_hours"/>
+
+                        </group>
+
+                    </group>
+
+                    <group string="Extras">
+
+                        <field name="extra_accessories"/>
+
+                    </group>
+
+                    <group string="Costos calculados">
+
+                        <field name="cost_material" readonly="1"/>
+                        <field name="mo_cost" readonly="1"/>
+                        <field name="cost_energy" readonly="1"/>
+                        <field name="cost_internet" readonly="1"/>
+                        <field name="cost_depreciation" readonly="1"/>
+
+                    </group>
+
+                    <group string="Resultado impresión">
+
+                        <field name="unit_cost" readonly="1"/>
+
+                    </group>
+
+                    <group string="Simulación de precios">
+
+                        <field name="price_50" readonly="1"/>
+                        <field name="price_75" readonly="1"/>
+                        <field name="price_100" readonly="1"/>
+
+                        <button name="action_simulate_3d_cost"
+                                type="object"
+                                string="Simular Costos"
+                                class="btn-primary"/>
+
+                    </group>
+
+                </xpath>
+
+            </field>
+
+        </record>
+        <!-- VISTA -->
+        <record id="crm_3d_config_form" model="ir.ui.view">
+            <field name="name">crm.3d.config.form</field>
+            <field name="model">print.cost.config</field>
+            <field name="arch" type="xml">
+                <form string="Configuración Costos 3D">
+                    <sheet>
+                        <group>
+                            <field name="internet_hour_cost"/>
+                            <field name="electricity_hour_cost"/>
+                            <field name="depreciation_hour_cost"/>
+                            <field name="capacity_increase_hour_cost"/>
+                            <field name="spare_parts_hour_cost"/>
+                            <field name="postprocess_consumables_cost"/>
+                            <field name="fiscal_charge_percent"/>
+                        </group>
+                        <group>
+                            <field name="mo_concept_hour"/>
+                            <field name="mo_design_hour"/>
+                            <field name="mo_operation_hour"/>
+                            <field name="mo_post_hour"/>
+                        </group>
+                    </sheet>
+                </form>
+            </field>
+        </record>
+        <!-- ACCIÓN -->
+        <record id="view_print_cost_config_action" model="ir.actions.act_window">
+            <field name="name">Costos Impresión 3D</field>
+            <field name="res_model">print.cost.config</field>
+            <field name="view_mode">form</field>
+            <field name="view_id" ref="crm_3d_config_form"/>
+        </record>
+        <!-- MENÚ CONFIGURACIÓN COSTOS IMPRESIÓN 3D -->
+        <menuitem
+            id="menu_print_cost_config_3d"
+            name="Configuración Costos 3D"
+            parent="crm.crm_menu_root"  
+            action="view_print_cost_config_action"
+            sequence="22"
+        />
+    </data>
+</odoo>

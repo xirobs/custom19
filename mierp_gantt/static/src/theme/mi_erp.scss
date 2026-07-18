@@ -1,0 +1,128 @@
+/* MI ERP Gantt — palette & overrides on top of Frappe Gantt defaults. */
+
+:root {
+    --mi-orange:       #E8713A;
+    --mi-orange-dark:  #B85620;
+    --mi-orange-soft:  #FCEEE3;
+    --mi-amber:        #F4B400;
+    --mi-red:          #DB4437;
+    --mi-red-dark:     #B83025;
+    --mi-grey-50:      #fafbfc;
+    --mi-grey-100:     #f7f8fa;
+    --mi-grey-200:     #eef0f3;
+    --mi-grey-300:     #e5e7eb;
+    --mi-grey-700:     #4b5563;
+    --mi-grey-900:     #1a1a1a;
+}
+
+.mierp-gantt-canvas .gantt {
+    .grid-header { fill: var(--mi-grey-50); }
+    .grid-row:nth-child(odd) { fill: #ffffff; }
+    .grid-row:nth-child(even) { fill: var(--mi-grey-100); }
+    .row-line { stroke: var(--mi-grey-200); }
+    .tick { stroke: var(--mi-grey-200); }
+
+    /* Modern bars: solid orange fill, subtle 3D shadow, larger corner radius,
+       soft hover lift. State and custom colours come via inline style on the
+       wrapper (set by critical_path_render.js). */
+    .bar-wrapper {
+        filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.15));
+        transition: filter 0.18s ease;
+        cursor: pointer;
+    }
+    .bar-wrapper:hover {
+        filter: drop-shadow(0 2px 5px rgba(0, 0, 0, 0.22));
+    }
+
+    .bar {
+        fill: var(--mi-orange);
+        stroke: var(--mi-orange-dark);
+        stroke-width: 0.5;
+        rx: 6; ry: 6;
+    }
+    .bar-progress {
+        fill: var(--mi-orange-dark);
+        rx: 6; ry: 6;
+    }
+    .bar-label { fill: #ffffff; font-weight: 600; text-shadow: 0 1px 2px rgba(0,0,0,0.3); }
+    .bar-label.big { fill: var(--mi-grey-900); text-shadow: none; }
+
+    .bar-wrapper.critical .bar {
+        fill: var(--mi-red);
+        stroke: var(--mi-red-dark);
+    }
+    .bar-wrapper.critical .bar-progress { fill: var(--mi-red-dark); }
+    .bar-wrapper.critical {
+        filter: drop-shadow(0 1px 2px rgba(219, 68, 55, 0.30));
+    }
+    .bar-wrapper.critical:hover {
+        filter: drop-shadow(0 2px 6px rgba(219, 68, 55, 0.45));
+    }
+
+    .bar-wrapper.milestone .bar {
+        fill: var(--mi-amber);
+        stroke: #c39600;
+    }
+
+    .bar-wrapper.state-done .bar          { fill: #3CC07A; stroke: #138A47; }
+    .bar-wrapper.state-done .bar-progress { fill: #138A47; }
+    .bar-wrapper.state-blocked .bar       { fill: #9CA3AF; stroke: #4B5563; }
+    .bar-wrapper.state-blocked .bar-progress { fill: #4B5563; }
+
+    /* When a task has color_hex set, JS injects --bar-fill / --bar-stroke. */
+    .bar-wrapper.has-custom-color .bar {
+        fill: var(--bar-fill) !important;
+        stroke: var(--bar-stroke) !important;
+    }
+    .bar-wrapper.has-custom-color .bar-progress {
+        fill: var(--bar-stroke) !important;
+    }
+
+    .arrow {
+        stroke: var(--mi-orange-dark);
+        stroke-width: 1.5;
+        fill: none;
+    }
+
+    .today-highlight { fill: var(--mi-orange-soft); opacity: 0.5; }
+
+    .baseline-bar {
+        fill: none;
+        stroke: var(--mi-grey-700);
+        stroke-width: 1.5;
+        stroke-dasharray: 3 3;
+        rx: 6; ry: 6;
+    }
+
+    .non-working { fill: var(--mi-grey-200); opacity: 0.45; }
+}
+
+.mierp-gantt-canvas .project-marker {
+    position: absolute;
+    top: 0;
+    width: 2px;
+    background: var(--mi-amber);
+    pointer-events: none;
+    z-index: 4;
+}
+.mierp-gantt-canvas .project-marker .label {
+    position: absolute;
+    top: 0;
+    left: 0;
+    transform: translateX(-50%);
+    background: var(--mi-amber);
+    color: white;
+    font-size: 11px;
+    font-weight: 600;
+    padding: 2px 6px;
+    border-radius: 0 0 4px 4px;
+    white-space: nowrap;
+}
+
+.mierp-gantt-canvas .progress-line {
+    stroke: var(--mi-orange);
+    stroke-width: 2;
+    fill: none;
+    stroke-dasharray: 6 4;
+    pointer-events: none;
+}

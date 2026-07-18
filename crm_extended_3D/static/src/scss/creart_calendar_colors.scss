@@ -1,0 +1,19 @@
+/* Colores CreArt para categorías de calendario (complemento a la paleta Odoo) */
+
+.o_calendar_renderer {
+    .o_cw_filter_color_8,
+    .fc-event.o_cw_filter_color_8 {
+        --o-event-color: #212529;
+        --o-event-bg: #212529;
+        background-color: #212529 !important;
+        border-color: #212529 !important;
+        color: #fff !important;
+    }
+}
+
+.o_tag.o_tag_color_8 {
+    &, &::after {
+        background-color: #212529 !important;
+        color: #fff !important;
+    }
+}

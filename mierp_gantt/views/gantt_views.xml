@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<odoo>
+
+    <record id="action_gantt_view" model="ir.actions.client">
+        <field name="name">Interactive Gantt</field>
+        <field name="tag">mierp_gantt.view</field>
+    </record>
+
+</odoo>

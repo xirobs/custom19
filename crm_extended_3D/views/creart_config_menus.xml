@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<odoo>
+    <data noupdate="0">
+
+        <menuitem id="menu_creart_config_root" name="Configuración"
+                  parent="menu_creart_root" sequence="20"/>
+
+        <menuitem id="menu_creart_config_costs" name="Costos"
+                  parent="menu_creart_config_root"
+                  action="action_print_cost_config" sequence="10"/>
+
+        <record id="action_creart_lost_reasons" model="ir.actions.act_window">
+            <field name="name">Motivos de pérdida</field>
+            <field name="res_model">crm.lost.reason</field>
+            <field name="view_mode">list,form</field>
+        </record>
+
+        <menuitem id="menu_creart_config_lost_reasons" name="Motivos de pérdida"
+                  parent="menu_creart_config_root"
+                  action="action_creart_lost_reasons" sequence="20"/>
+
+        <record id="action_creart_activity_types" model="ir.actions.act_window">
+            <field name="name">Tipos de actividades</field>
+            <field name="res_model">mail.activity.type</field>
+            <field name="view_mode">list,kanban,form</field>
+            <field name="domain">[('res_model', '=', 'crm.lead')]</field>
+            <field name="context">{'default_res_model': 'crm.lead'}</field>
+        </record>
+
+        <menuitem id="menu_creart_config_activity_types" name="Tipos de actividades"
+                  parent="menu_creart_config_root"
+                  action="action_creart_activity_types" sequence="30"/>
+
+        <menuitem id="menu_creart_config_calendar_categories" name="Categorías de calendario"
+                  parent="menu_creart_config_root"
+                  action="action_creart_calendar_event_types" sequence="40"/>
+
+    </data>
+</odoo>

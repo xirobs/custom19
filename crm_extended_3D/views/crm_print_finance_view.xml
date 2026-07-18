@@ -1,0 +1,156 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<odoo>
+
+    <!-- ========================================================= -->
+    <!-- PESTAÑA FINANZAS 3D EN CRM                               -->
+    <!-- Control de costos y simulación                            -->
+    <!-- ========================================================= -->
+
+    <data noupdate="0">
+
+        <record id="crm_lead_finance_view" model="ir.ui.view">
+
+            <field name="name">crm.lead.finance.3d</field>
+
+            <field name="model">crm.lead</field>
+
+            <field name="inherit_id" ref="crm.crm_lead_view_form"/>
+
+            <field name="arch" type="xml">
+
+                <!-- Reemplazo completo de Finanzas con estructura en 5 bloques -->
+                <xpath expr="//page[@name='finanzas']" position="replace">
+                    <page string="Finanzas" name="finanzas">
+                        <!-- 1) Bloque maestro -->
+                        <group string="1) Datos maestro (configuración base)">
+                            <group string="Mano de obra (tarifa por hora)">
+                                <field name="mo_concept_rate"/>
+                                <field name="mo_design_rate"/>
+                                <field name="mo_operation_rate"/>
+                                <field name="mo_post_rate"/>
+                            </group>
+                            <group string="Conceptos fijos">
+                                <field name="internet_hour_cost_master"/>
+                                <field name="electricity_hour_cost_master"/>
+                                <field name="depreciation_hour_cost_master"/>
+                                <field name="capacity_increase_hour_cost_master"/>
+                                <field name="spare_parts_hour_cost_master"/>
+                                <field name="postprocess_consumables_cost_master"/>
+                                <field name="dead_time_hour_cost_master"/>
+                                <field name="fiscal_charge_percent_master"/>
+                            </group>
+                        </group>
+
+                        <!-- 2) Bloque datos de impresión -->
+                        <group string="2) Datos de impresión">
+                            <group>
+                                <field name="filament_id"/>
+                                <field name="filament_grams"/>
+                                <field name="filament_waste_percent"/>
+                                <field name="print_hours"/>
+                                <field name="print_time_minutes"/>
+                                <field name="print_time_seconds"/>
+                                <field name="units"/>
+                            </group>
+                            <group>
+                                <field name="dead_time_hours"/>
+                                <field name="dead_time_minutes"/>
+                                <field name="dead_time_seconds"/>
+                                <field name="mo_concept_hours"/>
+                                <field name="mo_design_hours"/>
+                                <field name="mo_operation_hours"/>
+                                <field name="mo_postprocess_hours"/>
+                            </group>
+                        </group>
+
+                        <!-- 3) Bloque accesorios -->
+                        <group string="3) Accesorios (pegas, pintura, etc.)">
+                            <field name="accessory_ids">
+                                <list editable="bottom">
+                                    <field name="product_id"/>
+                                    <field name="usage_mode"/>
+                                    <field name="usage_percent" invisible="usage_mode != 'percent'"/>
+                                    <field name="quantity"/>
+                                    <field name="price_unit"/>
+                                    <field name="subtotal"/>
+                                </list>
+                            </field>
+                        </group>
+
+                        <!-- 4) Bloque resultados -->
+                        <group string="4) Resultados de impresión">
+                            <group string="Ingreso esperado (CRM)">
+                                <field name="auto_sync_expected_revenue"/>
+                                <field name="quote_price_hint" readonly="1"/>
+                                <button name="action_apply_quote_to_expected_revenue" type="object"
+                                        string="Aplicar precio cotizado" class="btn-link"
+                                        invisible="not selected_total_price"/>
+                            </group>
+                            <group string="Costo base">
+                                <button name="action_reload_cost_config" type="object"
+                                        string="Recargar tarifas desde configuración" class="btn-link"/>
+                                <field name="unit_cost" readonly="1"/>
+                                <field name="total_cost" readonly="1"/>
+                            </group>
+                            <group string="Precio de venta por %">
+                                <field name="price_50" readonly="1"/>
+                                <field name="price_75" readonly="1"/>
+                                <field name="price_100" readonly="1"/>
+                                <field name="distributor_margin_percent"/>
+                                <field name="price_distributor" readonly="1"/>
+                            </group>
+                            <group string="Precio por tramo de piezas">
+                                <group>
+                                    <field name="price_1_12" readonly="1" string="P. unit s/IVA (&lt;12, 100%)"/>
+                                    <field name="price_12_24" readonly="1" string="P. unit s/IVA (12-24, 75%)"/>
+                                    <field name="price_24_plus" readonly="1" string="P. unit s/IVA (24+, 50%)"/>
+                                </group>
+                                <group>
+                                    <field name="selected_unit_price" readonly="1" string="P. unitario s/IVA"/>
+                                    <field name="selected_total_price" readonly="1" string="P. venta s/IVA"/>
+                                    <field name="selected_unit_price_tax" readonly="1"/>
+                                    <field name="selected_total_price_tax" readonly="1"/>
+                                    <field name="batch_sale_reference" readonly="1"/>
+                                </group>
+                            </group>
+                            <group string="Desglose impresión (hoja CreArt)">
+                                <field name="cost_material" readonly="1"/>
+                                <field name="cost_machine_print" readonly="1"/>
+                                <field name="cost_machine_dead" readonly="1"/>
+                                <field name="mo_cost" readonly="1"/>
+                            </group>
+                        </group>
+
+                        <!-- 5) Bloque desglose de pagos -->
+                        <group string="5) Distribución de pagos por rubro">
+                            <group string="Montos">
+                                <field name="cost_material" readonly="1"/>
+                                <field name="cost_energy" readonly="1"/>
+                                <field name="cost_internet" readonly="1"/>
+                                <field name="cost_depreciation" readonly="1"/>
+                                <field name="mo_cost" readonly="1"/>
+                                <field name="accessories_total" readonly="1"/>
+                            </group>
+                            <group string="Porcentajes sobre costo total">
+                                <field name="pct_material" readonly="1"/>
+                                <field name="pct_energy" readonly="1"/>
+                                <field name="pct_internet" readonly="1"/>
+                                <field name="pct_depreciation" readonly="1"/>
+                                <field name="pct_labor" readonly="1"/>
+                                <field name="pct_accessories" readonly="1"/>
+                                <field name="pct_fiscal" readonly="1"/>
+                            </group>
+                            <group string="Monto fiscal">
+                                <field name="cost_fiscal" readonly="1"/>
+                            </group>
+                        </group>
+                    </page>
+                </xpath>
+
+            </field>
+
+        </record>
+
+    </data>
+
+</odoo>

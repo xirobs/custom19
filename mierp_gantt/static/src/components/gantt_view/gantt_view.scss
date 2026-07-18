@@ -1,0 +1,195 @@
+/* Let the Gantt grow to fit its full chart (sidebar + bars) so users
+   never see an empty band below the last task. The page itself scrolls
+   when the project has more rows than the viewport. */
+.o_action_manager:has(.mierp-gantt-app),
+.o_action_manager:has(.mierp-gantt-app) .o_action {
+    overflow-y: auto !important;
+    overflow-x: hidden !important;
+    height: auto !important;
+    min-height: 100% !important;
+}
+
+.mierp-gantt-app {
+    display: flex;
+    flex-direction: column;
+    /* No max-height: app expands to whatever the chart needs. */
+    min-height: 0;
+    background: #ffffff;
+    color: var(--mi-grey-900, #1a1a1a);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+
+    .mierp-gantt-toolbar {
+        background: white;
+        border-bottom: 1px solid var(--mi-grey-300, #e5e7eb);
+        box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+        flex: 0 0 auto;
+        padding: 8px 12px;
+        gap: 6px;
+
+        .vr {
+            border-left: 1px solid var(--mi-grey-300, #e5e7eb);
+            margin: 0 4px;
+            height: 28px;
+        }
+
+        .form-control { max-width: 220px; }
+
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+
+            i { font-size: 13px; }
+        }
+    }
+
+    .mierp-gantt-toolbar select.project-selector {
+        max-width: 280px;
+        font-weight: 600;
+    }
+
+    .mierp-gantt-body {
+        display: flex;
+        /* Grow to whatever the sidebar+canvas content need. The page
+           scrolls; the body itself does not clip its children. */
+        flex: 0 0 auto;
+        min-height: 400px;
+        overflow: visible;
+    }
+
+    .mierp-gantt-sidebar {
+        flex: 0 0 auto;
+        overflow: visible;
+        background: var(--mi-grey-50, #fafbfc);
+        border-right: 1px solid var(--mi-grey-300, #e5e7eb);
+    }
+
+    .mierp-gantt-sidebar .tabulator {
+        background: transparent;
+        border: none;
+        font-size: 13px;
+    }
+
+    .mierp-gantt-divider {
+        flex: 0 0 4px;
+        background: var(--mi-grey-300, #e5e7eb);
+        cursor: col-resize;
+        user-select: none;
+
+        &:hover { background: var(--mi-orange, #E8713A); }
+    }
+
+    .mierp-gantt-canvas {
+        flex: 1 1 auto;
+        /* Need overflow on both axes (browsers can't mix visible/auto),
+           so internal scrolling is fine for the timeline width. The
+           canvas itself grows vertically to fit the SVG via
+           min-height: max-content, which lifts the body height with it
+           and the page scrolls if the project is taller than the
+           viewport. */
+        overflow: auto;
+        min-height: max-content;
+        position: relative;
+        background: #fff;
+    }
+
+    .mierp-gantt-empty {
+        margin: 32px auto;
+        max-width: 480px;
+        text-align: center;
+        color: var(--mi-grey-700, #4b5563);
+
+        i { font-size: 48px; color: var(--mi-orange, #E8713A); margin-bottom: 16px; }
+    }
+
+    .mierp-gantt-footer {
+        flex: 0 0 auto;
+        border-top: 1px solid var(--mi-grey-300, #e5e7eb);
+        background: var(--mi-grey-50, #fafbfc);
+        padding: 8px 12px;
+    }
+
+    .mierp-gantt-popup {
+        position: fixed;
+        z-index: 1100;
+        background: white;
+        border: 1px solid var(--mi-grey-300, #e5e7eb);
+        border-radius: 8px;
+        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+        padding: 12px 14px;
+        font-size: 13px;
+        min-width: 240px;
+        max-width: 320px;
+
+        h6 {
+            margin: 0 0 6px;
+            font-weight: 700;
+            color: var(--mi-orange-dark, #B85620);
+        }
+
+        .popup-row {
+            display: flex;
+            justify-content: space-between;
+            margin: 2px 0;
+        }
+    }
+
+    .mierp-gantt-modal-mask {
+        position: fixed;
+        inset: 0;
+        background: rgba(0, 0, 0, 0.4);
+        z-index: 1090;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .settings-dropdown {
+        position: absolute;
+        z-index: 1095;
+        top: 56px;
+        right: 12px;
+        background: white;
+        border: 1px solid var(--mi-grey-300, #e5e7eb);
+        border-radius: 8px;
+        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+        padding: 12px;
+        min-width: 240px;
+
+        h6 {
+            margin: 0 0 8px;
+            font-weight: 700;
+            color: var(--mi-orange-dark, #B85620);
+            font-size: 12px;
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+        }
+
+        label {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 4px 0;
+            cursor: pointer;
+            font-size: 13px;
+            user-select: none;
+
+            &:hover { color: var(--mi-orange-dark, #B85620); }
+        }
+
+        .form-check-input { margin: 0; }
+    }
+
+    @media (max-width: 768px) {
+        .mierp-gantt-sidebar { display: none; }
+        .mierp-gantt-divider { display: none; }
+    }
+}
+
+/* Frappe Gantt hardcodes .gantt-container to height:500px + overflow:auto,
+   which clips long projects to ~10 rows. Force it to fit its SVG so
+   every task bar renders without an internal scrollbar. */
+.mierp-gantt-canvas .gantt-container {
+    height: auto !important;
+    overflow: visible !important;
+}

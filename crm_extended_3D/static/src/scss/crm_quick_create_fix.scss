@@ -1,0 +1,11 @@
+// Evita texto invertido al escribir en creación rápida del kanban CRM
+// (conflicto conocido con campos reservados / direccionalidad en el DOM).
+.o_kanban_quick_create,
+.o_kanban_quick_create_form {
+    .o_field_widget[name="name"] .o_input {
+        /*rtl:ignore*/
+        direction: ltr;
+        text-align: left;
+        unicode-bidi: normal;
+    }
+}

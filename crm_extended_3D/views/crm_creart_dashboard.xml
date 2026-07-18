@@ -1,0 +1,77 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<odoo>
+    <data noupdate="0">
+
+        <!-- Filtros rápidos CreArt en oportunidades -->
+        <record id="crm_lead_view_search_creart" model="ir.ui.view">
+            <field name="name">crm.lead.search.creart</field>
+            <field name="model">crm.lead</field>
+            <field name="inherit_id" ref="crm.view_crm_case_opportunities_filter"/>
+            <field name="arch" type="xml">
+                <xpath expr="//search" position="inside">
+                    <separator/>
+                    <filter name="creart_jobs" string="Trabajos CreArt"
+                            domain="[('lead_sequence', '!=', False)]"/>
+                    <filter name="creart_printing" string="Imprimiendo"
+                            domain="[('stage_id.name', 'in', ['Imprimiendo', 'En la cola de impresión', 'En la cola de impresion'])]"/>
+                    <filter name="creart_not_profitable" string="No rentables"
+                            domain="[('rentable', '=', False), ('total_cost', '>', 0)]"/>
+                    <filter name="creart_material_shortage" string="Faltante de stock"
+                            domain="[('material_shortage', '=', True)]"/>
+                </xpath>
+            </field>
+        </record>
+
+        <!-- Gráfico CreArt -->
+        <record id="crm_lead_view_graph_creart_pipeline" model="ir.ui.view">
+            <field name="name">crm.lead.graph.creart.pipeline</field>
+            <field name="model">crm.lead</field>
+            <field name="arch" type="xml">
+                <graph string="Pipeline CreArt" type="bar">
+                    <field name="stage_id"/>
+                    <field name="expected_revenue" type="measure"/>
+                    <field name="total_cost" type="measure"/>
+                </graph>
+            </field>
+        </record>
+
+        <record id="crm_lead_view_graph_creart_margin" model="ir.ui.view">
+            <field name="name">crm.lead.graph.creart.margin</field>
+            <field name="model">crm.lead</field>
+            <field name="arch" type="xml">
+                <graph string="Margen CreArt" type="bar">
+                    <field name="stage_id"/>
+                    <field name="margin_percent" type="measure"/>
+                </graph>
+            </field>
+        </record>
+
+        <record id="crm_lead_view_pivot_creart" model="ir.ui.view">
+            <field name="name">crm.lead.pivot.creart</field>
+            <field name="model">crm.lead</field>
+            <field name="arch" type="xml">
+                <pivot string="Análisis CreArt">
+                    <field name="stage_id" type="row"/>
+                    <field name="order_date" interval="month" type="col"/>
+                    <field name="expected_revenue" type="measure"/>
+                    <field name="total_cost" type="measure"/>
+                    <field name="margin" type="measure"/>
+                </pivot>
+            </field>
+        </record>
+
+        <!-- Dashboard principal: vistas nativas de CRM (estable en Odoo 19 Community) -->
+        <record id="action_creart_dashboard_leads" model="ir.actions.act_window">
+            <field name="name">Dashboard CreArt 3DP</field>
+            <field name="res_model">crm.lead</field>
+            <field name="view_mode">kanban,graph,pivot,list,form</field>
+            <field name="domain">[('type', '=', 'opportunity'), ('active', '=', True), ('lead_sequence', '!=', False)]</field>
+            <field name="context">{
+                'search_default_creart_jobs': 1,
+                'default_type': 'opportunity'
+            }</field>
+            <field name="search_view_id" ref="crm.view_crm_case_opportunities_filter"/>
+        </record>
+
+    </data>
+</odoo>

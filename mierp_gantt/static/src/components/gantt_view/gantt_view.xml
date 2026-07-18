@@ -1,0 +1,131 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<templates xml:space="preserve">
+
+    <t t-name="mierp_gantt.GanttView">
+        <div class="mierp-gantt-app o_action_manager">
+
+            <div class="mierp-gantt-toolbar d-flex align-items-center">
+                <select class="form-select form-select-sm project-selector"
+                        t-on-change="onSelectProject"
+                        t-att-value="state.projectId">
+                    <t t-foreach="state.projects" t-as="p" t-key="p.id">
+                        <option t-att-value="p.id" t-att-selected="p.id === state.projectId">
+                            <t t-esc="p.name"/>
+                        </option>
+                    </t>
+                </select>
+                <span class="vr"/>
+                <button class="btn btn-sm btn-primary" t-on-click="onNewTask" title="New task">
+                    <i class="fa fa-plus" title="add"/> New
+                </button>
+                <button class="btn btn-sm btn-light" t-on-click="onEditTask" title="Edit selected">
+                    <i class="fa fa-pencil" title="edit"/> Edit
+                </button>
+                <span class="vr"/>
+                <button class="btn btn-sm btn-light" t-on-click="() => this.setZoom('day')"
+                        t-att-class="state.zoomLevel === 'day' ? 'active' : ''" title="Day">D</button>
+                <button class="btn btn-sm btn-light" t-on-click="() => this.setZoom('week')"
+                        t-att-class="state.zoomLevel === 'week' ? 'active' : ''" title="Week">W</button>
+                <button class="btn btn-sm btn-light" t-on-click="() => this.setZoom('month')"
+                        t-att-class="state.zoomLevel === 'month' ? 'active' : ''" title="Month">M</button>
+                <button class="btn btn-sm btn-light" t-on-click="() => this.setZoom('quarter')"
+                        t-att-class="state.zoomLevel === 'quarter' ? 'active' : ''" title="Quarter">Q</button>
+                <span class="vr"/>
+                <button class="btn btn-sm btn-light" t-on-click="onSnapshotBaseline" title="Snapshot baseline">
+                    <i class="fa fa-camera" title="baseline"/>
+                </button>
+                <button class="btn btn-sm btn-light o-gantt-settings-btn" t-on-click="onToggleSettings" title="Settings">
+                    <i class="fa fa-cog" title="settings"/> Settings
+                </button>
+                <span class="ms-auto"/>
+                <input class="form-control form-control-sm" placeholder="Find by name…"
+                       t-att-value="state.searchTerm" t-on-input="onSearchInput"/>
+                <button class="btn btn-sm btn-secondary" t-on-click="onExportMSP" title="Export MSPDI XML">
+                    <i class="fa fa-download" title="export"/> Export MSP
+                </button>
+                <button class="btn btn-sm btn-light" t-on-click="onImportMSP" title="Import MSPDI XML">
+                    <i class="fa fa-upload" title="import"/> Import
+                </button>
+                <button class="btn btn-sm btn-light" t-on-click="onExportPNG" title="PNG snapshot">
+                    <i class="fa fa-image" title="png"/>
+                </button>
+            </div>
+
+            <div t-if="state.showSettings" class="settings-dropdown">
+                <h6>Display</h6>
+                <label><input type="checkbox" class="form-check-input"
+                              t-att-checked="state.settings.drawDependencies"
+                              t-on-change="(ev) => this.toggleSetting('drawDependencies', ev)"/>
+                       Draw dependencies</label>
+                <label><input type="checkbox" class="form-check-input"
+                              t-att-checked="state.settings.taskLabels"
+                              t-on-change="(ev) => this.toggleSetting('taskLabels', ev)"/>
+                       Task labels</label>
+                <label><input type="checkbox" class="form-check-input"
+                              t-att-checked="state.settings.criticalPaths"
+                              t-on-change="(ev) => this.toggleSetting('criticalPaths', ev)"/>
+                       Highlight critical path</label>
+                <label><input type="checkbox" class="form-check-input"
+                              t-att-checked="state.settings.projectLines"
+                              t-on-change="(ev) => this.toggleSetting('projectLines', ev)"/>
+                       Project Start/End lines</label>
+                <label><input type="checkbox" class="form-check-input"
+                              t-att-checked="state.settings.highlightNonWorkingTime"
+                              t-on-change="(ev) => this.toggleSetting('highlightNonWorkingTime', ev)"/>
+                       Highlight weekends/holidays</label>
+                <label><input type="checkbox" class="form-check-input"
+                              t-att-checked="state.settings.showBaselines"
+                              t-on-change="(ev) => this.toggleSetting('showBaselines', ev)"/>
+                       Show baselines</label>
+                <label><input type="checkbox" class="form-check-input"
+                              t-att-checked="state.settings.showProgressLine"
+                              t-on-change="(ev) => this.toggleSetting('showProgressLine', ev)"/>
+                       Show progress line</label>
+                <label><input type="checkbox" class="form-check-input"
+                              t-att-checked="state.settings.cellEditing"
+                              t-on-change="(ev) => this.toggleSetting('cellEditing', ev)"/>
+                       Cell editing</label>
+                <label><input type="checkbox" class="form-check-input"
+                              t-att-checked="state.settings.showHistogram"
+                              t-on-change="(ev) => this.toggleSetting('showHistogram', ev)"/>
+                       Resource histogram</label>
+                <label><input type="checkbox" class="form-check-input"
+                              t-att-checked="state.settings.hideSchedule"
+                              t-on-change="(ev) => this.toggleSetting('hideSchedule', ev)"/>
+                       Hide schedule (list only)</label>
+            </div>
+
+            <div class="mierp-gantt-body">
+                <div class="mierp-gantt-sidebar"
+                     t-att-style="`width: ${state.sidebarWidth}px`"
+                     t-ref="sidebarBox">
+                    <div t-ref="tabulatorEl"/>
+                </div>
+                <div class="mierp-gantt-divider" t-on-mousedown="onDividerDown"/>
+                <div class="mierp-gantt-canvas" t-ref="ganttEl"
+                     t-att-class="state.settings.hideSchedule ? 'd-none' : ''">
+                    <div t-if="!state.tasks.length" class="mierp-gantt-empty">
+                        <i class="fa fa-tasks" title="no tasks"/>
+                        <h4>No tasks yet</h4>
+                        <p>Create the first task using the “+ New” button.</p>
+                    </div>
+                </div>
+            </div>
+
+            <div t-if="state.settings.showHistogram and state.tasks.length"
+                 class="mierp-gantt-footer">
+                <div t-ref="histogramEl" style="height: 200px; width: 100%;"/>
+            </div>
+
+            <div t-if="state.editingTask" class="mierp-gantt-modal-mask"
+                 t-on-click.self="onCloseEditor">
+                <TaskEditorPopup task="state.editingTask"
+                                 dependencies="state.dependencies"
+                                 allTasks="state.tasks"
+                                 onSave="(t) => this.onSaveTask(t)"
+                                 onCancel="() => this.onCloseEditor()"/>
+            </div>
+        </div>
+    </t>
+
+</templates>

@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<templates xml:space="preserve">
+    <t t-inherit="mail.Chatter" t-inherit-mode="extension">
+        <xpath expr="//button[hasclass('o-mail-Chatter-activity')]" position="after">
+            <button t-if="showCreartTeamNotes"
+                    class="o-mail-Chatter-creartNotes btn btn-secondary text-nowrap me-1"
+                    t-att-class="{ 'my-2': !props.compactHeight }"
+                    t-att-disabled="!state.thread.canPostMessage and props.threadId"
+                    t-on-click="openCreartTeamNotes">
+                <i class="fa fa-clipboard me-1" role="img"/>
+                <span>Notas equipo</span>
+            </button>
+        </xpath>
+    </t>
+</templates>

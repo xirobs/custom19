@@ -1,0 +1,638 @@
+<!doctype html>
+<html lang="en">
+    <head>
+      <meta charset="utf-8"/>
+      <meta name="viewport" content="width=device-width, initial-scale=1"/>
+      <title>MI ERP Gantt Open-Source Pro — Odoo 19 (Free / LGPL-3)</title>
+      <meta name="description" content="Free, open-source Gantt chart for Odoo 19: Critical Path, Multi-Baseline, Auto-scheduling, MSPDI XML round-trip, resource histogram and working calendars. 100% MIT vendored libs, LGPL-3 module — no royalties, no fees."/>
+      <meta property="og:image" content="icon.png"/>
+      <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+      <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+      <style>
+        :root {
+            --orange:#E8713A;
+            --orange-light:#F4A07A;
+            --orange-dark:#B85620;
+            --orange-soft:#FCEEE3;
+            --dark:#1A1A1A;
+            --gray:#666666;
+            --success:#0F9D58;
+            --info:#4A90E2;
+            --purple:#8E5BC9;
+            --critical:#D8413B;
+        }
+        body { background:#f8f9fa; color:#212529; font-size:16px; }
+        .hero { background:#fff; border-radius:12px; padding:24px; box-shadow:0 4px 10px rgba(0,0,0,0.08); }
+        .feature { background:#fff; border-left:4px solid var(--orange); padding:12px 16px; border-radius:6px; margin-bottom:10px; }
+        .feature-warning { background:#fff; border-left:4px solid #ffc107; padding:12px 16px; border-radius:6px; margin-bottom:10px; }
+        .feature-info { background:#fff; border-left:4px solid var(--info); padding:12px 16px; border-radius:6px; margin-bottom:10px; }
+        .feature-success { background:#fff; border-left:4px solid var(--success); padding:12px 16px; border-radius:6px; margin-bottom:10px; }
+        h2, h3 { color:var(--orange-dark); font-weight:600; }
+        h5 { color:var(--orange-dark); }
+        footer { margin-top:30px; font-size:0.9rem; color:#6c757d; }
+        .module-card { background:#fff; border-radius:8px; padding:15px; margin-bottom:15px; box-shadow:0 2px 6px rgba(0,0,0,0.06); border-top:3px solid var(--orange); }
+        .module-card h5 { color:var(--orange-dark); margin-bottom:10px; }
+        .module-card i { color:var(--orange); margin-right:8px; }
+        .l10n-card { background:#fff; border-radius:8px; padding:15px; margin-bottom:15px; box-shadow:0 2px 6px rgba(0,0,0,0.06); border-top:3px solid var(--info); }
+        .l10n-card h5 { color:var(--info); margin-bottom:10px; }
+        .vs-card { background:#fff; border-radius:8px; padding:15px; margin-bottom:15px; box-shadow:0 2px 6px rgba(0,0,0,0.06); border-top:3px solid var(--success); }
+        .vs-card h5 { color:var(--success); margin-bottom:10px; }
+        .shot-card { background:#fff; border-radius:10px; overflow:hidden; box-shadow:0 4px 12px rgba(0,0,0,0.08); margin-bottom:24px; width:100%; max-width:100%; box-sizing:border-box; }
+        .shot-card img { width:100%; max-width:100%; height:auto; display:block; border-bottom:1px solid #eee; object-fit:cover; object-position:top; max-height:380px; }
+        .shot-card.shot-hero img { max-height:560px; }
+        .shot-caption { padding:14px 18px; }
+        .shot-caption h5 { color:var(--orange-dark); margin:0 0 4px 0; font-size:1rem; font-weight:700; }
+        .shot-caption p { margin:0; color:var(--gray); font-size:0.9rem; }
+        .badge-orange { background:var(--orange); color:#fff; }
+        .badge-orange-soft { background:var(--orange-soft); color:var(--orange-dark); }
+        .badge-critical { background:var(--critical); color:#fff; }
+        hr.mi-erp { width:80%;height:1px;background:linear-gradient(to right,var(--orange-light),var(--orange),var(--orange-dark)); border:none; }
+        table.compare { width:100%; border-collapse:collapse; }
+        table.compare th, table.compare td { padding:10px 12px; border-bottom:1px solid #eef0f3; text-align:left; font-size:0.92rem; }
+        table.compare th { background:var(--orange-soft); color:var(--orange-dark); }
+        table.compare tr:hover { background:#fafbfc; }
+        code { color:var(--orange-dark); background:var(--orange-soft); padding:1px 6px; border-radius:4px; font-size:0.88rem; }
+      </style>
+    </head>
+    <body>
+        <div class="container py-4">
+
+            <!-- HEADER -->
+            <div class="hero mb-4">
+                <div class="row align-items-center">
+                    <div class="col-md-2 text-center">
+                        <img src="icon.png" alt="MI ERP Gantt" class="img-fluid rounded" style="max-width:96px;">
+                    </div>
+                    <div class="col-md-10">
+                        <h1 class="h4 mb-1">MI ERP Gantt Open-Source Pro — Odoo 19</h1>
+                        <p class="mb-1 text-muted">Modern Gantt engine with Critical Path, Baselines and Auto-scheduling — <strong>free &amp; open-source (LGPL-3)</strong></p>
+                        <div>
+                            <span class="badge bg-success me-1">FREE · LGPL-3</span>
+                            <span class="badge badge-orange me-1">Odoo 19</span>
+                            <span class="badge badge-critical me-1">Critical Path</span>
+                            <span class="badge bg-info text-dark me-1">Multi-Baseline</span>
+                            <span class="badge bg-warning text-dark me-1">MSPDI XML</span>
+                            <span class="badge bg-secondary me-1">FS · SS · FF · SF</span>
+                            <span class="badge badge-orange-soft me-1">100% MIT vendored libs</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- DESCRIPTION -->
+            <div class="card mb-3">
+                <div class="card-body">
+                    <h2 class="h2 mb-3">Description</h2>
+                    <hr class="mi-erp">
+                    <p>
+                        <strong>MI ERP Gantt Open-Source Pro</strong> is a standalone, generic Gantt
+                        chart engine for <strong>Odoo 19</strong>, suitable for any module that needs
+                        to schedule activities — construction works, software projects, event
+                        planning, manufacturing campaigns. It ships a custom
+                        <strong>Critical Path Method</strong> (forward + backward pass) computed
+                        client-side, four dependency types (<strong>FS / SS / FF / SF</strong>) with
+                        lag and lead in working days, multi-baseline overlays, auto-scheduling of
+                        successors and a resource allocation histogram.
+                    </p>
+                    <p>
+                        Round-trips schedules with <strong>Microsoft Project</strong> via the MSPDI
+                        XML format (2019+), captures PNG snapshots in one click and renders with
+                        rounded bars, amber project markers and red critical-path highlight in the
+                        MI ERP palette. Designed to be extended — sibling bridges connect it to
+                        BIM/IFC viewers, construction APUs and field-foreman PWAs.
+                    </p>
+                    <div class="feature-success">
+                        <i class="fa fa-gift" style="color:var(--success);"></i>
+                        <strong>Free and open-source under LGPL-3.</strong> Built by
+                        <strong>GRUPO MI ERP SAS</strong> as a community alternative to the
+                        commercial Gantt components used by Presto and most construction
+                        ERPs. Use it, fork it, ship it inside your own modules — no per-developer
+                        fees, no runtime royalties.
+                    </div>
+                </div>
+            </div>
+
+            <!-- GALLERY — main course -->
+            <div class="card mb-3">
+                <div class="card-body">
+                    <h2 class="h2 mb-3">Product screenshots</h2>
+                    <hr class="mi-erp">
+                    <p class="text-muted mb-4">
+                        Real screenshots from the module running on Odoo 19 with seeded data,
+                        captured by the Playwright audit suite.
+                    </p>
+
+                    <!-- Critical Path — the star -->
+                    <div class="shot-card shot-hero">
+                        <img src="screenshots/02_gantt_critical_path.png" alt="Gantt with Critical Path"/>
+                        <div class="shot-caption">
+                            <h5><i class="fa fa-route"></i> Gantt with Critical Path</h5>
+                            <p>
+                                Forward + backward pass computed client-side: every task on the
+                                critical path turns red. Rounded bars, DHTMLX-style header bands,
+                                amber project markers, FS/SS/FF/SF dependency arrows with lag/lead.
+                                Drag a bar — every successor reschedules respecting the working
+                                calendar.
+                            </p>
+                        </div>
+                    </div>
+
+                    <!-- Tasks with WBS sidebar -->
+                    <div class="shot-card shot-hero">
+                        <img src="screenshots/08_tasks_with_wbs.png" alt="Tasks with WBS sidebar"/>
+                        <div class="shot-caption">
+                            <h5><i class="fa fa-stream"></i> WBS sidebar (Tabulator)</h5>
+                            <p>
+                                Hierarchical sidebar with <strong>WBS</strong>, name, start, duration
+                                and resources powered by Tabulator. In-cell editing, expand/collapse
+                                of summary tasks, multi-level indentation and a synchronized scroll
+                                with the chart.
+                            </p>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="shot-card">
+                                <img src="screenshots/01_projects.png" alt="Projects list"/>
+                                <div class="shot-caption">
+                                    <h5><i class="fa fa-folder-tree"></i> Multi-project selector</h5>
+                                    <p>List view of every Gantt project, with progress %, start/end and active calendar — switch contexts in one click.</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="shot-card">
+                                <img src="screenshots/06_project_form.png" alt="Project form"/>
+                                <div class="shot-caption">
+                                    <h5><i class="fa fa-clipboard-list"></i> Project form</h5>
+                                    <p>Project header with calendar, baselines, currency and zoom level. Open the Gantt straight from the smart-button.</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="shot-card">
+                                <img src="screenshots/03_settings_dropdown.png" alt="Settings dropdown"/>
+                                <div class="shot-caption">
+                                    <h5><i class="fa fa-sliders"></i> Settings dropdown</h5>
+                                    <p>Ten Bryntum-style toggles: critical path, baselines, project lines, non-working highlight, cell editing, progress line, rollups, list-only mode…</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="shot-card">
+                                <img src="screenshots/04_resource_histogram.png" alt="Resource histogram"/>
+                                <div class="shot-caption">
+                                    <h5><i class="fa fa-chart-bar"></i> Resource histogram (ECharts)</h5>
+                                    <p>Stacked-bar chart of effective resource hours per day. Spot over-allocations at a glance and re-balance by dragging tasks.</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="shot-card">
+                                <img src="screenshots/05_calendars.png" alt="Working calendars"/>
+                                <div class="shot-caption">
+                                    <h5><i class="fa fa-calendar-check"></i> Working calendars</h5>
+                                    <p>Pre-loaded calendars for Spain, Colombia and Venezuela. Define your own with workdays + holidays — the auto-scheduler honours them.</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="shot-card">
+                                <img src="screenshots/07_task_editor.png" alt="Task editor"/>
+                                <div class="shot-caption">
+                                    <h5><i class="fa fa-pen-to-square"></i> Task editor popup</h5>
+                                    <p>Inline editor with start, duration, % progress, predecessors, lag/lead and resources — no full reload between edits.</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+
+            <!-- CORE FEATURES -->
+            <div class="card mb-3">
+                <div class="card-body">
+                    <h2 class="h2 mb-3">Core features</h2>
+                    <hr class="mi-erp">
+                    <div class="row">
+
+                        <div class="col-md-6">
+                            <div class="module-card">
+                                <h5><i class="fa fa-route"></i> Critical Path Method</h5>
+                                <ul class="mb-0">
+                                    <li>Forward + backward pass in pure JS</li>
+                                    <li>Critical bars highlighted in red</li>
+                                    <li>Total float / free float per task</li>
+                                    <li>Recalculated on every drag</li>
+                                </ul>
+                            </div>
+                        </div>
+
+                        <div class="col-md-6">
+                            <div class="module-card">
+                                <h5><i class="fa fa-layer-group"></i> Multi-Baseline overlay</h5>
+                                <ul class="mb-0">
+                                    <li>Snapshot the schedule any time</li>
+                                    <li>Ghost-bar overlay vs current</li>
+                                    <li>Compare planned vs actual</li>
+                                    <li>Toggle individual baselines on/off</li>
+                                </ul>
+                            </div>
+                        </div>
+
+                        <div class="col-md-6">
+                            <div class="module-card">
+                                <h5><i class="fa fa-link"></i> Dependencies &amp; auto-schedule</h5>
+                                <ul class="mb-0">
+                                    <li>Four types: <strong>FS · SS · FF · SF</strong></li>
+                                    <li>Lag / lead in working days</li>
+                                    <li>Successors reschedule on drag</li>
+                                    <li>Working-calendar aware</li>
+                                </ul>
+                            </div>
+                        </div>
+
+                        <div class="col-md-6">
+                            <div class="module-card">
+                                <h5><i class="fa fa-calendar-days"></i> Working calendars</h5>
+                                <ul class="mb-0">
+                                    <li>Spain, Colombia, Venezuela built-in</li>
+                                    <li>Custom workdays + holidays</li>
+                                    <li>Non-working highlight on the chart</li>
+                                    <li>Per-project active calendar</li>
+                                </ul>
+                            </div>
+                        </div>
+
+                        <div class="col-md-6">
+                            <div class="module-card">
+                                <h5><i class="fa fa-file-import"></i> MSPDI XML round-trip</h5>
+                                <ul class="mb-0">
+                                    <li>Export to MS Project 2019+ format</li>
+                                    <li>Import back from <code>.xml</code></li>
+                                    <li>Tasks, dependencies, calendars</li>
+                                    <li>No format loss between trips</li>
+                                </ul>
+                            </div>
+                        </div>
+
+                        <div class="col-md-6">
+                            <div class="module-card">
+                                <h5><i class="fa fa-chart-bar"></i> Resource histogram</h5>
+                                <ul class="mb-0">
+                                    <li>Stacked-bar per day (ECharts)</li>
+                                    <li>Effective resource hours</li>
+                                    <li>Over-allocation detection</li>
+                                    <li>Click-through to the task</li>
+                                </ul>
+                            </div>
+                        </div>
+
+                        <div class="col-md-6">
+                            <div class="module-card">
+                                <h5><i class="fa fa-sliders"></i> Settings dropdown</h5>
+                                <ul class="mb-0">
+                                    <li>10 Bryntum-style toggles</li>
+                                    <li>Critical path, baselines, rollups…</li>
+                                    <li>Progress line and list-only mode</li>
+                                    <li>Per-user preferences</li>
+                                </ul>
+                            </div>
+                        </div>
+
+                        <div class="col-md-6">
+                            <div class="module-card">
+                                <h5><i class="fa fa-camera"></i> PNG snapshot</h5>
+                                <ul class="mb-0">
+                                    <li>One-click capture (html2canvas)</li>
+                                    <li>Full Gantt as PNG</li>
+                                    <li>Ready for status reports / emails</li>
+                                    <li>Zoom day / week / month / quarter</li>
+                                </ul>
+                            </div>
+                        </div>
+
+                        <div class="col-md-6">
+                            <div class="module-card">
+                                <h5><i class="fa fa-puzzle-piece"></i> Built to be extended</h5>
+                                <ul class="mb-0">
+                                    <li>Inherit <code>mierp.gantt.task</code></li>
+                                    <li>Inherit <code>mierp.gantt.project</code></li>
+                                    <li>BIM/IFC bridge via <code>mierp_construction_gantt</code></li>
+                                    <li>Mobile foreman PWA via <code>mierp_bim_fm</code></li>
+                                </ul>
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
+            </div>
+
+            <!-- COMPARISON -->
+            <div class="card mb-3">
+                <div class="card-body">
+                    <h2 class="h2 mb-3">Why we are better than the paid alternatives</h2>
+                    <hr class="mi-erp">
+                    <p class="text-muted">
+                        Presto and most construction ERPs depend on external Microsoft
+                        Project for the schedule, or embed the commercial Bryntum component. We
+                        bring the engine inside Odoo with zero runtime fees — vendored, audited and
+                        owned by you.
+                    </p>
+                    <table class="compare">
+                        <thead>
+                            <tr>
+                                <th>Aspect</th>
+                                <th>Bryntum (paid)</th>
+                                <th>MS Project (paid)</th>
+                                <th>MI ERP Gantt Pro</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr><td>Licensing model</td><td>USD 940 / dev / year</td><td>USD 10 / user / month</td><td><strong style="color:var(--success);">FREE · LGPL-3</strong></td></tr>
+                            <tr><td>Critical Path</td><td>&#10003;</td><td>&#10003;</td><td>&#10003; (custom JS, no black box)</td></tr>
+                            <tr><td>Multi-baselines</td><td>&#10003;</td><td>&#10003;</td><td>&#10003;</td></tr>
+                            <tr><td>Auto-scheduling (FS/SS/FF/SF)</td><td>&#10003;</td><td>&#10003;</td><td>&#10003;</td></tr>
+                            <tr><td>MS Project XML round-trip</td><td>&#10003;</td><td>native</td><td>&#10003; (MSPDI 2019+)</td></tr>
+                            <tr><td>Native Odoo 19 integration</td><td>—</td><td>—</td><td>&#10003;</td></tr>
+                            <tr><td>Resource histogram</td><td>&#10003;</td><td>&#10003;</td><td>&#10003; (ECharts)</td></tr>
+                            <tr><td>BIM / IFC bridge (xeokit)</td><td>—</td><td>—</td><td>&#10003; via <code>mierp_construction_gantt</code></td></tr>
+                            <tr><td>Mobile foreman PWA</td><td>—</td><td>—</td><td>&#10003; via <code>mierp_bim_fm</code></td></tr>
+                            <tr><td>Code ownership</td><td>obfuscated</td><td>closed</td><td>full source vendored</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- BRIDGES -->
+            <div class="card mb-3">
+                <div class="card-body">
+                    <h2 class="h2 mb-3">Companion modules (extend &amp; conquer)</h2>
+                    <hr class="mi-erp">
+                    <p class="text-muted">
+                        <code>mierp_gantt</code> stays domain-agnostic — every vertical adds its own
+                        bridge by inheriting <code>mierp.gantt.task</code> and
+                        <code>mierp.gantt.project</code>. None of these are required to use the Gantt
+                        on its own.
+                    </p>
+                    <div class="row">
+                        <div class="col-md-4">
+                            <div class="l10n-card">
+                                <h5><i class="fa fa-helmet-safety"></i> Construction</h5>
+                                <code>mierp_construction_gantt</code>
+                                <ul class="mt-2 mb-0">
+                                    <li>Work &harr; project</li>
+                                    <li>APU concept &harr; task</li>
+                                    <li>Stage &harr; summary</li>
+                                    <li>IFC element &harr; task (4D)</li>
+                                </ul>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="l10n-card">
+                                <h5><i class="fa fa-cubes"></i> BIM / 4D / 5D</h5>
+                                <code>mierp_bim_4d_5d</code>
+                                <ul class="mt-2 mb-0">
+                                    <li>xeokit IFC viewer in-task</li>
+                                    <li>Time-lapse 4D animation</li>
+                                    <li>Cost overlay 5D</li>
+                                    <li>Critical-path highlight in 3D</li>
+                                </ul>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="l10n-card">
+                                <h5><i class="fa fa-mobile-screen"></i> Field Manager</h5>
+                                <code>mierp_bim_fm</code>
+                                <ul class="mt-2 mb-0">
+                                    <li>Mobile foreman PWA</li>
+                                    <li>Daily progress capture</li>
+                                    <li>Photo + GPS evidence</li>
+                                    <li>Offline-first sync</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- WORKFLOW -->
+            <div class="card mb-3">
+                <div class="card-body">
+                    <h2 class="h2 mb-3">Typical workflow</h2>
+                    <hr class="mi-erp">
+
+                    <h5 class="mt-2"><i class="fa fa-arrow-right" style="color:var(--orange);"></i> Plan</h5>
+                    <ol>
+                        <li>Create the Gantt project, pick a working calendar (CO / VE / ES or custom).</li>
+                        <li>Add tasks manually, paste from clipboard, or import from MS Project XML.</li>
+                        <li>Link tasks with FS / SS / FF / SF dependencies and lag / lead in working days.</li>
+                        <li>Snapshot the initial baseline so you can compare planned vs actual later.</li>
+                    </ol>
+
+                    <h5 class="mt-3"><i class="fa fa-arrow-right" style="color:var(--orange);"></i> Execute</h5>
+                    <ol>
+                        <li>Drag a bar — every successor auto-reschedules honouring the calendar.</li>
+                        <li>Watch the critical path turn red live as the schedule moves.</li>
+                        <li>Capture % progress in the task editor or the WBS sidebar (in-cell editing).</li>
+                        <li>Review resource histograms to spot and resolve over-allocations.</li>
+                    </ol>
+
+                    <h5 class="mt-3"><i class="fa fa-arrow-right" style="color:var(--orange);"></i> Report</h5>
+                    <ol>
+                        <li>Toggle baseline overlay to compare planned vs actual.</li>
+                        <li>Export back to MSPDI XML for stakeholders running MS Project.</li>
+                        <li>Capture a PNG snapshot for status emails and weekly reports.</li>
+                        <li>Enable bridges (construction, BIM, FM) to add domain context as needed.</li>
+                    </ol>
+                </div>
+            </div>
+
+            <!-- TECHNICAL DETAILS -->
+            <div class="card mb-3">
+                <div class="card-body">
+                    <h2 class="h2 mb-3">Technical details</h2>
+                    <hr class="mi-erp">
+                    <ul>
+                        <li>Main models: <code>mierp.gantt.project</code>, <code>mierp.gantt.task</code>, <code>mierp.gantt.dependency</code>, <code>mierp.gantt.calendar</code>, <code>mierp.gantt.baseline</code>.</li>
+                        <li>OWL 2 component shipped under <code>mierp_gantt/static/src/components/gantt_view</code>.</li>
+                        <li>Critical Path engine: <code>core/cpm.js</code> — forward + backward pass with topological sort.</li>
+                        <li>Auto-scheduler: <code>core/auto_scheduler.js</code> — working-day arithmetic, FS/SS/FF/SF + lag/lead.</li>
+                        <li>MSPDI export: <code>core/mspdi_export.js</code>; import wizard parses the same format.</li>
+                        <li>BIM / IFC bridge hook: <code>widgets/ifc_bridge.js</code> — picked up by <code>mierp_construction_gantt</code>.</li>
+                        <li>Compatible with Odoo Enterprise and Community.</li>
+                        <li>Depends on: <code>base</code>, <code>mail</code>, <code>web</code>.</li>
+                    </ul>
+
+                    <h5 class="mt-3"><i class="fa fa-cube" style="color:var(--orange);"></i> Vendored libraries (no CDN)</h5>
+                    <table class="compare">
+                        <thead>
+                            <tr><th>Component</th><th>Library</th><th>License</th><th>Vendored size</th></tr>
+                        </thead>
+                        <tbody>
+                            <tr><td>Render engine</td><td>Frappe Gantt v0.9</td><td>MIT</td><td>41 KB</td></tr>
+                            <tr><td>Sidebar table</td><td>Tabulator v6.3</td><td>MIT</td><td>442 KB</td></tr>
+                            <tr><td>PNG snapshot</td><td>html2canvas v1.4</td><td>MIT</td><td>199 KB</td></tr>
+                            <tr><td>Resource histogram</td><td>Apache ECharts v5</td><td>Apache 2.0</td><td>shared</td></tr>
+                        </tbody>
+                    </table>
+
+                    <div class="feature-info mt-3">
+                        <i class="fa fa-info-circle text-info"></i>
+                        <strong>Note:</strong> the Gantt requires browsers with ES Modules support
+                        (Chrome 91+, Firefox 89+, Safari 15+) — every modern browser.
+                    </div>
+                </div>
+            </div>
+
+            <!-- REQUIREMENTS -->
+            <div class="card mb-3">
+                <div class="card-body">
+                    <h2 class="h2 mb-3">Requirements</h2>
+                    <hr class="mi-erp">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <h5><i class="fa fa-server" style="color:var(--orange);"></i> Odoo modules</h5>
+                            <ul>
+                                <li>Base (base)</li>
+                                <li>Discuss (mail)</li>
+                                <li>Web (web)</li>
+                            </ul>
+                            <h5 class="mt-3"><i class="fa fa-link" style="color:var(--orange);"></i> Optional bridges</h5>
+                            <ul>
+                                <li><code>mierp_construction_gantt</code> — work / APU / IFC bridge</li>
+                                <li><code>mierp_bim_4d_5d</code> — 4D/5D viewer</li>
+                                <li><code>mierp_bim_fm</code> — field-foreman PWA</li>
+                            </ul>
+                        </div>
+                        <div class="col-md-6">
+                            <h5><i class="fa fa-window-maximize" style="color:var(--orange);"></i> Browser</h5>
+                            <ul>
+                                <li>Chrome 91+ / Firefox 89+ / Safari 15+ / Edge 91+</li>
+                                <li>Native ES Modules support</li>
+                            </ul>
+                            <h5 class="mt-3"><i class="fa fa-box" style="color:var(--orange);"></i> No external services</h5>
+                            <ul>
+                                <li>All JS libraries vendored under <code>static/lib/</code></li>
+                                <li>No CDN, no telemetry, no phone-home</li>
+                                <li>Air-gapped installs supported</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- SERVICES -->
+            <div class="card mb-3">
+                <div class="card-body">
+                    <h2 class="h2 mb-3">Our Services</h2>
+                    <hr class="mi-erp">
+                    <div class="row justify-content-center text-align-center">
+                        <a style="display: inline-grid;margin: 10px;" class="col-sm">
+                            <img class="img img-responsive" style="max-height: 100px;max-width: 100px; margin: auto;" src="services/customization.png"/>
+                            <span style="text-align: center;">Customization</span>
+                        </a>
+                        <a style="display: inline-grid; margin: 10px;" class="col-sm">
+                            <img class="img img-responsive" style="max-height: 100px;max-width: 100px;margin: auto;" src="services/integration.png"/>
+                            <span style="text-align: center;">Integration</span>
+                        </a>
+                        <a style="display: inline-grid;margin: 10px;" class="col-sm">
+                            <img class="img img-responsive" style="max-height: 100px;max-width: 100px;margin: auto;" src="services/installation.png"/>
+                            <span style="text-align: center;">Installation</span>
+                        </a>
+                    </div>
+                    <div class="row justify-content-center">
+                        <a style="display: inline-grid;margin: 10px;" class="col-sm">
+                            <img class="img img-responsive" style="max-height: 100px;max-width: 100px;margin: auto;" src="services/create.gif"/>
+                            <span style="text-align: center;">Build &amp; Update</span>
+                        </a>
+                        <a style="display: inline-grid;margin: 10px;" class="col-sm">
+                            <img class="img img-responsive" style="max-height: 100px;max-width: 100px;margin: auto;" src="services/migration.png"/>
+                            <span style="text-align: center;">Migration</span>
+                        </a>
+                        <a style="display: inline-grid;margin: 10px;" class="col-sm">
+                            <img class="img img-responsive" style="max-height: 100px;max-width: 100px;margin: auto;" src="services/support.png"/>
+                            <span style="text-align: center;">Support</span>
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- CONTACT -->
+            <div class="card mb-3">
+                <div class="card-body">
+                    <h2 class="h2 mb-3">Contact us</h2>
+                    <hr class="mi-erp">
+                    <p>You'll get free assistance for 60 days for any issue or error.</p>
+                    <p>For inquiries or support:
+                        <a href="mailto:info@mi-erp.app?subject=MI%20ERP%20Gantt%20support">info@mi-erp.app</a>
+                    </p>
+
+                    <div class="contact-icons">
+                        <a href="mailto:info@mi-erp.app?subject=MI%20ERP%20Gantt%20support" target="_top"><i class="fa fa-envelope" style="min-width: 50px;background: var(--orange);padding: 10px;font-size: 30px;color: #ffffff;border-radius: 10px;min-height: 50px;box-shadow: 5px 8px 10px var(--orange-dark);"></i></a>
+                        <a href="https://www.facebook.com/birkot/" target="_blank"><i class="fa fa-facebook" style="min-width: 50px;background: var(--orange);padding: 10px;font-size: 30px;color: #ffffff;border-radius: 10px;min-height: 50px;box-shadow: 5px 8px 10px var(--orange-dark);"></i></a>
+                        <a href="https://www.linkedin.com/in/joselvizcaya/" target="_blank"><i class="fa fa-linkedin" style="min-width: 50px;background: var(--orange);padding: 10px;font-size: 30px;color: #ffffff;border-radius: 10px;min-height: 50px;box-shadow: 5px 8px 10px var(--orange-dark);"></i></a>
+                        <a href="https://www.youtube.com/channel/UC9WM_EAN-X0dbVDL3HhUCdw" target="_blank"><i class="fa fa-youtube" style="min-width: 50px;background: var(--orange);padding: 10px;font-size: 30px;color: #ffffff;border-radius: 10px;min-height: 50px;box-shadow: 5px 8px 10px var(--orange-dark);"></i></a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- PRICING -->
+            <div class="card mb-3" style="border:none; box-shadow:0 4px 14px rgba(0,0,0,0.08); border-radius:16px;">
+                <div class="card-body p-4">
+                    <h2 style="color:#B85620; font-weight:600; padding-bottom:8px; border-bottom:1px solid #FCEEE3;">Pricing</h2>
+                    <div class="row align-items-stretch g-3 mt-2">
+                        <div class="col-md-6">
+                            <div style="background:#fff; border-radius:16px; padding:28px; border:2px solid #0F9D58; text-align:center; height:100%;">
+                                <div style="font-size:0.9rem; color:#0F9D58; letter-spacing:2px; font-weight:600;">FREE</div>
+                                <div style="font-size:3rem; font-weight:700; color:#0F9D58; line-height:1;">USD 0</div>
+                                <div style="font-size:0.95rem; color:#666; margin-top:6px;">LGPL-3 &mdash; free and open-source</div>
+                                <ul style="list-style:none; padding:0; margin:18px 0 0; font-size:0.92rem; color:#444; text-align:left;">
+                                    <li style="padding:3px 0;">&#10003; No per-developer fees</li>
+                                    <li style="padding:3px 0;">&#10003; No runtime royalties</li>
+                                    <li style="padding:3px 0;">&#10003; Multi-company, multi-currency</li>
+                                    <li style="padding:3px 0;">&#10003; Full source code (forkable)</li>
+                                    <li style="padding:3px 0;">&#10003; Community email support</li>
+                                </ul>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div style="background:#FCEEE3; border-radius:16px; padding:24px; height:100%;">
+                                <h5 style="color:#B85620; margin:0 0 10px; font-weight:600;">Need the full suite?</h5>
+                                <p style="margin:0 0 12px; color:#444; font-size:0.94rem;">
+                                    <strong>MI ERP BIM Suite</strong> bundles the 5 core modules (Construction, BIM, Revit, 4D/5D, FM) plus the 2 Colombia localizations &mdash; Gantt included.
+                                </p>
+                                <p style="margin:0; color:#444; font-size:0.94rem;">
+                                    Available as a separate module: <code>mierp_bim_suite</code>.
+                                </p>
+                                <hr style="border:none; border-top:1px dashed #E8713A; margin:14px 0;">
+                                <p style="margin:0; color:#444; font-size:0.9rem;">
+                                    Contact us at
+                                    <a href="mailto:info@mi-erp.app">info@mi-erp.app</a>.
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <footer class="text-center py-3">
+                <p class="mb-1"><strong>GRUPO MI ERP SAS</strong> — José Luis Vizcaya López</p>
+                <p class="mb-0">
+                    <a href="https://www.mi-erp.app" target="_blank">www.mi-erp.app</a>
+                </p>
+                <p class="mb-0 mt-2" style="font-size:0.82rem;">© 2026 · Released under <strong>LGPL-3</strong> · Vendored libs keep their own licenses (see <code>static/lib/*</code>).</p>
+            </footer>
+        </div>
+
+        <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    </body>
+</html>

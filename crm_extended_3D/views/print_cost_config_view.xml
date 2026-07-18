@@ -1,0 +1,98 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<odoo>
+
+    <!-- ========================================================= -->
+    <!-- CONFIGURACIÓN GLOBAL DE COSTOS DE IMPRESIÓN 3D           -->
+    <!-- Este formulario permite definir los costos base           -->
+    <!-- utilizados por el simulador de costos del CRM             -->
+    <!-- ========================================================= -->
+
+    <data noupdate="0">
+
+        <!-- ========================================================= -->
+        <!-- VISTA FORMULARIO CONFIGURACIÓN COSTOS                    -->
+        <!-- Modelo: print.cost.config                                 -->
+        <!-- Solo debe existir UN registro en este modelo              -->
+        <!-- ========================================================= -->
+
+        <record id="view_print_cost_config_form" model="ir.ui.view">
+
+            <field name="name">print.cost.config.form</field>
+
+            <field name="model">print.cost.config</field>
+
+            <field name="arch" type="xml">
+
+                <form string="Configuración Costos Impresión 3D" create="false" delete="false">
+                    <header>
+                        <button name="action_apply_sheet_defaults" type="object"
+                                string="Cargar tarifas hoja CreArt" class="btn-primary"/>
+                    </header>
+                    <sheet>
+
+                        <!-- ========================================= -->
+                        <!-- COSTOS MANO DE OBRA                       -->
+                        <!-- ========================================= -->
+
+                        <group string="Mano de obra">
+
+                            <!-- Tiempo conceptualización -->
+                            <field name="mo_concept_hour"/>
+
+                            <!-- Tiempo diseño -->
+                            <field name="mo_design_hour"/>
+
+                            <!-- Tiempo operación impresora -->
+                            <field name="mo_operation_hour"/>
+
+                            <!-- Tiempo postproceso -->
+                            <field name="mo_post_hour"/>
+
+                        </group>
+
+                        <!-- ========================================= -->
+                        <!-- COSTOS INFRAESTRUCTURA                    -->
+                        <!-- ========================================= -->
+
+                        <group string="Infraestructura ($/hr impresión activa)">
+                            <field name="internet_hour_cost"/>
+                            <field name="electricity_hour_cost"/>
+                            <field name="depreciation_hour_cost"/>
+                            <field name="capacity_increase_hour_cost"/>
+                            <field name="spare_parts_hour_cost"/>
+                            <field name="postprocess_consumables_cost"/>
+                            <field name="dead_time_hour_cost"/>
+                        </group>
+
+                        <group string="Impuestos y utilidad de venta">
+                            <field name="fiscal_charge_percent"/>
+                            <field name="sale_markup_1_12"/>
+                            <field name="sale_markup_12_24"/>
+                            <field name="sale_markup_24_plus"/>
+                        </group>
+
+                    </sheet>
+
+                </form>
+
+            </field>
+
+        </record>
+
+        <!-- ========================================================= -->
+        <!-- ACCIÓN: Abrir configuración                              -->
+        <!-- ========================================================= -->
+
+        <record id="action_print_cost_config" model="ir.actions.act_window">
+            <field name="name">Configuración Costos 3D</field>
+            <field name="res_model">print.cost.config</field>
+            <field name="view_mode">form</field>
+            <field name="view_id" ref="view_print_cost_config_form"/>
+            <field name="res_id" ref="print_cost_config_creart_default"/>
+            <field name="target">current</field>
+            <field name="context">{'create': False, 'delete': False}</field>
+        </record>
+
+    </data>
+
+</odoo>

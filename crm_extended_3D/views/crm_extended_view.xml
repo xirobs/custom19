@@ -1,0 +1,322 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<odoo>
+    <data noupdate="0">
+        <!-- View crm.extended form -->
+        <record id="crm_extended_form_update_id" model="ir.ui.view">
+            <field name="name">crm.extended.form.update</field>
+            <field name="model">crm.lead</field>
+            <field name="inherit_id" ref="crm.crm_lead_view_form"/>
+            <field name="arch" type="xml">
+                <xpath expr="//field[@name='name']" position="after">
+                    <field name="lead_sequence" readonly="1"/>
+                    <field name="priority" widget="priority"/>
+                </xpath>
+                <!-- active in stage for name -->
+                <xpath expr="//field[@name='active']" position="after">
+                    <field name="stage_name" invisible="1"/>
+                </xpath>
+                <!-- Prioridad duplicada: solo arriba junto al nombre, no en Expected Closing -->
+                <xpath expr="//label[@for='date_deadline']/following-sibling::div/field[@name='priority']" position="replace"/>
+                <xpath expr="//button[@name='action_set_won_rainbowman']" position="attributes">
+                    <attribute name="invisible">1</attribute>
+                </xpath>
+                <!-- invisible button won -->
+                <xpath expr="//notebook" position="before">
+                    <group string="Perfil del cliente">
+                        <group>
+                            <field name="client_type"/>
+                            <field name="buyer_persona"/>
+                        </group>
+                        <group>
+                            <field name="sector_tag_ids" widget="many2many_tags"
+                                   options="{'color_field': 'color', 'no_create': True}"/>
+                            <field name="urgency_tag_ids" widget="many2many_tags"
+                                   options="{'color_field': 'color', 'no_create': True}"/>
+                        </group>
+                        <group>
+                            <field name="source_id"/>
+                            <field name="create_date"/>
+                        </group>
+                    </group>
+                </xpath>
+            </field>
+        </record>
+        <!-- Información del pedido 3D -->
+        <record id="crm_lead_form_3d_order_info" model="ir.ui.view">
+            <field name="name">crm.lead.form.3d.order.info</field>
+            <field name="model">crm.lead</field>
+            <field name="inherit_id" ref="crm.crm_lead_view_form"/>
+            <field name="arch" type="xml">
+                <xpath expr="//page[@name='extra']" position="before">
+                    <page string="Información del pedido 3D" name="order_info">
+                        <group string="Datos del pedido">
+                            <field string="Fecha de pedido" name="order_date"/>
+                            <field string="Fecha de entrega" name="delivery_date" readonly="1"/>
+                            <field string="Método de pago" name="payment_method"/>
+                            <field string="Abono del cliente" name="advance_payment"/>
+                            <field string="Restante" name="remaining_payment" readonly="1"/>
+                        </group>
+                    </page>
+                </xpath>
+            </field>
+        </record>
+        <!-- visible alone cotizacione stage the button for new quotation -->
+        <record id="crm_extended_form_update_boton" model="ir.ui.view">
+            <field name="name">crm.extended.form.update.boton</field>
+            <field name="model">crm.lead</field>
+            <field name="inherit_id" ref="sale_crm.crm_case_form_view_oppor"/>
+            <field name="arch" type="xml">
+                <xpath expr="//button[@name='action_sale_quotations_new']" position="replace">
+                    <button string="New Quotation" name="action_sale_quotations_new" type="object" class="oe_highlight" data-hotkey="q" 
+                    title="Create new quotation" invisible="stage_name in ['Solicitud','Conceptualización/Diseño','Propuesta enviada','Ganada/Pendiente pago','Imprimiendo','PostProcesado','Control de Calidad','Listo para Entregar','Entregado/Cerrado','Bloque/Pausado']"/>
+                </xpath> 
+            </field>
+        </record>
+        <!-- visible for calificados stage the expected and probability -->
+        <record id="crm_extended_form_update_expected" model="ir.ui.view">
+            <field name="name">crm.extended.form.update.expected</field>
+            <field name="model">crm.lead</field>
+            <field name="inherit_id" ref="crm.crm_lead_view_form"/>
+            <field name="arch" type="xml">
+                <xpath expr="//h2" position="replace">
+                <h2 class="row g-0 pb-3 pb-sm-4" invisible="stage_name == 'Leads'">
+                    <div class="col-auto pb-2 pb-md-0" >
+                        <label for="expected_revenue" class="oe_edit_only"/>
+                        <div class="d-flex align-items-baseline">
+                            <field name="company_currency" invisible="1"/>
+                            <field name="expected_revenue" class="o_input_13ch" widget="monetary" options="{'currency_field': 'company_currency'}"/>       
+                            <span class="oe_grey p-2" groups="crm.group_use_recurring_revenues"> + </span>
+                            <span class="oe_grey p-2" groups="!crm.group_use_recurring_revenues"> at </span>
+                            <div class="d-flex align-items-baseline gap-3" groups="crm.group_use_recurring_revenues">
+                                <field name="recurring_revenue" class="o_input_10ch" widget="monetary" options="{'currency_field': 'company_currency'}"/>  
+                                <div class="d-flex align-items-baseline">
+                                    <field name="recurring_plan" class="oe_inline o_input_13ch" placeholder="e.g. &quot;Monthly&quot;" required="recurring_revenue != 0" options="{'no_create': True, 'no_open': True}"/>                                   
+                                    <span class="oe_grey p-2 text-nowrap"> at </span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-auto" invisible="stage_name == 'Leads'">
+                        <label for="probability" class="d-inline-block"/>
+                        <button class="d-inline-block px-2 py-0 btn btn-link" name="action_set_automated_probability" type="object" invisible="is_automated_probability">
+                            <i class="fa fa-gear" role="img" title="Switch to automatic probability" aria-label="Switch to automatic probability"/>        
+                        </button>
+                        <small class="d-inline-block oe_grey h6 mb-0" invisible="is_automated_probability">
+                            <field class="mb-0" name="automated_probability" force_save="1"/> %
+                        </small>
+                        <div id="probability" class="d-flex align-items-baseline">
+                            <field name="is_automated_probability" invisible="1"/>
+                            <field name="probability" widget="float" class="oe_inline o_input_6ch"/>
+                            <span class="oe_grey p-2"> %</span>
+                            <field name="currency_id" options="{'no_quick_create': True, 'no_create_edit' : True}" />
+                        </div>
+                    </div>
+                </h2>
+                </xpath>
+            </field>
+        </record>
+        <!-- Kanban: termómetro visual (avance % y secuencia) -->
+        <record id="crm_extended_lead_kanban_inherited" model="ir.ui.view">
+            <field name="name">crm.extended.lead.kanban.lead.inherited</field>
+            <field name="model">crm.lead</field>
+            <field name="inherit_id" ref="crm.crm_case_kanban_view_leads"/>
+            <field name="arch" type="xml">
+
+                <xpath expr="//kanban" position="inside">
+
+                    <field name="printer_id"/>
+                    <field name="filament_color"/>
+
+                    <field name="filament_id"/>
+                    <field name="filament_grams"/>
+                    <field name="stage_progress"/>
+                    <field name="print_hours"/>
+                    <field name="mo_postprocess_hours"/>
+                    <field name="print_progress"/>
+                    <field name="price_100"/>
+                    <field name="total_cost"/>
+                    <field name="margin"/>
+                    <field name="margin_percent"/>
+                    <field name="rentable"/>
+                    <field name="order_date"/>
+                    <field name="delivery_date"/>
+                    <field name="advance_payment"/>
+                    <field name="remaining_payment"/>
+                    <field name="sequence"/>
+                    <field name="priority"/>
+                    <field name="commercial_partner_id"/>
+                    <field name="contact_name"/>
+                    <field name="selected_total_price"/>
+                       
+                </xpath>
+            <!-- Número de solicitud arriba del nombre -->
+                <xpath expr="//t[@t-name='card']//div[hasclass('d-flex')][field[@name='partner_id'][@widget='many2one_avatar']]" position="replace">
+                    <div class="d-flex align-items-center mb-1" invisible="not partner_id">
+                        <field name="partner_id" widget="many2one_avatar" class="text-truncate flex-shrink-0" readonly="1"
+                               options="{'no_create': 1, 'no_open': 1}"/>
+                        <div class="ms-2 text-truncate">
+                            <t t-if="record.commercial_partner_id.raw_value and record.commercial_partner_id.raw_value != record.partner_id.raw_value">
+                                <div class="fw-bold text-truncate">
+                                    <span class="text-muted small me-1">Empresa:</span>
+                                    <field name="commercial_partner_id" class="d-inline" readonly="1"/>
+                                </div>
+                                <div class="text-muted small text-truncate">
+                                    <span class="me-1">Contacto:</span>
+                                    <field name="contact_name" class="d-inline"/>
+                                </div>
+                            </t>
+                            <t t-else="">
+                                <div class="text-truncate">
+                                    <span class="text-muted small me-1">Contacto:</span>
+                                    <field name="contact_name" class="d-inline"/>
+                                </div>
+                            </t>
+                        </div>
+                    </div>
+                </xpath>
+                <xpath expr="//t[@t-name='card']//field[@name='name']" position="after">
+
+                    <div class="text-muted small mb-1">
+                        Nro: <field name="lead_sequence"/>
+                    </div>
+                    <div class="text-muted small mb-1">
+                        📅 <field name="order_date"/> 
+                        | 🚚 <field name="delivery_date"/>
+                        | 💲 <field name="selected_total_price"/> MXN
+                    </div>
+
+                </xpath>
+            <!-- Información de impresión -->
+                <xpath expr="//t[@t-name='card']" position="before">
+
+                    <div class="text-muted small">
+
+                        <!-- impresora -->
+                        <div>
+                            🖨 <field name="printer_id"/>
+                        </div>         
+                         <!-- unidad - Material - peso-->
+                        <div>
+                            <field name="units"/> pza
+                            🧵 <field name="filament_id"/>
+                            🎨 <field name="filament_color"/>
+                            ⚖  <field name="filament_grams"/>g 
+                        </div>
+
+                        <!-- TIEMPO -->
+                        <div>
+                           ⏱ <field name="print_hours"/> hrs /
+                           ⏱ <field name="mo_postprocess_hours"/> hrs
+                        </div>
+                        <!-- BARRA PROGRESO -->
+                        <div class="col-12 mt-1">
+                            <div class="progress mt-1" style="height:6px;">
+                                <div class="progress-bar bg-info"
+                                    t-att-style="'width:' + (record.print_progress and record.print_progress.raw_value ? record.print_progress.raw_value : 0) + '%'">
+                                </div>
+                            </div>
+                        </div>
+
+                    </div>
+                </xpath>
+                <!-- Ocultar ingreso esperado nativo (precio duplicado arriba del contacto) -->
+                <xpath expr="//t[@t-name='card']//div[hasclass('o_kanban_card_crm_lead_revenue')]" position="attributes">
+                    <attribute name="invisible">1</attribute>
+                </xpath>
+                <!-- Banda de prioridad junto al reloj de actividades (sin estrellas) -->
+                <xpath expr="//t[@t-name='card']//footer//field[@name='priority'][@widget='priority']" position="replace">
+                    <div class="d-flex align-items-center me-2">
+                        <t t-set="color_idx" t-value="record.color and record.color.raw_value or 0"/>
+                        <t t-set="badge_bg" t-value="'#6c757d'"/>
+                        <t t-if="color_idx == 1" t-set="badge_bg" t-value="'#1f77b4'"/>
+                        <t t-if="color_idx == 2" t-set="badge_bg" t-value="'#f0ad4e'"/>
+                        <t t-if="color_idx == 3" t-set="badge_bg" t-value="'#5bc0de'"/>
+                        <t t-if="color_idx == 4" t-set="badge_bg" t-value="'#f39c12'"/>
+                        <t t-if="color_idx == 5" t-set="badge_bg" t-value="'#8e44ad'"/>
+                        <t t-if="color_idx == 6" t-set="badge_bg" t-value="'#d9534f'"/>
+                        <t t-if="color_idx == 7" t-set="badge_bg" t-value="'#8d6e63'"/>
+                        <t t-if="color_idx == 8" t-set="badge_bg" t-value="'#2e7d32'"/>
+                        <t t-if="color_idx == 9" t-set="badge_bg" t-value="'#43a047'"/>
+                        <t t-if="color_idx == 10" t-set="badge_bg" t-value="'#7cb342'"/>
+                        <span class="badge text-nowrap" t-att-style="'background-color:' + badge_bg + '; color: #fff;'">
+                            Prioridad:
+                            <t t-if="record.priority and record.priority.raw_value == '3'"> Urgente</t>
+                            <t t-if="record.priority and record.priority.raw_value == '2'"> Alta</t>
+                            <t t-if="record.priority and record.priority.raw_value == '1'"> Normal</t>
+                            <t t-if="record.priority and record.priority.raw_value == '0'"> Baja</t>
+                        </span>
+                    </div>
+                </xpath>
+                <!-- de donde procede el leads-->
+                <xpath expr="//field[@name='tag_ids']" position="after">
+                    <field name="source_id"/>
+                </xpath>
+            </field>
+        </record>
+        <!-- List view for quoted products (model crm.quoted.product) -->
+        <record id="view_crm_quoted_product_tree" model="ir.ui.view">
+            <field name="name">crm.quoted.product.list</field>
+            <field name="model">crm.quoted.product</field>
+            <field name="arch" type="xml">
+                <list editable="bottom">
+                    <field name="lead_id" optional="hide"/>
+                    <field name="product_id"/>
+                    <field name="quantity"/>
+                </list>
+            </field>
+        </record>
+        <!-- Hereda de nuestra vista extendida para que exista la página 'extra"' -->
+        <record id="view_crm_lead_form_extended" model="ir.ui.view">
+            <field name="name">crm.lead.form.extended</field>
+            <field name="model">crm.lead</field>
+            <field name="inherit_id" ref="crm.crm_lead_view_form"/>
+            <field name="arch" type="xml">
+                <xpath expr="//page[@name='extra']" position="before">
+                    <!-- Proceso de impresión 3D: diseño → entrega -->
+                    <page string="Operaciones" name="print_process" invisible="stage_name in ['Leads','Calificados']">
+                        <div class="mb-2">
+                            <button name="action_create_default_process_steps" type="object" string="Crear pasos por defecto" class="btn-link" invisible="print_process_step_ids"/>
+                        </div>
+                        <field name="print_process_step_ids">
+                            <list editable="bottom" create="1" delete="1">
+                                <field name="sequence" widget="handle"/>
+                                <field name="name"/>
+                                <field name="state"/>
+                                <field name="date_start"/>
+                                <field name="date_done"/>
+                                <field name="user_id"/>
+                                <field name="notes"/>
+                            </list>
+                        </field>
+                    </page>
+                    <!-- Control gastos e ingresos -->
+                    <page string="Finanzas" name="finanzas">
+                        <div class="mb-2" invisible="not cost_line_ids">
+                            <button name="action_compute_total_cost_from_lines" type="object" string="Calcular coste total desde líneas" class="btn-link"/>
+                        </div>
+                        <group>
+                            <group string="Resumen">
+                                <field name="expected_revenue" readonly="1"/>
+                                <field name="total_cost"/>
+                                <field name="margin_amount" readonly="1"/>
+                                <field name="margin_percent" readonly="1"/>
+                            </group>
+                        </group>
+                        <notebook>
+                            <page string="Desglose de costes" name="cost_lines">
+                                <field name="cost_line_ids">
+                                    <list editable="bottom" create="1" delete="1">
+                                        <field name="date"/>
+                                        <field name="name"/>
+                                        <field name="cost_type"/>
+                                        <field name="amount"/>
+                                    </list>
+                                </field>
+                            </page>
+                        </notebook>
+                    </page>
+                </xpath>
+            </field>
+        </record>
+    </data>
+</odoo>

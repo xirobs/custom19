@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="creart_chatter_note_wizard_form" model="ir.ui.view">
+        <field name="name">creart.crm.chatter.note.wizard.form</field>
+        <field name="model">creart.crm.chatter.note.wizard</field>
+        <field name="arch" type="xml">
+            <form string="Nota interna estandarizada">
+                <group>
+                    <field name="lead_id"/>
+                    <field name="note_type" widget="selection_badge" options="{'horizontal': false, 'size': 'sm'}"/>
+                    <field name="currency_id" invisible="1"/>
+                </group>
+
+                <group string="Primer contacto" invisible="note_type != 'first_contact'">
+                    <field name="channel" placeholder="WhatsApp, Instagram, referido…"/>
+                    <field name="need_summary" placeholder="Resumen de la necesidad del cliente"/>
+                    <field name="estimated_budget"/>
+                    <field name="urgency"/>
+                </group>
+
+                <group string="Cotización" invisible="note_type != 'quote'">
+                    <field name="quote_amount"/>
+                    <field name="quote_date"/>
+                    <field name="product_detail" placeholder="Descripción del producto cotizado"/>
+                    <field name="delivery_days"/>
+                </group>
+
+                <group string="Objeción" invisible="note_type != 'objection'">
+                    <field name="objection_type" placeholder="Precio, tiempo, calidad… (ver Manual de Objeciones)"/>
+                    <field name="response_summary"/>
+                    <field name="next_step"/>
+                </group>
+
+                <group string="Cierre ganado" invisible="note_type != 'won'">
+                    <field name="sale_amount"/>
+                    <field name="committed_delivery_date"/>
+                    <field name="production_notified" widget="radio"/>
+                </group>
+
+                <group string="Cierre perdido" invisible="note_type != 'lost'">
+                    <field name="lost_reason_id" options="{'no_create': True}"/>
+                    <field name="reactivation_date"/>
+                </group>
+
+                <group string="Vista previa">
+                    <field name="preview" nolabel="1" readonly="1"/>
+                </group>
+
+                <footer>
+                    <button string="Publicar nota interna" name="action_post_note" type="object" class="btn-primary"/>
+                    <button string="Cancelar" special="cancel"/>
+                </footer>
+            </form>
+        </field>
+    </record>
+
+</odoo>

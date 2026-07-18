@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<odoo>
+
+    <record id="crm_lost_reason_view_form_creart" model="ir.ui.view">
+        <field name="name">crm.lost.reason.form.creart</field>
+        <field name="model">crm.lost.reason</field>
+        <field name="inherit_id" ref="crm.crm_lost_reason_view_form"/>
+        <field name="arch" type="xml">
+            <field name="name" position="after">
+                <field name="requires_detail_note"/>
+            </field>
+        </field>
+    </record>
+
+    <record id="crm_lead_lost_view_form_creart" model="ir.ui.view">
+        <field name="name">crm.lead.lost.form.creart</field>
+        <field name="model">crm.lead.lost</field>
+        <field name="inherit_id" ref="crm.crm_lead_lost_view_form"/>
+        <field name="arch" type="xml">
+            <field name="lost_reason_id" position="attributes">
+                <attribute name="string">Motivo de pérdida</attribute>
+                <attribute name="placeholder">Seleccione un motivo...</attribute>
+            </field>
+            <xpath expr="//label[@for='lost_feedback']" position="replace">
+                <label for="lost_feedback" class="o_form_label">Nota interna</label>
+            </xpath>
+            <field name="lost_feedback" position="attributes">
+                <attribute name="placeholder">Detalle del motivo (obligatorio si eligió Otro)</attribute>
+            </field>
+            <field name="lost_feedback" position="after">
+                <field name="reactivation_date"/>
+            </field>
+        </field>
+    </record>
+
+</odoo>

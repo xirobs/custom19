@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<odoo>
+
+    <record id="view_snapshot_baseline_form" model="ir.ui.view">
+        <field name="name">mierp.gantt.snapshot.baseline.form</field>
+        <field name="model">mierp.gantt.snapshot.baseline</field>
+        <field name="arch" type="xml">
+            <form string="Snapshot Baseline">
+                <group>
+                    <field name="project_id"/>
+                    <field name="name"/>
+                    <field name="set_as_overlay" widget="boolean_toggle"/>
+                    <field name="note"/>
+                </group>
+                <footer>
+                    <button name="action_create" string="Create Baseline" type="object" class="btn-primary"/>
+                    <button special="cancel" string="Cancel"/>
+                </footer>
+            </form>
+        </field>
+    </record>
+
+</odoo>

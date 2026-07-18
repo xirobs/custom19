@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<odoo>
+
+    <record id="mail_activity_type_view_tree_creart" model="ir.ui.view">
+        <field name="name">mail.activity.type.list.creart</field>
+        <field name="model">mail.activity.type</field>
+        <field name="inherit_id" ref="mail.mail_activity_type_view_tree"/>
+        <field name="arch" type="xml">
+            <field name="summary" position="after">
+                <field name="default_note" string="Descripción" optional="show"/>
+            </field>
+        </field>
+    </record>
+
+</odoo>

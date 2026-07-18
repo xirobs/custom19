@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <data noupdate="0">
+
+        <record id="action_creart_planning_gantt" model="ir.actions.server">
+            <field name="name">Abrir Gantt CreArt</field>
+            <field name="model_id" ref="crm.model_crm_lead"/>
+            <field name="state">code</field>
+            <field name="code">action = env['crm.lead'].action_open_creart_planning_gantt()</field>
+        </record>
+
+        <record id="action_creart_planning_tasks" model="ir.actions.act_window">
+            <field name="view_mode">calendar,graph,list,form,kanban,pivot</field>
+        </record>
+
+        <record id="crm_lead_form_planning_gantt" model="ir.ui.view">
+            <field name="name">crm.lead.form.planning.gantt</field>
+            <field name="model">crm.lead</field>
+            <field name="inherit_id" ref="crm_extended_3D.crm_lead_form_planning_tab"/>
+            <field name="arch" type="xml">
+                <button name="action_open_planning" position="attributes">
+                    <attribute name="string">Abrir Gantt</attribute>
+                </button>
+                <button name="action_open_planning" position="after">
+                    <button name="action_open_gantt" type="object"
+                            string="Gantt de esta oportunidad" class="btn-secondary"
+                            invisible="not planning_task_count"/>
+                </button>
+                <xpath expr="//button[@name='action_resync_planning_queue']" position="after">
+                    <button name="action_open_creart_planning_gantt" type="object"
+                            string="Gantt cola completa" class="btn-primary"/>
+                </xpath>
+            </field>
+        </record>
+
+        <record id="crm_lead_form_planning_gantt_stat" model="ir.ui.view">
+            <field name="name">crm.lead.form.planning.gantt.stat</field>
+            <field name="model">crm.lead</field>
+            <field name="inherit_id" ref="crm_extended_3D.crm_lead_form_planning_stat"/>
+            <field name="arch" type="xml">
+                <button name="action_open_planning" position="attributes">
+                    <attribute name="icon">fa-tasks</attribute>
+                    <attribute name="string">Gantt</attribute>
+                </button>
+            </field>
+        </record>
+
+    </data>
+</odoo>

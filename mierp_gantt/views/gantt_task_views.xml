@@ -1,0 +1,121 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<odoo>
+
+    <record id="view_gantt_task_list" model="ir.ui.view">
+        <field name="name">mierp.gantt.task.list</field>
+        <field name="model">mierp.gantt.task</field>
+        <field name="arch" type="xml">
+            <list string="Tasks">
+                <field name="wbs"/>
+                <field name="name"/>
+                <field name="project_id"/>
+                <field name="date_start"/>
+                <field name="date_end"/>
+                <field name="duration_days"/>
+                <field name="progress_pct" widget="percentage"/>
+                <field name="is_milestone" widget="boolean_toggle"/>
+                <field name="state" widget="badge"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_gantt_task_form" model="ir.ui.view">
+        <field name="name">mierp.gantt.task.form</field>
+        <field name="model">mierp.gantt.task</field>
+        <field name="arch" type="xml">
+            <form string="Task">
+                <header>
+                    <button name="action_set_in_progress" type="object" string="Start"
+                            invisible="state in ('in_progress', 'done')"/>
+                    <button name="action_set_done" type="object" string="Mark Done"
+                            invisible="state == 'done'" class="oe_highlight"/>
+                    <field name="state" widget="statusbar"/>
+                </header>
+                <sheet>
+                    <div class="oe_title">
+                        <h1><field name="name"/></h1>
+                        <h3><field name="wbs" readonly="1"/></h3>
+                    </div>
+                    <group>
+                        <group>
+                            <field name="project_id"/>
+                            <field name="parent_id"/>
+                            <field name="sequence"/>
+                            <field name="is_milestone" widget="boolean_toggle"/>
+                        </group>
+                        <group>
+                            <field name="date_start"/>
+                            <field name="date_end"/>
+                            <field name="duration_days"/>
+                            <field name="progress_pct" widget="percentage"/>
+                            <field name="color_hex" placeholder="#E8713A"/>
+                        </group>
+                    </group>
+                    <notebook>
+                        <page name="predecessors" string="Predecessors">
+                            <field name="predecessor_ids">
+                                <list editable="bottom">
+                                    <field name="predecessor_task_id"/>
+                                    <field name="type"/>
+                                    <field name="lag_days"/>
+                                </list>
+                            </field>
+                        </page>
+                        <page name="successors" string="Successors">
+                            <field name="successor_ids">
+                                <list editable="bottom">
+                                    <field name="successor_task_id"/>
+                                    <field name="type"/>
+                                    <field name="lag_days"/>
+                                </list>
+                            </field>
+                        </page>
+                        <page name="resources" string="Resources">
+                            <field name="resource_assignment_ids">
+                                <list editable="bottom">
+                                    <field name="sequence" widget="handle"/>
+                                    <field name="resource_name"/>
+                                    <field name="resource_kind"/>
+                                    <field name="units"/>
+                                    <field name="allocation_pct"/>
+                                </list>
+                            </field>
+                        </page>
+                        <page name="notes" string="Notes">
+                            <field name="notes"/>
+                        </page>
+                    </notebook>
+                </sheet>
+                <chatter/>
+            </form>
+        </field>
+    </record>
+
+    <record id="view_gantt_task_search" model="ir.ui.view">
+        <field name="name">mierp.gantt.task.search</field>
+        <field name="model">mierp.gantt.task</field>
+        <field name="arch" type="xml">
+            <search>
+                <field name="name"/>
+                <field name="wbs"/>
+                <field name="project_id"/>
+                <separator/>
+                <filter name="milestones" string="Milestones" domain="[('is_milestone', '=', True)]"/>
+                <filter name="in_progress" string="In Progress" domain="[('state', '=', 'in_progress')]"/>
+                <filter name="done" string="Done" domain="[('state', '=', 'done')]"/>
+                <group>
+                    <filter name="group_project" string="Project" context="{'group_by': 'project_id'}"/>
+                    <filter name="group_state" string="Status" context="{'group_by': 'state'}"/>
+                </group>
+            </search>
+        </field>
+    </record>
+
+    <record id="action_gantt_task" model="ir.actions.act_window">
+        <field name="name">Tasks</field>
+        <field name="res_model">mierp.gantt.task</field>
+        <field name="view_mode">list,form</field>
+        <field name="search_view_id" ref="view_gantt_task_search"/>
+    </record>
+
+</odoo>

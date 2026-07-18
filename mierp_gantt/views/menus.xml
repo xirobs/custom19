@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<odoo>
+
+    <menuitem id="menu_gantt_root"
+              name="Gantt"
+              sequence="55"
+              web_icon="mierp_gantt,static/description/icon.png"/>
+
+    <menuitem id="menu_gantt_projects"
+              name="Projects"
+              parent="menu_gantt_root"
+              action="action_gantt_project"
+              sequence="10"/>
+
+    <menuitem id="menu_gantt_tasks"
+              name="All Tasks"
+              parent="menu_gantt_root"
+              action="action_gantt_task"
+              sequence="20"/>
+
+    <menuitem id="menu_gantt_open_view"
+              name="Interactive Gantt"
+              parent="menu_gantt_root"
+              action="action_gantt_view"
+              sequence="30"/>
+
+    <menuitem id="menu_gantt_config"
+              name="Configuration"
+              parent="menu_gantt_root"
+              sequence="100"/>
+
+    <menuitem id="menu_gantt_calendars"
+              name="Working Calendars"
+              parent="menu_gantt_config"
+              action="action_gantt_calendar"
+              sequence="10"/>
+
+    <menuitem id="menu_gantt_baselines"
+              name="Baselines"
+              parent="menu_gantt_config"
+              action="action_gantt_baseline"
+              sequence="20"/>
+
+</odoo>

@@ -1,0 +1,150 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<templates xml:space="preserve">
+
+    <t t-name="mierp_gantt.TaskEditorPopup">
+        <div class="card shadow"
+             style="width: 540px; max-width: 90vw; max-height: 85vh; overflow: auto; background: white; border-radius: 12px;"
+             t-on-click.stop="">
+            <div class="card-header d-flex justify-content-between align-items-center"
+                 style="background: var(--mi-orange-soft, #FCEEE3); border-bottom: 1px solid var(--mi-grey-300, #e5e7eb);">
+                <div>
+                    <h5 class="mb-0" style="color: var(--mi-orange-dark, #B85620);">
+                        <i class="fa fa-pencil me-2" title="edit"/> Task — <t t-esc="state.task.name || 'Untitled'"/>
+                    </h5>
+                    <div class="text-muted small">WBS <t t-esc="state.task.wbs || ''"/></div>
+                </div>
+                <button class="btn btn-sm btn-light" t-on-click="cancel">
+                    <i class="fa fa-times" title="close"/>
+                </button>
+            </div>
+            <ul class="nav nav-tabs px-2 pt-2">
+                <li class="nav-item">
+                    <a class="nav-link" t-att-class="state.tab === 'general' ? 'active' : ''"
+                       t-on-click="() => this.setTab('general')" href="#">General</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" t-att-class="state.tab === 'preds' ? 'active' : ''"
+                       t-on-click="() => this.setTab('preds')" href="#">Predecessors</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" t-att-class="state.tab === 'succs' ? 'active' : ''"
+                       t-on-click="() => this.setTab('succs')" href="#">Successors</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" t-att-class="state.tab === 'advanced' ? 'active' : ''"
+                       t-on-click="() => this.setTab('advanced')" href="#">Advanced</a>
+                </li>
+            </ul>
+            <div class="card-body">
+                <div t-if="state.tab === 'general'">
+                    <div class="mb-2">
+                        <label class="form-label small">Name</label>
+                        <input class="form-control form-control-sm"
+                               t-att-value="state.task.name"
+                               t-on-input="(ev) => this.onChange('name', ev)"/>
+                    </div>
+                    <div class="row">
+                        <div class="col-6 mb-2">
+                            <label class="form-label small">Start</label>
+                            <input type="date" class="form-control form-control-sm"
+                                   t-att-value="state.task.date_start"
+                                   t-on-change="(ev) => this.onChange('date_start', ev)"/>
+                        </div>
+                        <div class="col-6 mb-2">
+                            <label class="form-label small">End</label>
+                            <input type="date" class="form-control form-control-sm"
+                                   t-att-value="state.task.date_end"
+                                   t-on-change="(ev) => this.onChange('date_end', ev)"/>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-6 mb-2">
+                            <label class="form-label small">Duration (days)</label>
+                            <input type="number" class="form-control form-control-sm"
+                                   t-att-value="state.task.duration_days"
+                                   t-on-change="(ev) => this.onChange('duration_days', ev)"/>
+                        </div>
+                        <div class="col-6 mb-2">
+                            <label class="form-label small">% Complete</label>
+                            <input type="number" min="0" max="100" class="form-control form-control-sm"
+                                   t-att-value="state.task.progress_pct"
+                                   t-on-change="(ev) => this.onChange('progress_pct', ev)"/>
+                        </div>
+                    </div>
+                    <div class="form-check">
+                        <input type="checkbox" class="form-check-input"
+                               t-att-checked="state.task.is_milestone"
+                               t-on-change="(ev) => this.onChange('is_milestone', ev)"
+                               id="task-milestone"/>
+                        <label class="form-check-label" for="task-milestone">Milestone</label>
+                    </div>
+                </div>
+
+                <div t-if="state.tab === 'preds'">
+                    <table class="table table-sm">
+                        <thead><tr><th>Predecessor</th><th>Type</th><th>Lag (d)</th></tr></thead>
+                        <tbody>
+                            <tr t-foreach="predecessorsOf(state.task.id)" t-as="d" t-key="d.id">
+                                <td><t t-esc="nameOf(d.predecessor)"/></td>
+                                <td><t t-esc="d.type"/></td>
+                                <td><t t-esc="d.lag_days"/></td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <div t-if="state.tab === 'succs'">
+                    <table class="table table-sm">
+                        <thead><tr><th>Successor</th><th>Type</th><th>Lag (d)</th></tr></thead>
+                        <tbody>
+                            <tr t-foreach="successorsOf(state.task.id)" t-as="d" t-key="d.id">
+                                <td><t t-esc="nameOf(d.successor)"/></td>
+                                <td><t t-esc="d.type"/></td>
+                                <td><t t-esc="d.lag_days"/></td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <div t-if="state.tab === 'advanced'">
+                    <div class="mb-3">
+                        <label class="form-label small">Bar colour</label>
+                        <div class="d-flex align-items-center gap-2">
+                            <input type="color" class="form-control form-control-color"
+                                   style="width: 48px; height: 36px; padding: 2px; cursor: pointer;"
+                                   t-att-value="state.task.color_hex || '#E8713A'"
+                                   t-on-input="(ev) => this.onChange('color_hex', ev)"/>
+                            <input type="text" class="form-control form-control-sm"
+                                   style="max-width: 110px; font-family: monospace;"
+                                   placeholder="#E8713A"
+                                   t-att-value="state.task.color_hex || ''"
+                                   t-on-change="(ev) => this.onChange('color_hex', ev)"/>
+                            <button type="button" class="btn btn-sm btn-light"
+                                    t-on-click="() => this.clearColor()"
+                                    title="Reset to default">
+                                <i class="fa fa-times" title="reset"/>
+                            </button>
+                        </div>
+                        <div class="mt-2 d-flex flex-wrap gap-1">
+                            <t t-foreach="presetColors" t-as="c" t-key="c">
+                                <button type="button"
+                                        t-att-style="`width:24px; height:24px; border-radius:6px; border: 2px solid ${state.task.color_hex === c ? '#1a1a1a' : 'transparent'}; background: ${c}; cursor: pointer; padding: 0;`"
+                                        t-att-title="c"
+                                        t-on-click="() => this.pickPreset(c)"/>
+                            </t>
+                        </div>
+                    </div>
+                    <div class="mb-2">
+                        <label class="form-label small">Resources</label>
+                        <div class="text-muted small"><t t-esc="state.task.resource_names || '—'"/></div>
+                    </div>
+                </div>
+            </div>
+            <div class="card-footer text-end">
+                <button class="btn btn-light btn-sm me-2" t-on-click="cancel">Cancel</button>
+                <button class="btn btn-primary btn-sm" t-on-click="save">Save</button>
+            </div>
+        </div>
+    </t>
+
+</templates>

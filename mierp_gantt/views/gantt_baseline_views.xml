@@ -1,0 +1,69 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<odoo>
+
+    <record id="view_gantt_baseline_list" model="ir.ui.view">
+        <field name="name">mierp.gantt.baseline.list</field>
+        <field name="model">mierp.gantt.baseline</field>
+        <field name="arch" type="xml">
+            <list string="Baselines">
+                <field name="name"/>
+                <field name="project_id"/>
+                <field name="snapshot_date"/>
+                <field name="line_count"/>
+                <field name="is_active_overlay" widget="boolean_toggle"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_gantt_baseline_form" model="ir.ui.view">
+        <field name="name">mierp.gantt.baseline.form</field>
+        <field name="model">mierp.gantt.baseline</field>
+        <field name="arch" type="xml">
+            <form string="Baseline">
+                <header>
+                    <button name="action_set_overlay" type="object" string="Show as overlay"
+                            class="oe_highlight" invisible="is_active_overlay"/>
+                </header>
+                <sheet>
+                    <div class="oe_title">
+                        <h1><field name="name"/></h1>
+                    </div>
+                    <group>
+                        <group>
+                            <field name="project_id"/>
+                            <field name="snapshot_date"/>
+                        </group>
+                        <group>
+                            <field name="line_count"/>
+                            <field name="is_active_overlay" widget="boolean_toggle"/>
+                            <field name="active" widget="boolean_toggle"/>
+                        </group>
+                    </group>
+                    <notebook>
+                        <page name="lines" string="Lines">
+                            <field name="line_ids">
+                                <list>
+                                    <field name="task_id"/>
+                                    <field name="date_start"/>
+                                    <field name="date_end"/>
+                                    <field name="duration_days"/>
+                                    <field name="progress_pct"/>
+                                </list>
+                            </field>
+                        </page>
+                        <page name="note" string="Notes">
+                            <field name="note"/>
+                        </page>
+                    </notebook>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="action_gantt_baseline" model="ir.actions.act_window">
+        <field name="name">Baselines</field>
+        <field name="res_model">mierp.gantt.baseline</field>
+        <field name="view_mode">list,form</field>
+    </record>
+
+</odoo>

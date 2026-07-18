@@ -1,0 +1,15 @@
+Copyright (c) 2026 GRUPO MI ERP SAS — Pereira, Colombia
+
+All rights reserved.
+
+This module is distributed under the "Other proprietary" license, consistent
+with the MI ERP BIM Suite. Vendored third-party libraries retain their own
+licenses (Frappe Gantt: MIT, Tabulator: MIT, html2canvas: MIT, ECharts:
+Apache-2.0). See static/lib/<library>/LICENSE for individual terms.
+
+Use of this module by an authorised customer of GRUPO MI ERP SAS is permitted
+within the licensed installation. Redistribution, sub-licensing, modification
+of the original source for resale, or removal of attribution headers is
+prohibited without prior written consent.
+
+For commercial licensing inquiries: info@mi-erp.app

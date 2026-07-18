@@ -1,0 +1,221 @@
+#. module: crm_extended
+#: model:ir.model.fields,field_description:crm_extended.field_crm.lead__source_id
+#: model_terms:ir.ui.view,arch_db:crm_extended.view_crm_lead__source_id
+msgid "Source"
+msgstr "Fuente"
+
+#. module: crm_extended
+#: model:ir.model.fields,field_description:crm_extended.field_crm.lead__segment_opportunity_id
+#: model_terms:ir.ui.view,arch_db:crm_extended.view_crm_lead__segment_opportunity_id
+msgid "Segment/Opportunity"
+msgstr "Segmento/Oportunidad"
+
+#. module: crm_extended
+#: model:ir.model.fields,field_description:crm_extended.field_crm.lead__business_display_id
+msgid "Business Display"
+msgstr "Negociación"
+
+#. module: crm_extended
+#: model:ir.model.fields,field_description:crm_extended.field_crm.lead__public_charge_id
+msgid "Public charging"
+msgstr "Carga pública"
+
+#. module: crm_extended
+#: model:ir.model.fields,field_description:crm_extended.field_crm.lead__oems_ves_id
+msgid "OEMS VE´S"
+msgstr "OEMS VE´S"
+
+#. module: crm_extended
+#: model:ir.model.fields,field_description:crm_extended.field_crm.lead__opportunity_size_id
+msgid "Opportunity size"
+msgstr "Tamaño de Oportunidad"
+
+#. module: crm_extended
+#: model:ir.model.fields,field_description:crm_extended.field_crm.lead__name_project
+#: model_terms:ir.ui.view,arch_db:crm_extended.view_crm_lead__name_project
+msgid "Name Project"
+msgstr "Nombre del proyecto"
+
+#. module: crm_extended
+#: model:ir.model.fields,field_description:crm_extended.field_crm.lead__description_project
+#: model_terms:ir.ui.view,arch_db:crm_extended.view_crm_lead__description_project
+msgid "Description"
+msgstr "Descripción"
+
+#. module: crm_extended
+#: model:ir.model.fields,field_description:crm_extended.field_crm.lead__description_place
+#: model_terms:ir.ui.view,arch_db:crm_extended.view_crm_lead__description_place
+msgid "site address"
+msgstr "Descripción del lugar"
+
+#. module: crm_extended
+#: model:ir.model.fields,field_description:crm_extended.field_crm.lead__geolocation_latitude
+#: model_terms:ir.ui.view,arch_db:crm_extended.view_crm_lead__geolocation_latitude
+msgid "Latitude"
+msgstr "Latitud"
+
+#. module: crm_extended
+#: model:ir.model.fields,field_description:crm_extended.field_crm.lead__geolocation_longitude
+#: model_terms:ir.ui.view,arch_db:crm_extended.view_crm_lead__geolocation_longitude
+msgid "Longitude"
+msgstr "Longitud"
+
+#. module: crm_extended
+#: model:ir.model.fields,field_description:crm_extended.field_crm.lead__date_from
+#: model_terms:ir.ui.view,arch_db:crm_extended.view_crm_lead__date_from
+msgid "Install date"
+msgstr "Fecha ejecución"
+
+#. module: crm_extended
+#: model:ir.model.fields,field_description:crm_extended.field_crm.lead__date_from
+#: model_terms:ir.ui.view,arch_db:crm_extended.view_crm_lead__date_from
+msgid "Install date"
+msgstr "Fecha ejecución"
+
+#. module: crm_extended
+#: model:ir.model.fields,field_description:crm_extended.field_crm.lead__nda
+#: model_terms:ir.ui.view,arch_db:crm_extended.view_crm_lead__nda
+msgid "NDA"
+msgstr "NDA"
+
+#. module: crm_extended
+#: model:ir.model.fields,field_description:crm_extended.field_crm.lead__privacy_notice
+#: model_terms:ir.ui.view,arch_db:crm_extended.view_crm_lead__privacy_notice
+msgid "Privacy Notice"
+msgstr "Aviso de privacidad"
+
+#. module: crm_extended
+#: model:ir.model.fields,field_description:crm_extended.field_crm.lead__terms_conditions
+#: model_terms:ir.ui.view,arch_db:crm_extended.view_crm_lead__terms_conditions
+msgid "Terms & Conditions"
+msgstr "Terminos y Condiciones"
+
+#. module: crm_extended
+#: model:ir.model.fields,field_description:crm_extended.field_crm.lead__final_price
+#: model_terms:ir.ui.view,arch_db:crm_extended.view_crm_lead__final_price
+msgid "Final Prices"
+msgstr "Precios finales"
+
+#. module: crm_extended
+#: model:ir.model.fields,field_description:crm_extended.field_crm.lead__payment_terms
+#: model_terms:ir.ui.view,arch_db:crm_extended.view_crm_lead__payment_terms
+msgid "Payment Terms"
+msgstr "Plazos de pago"
+
+#. module: crm_extended
+#: model:ir.model.fields,field_description:crm_extended.field_crm.lead__finance_option
+#: model_terms:ir.ui.view,arch_db:crm_extended.view_crm_lead__finance_option
+msgid "Financial Options"
+msgstr "Opciones financieras"
+
+#. module: crm_extended
+#: model:ir.model.fields,field_description:crm_extended.field_crm.lead__rfi
+#: model_terms:ir.ui.view,arch_db:crm_extended.view_crm_lead__rfi
+msgid "RFI"
+msgstr "RFI"
+
+#. module: crm_extended
+#: model:ir.model.fields,field_description:crm_extended.field_crm.lead__date_supplier
+#: model_terms:ir.ui.view,arch_db:crm_extended.view_crm_lead__date_supplier
+msgid "Supplier time"
+msgstr "Fecha propuesta proveedor"
+
+#. module: crm_extended
+#: model:ir.model.fields,field_description:crm_extended.field_crm.lead__date_customs
+#: model_terms:ir.ui.view,arch_db:crm_extended.view_crm_lead__date_customs
+msgid "Customs time"
+msgstr "Fecha propuesta aduana"
+
+#. module: crm_extended
+#: model:ir.model.fields,field_description:crm_extended.field_crm.lead__date_qion
+#: model_terms:ir.ui.view,arch_db:crm_extended.view_crm_lead__date_qion
+msgid "QiOn Lead time"
+msgstr "Fecha propuesta QiOn"
+
+#. module: crm_extended
+#: model:ir.model.fields,field_description:crm_extended.field_crm.lead__oc
+#: model_terms:ir.ui.view,arch_db:crm_extended.view_crm_lead__oc
+msgid "Purchase Order"
+msgstr "Orden de Compra"
+
+#. module: crm_extended
+#: model_terms:ir.ui.view,arch_db:crm_extended.crm_extended_form_update_id
+msgid "Approve"
+msgstr "Aprobar"
+
+#. module: crm_extended
+#: model:ir.model.fields,field_description:crm_extended.field_business__name
+msgid "Business"
+msgstr "Negocio"
+
+#. module: crm_extended
+#: model:ir.module.category,name:crm_extended.module_management
+msgid "CRM Extended"
+msgstr "Extensión de CRM"
+
+#. module: crm_extended
+#: model:ir.model.fields,field_description:crm_extended.field_crm_lead__company_id
+msgid "Company"
+msgstr "Empresa"
+
+#. module: crm_extended
+#: model_terms:ir.ui.view,arch_db:crm_extended.crm_extended_form_update_id
+msgid "Conditions"
+msgstr "Condiciones"
+
+#. module: crm_extended
+#: model_terms:ir.ui.view,arch_db:crm_extended.crm_extended_form_update_boton
+msgid "Create new quotation"
+msgstr "Crear una nuevo presupuesto"
+
+#. module: crm_extended
+#: model:ir.model.fields,field_description:crm_extended.field_business__create_uid
+#: model:ir.model.fields,field_description:crm_extended.field_business_display__create_uid
+#: model:ir.model.fields,field_description:crm_extended.field_oems_ves__create_uid
+#: model:ir.model.fields,field_description:crm_extended.field_opportunity_size__create_uid
+#: model:ir.model.fields,field_description:crm_extended.field_public_charge__create_uid
+#: model:ir.model.fields,field_description:crm_extended.field_residential_charge__create_uid
+#: model:ir.model.fields,field_description:crm_extended.field_segment_opportunity__create_uid
+msgid "Created by"
+msgstr "Creado por"
+
+#. module: crm_extended
+#: model:ir.model.fields,field_description:crm_extended.field_business__create_date
+#: model:ir.model.fields,field_description:crm_extended.field_business_display__create_date
+#: model:ir.model.fields,field_description:crm_extended.field_oems_ves__create_date
+#: model:ir.model.fields,field_description:crm_extended.field_opportunity_size__create_date
+#: model:ir.model.fields,field_description:crm_extended.field_public_charge__create_date
+#: model:ir.model.fields,field_description:crm_extended.field_residential_charge__create_date
+#: model:ir.model.fields,field_description:crm_extended.field_segment_opportunity__create_date
+msgid "Created on"
+msgstr "Creado en"
+
+#. module: crm_extended
+#: model_terms:ir.ui.view,arch_db:crm_extended.crm_extended_form_update_id
+msgid "Geolocation Map"
+msgstr "Geolocalización"
+
+#. module: crm_extended
+#: model:res.groups,name:crm_extended_3D.group_crm_manager
+msgid "Manager: CRM"
+msgstr "Administrador:CRM"
+
+#. module: crm_extended
+#: model_terms:ir.ui.view,arch_db:crm_extended.crm_extended_form_update_boton
+msgid "New Quotation"
+msgstr "Nueva cotización"
+
+#. module: crm_extended
+#: model_terms:ir.ui.view,arch_db:crm_extended.crm_extended_form_update_id
+msgid "Project"
+msgstr "Proyecto"
+
+#. module: crm_extended
+#: model_terms:ir.ui.view,arch_db:crm_extended.crm_extended_form_update_id
+msgid "Project Information"
+msgstr "Información de proyecto"
+
+#. module: crm_extended
+#: model:res.groups,name:crm_extended_3D.group_crm_user
+msgid "User: CRM"
+msgstr "Usuario: CRM"

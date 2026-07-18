@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <data noupdate="1">
+
+        <!-- Colores índice Odoo ($o-colors): 0 gris, 2 naranja, 4 azul, 8 azul oscuro -->
+        <record id="creart_cal_categ_marketing" model="calendar.event.type">
+            <field name="name">Campaña de Marketing</field>
+            <field name="color">2</field>
+            <field name="creart_usage">Hitos y fechas clave de cada campaña ancla de marketing.</field>
+        </record>
+
+        <record id="creart_cal_categ_commercial_date" model="calendar.event.type">
+            <field name="name">Fecha Comercial</field>
+            <field name="color">8</field>
+            <field name="creart_usage">Fechas patrias y comerciales clave: Día de la Secretaria, Día del Amigo, Regreso a Clases, Día del Abuelo, Independencia, etc.</field>
+        </record>
+
+        <record id="creart_cal_categ_networking" model="calendar.event.type">
+            <field name="name">Reunión Networking</field>
+            <field name="color">0</field>
+            <field name="creart_usage">Eventos BNI, cámaras empresariales y grupos de networking.</field>
+        </record>
+
+        <record id="creart_cal_categ_pipeline_review" model="calendar.event.type">
+            <field name="name">Cierre / Reporte</field>
+            <field name="color">4</field>
+            <field name="creart_usage">Revisiones semanales y de fin de mes del pipeline comercial.</field>
+        </record>
+
+    </data>
+</odoo>

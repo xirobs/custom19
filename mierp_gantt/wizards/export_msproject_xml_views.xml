@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<odoo>
+
+    <record id="view_export_msproject_form" model="ir.ui.view">
+        <field name="name">mierp.gantt.export.msproject.form</field>
+        <field name="model">mierp.gantt.export.msproject</field>
+        <field name="arch" type="xml">
+            <form string="Export to MS Project XML">
+                <group>
+                    <field name="project_id" readonly="state == 'done'"/>
+                    <field name="file_name" invisible="state == 'draft'"/>
+                    <field name="file_data" filename="file_name" invisible="state == 'draft'"/>
+                    <field name="state" invisible="1"/>
+                </group>
+                <footer>
+                    <button name="action_generate" string="Generate XML"
+                            type="object" class="btn-primary"
+                            invisible="state == 'done'"/>
+                    <button special="cancel" string="Close"/>
+                </footer>
+            </form>
+        </field>
+    </record>
+
+    <record id="action_export_msproject" model="ir.actions.act_window">
+        <field name="name">Export to MS Project (.xml)</field>
+        <field name="res_model">mierp.gantt.export.msproject</field>
+        <field name="view_mode">form</field>
+        <field name="target">new</field>
+    </record>
+
+</odoo>

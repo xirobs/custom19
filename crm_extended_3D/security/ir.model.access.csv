@@ -1,0 +1,21 @@
+id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink
+access_source_user,source user,model_source,crm_extended_3D.group_crm_user,1,1,0,0
+access_source_manager,source manager,model_source,crm_extended_3D.group_crm_manager,1,1,1,1
+access_crm_quoted_product_user,crm_quoted_product user,model_crm_quoted_product,crm_extended_3D.group_crm_user,1,1,0,0
+access_crm_quoted_product_manager,crm_quoted_product manager,model_crm_quoted_product,crm_extended_3D.group_crm_manager,1,1,1,1
+access_crm_print_process_step_user,crm.print.process.step user,model_crm_print_process_step,crm_extended_3D.group_crm_user,1,1,1,0
+access_crm_print_process_step_manager,crm.print.process.step manager,model_crm_print_process_step,crm_extended_3D.group_crm_manager,1,1,1,1
+access_crm_lead_cost_line_user,crm.lead.cost.line user,model_crm_lead_cost_line,crm_extended_3D.group_crm_user,1,1,1,0
+access_crm_lead_cost_line_manager,crm.lead.cost.line manager,model_crm_lead_cost_line,crm_extended_3D.group_crm_manager,1,1,1,1
+access_crm_whatsapp_communication_user,crm.whatsapp.communication user,model_crm_whatsapp_communication,crm_extended_3D.group_crm_user,1,1,1,0
+access_crm_whatsapp_communication_manager,crm.whatsapp.communication manager,model_crm_whatsapp_communication,crm_extended_3D.group_crm_manager,1,1,1,1
+access_print_cost_config_user,print.cost.config user,model_print_cost_config,crm_extended_3D.group_crm_user,1,1,1,0
+access_print_cost_config_manager,print.cost.config manager,model_print_cost_config,crm_extended_3D.group_crm_manager,1,1,1,1
+access_crm_print_accessory_line_user,crm.print.accessory.line user,model_crm_print_accessory_line,crm_extended_3D.group_crm_user,1,1,1,0
+access_crm_print_accessory_line_manager,crm.print.accessory.line manager,model_crm_print_accessory_line,crm_extended_3D.group_crm_manager,1,1,1,1
+access_crm_lead_material_line_user,crm.lead.material.line user,model_crm_lead_material_line,crm_extended_3D.group_crm_user,1,1,1,0
+access_crm_lead_material_line_manager,crm.lead.material.line manager,model_crm_lead_material_line,crm_extended_3D.group_crm_manager,1,1,1,1
+access_creart_3dp_dashboard_user,creart.3dp.dashboard user,model_creart_3dp_dashboard,crm_extended_3D.group_crm_user,1,1,1,1
+access_creart_3dp_dashboard_manager,creart.3dp.dashboard manager,model_creart_3dp_dashboard,crm_extended_3D.group_crm_manager,1,1,1,1
+access_creart_chatter_note_wizard_user,creart.crm.chatter.note.wizard user,model_creart_crm_chatter_note_wizard,crm_extended_3D.group_crm_user,1,1,1,1
+access_creart_chatter_note_wizard_manager,creart.crm.chatter.note.wizard manager,model_creart_crm_chatter_note_wizard,crm_extended_3D.group_crm_manager,1,1,1,1

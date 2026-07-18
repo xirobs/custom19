@@ -1,0 +1,79 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="view_calendar_event_type_tree_creart" model="ir.ui.view">
+        <field name="name">calendar.event.type.list.creart</field>
+        <field name="model">calendar.event.type</field>
+        <field name="inherit_id" ref="calendar.view_calendar_event_type_tree"/>
+        <field name="arch" type="xml">
+            <field name="name" position="after">
+                <field name="color" widget="color_picker"/>
+                <field name="creart_usage" optional="show"/>
+            </field>
+        </field>
+    </record>
+
+    <record id="view_calendar_event_type_form_creart" model="ir.ui.view">
+        <field name="name">calendar.event.type.form.creart</field>
+        <field name="model">calendar.event.type</field>
+        <field name="arch" type="xml">
+            <form string="Categoría de evento">
+                <sheet>
+                    <group>
+                        <field name="name"/>
+                        <field name="color" widget="color_picker"/>
+                    </group>
+                    <group string="Guía de uso">
+                        <field name="creart_usage" nolabel="1" placeholder="Describa cuándo usar esta categoría…"/>
+                    </group>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <!-- Calendario CreArt: color por categoría (etiqueta) -->
+    <record id="view_creart_calendar_event_calendar" model="ir.ui.view">
+        <field name="name">calendar.event.calendar.creart</field>
+        <field name="model">calendar.event</field>
+        <field name="inherit_id" ref="calendar.view_calendar_event_calendar"/>
+        <field name="mode">primary</field>
+        <field name="arch" type="xml">
+            <xpath expr="//calendar" position="attributes">
+                <attribute name="color">categ_ids</attribute>
+            </xpath>
+        </field>
+    </record>
+
+    <record id="action_creart_calendar_event_types" model="ir.actions.act_window">
+        <field name="name">Categorías de evento</field>
+        <field name="res_model">calendar.event.type</field>
+        <field name="view_mode">list,form</field>
+        <field name="context">{}</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">
+                Configure las etiquetas del calendario comercial CreArt.
+            </p>
+            <p>
+                Use <strong>Campaña de Marketing</strong> (naranja), <strong>Fecha Comercial</strong> (oscuro),
+                <strong>Reunión Networking</strong> (gris) y <strong>Cierre / Reporte</strong> (azul).
+            </p>
+        </field>
+    </record>
+
+    <record id="action_creart_commercial_calendar" model="ir.actions.act_window">
+        <field name="name">Calendario comercial</field>
+        <field name="res_model">calendar.event</field>
+        <field name="view_mode">calendar,list,form</field>
+        <field name="view_id" ref="view_creart_calendar_event_calendar"/>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">
+                Cree eventos y asígneles una categoría CreArt.
+            </p>
+            <p>
+                Filtre por etiqueta en la barra lateral del calendario para ver campañas,
+                fechas comerciales, networking o cierres de pipeline.
+            </p>
+        </field>
+    </record>
+
+</odoo>

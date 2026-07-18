@@ -1,0 +1,14 @@
+id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink
+access_gantt_calendar_user,gantt.calendar.user,model_mierp_gantt_calendar,base.group_user,1,0,0,0
+access_gantt_calendar_manager,gantt.calendar.manager,model_mierp_gantt_calendar,base.group_system,1,1,1,1
+access_gantt_holiday_user,gantt.holiday.user,model_mierp_gantt_holiday,base.group_user,1,0,0,0
+access_gantt_holiday_manager,gantt.holiday.manager,model_mierp_gantt_holiday,base.group_system,1,1,1,1
+access_gantt_project_user,gantt.project.user,model_mierp_gantt_project,base.group_user,1,1,1,1
+access_gantt_task_user,gantt.task.user,model_mierp_gantt_task,base.group_user,1,1,1,1
+access_gantt_dependency_user,gantt.dependency.user,model_mierp_gantt_dependency,base.group_user,1,1,1,1
+access_gantt_baseline_user,gantt.baseline.user,model_mierp_gantt_baseline,base.group_user,1,1,1,1
+access_gantt_baseline_line_user,gantt.baseline.line.user,model_mierp_gantt_baseline_line,base.group_user,1,1,1,1
+access_gantt_resource_assignment_user,gantt.resource.assignment.user,model_mierp_gantt_resource_assignment,base.group_user,1,1,1,1
+access_gantt_snapshot_baseline,gantt.snapshot.baseline,model_mierp_gantt_snapshot_baseline,base.group_user,1,1,1,1
+access_gantt_import_msproject,gantt.import.msproject,model_mierp_gantt_import_msproject,base.group_user,1,1,1,1
+access_gantt_export_msproject,gantt.export.msproject,model_mierp_gantt_export_msproject,base.group_user,1,1,1,1

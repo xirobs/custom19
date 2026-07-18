@@ -1,0 +1,70 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <data noupdate="1">
+
+        <!-- Por sector -->
+        <record id="crm_tag_sector_restaurants" model="crm.tag">
+            <field name="name">Restaurantes</field>
+            <field name="creart_tag_group">sector</field>
+            <field name="color">4</field>
+        </record>
+        <record id="crm_tag_sector_clinics" model="crm.tag">
+            <field name="name">Clínicas</field>
+            <field name="creart_tag_group">sector</field>
+            <field name="color">5</field>
+        </record>
+        <record id="crm_tag_sector_schools" model="crm.tag">
+            <field name="name">Escuelas</field>
+            <field name="creart_tag_group">sector</field>
+            <field name="color">7</field>
+        </record>
+        <record id="crm_tag_sector_constructors" model="crm.tag">
+            <field name="name">Constructoras</field>
+            <field name="creart_tag_group">sector</field>
+            <field name="color">8</field>
+        </record>
+        <record id="crm_tag_sector_hotels_events" model="crm.tag">
+            <field name="name">Hoteles/Eventos</field>
+            <field name="creart_tag_group">sector</field>
+            <field name="color">9</field>
+        </record>
+        <record id="crm_tag_sector_corporate" model="crm.tag">
+            <field name="name">Corporativo</field>
+            <field name="creart_tag_group">sector</field>
+            <field name="color">10</field>
+        </record>
+        <record id="crm_tag_sector_families" model="crm.tag">
+            <field name="name">Familias</field>
+            <field name="creart_tag_group">sector</field>
+            <field name="color">3</field>
+        </record>
+        <record id="crm_tag_sector_collectors" model="crm.tag">
+            <field name="name">Coleccionistas</field>
+            <field name="creart_tag_group">sector</field>
+            <field name="color">6</field>
+        </record>
+        <record id="crm_tag_sector_entrepreneurs" model="crm.tag">
+            <field name="name">Emprendedores</field>
+            <field name="creart_tag_group">sector</field>
+            <field name="color">11</field>
+        </record>
+
+        <!-- Por urgencia -->
+        <record id="crm_tag_urgency_deadline" model="crm.tag">
+            <field name="name">Fecha límite próxima</field>
+            <field name="creart_tag_group">urgency</field>
+            <field name="color">1</field>
+        </record>
+        <record id="crm_tag_urgency_express" model="crm.tag">
+            <field name="name">Pedido exprés</field>
+            <field name="creart_tag_group">urgency</field>
+            <field name="color">2</field>
+        </record>
+        <record id="crm_tag_urgency_recurring" model="crm.tag">
+            <field name="name">Recurrente</field>
+            <field name="creart_tag_group">urgency</field>
+            <field name="color">11</field>
+        </record>
+
+    </data>
+</odoo>

@@ -1,0 +1,75 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <!-- Secuencia para numerar los leads / oportunidades -->
+    <record id="seq_crm_extended_lead" model="ir.sequence">
+        <field name="name">CRM Lead Sequence</field>
+        <field name="code">crm.lead.sequence</field>
+        <field name="prefix">%(year)s%(month)s</field>
+        <field name="padding">4</field>
+        <field name="implementation">no_gap</field>
+    </record>
+
+    <!-- Etapas del pipeline con la nueva nomenclatura -->
+    <record id="crm_stage_solicitud_recibida" model="crm.stage">
+        <field name="name">Solicitud</field>
+        <field name="sequence">10</field>
+    </record>
+
+    <record id="crm_stage_en_diseno" model="crm.stage">
+        <field name="name">Conceptualización/Diseño</field>
+        <field name="sequence">20</field>
+    </record>
+
+    <record id="crm_stage_pendiente_aprobacion" model="crm.stage">
+        <field name="name">Propuesta enviada</field>
+        <field name="sequence">30</field>
+        <field name="fold">True</field>
+    </record>
+
+    <record id="crm_stage_negociacion_seguimiento" model="crm.stage">
+        <field name="name">Negociación / Seguimiento</field>
+        <field name="sequence">35</field>
+    </record>
+
+    <record id="crm_stage_pendiente_pago" model="crm.stage">
+        <field name="name">Ganada/Pendiente pago</field>
+        <field name="sequence">40</field>
+    </record>
+
+    <record id="crm_stage_imprimiendo" model="crm.stage">
+        <field name="name">Imprimiendo</field>
+        <field name="sequence">50</field>
+    </record>
+
+    <record id="crm_stage_post_proceso" model="crm.stage">
+        <field name="name">PostProcesado</field>
+        <field name="sequence">60</field>
+    </record>
+
+    <record id="crm_stage_control_calidad" model="crm.stage">
+        <field name="name">Control de Calidad</field>
+        <field name="sequence">70</field>
+    </record>
+
+    <record id="crm_stage_listo_entrega" model="crm.stage">
+        <field name="name">Listo para Entregar</field>
+        <field name="sequence">80</field>
+    </record>
+
+    <!-- Nueva etapa final Entregado/cerrado -->
+    <record id="crm_stage_entregado_cerrado" model="crm.stage">
+        <field name="name">Entregado/Cerrado</field>
+        <field name="sequence">90</field>
+        <field name="is_won">True</field>
+        <field name="fold">True</field>
+    </record>
+
+    <record id="crm_stage_bloqueado" model="crm.stage">
+        <field name="name">Bloque/Pausado</field>
+        <field name="sequence">100</field>
+        <field name="fold">True</field>
+    </record>
+
+</odoo>
+

@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<odoo>
+    <data noupdate="0">
+        <delete model="ir.ui.menu" id="menu_creart_dashboard"/>
+
+        <menuitem id="menu_creart_root" name="CreArt 3DP" sequence="15"
+                  web_icon="crm,static/description/icon.png"/>
+
+        <!-- Un solo acceso al pipeline CRM (sin menú Dashboard duplicado) -->
+        <menuitem id="menu_creart_opportunities" name="Oportunidades 3D"
+                  parent="menu_creart_root"
+                  action="crm.crm_lead_action_pipeline"
+                  sequence="5"/>
+
+        <menuitem id="menu_creart_planning_app" name="Planificación"
+                  parent="menu_creart_root"
+                  action="action_creart_planning_gantt"
+                  sequence="10"/>
+
+        <menuitem id="menu_creart_planning_resync" name="Replanificar cola"
+                  parent="menu_creart_root"
+                  action="action_resync_creart_planning_queue"
+                  sequence="11"/>
+
+        <menuitem id="menu_creart_commercial_calendar" name="Calendario comercial"
+                  parent="menu_creart_root"
+                  action="action_creart_commercial_calendar"
+                  sequence="12"/>
+    </data>
+</odoo>

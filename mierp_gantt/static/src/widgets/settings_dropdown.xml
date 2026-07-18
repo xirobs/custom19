@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<templates xml:space="preserve">
+    <!-- Currently inlined inside mierp_gantt.GanttView; this file is reserved
+         for a stand-alone reusable settings dropdown. -->
+</templates>

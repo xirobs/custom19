@@ -1,0 +1,150 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<odoo>
+    <data noupdate="0">
+        <record id="action_creart_planning_tasks" model="ir.actions.act_window">
+            <field name="name">Planificación CreArt 3DP</field>
+            <field name="res_model">project.task</field>
+            <field name="view_mode">calendar,graph,list,form,kanban,pivot</field>
+            <field name="domain">[('lead_id', '!=', False)]</field>
+            <field name="context">{
+                'search_default_my_tasks': 0,
+                'default_project_id': False,
+            }</field>
+        </record>
+
+        <record id="action_resync_creart_planning_queue" model="ir.actions.server">
+            <field name="name">Replanificar cola CreArt</field>
+            <field name="model_id" ref="crm.model_crm_lead"/>
+            <field name="state">code</field>
+            <field name="code">action = env['crm.lead'].action_resync_planning_queue()</field>
+        </record>
+
+        <!-- Calendario por intervalo (Community: sustituto práctico de Gantt) -->
+        <record id="view_creart_planning_task_calendar" model="ir.ui.view">
+            <field name="name">project.task.calendar.creart</field>
+            <field name="model">project.task</field>
+            <field name="priority">20</field>
+            <field name="arch" type="xml">
+                <calendar string="Planificación CreArt"
+                          date_start="planned_date_start"
+                          date_stop="planned_date_end"
+                          color="project_id"
+                          mode="week"
+                          quick_create="0">
+                    <field name="name"/>
+                    <field name="lead_id"/>
+                    <field name="user_ids" widget="many2many_avatar_user"/>
+                    <field name="allocated_hours"/>
+                </calendar>
+            </field>
+        </record>
+
+        <record id="view_creart_planning_task_graph_load" model="ir.ui.view">
+            <field name="name">project.task.graph.creart.load</field>
+            <field name="model">project.task</field>
+            <field name="priority">20</field>
+            <field name="arch" type="xml">
+                <graph string="Carga horaria por responsable" type="bar" stacked="True">
+                    <field name="user_ids"/>
+                    <field name="allocated_hours" type="measure"/>
+                </graph>
+            </field>
+        </record>
+
+        <record id="crm_lead_form_planning_stat" model="ir.ui.view">
+            <field name="name">crm.lead.form.planning.stat</field>
+            <field name="model">crm.lead</field>
+            <field name="inherit_id" ref="crm.crm_lead_view_form"/>
+            <field name="arch" type="xml">
+                <xpath expr="//div[@name='button_box']" position="inside">
+                    <button name="action_open_planning" type="object" class="oe_stat_button" icon="fa-calendar"
+                            invisible="not planning_task_count">
+                        <field name="planning_task_count" widget="statinfo" string="Plan"/>
+                    </button>
+                </xpath>
+            </field>
+        </record>
+
+        <record id="crm_lead_form_planning_buttons" model="ir.ui.view">
+            <field name="name">crm.lead.form.planning.buttons</field>
+            <field name="model">crm.lead</field>
+            <field name="inherit_id" ref="crm.crm_lead_view_form"/>
+            <field name="arch" type="xml">
+                <xpath expr="//header" position="inside">
+                    <button name="action_create_planning_project" type="object" string="Generar plan CreArt"
+                            class="btn-primary" invisible="planning_task_count"/>
+                    <button name="action_resync_planning_project" type="object" string="Regenerar plan CreArt"
+                            class="btn-secondary" invisible="not planning_task_count"/>
+                    <button name="action_open_planning" type="object" string="Ver planificación"
+                            class="btn-secondary" invisible="not planning_task_count"/>
+                </xpath>
+            </field>
+        </record>
+
+        <record id="crm_lead_form_planning_tab" model="ir.ui.view">
+            <field name="name">crm.lead.form.planning.tab</field>
+            <field name="model">crm.lead</field>
+            <field name="inherit_id" ref="crm_extended_3D.view_crm_lead_form_extended"/>
+            <field name="arch" type="xml">
+                <xpath expr="//page[@name='print_process']" position="before">
+                    <page string="Planificación" name="creart_planning">
+                        <group>
+                            <group>
+                                <field name="priority" widget="priority"/>
+                                <field name="planning_queue_note" readonly="1" colspan="2"/>
+                                <field name="project_id" readonly="1"/>
+                                <field name="planning_date_start"/>
+                                <field name="planning_date_end"/>
+                                <field name="planning_progress"/>
+                            </group>
+                            <group>
+                                <button name="action_create_planning_project" type="object"
+                                        string="Generar plan CreArt" class="btn-primary"
+                                        invisible="planning_task_count"/>
+                                <button name="action_resync_planning_project" type="object"
+                                        string="Regenerar plan CreArt" class="btn-secondary"
+                                        invisible="not planning_task_count"/>
+                                <button name="action_resync_planning_queue" type="object"
+                                        string="Replanificar toda la cola" class="btn-secondary"/>
+                                <button name="action_open_planning" type="object"
+                                        string="Abrir Gantt" class="btn-secondary"
+                                        invisible="not planning_task_count"/>
+                            </group>
+                        </group>
+                        <p class="text-muted">
+                            <strong>Gantt:</strong> al generar o replanificar se sincroniza con MI ERP Gantt
+                            (ruta crítica, dependencias FS, histograma de recursos). Use
+                            <em>Gantt cola completa</em> para ver todos los trabajos en secuencia.
+                        </p>
+                        <p class="text-muted">
+                            <strong>Horario laboral CreArt (hora local):</strong>
+                            Lun–Sáb 05:00–07:00, 10:00–12:45, 16:00–18:00, 19:00–20:00. Domingo no se programa.
+                        </p>
+                        <p class="text-muted">
+                            <strong>Cola de trabajos:</strong> el inicio se pospone hasta terminar las tareas
+                            pendientes de oportunidades con mayor prioridad / menor «Orden en cola» (campos arriba).
+                            Al regenerar un plan, los trabajos posteriores en cola también se recalculan.
+                        </p>
+                        <ul class="text-muted">
+                            <li>Diseño / ajustes → hasta 24 h (diseño + aprobación cliente); si en Finanzas hay más horas MO, se usa el mayor.</li>
+                            <li>Cola de impresión → 15 min administrativos (la espera real la define la cola).</li>
+                            <li>Imprimiendo → horas de impresión + tiempo muerto (Finanzas).</li>
+                            <li>Postprocesado → horas MO postprocesado.</li>
+                            <li>Control de calidad → 1 h; entrega / listo → 30 min; otros → 2 h.</li>
+                        </ul>
+                        <field name="planning_task_ids" readonly="1">
+                            <list>
+                                <field name="name"/>
+                                <field name="planned_date_start"/>
+                                <field name="planned_date_end"/>
+                                <field name="allocated_hours"/>
+                                <field name="user_ids" widget="many2many_avatar_user"/>
+                                <field name="state"/>
+                            </list>
+                        </field>
+                    </page>
+                </xpath>
+            </field>
+        </record>
+    </data>
+</odoo>

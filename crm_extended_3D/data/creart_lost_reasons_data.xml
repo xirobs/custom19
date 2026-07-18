@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <data noupdate="1">
+
+        <!-- Motivos CreArt 3DP -->
+        <record id="creart_lost_reason_expensive" model="crm.lost.reason">
+            <field name="name">Está caro</field>
+        </record>
+        <record id="creart_lost_reason_has_supplier" model="crm.lost.reason">
+            <field name="name">Ya tiene proveedor</field>
+        </record>
+        <record id="creart_lost_reason_no_contact" model="crm.lost.reason">
+            <field name="name">No responde / sin contacto</field>
+        </record>
+        <record id="creart_lost_reason_out_of_budget" model="crm.lost.reason">
+            <field name="name">Fuera de presupuesto</field>
+        </record>
+        <record id="creart_lost_reason_postponed" model="crm.lost.reason">
+            <field name="name">Proyecto pospuesto</field>
+        </record>
+        <record id="creart_lost_reason_other" model="crm.lost.reason">
+            <field name="name">Otro (especificar en nota interna)</field>
+            <field name="requires_detail_note" eval="True"/>
+        </record>
+
+    </data>
+</odoo>

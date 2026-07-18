@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<odoo>
+    <data noupdate="0">
+        <record id="crm_lead_form_materials_buttons" model="ir.ui.view">
+            <field name="name">crm.lead.form.materials.buttons</field>
+            <field name="model">crm.lead</field>
+            <field name="inherit_id" ref="crm.crm_lead_view_form"/>
+            <field name="arch" type="xml">
+                <xpath expr="//header" position="inside">
+                    <button name="action_update_materials_from_job" type="object" string="Actualizar materiales" class="btn-secondary"/>
+                    <button name="action_reserve_materials" type="object" string="Reservar stock" class="btn-secondary"
+                            invisible="material_state in ('reserved', 'consumed')"/>
+                    <button name="action_consume_materials" type="object" string="Consumir materiales" class="btn-primary"
+                            invisible="material_state != 'reserved'"/>
+                </xpath>
+            </field>
+        </record>
+        <record id="crm_lead_form_materials_tab" model="ir.ui.view">
+            <field name="name">crm.lead.form.materials.tab</field>
+            <field name="model">crm.lead</field>
+            <field name="inherit_id" ref="crm_extended_3D.view_crm_lead_form_extended"/>
+            <field name="arch" type="xml">
+                <xpath expr="//page[@name='creart_planning']" position="after">
+                    <page string="Materiales" name="creart_materials">
+                        <group>
+                            <field name="material_state"/>
+                            <field name="material_shortage"/>
+                            <button name="action_update_materials_from_job" type="object" string="Cargar desde trabajo" class="btn-link"/>
+                        </group>
+                        <field name="material_line_ids">
+                            <list editable="bottom">
+                                <field name="material_type"/>
+                                <field name="product_id"/>
+                                <field name="quantity"/>
+                                <field name="qty_available"/>
+                                <field name="state"/>
+                            </list>
+                        </field>
+                    </page>
+                </xpath>
+            </field>
+        </record>
+    </data>
+</odoo>
