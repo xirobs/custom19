@@ -1,24 +1,48 @@
-<?xml version="1.0" encoding="utf-8"?>
-<odoo>
-    <data noupdate="0">
-        <record id="print_cost_config_creart_default" model="print.cost.config">
-            <field name="name">CreArt 3DP - Configuración General</field>
-            <!-- Valores pestaña "prueba" del spreadsheet CreArt -->
-            <field name="internet_hour_cost">1.35</field>
-            <field name="electricity_hour_cost">0.29</field>
-            <field name="depreciation_hour_cost">2.0</field>
-            <field name="capacity_increase_hour_cost">4.0</field>
-            <field name="spare_parts_hour_cost">0.5</field>
-            <field name="postprocess_consumables_cost">10.0</field>
-            <field name="dead_time_hour_cost">0.55</field>
-            <field name="fiscal_charge_percent">16.0</field>
-            <field name="mo_concept_hour">70.0</field>
-            <field name="mo_design_hour">150.0</field>
-            <field name="mo_operation_hour">50.0</field>
-            <field name="mo_post_hour">100.0</field>
-            <field name="sale_markup_1_12">2.0</field>
-            <field name="sale_markup_12_24">1.75</field>
-            <field name="sale_markup_24_plus">1.5</field>
-        </record>
-    </data>
-</odoo>
+<?xml version="1.0" encoding="utf-8"?>
+
+<odoo>
+
+    <data noupdate="0">
+
+        <record id="print_cost_config_creart_default" model="print.cost.config">
+
+            <field name="name">CreArt 3DP - Configuración General</field>
+
+            <!-- Valores pestaña "prueba" del spreadsheet CreArt -->
+
+            <field name="internet_hour_cost">1.35</field>
+
+            <field name="electricity_hour_cost">0.29</field>
+
+            <field name="depreciation_hour_cost">2.0</field>
+
+            <field name="capacity_increase_hour_cost">4.0</field>
+
+            <field name="spare_parts_hour_cost">0.5</field>
+
+            <field name="postprocess_consumables_cost">10.0</field>
+
+            <field name="dead_time_hour_cost">0.55</field>
+
+            <field name="fiscal_charge_percent">16.0</field>
+
+            <field name="mo_concept_hour">70.0</field>
+
+            <field name="mo_design_hour">150.0</field>
+
+            <field name="mo_operation_hour">50.0</field>
+
+            <field name="mo_post_hour">100.0</field>
+
+            <field name="sale_markup_1_12">2.0</field>
+
+            <field name="sale_markup_12_24">1.75</field>
+
+            <field name="sale_markup_24_plus">1.5</field>
+
+        </record>
+
+    </data>
+
+</odoo>
+
