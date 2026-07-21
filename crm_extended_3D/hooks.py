@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-"""Hooks de instalación CreArt 3DP (costos, etapas legacy, verificación)."""
+"""Hooks de instalación CreArt 3DP (costos, dedupe de etapas, verificación)."""
 
 SHEET_COST_DEFAULTS = {
     "internet_hour_cost": 1.35,
@@ -33,30 +33,25 @@ CREART_STAGE_NAMES = {
     "Bloque/Pausado",
 }
 
-LEGACY_STAGE_NAMES = {
-    "Conceptualización / Propuesta Enviada",
-    "Ganado / adelanto recibido",
-    "Aprobada propuesta",
-    "Ganado y pendiente de pago",
-    "Diseño/Ajustes",
-    "En la cola de impresión",
-    "En la cola de impresion",
-    "Postprocesado",
-    "Listo para entregar",
-    "Entregado/cerrado",
-    "Bloqueado/En pausa",
-    "Bloqueado/en pausa",
-    "New",
-    "Qualified",
-    "Proposition",
-    "Won",
-    "Lost",
+# xmlid en crm_extended_data.xml → nombre canónico del pipeline
+CREART_STAGE_XMLID_BY_NAME = {
+    "Solicitud": "crm_stage_solicitud_recibida",
+    "Conceptualización/Diseño": "crm_stage_en_diseno",
+    "Propuesta enviada": "crm_stage_pendiente_aprobacion",
+    "Negociación / Seguimiento": "crm_stage_negociacion_seguimiento",
+    "Ganada/Pendiente pago": "crm_stage_pendiente_pago",
+    "Imprimiendo": "crm_stage_imprimiendo",
+    "PostProcesado": "crm_stage_post_proceso",
+    "Control de Calidad": "crm_stage_control_calidad",
+    "Listo para Entregar": "crm_stage_listo_entrega",
+    "Entregado/Cerrado": "crm_stage_entregado_cerrado",
+    "Bloque/Pausado": "crm_stage_bloqueado",
 }
 
 
 def post_init_hook(env):
     _sync_sheet_defaults(env)
-    _cleanup_legacy_stages(env)
+    _dedupe_duplicate_stages(env)
 
 
 def _sync_sheet_defaults(env):
@@ -65,17 +60,36 @@ def _sync_sheet_defaults(env):
         config.write(SHEET_COST_DEFAULTS)
 
 
-def _cleanup_legacy_stages(env):
-    """Archiva etapas duplicadas o legacy sin oportunidades (instalación limpia online)."""
-    Stage = env["crm.stage"].with_context(active_test=False)
-    for stage in Stage.search([("name", "in", list(LEGACY_STAGE_NAMES))]):
-        if not env["crm.lead"].search_count([("stage_id", "=", stage.id)]):
-            stage.active = False
-    # Etapas fuera del pipeline CreArt que quedaron vacías (p. ej. defaults CRM)
-    for stage in Stage.search([("name", "not in", list(CREART_STAGE_NAMES))]):
-        if stage.name in LEGACY_STAGE_NAMES:
+def _dedupe_duplicate_stages(env):
+    """Fusiona etapas repetidas (mismo nombre) sin borrar columnas vacías del pipeline.
+
+    Al reinstalar/actualizar a veces quedan dos ``crm.stage`` con el mismo nombre.
+    Se conserva el registro del XML del módulo (o el que tenga más oportunidades),
+    se reasignan los leads y se elimina el duplicado.
+    """
+    Stage = env["crm.stage"]
+    Lead = env["crm.lead"]
+
+    stages = Stage.search([("name", "in", list(CREART_STAGE_NAMES))], order="id")
+    by_name = {}
+    for stage in stages:
+        by_name.setdefault(stage.name, Stage.browse())
+        by_name[stage.name] |= stage
+
+    for name, group in by_name.items():
+        if len(group) <= 1:
             continue
-        if env["crm.lead"].search_count([("stage_id", "=", stage.id)]):
-            continue
-        if stage.name not in CREART_STAGE_NAMES:
-            stage.active = False
+        keeper = _pick_stage_keeper(env, name, group)
+        for duplicate in group - keeper:
+            Lead.search([("stage_id", "=", duplicate.id)]).write({"stage_id": keeper.id})
+            duplicate.unlink()
+
+
+def _pick_stage_keeper(env, stage_name, stages):
+    xmlid = CREART_STAGE_XMLID_BY_NAME.get(stage_name)
+    if xmlid:
+        canonical = env.ref(f"crm_extended_3D.{xmlid}", raise_if_not_found=False)
+        if canonical and canonical in stages:
+            return canonical
+    Lead = env["crm.lead"]
+    return max(stages, key=lambda s: Lead.search_count([("stage_id", "=", s.id)]))

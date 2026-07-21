@@ -1,63 +1,289 @@
+<!-- CreArt 3DP · documentación módulo 19.0.3.28.0 (index ~18 KB en servidor) -->
 <section class="oe_container">
-	<div class="oe_row oe_spaced">
-		<h2 class="oe_slogan" style="color: #7c7bad;font-size:35px;font-weight:bolder;">
-            CRM Extended
-        </h2>
-		<div>
-            <p style="text-align: center;">
-                This module for Odoo 18, in the Stands CRM, optimizes lead management by adding custom fields and process sequences that align with the established workflow for the sales team.
-                The module includes an approval system where the sales manager authorizes the advancement of leads at each stage of the process. It also features a visual process tracker, similar to a thermometer, to monitor the status of each opportunity and allow the team to know where each opportunity is in the process.
-                An additional feature is that you can generate a won opportunity as a lead for another company, this works in multi-company.
+    <div class="oe_row oe_spaced">
+        <div class="oe_span12 text-center">
+            <h1 class="oe_slogan" style="color:#714B67;font-size:2.2rem;font-weight:700;margin-bottom:0.25rem;">
+                CreArt 3DP
+            </h1>
+            <p style="font-size:1.05rem;color:#666;margin:0 0 1rem;">CRM Extended para impresión 3D · Odoo 19</p>
+            <p style="font-size:1.12rem;color:#555;max-width:820px;margin:0 auto 1.5rem;line-height:1.65;">
+                Módulo pensado para el flujo comercial y operativo de <strong>CreArt 3DP</strong>: pipeline por etapas,
+                costos de impresión, planificación en Gantt, materiales, finanzas por oportunidad, calendario comercial
+                y automatizaciones al avanzar cada trabajo.
+            </p>
+            <p style="margin-bottom:0;">
+                <span class="badge" style="background:#714B67;color:#fff;padding:6px 14px;border-radius:20px;font-size:0.9rem;margin:4px;">CRM</span>
+                <span class="badge" style="background:#017E84;color:#fff;padding:6px 14px;border-radius:20px;font-size:0.9rem;margin:4px;">Impresión 3D</span>
+                <span class="badge" style="background:#875A7B;color:#fff;padding:6px 14px;border-radius:20px;font-size:0.9rem;margin:4px;">Planificación</span>
             </p>
         </div>
-	</div>
+    </div>
 </section>
 
-<section class="oe_container oe_dark">
+<section class="oe_container oe_dark" style="background:#f8f9fa;padding:2rem 0;">
     <div class="oe_row oe_spaced">
-        <h4 class="oe_slogan" style="color: #7c7bad;font-size:35px;font-weight:bolder;">Installation</h4>
+        <h2 class="oe_slogan" style="color:#714B67;font-size:1.75rem;font-weight:600;">¿Qué incluye?</h2>
         <div class="oe_span12">
-            <p><strong>- Copy crm_extended_3D module to addons folder</strong></p>
-            <p><strong>- Install the module normally like other modules</strong></p>
+            <div class="row" style="display:flex;flex-wrap:wrap;gap:1rem;justify-content:center;">
+                <div style="flex:1 1 260px;max-width:300px;background:#fff;border-radius:8px;padding:1.25rem;box-shadow:0 2px 8px rgba(0,0,0,0.06);">
+                    <h3 style="color:#714B67;font-size:1.05rem;margin-top:0;"><i class="fa fa-filter"></i> Pipeline CreArt</h3>
+                    <p style="color:#555;font-size:0.93rem;line-height:1.55;margin-bottom:0;">
+                        Kanban con etapas del negocio 3DP, progreso, etiquetas, secuencia de oportunidades y perfil del cliente.
+                    </p>
+                </div>
+                <div style="flex:1 1 260px;max-width:300px;background:#fff;border-radius:8px;padding:1.25rem;box-shadow:0 2px 8px rgba(0,0,0,0.06);">
+                    <h3 style="color:#714B67;font-size:1.05rem;margin-top:0;"><i class="fa fa-calculator"></i> Finanzas y costos</h3>
+                    <p style="color:#555;font-size:0.93rem;line-height:1.55;margin-bottom:0;">
+                        Configuración de costos, cálculo por oportunidad, pasos de impresión y márgenes de venta.
+                    </p>
+                </div>
+                <div style="flex:1 1 260px;max-width:300px;background:#fff;border-radius:8px;padding:1.25rem;box-shadow:0 2px 8px rgba(0,0,0,0.06);">
+                    <h3 style="color:#714B67;font-size:1.05rem;margin-top:0;"><i class="fa fa-calendar"></i> Planificación</h3>
+                    <p style="color:#555;font-size:0.93rem;line-height:1.55;margin-bottom:0;">
+                        Cola de impresión, Gantt, replanificación y calendario comercial integrado al CRM.
+                    </p>
+                </div>
+                <div style="flex:1 1 260px;max-width:300px;background:#fff;border-radius:8px;padding:1.25rem;box-shadow:0 2px 8px rgba(0,0,0,0.06);">
+                    <h3 style="color:#714B67;font-size:1.05rem;margin-top:0;"><i class="fa fa-cubes"></i> Materiales</h3>
+                    <p style="color:#555;font-size:0.93rem;line-height:1.55;margin-bottom:0;">
+                        Materiales por pedido, reservas y seguimiento ligado al avance del trabajo.
+                    </p>
+                </div>
+                <div style="flex:1 1 260px;max-width:300px;background:#fff;border-radius:8px;padding:1.25rem;box-shadow:0 2px 8px rgba(0,0,0,0.06);">
+                    <h3 style="color:#714B67;font-size:1.05rem;margin-top:0;"><i class="fa fa-cog"></i> Configuración CreArt</h3>
+                    <p style="color:#555;font-size:0.93rem;line-height:1.55;margin-bottom:0;">
+                        Menú de costos, actividades, categorías de calendario y motivos de pérdida bajo <strong>CreArt 3DP</strong>.
+                    </p>
+                </div>
+            </div>
         </div>
     </div>
 </section>
 
-<section class="oe_container oe_dark">
+<section class="oe_container">
     <div class="oe_row oe_spaced">
-        <h4 class="oe_slogan" style="color: #7c7bad;font-size:35px;font-weight:bolder;">1. Extension configuration</h4>
-        <p>Settings -> user -> you select type of user access</p>
-        <div class="oe_span12">            
-            <br/>
-            <div class="oe_row_img  oe_screenshot oe_centered">
-                <img style="border:10px solid white; width: 100% !important" src="1.png">
-            </div>
+        <h2 class="oe_slogan" style="color:#714B67;font-size:1.75rem;font-weight:600;">Etapas del pipeline</h2>
+        <div class="oe_span12" style="max-width:900px;margin:0 auto;">
+            <ol style="columns:2;column-gap:2rem;color:#444;line-height:1.85;font-size:0.98rem;padding-left:1.25rem;">
+                <li>Solicitud</li>
+                <li>Conceptualización / Diseño</li>
+                <li>Propuesta enviada</li>
+                <li>Negociación / Seguimiento</li>
+                <li>Ganada / Pendiente pago</li>
+                <li>Imprimiendo</li>
+                <li>PostProcesado</li>
+                <li>Control de Calidad</li>
+                <li>Listo para Entregar</li>
+                <li>Entregado / Cerrado</li>
+                <li>Bloque / Pausado</li>
+            </ol>
+            <p style="text-align:center;color:#777;font-size:0.9rem;margin-top:1rem;">
+                Una columna del kanban puede estar vacía si no hay oportunidades en esa etapa; es normal cuando los leads avanzan en el flujo.
+            </p>
         </div>
-        <div class="oe_span12">            
-            <br/>
-            <div class="oe_row_img  oe_screenshot oe_centered">
-                <img style="border:10px solid white; width: 100% !important" src="2.png">
-            </div>
-        </div>
-        <p><strong>- When converting a won opportunity into an opportunity for another company, you must have both companies selected and check that this won opportunity will go to the company you select next.
-            Likewise, you must have the products sold listed with quantity, it is not necessary to manage the quote, just name them..
-        </strong></p>
-        <div class="oe_span12">            
-            <br/>
-            <div class="oe_row_img  oe_screenshot oe_centered">
-                <img style="border:10px solid white; width: 100% !important" src="3.png">
-            </div>
-        </div>
-        <p><strong>- You select both companies together and then change the status of the opportunity to won so that it becomes a lead in the other company...
-        </strong></p>
     </div>
 </section>
 
-<section class="oe_container oe_dark">
-    <h3 class="oe_slogan">Help and Support</h3>
-    <div class="oe_slogan">
-        <a class="btn btn-primary btn-lg mt8" href="mailto:jhuliana.delgado@supercool.center">
-            <i class="fa fa-envelope"></i> Email
+<section class="oe_container oe_dark" style="background:#f0f4f8;padding:2rem 0;">
+    <div class="oe_row oe_spaced">
+        <h2 class="oe_slogan" style="color:#714B67;font-size:1.75rem;font-weight:600;">Instalación</h2>
+        <div class="oe_span12" style="max-width:780px;margin:0 auto;">
+            <div style="background:#fff;border-left:4px solid #714B67;padding:1rem 1.25rem;margin-bottom:1rem;border-radius:0 6px 6px 0;">
+                <strong>1. Dependencias</strong>
+                <p style="margin:0.5rem 0 0;color:#555;line-height:1.6;">
+                    Instala o ten disponibles en addons: <em>crm</em>, <em>sale_crm</em>, <em>stock</em>, <em>project</em>,
+                    <em>calendar</em>, <em>mierp_gantt</em>, <em>maintenance</em> y dependencias base.
+                </p>
+            </div>
+            <div style="background:#fff;border-left:4px solid #714B67;padding:1rem 1.25rem;margin-bottom:1rem;border-radius:0 6px 6px 0;">
+                <strong>2. Copiar el módulo</strong>
+                <p style="margin:0.5rem 0 0;color:#555;line-height:1.6;">
+                    Copia la carpeta <code>crm_extended_3D</code> a tu ruta de addons personalizados, reinicia Odoo
+                    o actualiza la lista de aplicaciones.
+                </p>
+            </div>
+            <div style="background:#fff;border-left:4px solid #714B67;padding:1rem 1.25rem;margin-bottom:1rem;border-radius:0 6px 6px 0;">
+                <strong>3. Instalar</strong>
+                <p style="margin:0.5rem 0 0;color:#555;line-height:1.6;">
+                    Modo desarrollador → <strong>Apps</strong> → buscar <strong>CRM Extended</strong> → <strong>Instalar</strong>.
+                    Verás el menú raíz <strong>CreArt 3DP</strong>.
+                </p>
+            </div>
+            <div style="background:#fff;border-left:4px solid #875A7B;padding:1rem 1.25rem;border-radius:0 6px 6px 0;">
+                <strong>4. Actualizar versiones</strong>
+                <p style="margin:0.5rem 0 0;color:#555;line-height:1.6;">
+                    Sustituye archivos del módulo → <strong>Actualizar lista de apps</strong> → <strong>Actualizar</strong>
+                    en CRM Extended (preferible a reinstalar).
+                </p>
+            </div>
+        </div>
+    </div>
+</section>
+
+<section class="oe_container">
+    <div class="oe_row oe_spaced">
+        <h2 class="oe_slogan" style="color:#714B67;font-size:1.75rem;font-weight:600;">Configuración recomendada</h2>
+        <div class="oe_span12" style="max-width:820px;margin:0 auto;">
+            <table class="table table-bordered" style="background:#fff;width:100%;font-size:0.95rem;">
+                <thead style="background:#714B67;color:#fff;">
+                    <tr>
+                        <th style="padding:10px;width:30%;">Área</th>
+                        <th style="padding:10px;">Ubicación en Odoo</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td style="padding:10px;vertical-align:top;"><strong>Permisos</strong></td>
+                        <td style="padding:10px;line-height:1.55;">
+                            <strong>Ajustes → Usuarios</strong> → Derechos de acceso → <em>CRM Extended 3D</em>
+                            (Usuario CRM, Manager CRM, Dirección Comercial CreArt).
+                        </td>
+                    </tr>
+                    <tr>
+                        <td style="padding:10px;vertical-align:top;"><strong>Costos</strong></td>
+                        <td style="padding:10px;line-height:1.55;">
+                            <strong>CreArt 3DP → Configuración → Costos</strong> (tarifas MO, máquina, markup, fiscal).
+                        </td>
+                    </tr>
+                    <tr>
+                        <td style="padding:10px;vertical-align:top;"><strong>Actividades</strong></td>
+                        <td style="padding:10px;line-height:1.55;">
+                            <strong>Configuración → Tipos de actividades</strong> (plantillas CreArt al instalar).
+                        </td>
+                    </tr>
+                    <tr>
+                        <td style="padding:10px;vertical-align:top;"><strong>Calendario</strong></td>
+                        <td style="padding:10px;line-height:1.55;">
+                            <strong>Configuración → Categorías de calendario</strong> y menú <strong>Calendario comercial</strong>.
+                        </td>
+                    </tr>
+                    <tr>
+                        <td style="padding:10px;vertical-align:top;"><strong>Pérdidas</strong></td>
+                        <td style="padding:10px;line-height:1.55;">
+                            <strong>Configuración → Motivos de pérdida</strong>.
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</section>
+
+<section class="oe_container oe_dark" style="background:#fafafa;padding:2rem 0;">
+    <div class="oe_row oe_spaced">
+        <h2 class="oe_slogan" style="color:#714B67;font-size:1.75rem;font-weight:600;">Recorrido visual</h2>
+
+        <h3 class="text-center" style="color:#555;font-size:1.15rem;font-weight:600;margin:2rem 0 1rem;">Acceso y configuración</h3>
+        <div class="oe_span6 text-center" style="margin-bottom:1.5rem;">
+            <div class="oe_row_img oe_screenshot oe_centered">
+                <img alt="Configuración de permisos CreArt 3DP" src="/crm_extended_3D/static/description/1.png"
+                     style="border:8px solid #eee;border-radius:8px;width:100%;max-width:520px;"/>
+            </div>
+            <p style="font-size:0.9rem;color:#555;margin-top:0.75rem;"><strong>Permisos de usuario</strong> — CRM Extended 3D</p>
+        </div>
+        <div class="oe_span6 text-center" style="margin-bottom:1.5rem;">
+            <div class="oe_row_img oe_screenshot oe_centered">
+                <img alt="Menú Configuración CreArt 3DP" src="/crm_extended_3D/static/description/12.png"
+                     style="border:8px solid #eee;border-radius:8px;width:100%;max-width:520px;"/>
+            </div>
+            <p style="font-size:0.9rem;color:#555;margin-top:0.75rem;"><strong>Menú Configuración</strong> — costos, actividades, calendario</p>
+        </div>
+
+        <h3 class="text-center" style="color:#555;font-size:1.15rem;font-weight:600;margin:2rem 0 1rem;">Oportunidades</h3>
+        <div class="oe_span12 text-center" style="margin-bottom:2rem;">
+            <div class="oe_row_img oe_screenshot oe_centered">
+                <img alt="Vista kanban CreArt 3DP" src="/crm_extended_3D/static/description/2.png"
+                     style="border:8px solid #eee;border-radius:8px;width:100%;max-width:960px;"/>
+            </div>
+            <p style="font-size:0.9rem;color:#555;margin-top:0.75rem;"><strong>Vista kanban</strong> — pipeline por etapas</p>
+        </div>
+        <div class="oe_span12 text-center" style="margin-bottom:2rem;">
+            <div class="oe_row_img oe_screenshot oe_centered">
+                <img alt="Formulario oportunidad CreArt 3DP" src="/crm_extended_3D/static/description/3.png"
+                     style="border:8px solid #eee;border-radius:8px;width:100%;max-width:960px;"/>
+            </div>
+            <p style="font-size:0.9rem;color:#555;margin-top:0.75rem;"><strong>Formulario</strong> — oportunidad CreArt 3DP</p>
+        </div>
+        <div class="oe_span12 text-center" style="margin-bottom:1.5rem;">
+            <div class="oe_row_img oe_screenshot oe_centered">
+                <img alt="Información del pedido 3D" src="/crm_extended_3D/static/description/4.png"
+                     style="border:8px solid #eee;border-radius:8px;width:100%;max-width:960px;"/>
+            </div>
+            <p style="font-size:0.9rem;color:#555;margin-top:0.75rem;"><strong>Información de pedido</strong> — pestaña del formulario</p>
+        </div>
+
+        <h3 class="text-center" style="color:#555;font-size:1.15rem;font-weight:600;margin:2rem 0 1rem;">Planificación y calendario</h3>
+        <div class="oe_span6 text-center" style="margin-bottom:1.5rem;">
+            <div class="oe_row_img oe_screenshot oe_centered">
+                <img alt="Planificación en oportunidad" src="/crm_extended_3D/static/description/5.png"
+                     style="border:8px solid #eee;border-radius:8px;width:100%;max-width:520px;"/>
+            </div>
+            <p style="font-size:0.9rem;color:#555;margin-top:0.75rem;"><strong>Planificación</strong> — en la oportunidad</p>
+        </div>
+        <div class="oe_span6 text-center" style="margin-bottom:1.5rem;">
+            <div class="oe_row_img oe_screenshot oe_centered">
+                <img alt="Vista Gantt planificación" src="/crm_extended_3D/static/description/10.png"
+                     style="border:8px solid #eee;border-radius:8px;width:100%;max-width:520px;"/>
+            </div>
+            <p style="font-size:0.9rem;color:#555;margin-top:0.75rem;"><strong>Planificación Gantt</strong> — menú CreArt 3DP</p>
+        </div>
+        <div class="oe_span12 text-center" style="margin-bottom:1.5rem;">
+            <div class="oe_row_img oe_screenshot oe_centered">
+                <img alt="Calendario comercial" src="/crm_extended_3D/static/description/11.png"
+                     style="border:8px solid #eee;border-radius:8px;width:100%;max-width:960px;"/>
+            </div>
+            <p style="font-size:0.9rem;color:#555;margin-top:0.75rem;"><strong>Calendario comercial</strong></p>
+        </div>
+
+        <h3 class="text-center" style="color:#555;font-size:1.15rem;font-weight:600;margin:2rem 0 1rem;">Materiales y finanzas</h3>
+        <div class="oe_span12 text-center" style="margin-bottom:1.5rem;">
+            <div class="oe_row_img oe_screenshot oe_centered">
+                <img alt="Materiales por oportunidad" src="/crm_extended_3D/static/description/6.png"
+                     style="border:8px solid #eee;border-radius:8px;width:100%;max-width:720px;"/>
+            </div>
+            <p style="font-size:0.9rem;color:#555;margin-top:0.75rem;"><strong>Materiales</strong> — líneas y reservas</p>
+        </div>
+        <div class="oe_span6 text-center" style="margin-bottom:1.5rem;">
+            <div class="oe_row_img oe_screenshot oe_centered">
+                <img alt="Finanzas oportunidad 1" src="/crm_extended_3D/static/description/8.png"
+                     style="border:8px solid #eee;border-radius:8px;width:100%;max-width:520px;"/>
+            </div>
+            <p style="font-size:0.9rem;color:#555;margin-top:0.75rem;"><strong>Finanzas</strong> — costos y cotización</p>
+        </div>
+        <div class="oe_span6 text-center" style="margin-bottom:1.5rem;">
+            <div class="oe_row_img oe_screenshot oe_centered">
+                <img alt="Finanzas oportunidad 2" src="/crm_extended_3D/static/description/9.png"
+                     style="border:8px solid #eee;border-radius:8px;width:100%;max-width:520px;"/>
+            </div>
+            <p style="font-size:0.9rem;color:#555;margin-top:0.75rem;"><strong>Finanzas</strong> — detalle de impresión y márgenes</p>
+        </div>
+    </div>
+</section>
+
+<section class="oe_container oe_dark" style="background:linear-gradient(135deg,#714B67 0%,#875A7B 100%);color:#fff;padding:2.5rem 0;">
+    <div class="oe_row oe_spaced text-center">
+        <h2 class="oe_slogan" style="color:#fff;font-size:1.75rem;font-weight:600;margin-bottom:0.5rem;">
+            Soporte CreArt 3DP
+        </h2>
+        <p style="max-width:560px;margin:0 auto 1.5rem;line-height:1.65;font-size:1.05rem;opacity:0.95;">
+            Para instalación, configuración de costos, pipeline, planificación o incidencias en servidor,
+            contáctanos por correo.
+        </p>
+        <p style="margin-bottom:1.25rem;font-size:1rem;">
+            <strong>CreArt 3DP</strong><br/>
+            <span style="opacity:0.9;">Equipo del módulo CRM Extended</span>
+        </p>
+        <a class="btn btn-primary btn-lg" href="mailto:creart.3dp@gmail.com"
+           style="background:#fff;color:#714B67;border:none;font-weight:600;padding:12px 28px;border-radius:6px;">
+            <i class="fa fa-envelope"></i> creart.3dp@gmail.com
         </a>
+    </div>
+</section>
+
+<section class="oe_container">
+    <div class="oe_row">
+        <p class="text-center" style="color:#999;font-size:0.85rem;margin:1.5rem 0;">
+            Licencia LGPL-3 · Odoo 19 · <em>crm_extended_3D</em> · CreArt 3DP
+        </p>
     </div>
 </section>

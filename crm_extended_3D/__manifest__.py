@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 {
     "name": "CRM Extended",
-    "version": "19.0.3.25.0",
+    "version": "19.0.3.28.0",
     "author": "Jhuliana Delgado",
     "maintainer": "Jhuliana Delgado",
     "website": "",
