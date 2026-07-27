@@ -1,0 +1,13 @@
+/* hide_expiration.scss - Oculta el panel de expiración de base de datos */
+.database_expiration_panel {
+  display: none !important;
+  visibility: hidden !important;
+  height: 0 !important;
+  margin: 0 !important;
+  padding: 0 !important;
+}
+
+/* Cobertura específica para home menu en web_enterprise */
+.o_home_menu .database_expiration_panel {
+  display: none !important;
+}

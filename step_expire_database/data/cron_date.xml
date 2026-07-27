@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<!--
+  © 2026 (Jamie Escalante <jamie.escalante7@gmail.com>)
+  License AGPL-3.0 or later (http://www.gnu.org/licenses/agpl).
+-->
+<odoo>
+
+    <data noupdate="1">
+        <record id="cron_update_date" model="ir.cron">
+            <field name="name">Update Date</field>
+            <field name="model_id" ref="date_expired.model_expirate_date"/>
+            <field name="user_id" ref="base.user_root"/>
+            <field name="interval_number">5</field>
+            <field name="interval_type">minutes</field>
+            <field name="active">True</field>
+            <field name="numbercall">-1</field>
+            <field name="priority">5</field>
+            <field name="code">model.check()</field>
+        </record>
+    </data>
+
+</odoo> 
