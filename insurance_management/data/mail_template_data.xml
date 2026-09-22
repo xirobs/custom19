@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <data noupdate="1">
+        <record id="email_template_collection_notice" model="mail.template">
+            <field name="name">Seguros: aviso de cobranza</field>
+            <field name="model_id" ref="model_insurance_installment"/>
+            <field name="subject">Aviso de cobranza {{ object.policy_id.name }} — cuota {{ object.number }}</field>
+            <field name="email_from">{{ (object.company_id.email_formatted or user.email_formatted) }}</field>
+            <field name="partner_to">{{ object.partner_id.id }}</field>
+            <field name="body_html" type="html">
+                <div style="margin:0px;padding:0px;font-family:Arial,Helvetica,sans-serif;font-size:14px;">
+                    <p>Estimado/a <t t-out="object.partner_id.name or ''"/>,</p>
+                    <p>
+                        Le recordamos el pago de la prima de su póliza
+                        <strong><t t-out="object.policy_id.name or ''"/></strong>
+                        (<t t-out="object.policy_id.scheme_id.name or ''"/>).
+                    </p>
+                    <ul>
+                        <li>Cuota: <t t-out="object.number"/></li>
+                        <li>Periodo: <t t-out="object.date_from"/> al <t t-out="object.date_to"/></li>
+                        <li>Vencimiento: <t t-out="object.due_date"/></li>
+                        <li>Importe: <t t-out="object.amount"/> <t t-out="object.currency_id.name or ''"/></li>
+                    </ul>
+                    <p>Si el pago ya fue realizado, ignore este mensaje. En caso contrario, le pedimos regularizarlo para mantener su cobertura vigente.</p>
+                    <p>Saludos,<br/>Área de cobranzas</p>
+                </div>
+            </field>
+        </record>
+    </data>
+</odoo>

@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_insurance_agent_list" model="ir.ui.view">
+        <field name="name">insurance.agent.list</field>
+        <field name="model">insurance.agent</field>
+        <field name="arch" type="xml">
+            <list string="Agentes">
+                <field name="name"/>
+                <field name="agent_code"/>
+                <field name="branch_id"/>
+                <field name="insurance_company_id"/>
+                <field name="mobile"/>
+                <field name="email"/>
+                <field name="policy_count"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_insurance_agent_form" model="ir.ui.view">
+        <field name="name">insurance.agent.form</field>
+        <field name="model">insurance.agent</field>
+        <field name="arch" type="xml">
+            <form string="Agente">
+                <sheet>
+                    <div class="oe_button_box" name="button_box">
+                        <button name="action_open_policies" type="object" class="oe_stat_button" icon="fa-file-text-o">
+                            <field name="policy_count" widget="statinfo" string="Pólizas"/>
+                        </button>
+                    </div>
+                    <group>
+                        <group>
+                            <field name="name"/>
+                            <field name="agent_code"/>
+                            <field name="partner_id"/>
+                            <field name="user_id"/>
+                        </group>
+                        <group>
+                            <field name="branch_id"/>
+                            <field name="insurance_company_id"/>
+                            <field name="mobile"/>
+                            <field name="email"/>
+                            <field name="date_start"/>
+                            <field name="commission_rate"/>
+                            <field name="active"/>
+                        </group>
+                    </group>
+                </sheet>
+                <chatter/>
+            </form>
+        </field>
+    </record>
+
+    <record id="action_insurance_agent" model="ir.actions.act_window">
+        <field name="name">Detalle del agente</field>
+        <field name="res_model">insurance.agent</field>
+        <field name="view_mode">list,form</field>
+    </record>
+</odoo>

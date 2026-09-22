@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_insurance_policy_type_list" model="ir.ui.view">
+        <field name="name">insurance.policy.type.list</field>
+        <field name="model">insurance.policy.type</field>
+        <field name="arch" type="xml">
+            <list string="Tipos de póliza">
+                <field name="name"/>
+                <field name="code"/>
+                <field name="scheme_count"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_insurance_policy_type_form" model="ir.ui.view">
+        <field name="name">insurance.policy.type.form</field>
+        <field name="model">insurance.policy.type</field>
+        <field name="arch" type="xml">
+            <form string="Tipo de póliza">
+                <sheet>
+                    <group>
+                        <group>
+                            <field name="name"/>
+                        </group>
+                        <group>
+                            <field name="code"/>
+                            <field name="active"/>
+                        </group>
+                    </group>
+                    <field name="description" placeholder="Descripción del tipo de póliza..."/>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="action_insurance_policy_type" model="ir.actions.act_window">
+        <field name="name">Tipos de póliza</field>
+        <field name="res_model">insurance.policy.type</field>
+        <field name="view_mode">list,form</field>
+    </record>
+</odoo>

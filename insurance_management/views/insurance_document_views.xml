@@ -1,0 +1,144 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_insurance_document_type_list" model="ir.ui.view">
+        <field name="name">insurance.document.type.list</field>
+        <field name="model">insurance.document.type</field>
+        <field name="arch" type="xml">
+            <list string="Tipos de documento">
+                <field name="sequence" widget="handle"/>
+                <field name="name"/>
+                <field name="code"/>
+                <field name="usage"/>
+                <field name="claim_kind"/>
+                <field name="requires_signature"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_insurance_document_type_form" model="ir.ui.view">
+        <field name="name">insurance.document.type.form</field>
+        <field name="model">insurance.document.type</field>
+        <field name="arch" type="xml">
+            <form string="Tipo de documento">
+                <sheet>
+                    <group>
+                        <field name="name"/>
+                        <field name="code"/>
+                        <field name="sequence"/>
+                        <field name="usage"/>
+                        <field name="claim_kind" invisible="usage == 'contracting'"/>
+                        <field name="requires_signature"/>
+                        <field name="active"/>
+                        <field name="description"/>
+                    </group>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="action_insurance_document_type" model="ir.actions.act_window">
+        <field name="name">Tipos de documento</field>
+        <field name="res_model">insurance.document.type</field>
+        <field name="view_mode">list,form</field>
+    </record>
+
+    <record id="view_insurance_document_list" model="ir.ui.view">
+        <field name="name">insurance.document.list</field>
+        <field name="model">insurance.document</field>
+        <field name="arch" type="xml">
+            <list string="Expedientes y firmas"
+                  decoration-success="state == 'signed'"
+                  decoration-warning="state in ('pending', 'uploaded')"
+                  decoration-danger="state == 'rejected'">
+                <field name="partner_id"/>
+                <field name="policy_id"/>
+                <field name="claim_id"/>
+                <field name="document_type_id"/>
+                <field name="requires_signature"/>
+                <field name="state" widget="badge"
+                       decoration-info="state == 'pending'"
+                       decoration-warning="state == 'uploaded'"
+                       decoration-success="state == 'signed'"
+                       decoration-danger="state == 'rejected'"/>
+                <field name="signed_date"/>
+                <field name="signed_by"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_insurance_document_form" model="ir.ui.view">
+        <field name="name">insurance.document.form</field>
+        <field name="model">insurance.document</field>
+        <field name="arch" type="xml">
+            <form string="Documento de póliza">
+                <header>
+                    <button name="action_mark_uploaded" type="object" string="Marcar cargado"
+                            invisible="state not in ('pending', 'rejected')" class="btn-secondary"/>
+                    <button name="action_mark_signed" type="object" string="Registrar firma"
+                            invisible="state == 'signed'" class="btn-primary"/>
+                    <button name="action_request_sign" type="object" string="Enviar a firmar"
+                            invisible="not has_sign_module or state == 'signed'" class="btn-primary"/>
+                    <button name="action_open_documents_workspace" type="object" string="Ver en Documentos"
+                            invisible="not has_documents_module"/>
+                    <button name="action_reject" type="object" string="Rechazar"
+                            invisible="state in ('signed', 'rejected')" class="btn-secondary"/>
+                    <button name="action_reset_pending" type="object" string="Volver a pendiente"
+                            invisible="state == 'pending'"/>
+                    <field name="state" widget="statusbar" statusbar_visible="pending,uploaded,signed"/>
+                </header>
+                <sheet>
+                    <group>
+                        <group>
+                            <field name="partner_id"/>
+                            <field name="policy_id"/>
+                            <field name="claim_id"/>
+                            <field name="document_type_id"/>
+                            <field name="requires_signature"/>
+                            <field name="has_sign_module" invisible="1"/>
+                            <field name="has_documents_module" invisible="1"/>
+                        </group>
+                        <group>
+                            <field name="signed"/>
+                            <field name="signed_date"/>
+                            <field name="signed_by"/>
+                            <field name="rejected_reason" invisible="state != 'rejected'"/>
+                        </group>
+                    </group>
+                    <group string="Archivos adjuntos">
+                        <field name="attachment_ids" widget="many2many_binary" nolabel="1"/>
+                    </group>
+                    <field name="note" placeholder="Observaciones del expediente..."/>
+                </sheet>
+                <chatter/>
+            </form>
+        </field>
+    </record>
+
+    <record id="view_insurance_document_search" model="ir.ui.view">
+        <field name="name">insurance.document.search</field>
+        <field name="model">insurance.document</field>
+        <field name="arch" type="xml">
+            <search>
+                <field name="policy_id"/>
+                <field name="partner_id"/>
+                <field name="document_type_id"/>
+                <filter name="pending" string="Pendientes" domain="[('state', 'in', ['pending', 'uploaded'])]"/>
+                <filter name="unsigned" string="Sin firma" domain="[('requires_signature', '=', True), ('state', '!=', 'signed')]"/>
+                <filter name="signed" string="Firmados" domain="[('state', '=', 'signed')]"/>
+                <group>
+                    <filter name="group_policy" string="Póliza" context="{'group_by': 'policy_id'}"/>
+                    <filter name="group_type" string="Tipo" context="{'group_by': 'document_type_id'}"/>
+                    <filter name="group_state" string="Estado" context="{'group_by': 'state'}"/>
+                </group>
+            </search>
+        </field>
+    </record>
+
+    <record id="action_insurance_document" model="ir.actions.act_window">
+        <field name="name">Expedientes y firmas</field>
+        <field name="res_model">insurance.document</field>
+        <field name="view_mode">list,form</field>
+        <field name="search_view_id" ref="view_insurance_document_search"/>
+        <field name="context">{'search_default_pending': 1}</field>
+    </record>
+</odoo>

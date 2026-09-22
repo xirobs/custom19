@@ -1,0 +1,145 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_insurance_installment_list" model="ir.ui.view">
+        <field name="name">insurance.installment.list</field>
+        <field name="model">insurance.installment</field>
+        <field name="arch" type="xml">
+            <list string="Cuotas / cobranzas"
+                  decoration-danger="state == 'overdue'"
+                  decoration-success="state == 'paid'"
+                  decoration-muted="state == 'cancelled'">
+                <field name="policy_id"/>
+                <field name="partner_id"/>
+                <field name="number"/>
+                <field name="date_from"/>
+                <field name="date_to"/>
+                <field name="due_date"/>
+                <field name="amount"/>
+                <field name="state" widget="badge"
+                       decoration-info="state == 'pending'"
+                       decoration-warning="state == 'invoiced'"
+                       decoration-success="state == 'paid'"
+                       decoration-danger="state == 'overdue'"/>
+                <field name="invoice_id"/>
+                <field name="payment_state"/>
+                <button name="action_create_invoice" type="object" string="Crear factura"
+                        icon="fa-plus" invisible="invoice_id or state == 'cancelled'"/>
+                <button name="action_register_payment" type="object" string="Registrar pago"
+                        icon="fa-money" invisible="state in ('paid', 'cancelled')"/>
+                <button name="action_send_collection_notice" type="object" string="Avisar"
+                        icon="fa-envelope" invisible="state in ('paid', 'cancelled')"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_insurance_installment_form" model="ir.ui.view">
+        <field name="name">insurance.installment.form</field>
+        <field name="model">insurance.installment</field>
+        <field name="arch" type="xml">
+            <form string="Cuota">
+                <header>
+                    <button name="action_create_invoice" type="object" string="Crear factura"
+                            class="btn-primary" invisible="invoice_id or state == 'cancelled'"/>
+                    <button name="action_register_payment" type="object" string="Registrar pago"
+                            class="btn-primary" invisible="state in ('paid', 'cancelled')"/>
+                    <button name="action_send_collection_notice" type="object" string="Enviar aviso de cobranza"
+                            invisible="state in ('paid', 'cancelled')"/>
+                    <button name="action_open_invoice" type="object" string="Ver factura"
+                            invisible="not invoice_id"/>
+                    <field name="state" widget="statusbar" statusbar_visible="pending,invoiced,paid"/>
+                </header>
+                <sheet>
+                    <group>
+                        <group>
+                            <field name="policy_id"/>
+                            <field name="partner_id"/>
+                            <field name="number"/>
+                            <field name="amount"/>
+                        </group>
+                        <group>
+                            <field name="date_from"/>
+                            <field name="date_to"/>
+                            <field name="due_date"/>
+                            <field name="invoice_id"/>
+                            <field name="payment_state"/>
+                        </group>
+                    </group>
+                </sheet>
+                <chatter/>
+            </form>
+        </field>
+    </record>
+
+    <record id="view_insurance_installment_search" model="ir.ui.view">
+        <field name="name">insurance.installment.search</field>
+        <field name="model">insurance.installment</field>
+        <field name="arch" type="xml">
+            <search>
+                <field name="policy_id"/>
+                <field name="partner_id"/>
+                <field name="invoice_id"/>
+                <filter name="pending" string="Pendientes" domain="[('state', '=', 'pending')]"/>
+                <filter name="invoiced" string="Facturadas" domain="[('state', '=', 'invoiced')]"/>
+                <filter name="overdue" string="Vencidas" domain="[('state', '=', 'overdue')]"/>
+                <filter name="paid" string="Pagadas" domain="[('state', '=', 'paid')]"/>
+                <filter name="this_month" string="Vencen este mes"
+                        domain="[('due_date', '&gt;=', (context_today()).strftime('%Y-%m-01')), ('due_date', '&lt;', (context_today() + relativedelta(months=1)).strftime('%Y-%m-01'))]"/>
+                <group>
+                    <filter name="group_partner" string="Cliente" context="{'group_by': 'partner_id'}"/>
+                    <filter name="group_policy" string="Póliza" context="{'group_by': 'policy_id'}"/>
+                    <filter name="group_state" string="Estado" context="{'group_by': 'state'}"/>
+                    <filter name="group_due" string="Vencimiento" context="{'group_by': 'due_date'}"/>
+                    <filter name="group_branch" string="Sucursal" context="{'group_by': 'branch_id'}"/>
+                </group>
+            </search>
+        </field>
+    </record>
+
+    <record id="view_insurance_installment_pivot" model="ir.ui.view">
+        <field name="name">insurance.installment.pivot</field>
+        <field name="model">insurance.installment</field>
+        <field name="arch" type="xml">
+            <pivot string="Cobranzas">
+                <field name="branch_id" type="row"/>
+                <field name="state" type="col"/>
+                <field name="amount" type="measure"/>
+            </pivot>
+        </field>
+    </record>
+
+    <record id="view_insurance_installment_graph" model="ir.ui.view">
+        <field name="name">insurance.installment.graph</field>
+        <field name="model">insurance.installment</field>
+        <field name="arch" type="xml">
+            <graph string="Cobranzas" type="bar">
+                <field name="due_date" interval="month"/>
+                <field name="amount" type="measure"/>
+            </graph>
+        </field>
+    </record>
+
+    <record id="action_insurance_installment" model="ir.actions.act_window">
+        <field name="name">Cuotas por cobrar</field>
+        <field name="res_model">insurance.installment</field>
+        <field name="view_mode">list,pivot,graph,form</field>
+        <field name="search_view_id" ref="view_insurance_installment_search"/>
+        <field name="domain">[('state', 'in', ['pending', 'invoiced', 'overdue'])]</field>
+        <field name="context">{'search_default_pending': 1}</field>
+    </record>
+
+    <record id="action_insurance_installment_overdue" model="ir.actions.act_window">
+        <field name="name">Cuotas vencidas</field>
+        <field name="res_model">insurance.installment</field>
+        <field name="view_mode">list,form</field>
+        <field name="search_view_id" ref="view_insurance_installment_search"/>
+        <field name="domain">[('state', '=', 'overdue')]</field>
+    </record>
+
+    <record id="action_insurance_invoices" model="ir.actions.act_window">
+        <field name="name">Facturas de seguros</field>
+        <field name="res_model">account.move</field>
+        <field name="view_mode">list,form</field>
+        <field name="domain">[('insurance_policy_id', '!=', False), ('move_type', '=', 'out_invoice')]</field>
+        <field name="context">{'default_move_type': 'out_invoice'}</field>
+    </record>
+</odoo>

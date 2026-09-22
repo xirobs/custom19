@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_crm_lead_form_insurance" model="ir.ui.view">
+        <field name="name">crm.lead.form.insurance</field>
+        <field name="model">crm.lead</field>
+        <field name="inherit_id" ref="crm.crm_lead_view_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//header" position="inside">
+                <button name="action_create_insurance_policy" type="object"
+                        string="Crear póliza" class="btn-primary"
+                        invisible="not insurance_scheme_id or insurance_policy_id"/>
+                <button name="action_open_insurance_policy" type="object"
+                        string="Ver póliza"
+                        invisible="not insurance_policy_id"/>
+            </xpath>
+            <xpath expr="//notebook" position="inside">
+                <page string="Seguros" name="insurance">
+                    <group>
+                        <group>
+                            <field name="insurance_scheme_id"/>
+                            <field name="insurance_policy_type_id"/>
+                            <field name="insurance_company_id"/>
+                            <field name="insurance_policy_id" readonly="1"/>
+                        </group>
+                        <group>
+                            <field name="estimated_premium"/>
+                            <field name="estimated_insured_amount"/>
+                            <field name="insurance_coverage_mode"/>
+                            <field name="insurance_duration_months"/>
+                        </group>
+                    </group>
+                </page>
+            </xpath>
+        </field>
+    </record>
+
+    <record id="action_insurance_crm_leads" model="ir.actions.act_window">
+        <field name="name">Oportunidades de seguros</field>
+        <field name="res_model">crm.lead</field>
+        <field name="view_mode">kanban,list,form</field>
+        <field name="domain">['|', ('insurance_scheme_id', '!=', False), ('insurance_policy_id', '!=', False)]</field>
+        <field name="context">{
+            'default_type': 'opportunity',
+            'search_default_assigned_to_me': 1,
+        }</field>
+    </record>
+</odoo>

@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_insurance_branch_list" model="ir.ui.view">
+        <field name="name">insurance.branch.list</field>
+        <field name="model">insurance.branch</field>
+        <field name="arch" type="xml">
+            <list string="Sucursales">
+                <field name="name"/>
+                <field name="code"/>
+                <field name="city"/>
+                <field name="phone"/>
+                <field name="email"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_insurance_branch_form" model="ir.ui.view">
+        <field name="name">insurance.branch.form</field>
+        <field name="model">insurance.branch</field>
+        <field name="arch" type="xml">
+            <form string="Sucursal / Rama">
+                <sheet>
+                    <div class="oe_button_box" name="button_box">
+                        <button name="action_open_branch_policies" type="object" class="oe_stat_button" icon="fa-shield">
+                            <field name="dash_active_policies" widget="statinfo" string="En servicio"/>
+                        </button>
+                        <button name="action_open_branch_renewals" type="object" class="oe_stat_button" icon="fa-refresh">
+                            <field name="dash_renew_count" widget="statinfo" string="Por renovar"/>
+                        </button>
+                        <button name="action_open_branch_overdue" type="object" class="oe_stat_button" icon="fa-exclamation-triangle">
+                            <field name="dash_overdue_count" widget="statinfo" string="En mora"/>
+                        </button>
+                    </div>
+                    <group>
+                        <group>
+                            <field name="name"/>
+                            <field name="code"/>
+                            <field name="company_id" groups="base.group_multi_company"/>
+                        </group>
+                        <group>
+                            <field name="street"/>
+                            <field name="city"/>
+                            <field name="phone"/>
+                            <field name="email"/>
+                            <field name="active"/>
+                        </group>
+                    </group>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="action_insurance_branch" model="ir.actions.act_window">
+        <field name="name">Registro de sucursales</field>
+        <field name="res_model">insurance.branch</field>
+        <field name="view_mode">list,form</field>
+    </record>
+</odoo>

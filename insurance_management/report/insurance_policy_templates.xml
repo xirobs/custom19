@@ -1,0 +1,103 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <template id="report_insurance_policy_document">
+        <t t-call="web.html_container">
+            <t t-foreach="docs" t-as="o">
+                <t t-call="web.external_layout">
+                    <div class="page">
+                        <h2><span t-field="o.display_title"/></h2>
+                        <h4>Número de póliza <span t-field="o.name"/></h4>
+                        <table class="table table-sm table-bordered mt-3">
+                            <tr>
+                                <th>Titular</th>
+                                <td><span t-field="o.partner_id"/></td>
+                                <th>Duración</th>
+                                <td><span t-field="o.duration_months"/> mes(es)</td>
+                            </tr>
+                            <tr>
+                                <th>Oferta</th>
+                                <td><span t-field="o.scheme_id"/></td>
+                                <th>Inicio de cobertura</th>
+                                <td><span t-field="o.coverage_start_date"/></td>
+                            </tr>
+                            <tr>
+                                <th>Sucursal</th>
+                                <td><span t-field="o.branch_id"/></td>
+                                <th>Fin de cobertura</th>
+                                <td><span t-field="o.coverage_end_date"/></td>
+                            </tr>
+                            <tr>
+                                <th>Agente</th>
+                                <td><span t-field="o.agent_id"/></td>
+                                <th>Monto de la póliza</th>
+                                <td><span t-field="o.policy_amount"/></td>
+                            </tr>
+                            <tr>
+                                <th>Plazo de pago</th>
+                                <td><span t-field="o.payment_term_id"/></td>
+                                <th>Tipo de prima</th>
+                                <td><span t-field="o.premium_type"/></td>
+                            </tr>
+                            <tr>
+                                <th>Compañía de seguros</th>
+                                <td><span t-field="o.insurance_company_id"/></td>
+                                <th>Suma asegurada</th>
+                                <td><span t-field="o.insured_amount"/></td>
+                            </tr>
+                        </table>
+
+                        <h4 class="mt-4">Detalles de la EMI</h4>
+                        <table class="table table-sm table-bordered">
+                            <thead>
+                                <tr>
+                                    <th>N.º</th>
+                                    <th>Desde</th>
+                                    <th>Hasta</th>
+                                    <th>Importe</th>
+                                    <th>Estado</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr t-foreach="o.installment_ids" t-as="line">
+                                    <td><span t-field="line.number"/></td>
+                                    <td><span t-field="line.date_from"/></td>
+                                    <td><span t-field="line.date_to"/></td>
+                                    <td><span t-field="line.amount"/></td>
+                                    <td><span t-field="line.state"/></td>
+                                </tr>
+                            </tbody>
+                        </table>
+
+                        <t t-if="o.coverage_ids">
+                            <h4 class="mt-4">Coberturas</h4>
+                            <table class="table table-sm table-bordered">
+                                <thead>
+                                    <tr>
+                                        <th>Cobertura</th>
+                                        <th>Suma asegurada</th>
+                                        <th>Deducible</th>
+                                        <th>Coaseguro (%)</th>
+                                        <th>Espera (días)</th>
+                                        <th>Desde</th>
+                                        <th>Hasta</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr t-foreach="o.coverage_ids" t-as="cov">
+                                        <td><span t-field="cov.name"/></td>
+                                        <td><span t-field="cov.insured_amount"/></td>
+                                        <td><span t-field="cov.deductible"/></td>
+                                        <td><span t-field="cov.coinsurance"/></td>
+                                        <td><span t-field="cov.waiting_days"/></td>
+                                        <td><span t-field="cov.date_from"/></td>
+                                        <td><span t-field="cov.date_to"/></td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </t>
+                    </div>
+                </t>
+            </t>
+        </t>
+    </template>
+</odoo>

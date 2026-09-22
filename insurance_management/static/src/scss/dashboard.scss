@@ -1,0 +1,52 @@
+.o_insurance_dash_kanban {
+    .o_kanban_record {
+        width: 320px;
+        min-height: 240px;
+    }
+
+    .o_insurance_dash_card {
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+        min-height: 220px;
+    }
+
+    .o_insurance_dash_kpis {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 8px;
+    }
+
+    .o_insurance_kpi {
+        border-radius: 12px;
+        padding: 10px 12px;
+        background: #f4f3f2;
+    }
+
+    .o_insurance_kpi.warning {
+        background: #fff4df;
+    }
+
+    .o_insurance_kpi.danger {
+        background: #fde8e8;
+    }
+
+    .o_insurance_kpi.success {
+        background: #e7f6ed;
+    }
+
+    .o_insurance_kpi_label {
+        display: block;
+        font-size: 11px;
+        text-transform: uppercase;
+        letter-spacing: 0.03em;
+        opacity: 0.7;
+    }
+
+    .o_insurance_kpi_value {
+        display: block;
+        font-size: 20px;
+        font-weight: 700;
+        line-height: 1.2;
+    }
+}

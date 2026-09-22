@@ -1,0 +1,457 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_insurance_policy_list" model="ir.ui.view">
+        <field name="name">insurance.policy.list</field>
+        <field name="model">insurance.policy</field>
+        <field name="arch" type="xml">
+            <list string="Pólizas"
+                  decoration-info="state == 'draft'"
+                  decoration-success="state == 'done'"
+                  decoration-warning="state == 'expired'"
+                  decoration-muted="state == 'cancelled'">
+                <field name="display_title"/>
+                <field name="scheme_id"/>
+                <field name="partner_id"/>
+                <field name="name"/>
+                <field name="insurance_company_id"/>
+                <field name="branch_id"/>
+                <field name="agent_id"/>
+                <field name="duration_months"/>
+                <field name="coverage_start_date"/>
+                <field name="coverage_end_date"/>
+                <field name="policy_amount"/>
+                <field name="currency_id" optional="hide" groups="base.group_multi_currency"/>
+                <field name="coverage_mode"/>
+                <field name="premium_type"/>
+                <field name="lifecycle_stage" widget="badge"/>
+                <field name="state" widget="badge"
+                       decoration-info="state == 'draft'"
+                       decoration-success="state == 'confirmed'"
+                       decoration-warning="state == 'expired'"
+                       decoration-muted="state == 'done'"
+                       decoration-danger="state == 'cancelled'"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_insurance_policy_form" model="ir.ui.view">
+        <field name="name">insurance.policy.form</field>
+        <field name="model">insurance.policy</field>
+        <field name="arch" type="xml">
+            <form string="Póliza">
+                <header>
+                    <button name="action_confirm" type="object" string="Confirmar"
+                            class="btn-primary" invisible="state != 'draft'"/>
+                    <button name="action_open_cfdi_global" type="object"
+                            string="CFDI 4.0 de prima"
+                            class="btn-primary" invisible="state != 'confirmed'"/>
+                    <button name="action_create_all_pending_invoices" type="object"
+                            string="Facturar cuotas pendientes"
+                            invisible="state != 'confirmed' or invoice_mode == 'global_ppd'"/>
+                    <button name="action_create_commission_bill" type="object"
+                            string="Facturar comisión"
+                            invisible="state not in ('confirmed', 'expired') or not agent_id"/>
+                    <button name="action_apply_growth" type="object" string="Aplicar crecimiento"
+                            invisible="state != 'confirmed'"/>
+                    <button name="action_renew" type="object" string="Activar renovación"
+                            class="btn-primary"
+                            invisible="lifecycle_stage != 'renewal'"/>
+                    <button name="action_done" type="object" string="Cerrar póliza"
+                            invisible="state not in ('confirmed', 'expired')"/>
+                    <button name="action_cancel" type="object" string="Cancelar"
+                            invisible="state not in ('draft', 'confirmed', 'expired')"
+                            confirm="¿Cancelar esta póliza?"/>
+                    <button name="action_draft" type="object" string="Volver a borrador"
+                            invisible="state != 'cancelled'"/>
+                    <field name="state" widget="statusbar" statusbar_visible="draft,confirmed,expired"/>
+                </header>
+                <sheet>
+                    <div class="oe_button_box" name="button_box">
+                        <button name="action_open_installments" type="object" class="oe_stat_button" icon="fa-list">
+                            <div class="o_stat_info">
+                                <span class="o_stat_value">
+                                    <field name="overdue_count"/>
+                                </span>
+                                <span class="o_stat_text">Vencidas</span>
+                            </div>
+                        </button>
+                        <button name="action_open_invoices" type="object" class="oe_stat_button" icon="fa-pencil-square-o">
+                            <field name="invoice_count" widget="statinfo" string="Facturas"/>
+                        </button>
+                        <button name="action_open_subscription" type="object" class="oe_stat_button" icon="fa-repeat"
+                                invisible="not subscription_id">
+                            <span class="o_stat_text">Suscripción</span>
+                        </button>
+                        <button name="action_open_documents" type="object" class="oe_stat_button" icon="fa-folder-open">
+                            <div class="o_stat_info">
+                                <span class="o_stat_value">
+                                    <field name="document_pending_count"/>
+                                </span>
+                                <span class="o_stat_text">Expediente</span>
+                            </div>
+                        </button>
+                        <button name="action_open_claims" type="object" class="oe_stat_button" icon="fa-medkit">
+                            <field name="claim_count" widget="statinfo" string="Siniestros"/>
+                        </button>
+                        <button name="action_open_renewals" type="object" class="oe_stat_button" icon="fa-refresh">
+                            <field name="renewal_count" widget="statinfo" string="Renovaciones"/>
+                        </button>
+                        <button name="action_open_partner" type="object" class="oe_stat_button" icon="fa-user">
+                            <span class="o_stat_text">Cliente</span>
+                        </button>
+                    </div>
+                    <div class="oe_title">
+                        <h1>
+                            <field name="display_title" placeholder="Titular — oferta"/>
+                        </h1>
+                        <label for="name"/>
+                        <h2>
+                            <field name="name" readonly="state != 'draft'" placeholder="Número de póliza"/>
+                        </h2>
+                    </div>
+                    <group>
+                        <group>
+                            <field name="scheme_id" readonly="state != 'draft'"/>
+                            <field name="partner_id" readonly="state != 'draft'"/>
+                            <field name="insurance_company_id" readonly="state != 'draft'"/>
+                            <field name="policy_type_id"/>
+                            <field name="payment_term_id" readonly="state != 'draft'"/>
+                            <field name="branch_id" readonly="state != 'draft'"/>
+                            <field name="agent_id" readonly="state != 'draft'"/>
+                            <field name="commission_rate" readonly="state != 'draft'"/>
+                            <field name="commission_amount"/>
+                            <field name="commission_move_id" readonly="1"/>
+                            <field name="coverage_mode" readonly="state != 'draft'"/>
+                            <field name="lead_id" readonly="state != 'draft'"/>
+                            <field name="project_id"/>
+                            <field name="calendar_event_id" readonly="1"/>
+                            <field name="lifecycle_stage"/>
+                        </group>
+                        <group>
+                            <field name="duration_months" readonly="state != 'draft'"/>
+                            <field name="coverage_start_date" readonly="state != 'draft'"/>
+                            <field name="coverage_end_date"/>
+                            <field name="next_growth_date"/>
+                            <field name="insured_amount" readonly="state != 'draft'"/>
+                            <field name="policy_amount" readonly="state != 'draft'"/>
+                            <field name="premium_type" readonly="state != 'draft'"/>
+                            <field name="installment_count"/>
+                            <field name="installment_amount"/>
+                            <field name="currency_id" groups="base.group_multi_currency"/>
+                            <field name="user_id"/>
+                            <field name="company_id" groups="base.group_multi_company"/>
+                        </group>
+                    </group>
+                    <div class="alert alert-warning" role="alert" invisible="lifecycle_stage != 'renewal'">
+                        Esta póliza está por vencer. Active la renovación para generar la póliza del siguiente periodo.
+                    </div>
+                    <group string="Renovación">
+                        <group>
+                            <field name="auto_renew"/>
+                            <field name="origin_policy_id" readonly="1"/>
+                        </group>
+                        <group>
+                            <button name="action_renew" type="object" string="Activar renovación"
+                                    class="btn-primary"
+                                    invisible="lifecycle_stage != 'renewal'"/>
+                        </group>
+                    </group>
+                    <group string="Cobranzas">
+                        <group>
+                            <field name="amount_invoiced"/>
+                            <field name="amount_to_invoice"/>
+                            <field name="amount_paid"/>
+                        </group>
+                        <group>
+                            <field name="amount_due"/>
+                            <field name="overdue_count"/>
+                            <field name="coverage_consumed"/>
+                            <field name="coverage_remaining"/>
+                        </group>
+                    </group>
+                    <notebook>
+                        <page string="Coberturas" name="coverages">
+                            <field name="coverage_ids">
+                                <list editable="bottom">
+                                    <field name="sequence" widget="handle"/>
+                                    <field name="name"/>
+                                    <field name="insured_amount"/>
+                                    <field name="deductible"/>
+                                    <field name="coinsurance"/>
+                                    <field name="currency_id" groups="base.group_multi_currency"/>
+                                    <field name="waiting_days" optional="hide"/>
+                                    <field name="date_from" optional="hide"/>
+                                    <field name="date_to" optional="hide"/>
+                                    <field name="consumed_amount"/>
+                                    <field name="remaining_amount"/>
+                                    <field name="consumption_percent" widget="progressbar"/>
+                                </list>
+                            </field>
+                        </page>
+                        <page string="Características" name="features">
+                            <field name="feature_ids">
+                                <list editable="bottom">
+                                    <field name="sequence" widget="handle"/>
+                                    <field name="name"/>
+                                    <field name="included"/>
+                                </list>
+                            </field>
+                        </page>
+                        <page string="Partes aseguradas" name="members">
+                            <field name="member_ids">
+                                <list editable="bottom">
+                                    <field name="relationship"/>
+                                    <field name="partner_id"/>
+                                    <field name="name"/>
+                                    <field name="birth_date"/>
+                                    <field name="seniority_date"/>
+                                    <field name="premium_share"/>
+                                    <field name="mx_curp" optional="hide"/>
+                                    <field name="mx_rfc" optional="hide"/>
+                                    <field name="phone" optional="hide"/>
+                                    <field name="email" optional="hide"/>
+                                </list>
+                            </field>
+                        </page>
+                        <page string="Detalles" name="details">
+                            <group>
+                                <field name="description" placeholder="Descripción de la póliza..."/>
+                            </group>
+                            <group>
+                                <field name="special_note" placeholder="Notas especiales..."/>
+                            </group>
+                            <separator string="Tabla de coberturas"/>
+                            <field name="coverage_ids" readonly="1">
+                                <list>
+                                    <field name="name"/>
+                                    <field name="insured_amount"/>
+                                    <field name="deductible"/>
+                                    <field name="coinsurance"/>
+                                    <field name="currency_id" groups="base.group_multi_currency"/>
+                                </list>
+                            </field>
+                        </page>
+                        <page string="Cuotas y pagos" name="installments">
+                            <field name="installment_ids" readonly="state == 'cancelled'">
+                                <list editable="bottom" decoration-danger="state == 'overdue'" decoration-success="state == 'paid'">
+                                    <field name="number"/>
+                                    <field name="date_from"/>
+                                    <field name="date_to"/>
+                                    <field name="due_date"/>
+                                    <field name="amount"/>
+                                    <field name="state" widget="badge"
+                                           decoration-info="state == 'pending'"
+                                           decoration-warning="state == 'invoiced'"
+                                           decoration-success="state == 'paid'"
+                                           decoration-danger="state == 'overdue'"/>
+                                    <field name="invoice_id"/>
+                                    <button name="action_create_invoice" type="object" string="Crear factura"
+                                            icon="fa-plus" invisible="invoice_id or state == 'cancelled'"/>
+                                    <button name="action_register_payment" type="object" string="Registrar pago"
+                                            icon="fa-money" invisible="state == 'paid' or state == 'cancelled'"/>
+                                    <button name="action_send_collection_notice" type="object" string="Avisar cobranza"
+                                            icon="fa-envelope" invisible="state in ('paid', 'cancelled')"/>
+                                    <button name="action_open_invoice" type="object" string="Ver factura"
+                                            icon="fa-external-link" invisible="not invoice_id"/>
+                                </list>
+                            </field>
+                        </page>
+                        <page string="Fechas de crecimiento" name="growth">
+                            <group>
+                                <field name="next_growth_date"/>
+                            </group>
+                            <field name="growth_ids">
+                                <list>
+                                    <field name="date"/>
+                                    <field name="percent"/>
+                                    <field name="old_premium"/>
+                                    <field name="new_premium"/>
+                                    <field name="old_insured"/>
+                                    <field name="new_insured"/>
+                                    <field name="note"/>
+                                </list>
+                            </field>
+                        </page>
+                        <page string="CFDI 4.0 y prima" name="cfdi">
+                            <group>
+                                <group string="Facturación SAT">
+                                    <field name="invoice_mode"/>
+                                    <field name="cfdi_usage"/>
+                                    <field name="cfdi_payment_method"/>
+                                    <field name="cfdi_payment_form"/>
+                                    <field name="cfdi_global_move_id"/>
+                                    <field name="subscription_id"/>
+                                </group>
+                                <group string="Desglose de prima y cobertura">
+                                    <field name="prima_neta"/>
+                                    <field name="derechos"/>
+                                    <field name="recargos"/>
+                                    <field name="policy_amount"/>
+                                    <field name="insured_amount"/>
+                                    <field name="coverage_consumed"/>
+                                    <field name="coverage_remaining"/>
+                                </group>
+                            </group>
+                        </page>
+                        <page string="Notas" name="notes">
+                            <field name="note" placeholder="Observaciones de la póliza..."/>
+                        </page>
+                    </notebook>
+                </sheet>
+                <chatter/>
+            </form>
+        </field>
+    </record>
+
+    <record id="view_insurance_policy_search" model="ir.ui.view">
+        <field name="name">insurance.policy.search</field>
+        <field name="model">insurance.policy</field>
+        <field name="arch" type="xml">
+            <search>
+                <field name="name"/>
+                <field name="display_title"/>
+                <field name="partner_id"/>
+                <field name="scheme_id"/>
+                <field name="insurance_company_id"/>
+                <field name="agent_id"/>
+                <filter name="draft" string="Borrador" domain="[('state', '=', 'draft')]"/>
+                <filter name="confirmed" string="Activas" domain="[('state', '=', 'confirmed')]"/>
+                <filter name="expired" string="Vencidas" domain="[('state', '=', 'expired')]"/>
+                <filter name="done" string="Cerradas" domain="[('state', '=', 'done')]"/>
+                <filter name="overdue" string="Con mora" domain="[('overdue_count', '&gt;', 0)]"/>
+                <filter name="docs_pending" string="Expediente incompleto" domain="[('document_pending_count', '&gt;', 0)]"/>
+                <filter name="individual" string="Individual" domain="[('coverage_mode', '=', 'individual')]"/>
+                <filter name="family" string="Familiar" domain="[('coverage_mode', '=', 'family')]"/>
+                <filter name="to_renew" string="Por renovar" domain="[('lifecycle_stage', '=', 'renewal')]"/>
+                <filter name="in_service" string="En servicio" domain="[('lifecycle_stage', '=', 'active')]"/>
+                <filter name="prospect" string="Prospección" domain="[('lifecycle_stage', '=', 'prospecting')]"/>
+                <separator/>
+                <filter name="growth_soon" string="Crecimiento próximo"
+                        domain="[('next_growth_date', '!=', False), ('next_growth_date', '&lt;=', (context_today() + datetime.timedelta(days=30)).strftime('%Y-%m-%d'))]"/>
+                <group>
+                    <filter name="group_scheme" string="Oferta" context="{'group_by': 'scheme_id'}"/>
+                    <filter name="group_company" string="Aseguradora" context="{'group_by': 'insurance_company_id'}"/>
+                    <filter name="group_agent" string="Agente" context="{'group_by': 'agent_id'}"/>
+                    <filter name="group_state" string="Estado" context="{'group_by': 'state'}"/>
+                    <filter name="group_stage" string="Etapa" context="{'group_by': 'lifecycle_stage'}"/>
+                    <filter name="group_mode" string="Individual / familiar" context="{'group_by': 'coverage_mode'}"/>
+                    <filter name="group_branch" string="Sucursal" context="{'group_by': 'branch_id'}"/>
+                </group>
+            </search>
+        </field>
+    </record>
+
+    <record id="view_insurance_policy_kanban" model="ir.ui.view">
+        <field name="name">insurance.policy.kanban</field>
+        <field name="model">insurance.policy</field>
+        <field name="arch" type="xml">
+            <kanban default_group_by="state" class="o_kanban_small_column">
+                <field name="name"/>
+                <field name="display_title"/>
+                <field name="partner_id"/>
+                <field name="scheme_id"/>
+                <field name="policy_amount"/>
+                <field name="coverage_end_date"/>
+                <field name="state"/>
+                <templates>
+                    <t t-name="card">
+                        <div class="d-flex flex-column gap-1">
+                            <strong><field name="display_title"/></strong>
+                            <span><field name="name"/></span>
+                            <span><field name="scheme_id"/></span>
+                            <span><field name="policy_amount" widget="monetary"/></span>
+                            <span>Vigencia: <field name="coverage_end_date"/></span>
+                        </div>
+                    </t>
+                </templates>
+            </kanban>
+        </field>
+    </record>
+
+    <record id="view_insurance_policy_calendar" model="ir.ui.view">
+        <field name="name">insurance.policy.calendar</field>
+        <field name="model">insurance.policy</field>
+        <field name="arch" type="xml">
+            <calendar string="Vigencias" date_start="coverage_start_date" date_stop="coverage_end_date" color="state" mode="month">
+                <field name="name"/>
+                <field name="display_title"/>
+                <field name="partner_id"/>
+                <field name="scheme_id"/>
+                <field name="state"/>
+            </calendar>
+        </field>
+    </record>
+
+    <record id="view_insurance_policy_pivot" model="ir.ui.view">
+        <field name="name">insurance.policy.pivot</field>
+        <field name="model">insurance.policy</field>
+        <field name="arch" type="xml">
+            <pivot string="Análisis de pólizas">
+                <field name="scheme_id" type="row"/>
+                <field name="state" type="col"/>
+                <field name="policy_amount" type="measure"/>
+                <field name="insured_amount" type="measure"/>
+                <field name="commission_amount" type="measure"/>
+                <field name="coverage_consumed" type="measure"/>
+                <field name="coverage_remaining" type="measure"/>
+            </pivot>
+        </field>
+    </record>
+
+    <record id="view_insurance_policy_graph" model="ir.ui.view">
+        <field name="name">insurance.policy.graph</field>
+        <field name="model">insurance.policy</field>
+        <field name="arch" type="xml">
+            <graph string="Pólizas" type="bar">
+                <field name="state"/>
+                <field name="policy_amount" type="measure"/>
+            </graph>
+        </field>
+    </record>
+
+    <record id="view_insurance_policy_activity" model="ir.ui.view">
+        <field name="name">insurance.policy.activity</field>
+        <field name="model">insurance.policy</field>
+        <field name="arch" type="xml">
+            <activity string="Actividades">
+                <field name="user_id"/>
+                <templates>
+                    <div t-name="activity-box">
+                        <field name="display_title"/>
+                        <div>
+                            <field name="name"/>
+                            <field name="partner_id"/>
+                        </div>
+                    </div>
+                </templates>
+            </activity>
+        </field>
+    </record>
+
+    <record id="action_insurance_policy" model="ir.actions.act_window">
+        <field name="name">Venta de póliza</field>
+        <field name="res_model">insurance.policy</field>
+        <field name="view_mode">kanban,list,form,calendar,pivot,graph,activity</field>
+        <field name="search_view_id" ref="view_insurance_policy_search"/>
+        <field name="context">{}</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">Registre la primera póliza</p>
+            <p>Capture oferta, titular, vigencia (normalmente 12 meses) y genere cuotas al confirmar.</p>
+        </field>
+    </record>
+
+    <record id="action_insurance_policy_renewal" model="ir.actions.act_window">
+        <field name="name">Por renovar</field>
+        <field name="res_model">insurance.policy</field>
+        <field name="view_mode">kanban,list,form,calendar,pivot,graph,activity</field>
+        <field name="search_view_id" ref="view_insurance_policy_search"/>
+        <field name="domain">[('lifecycle_stage', '=', 'renewal')]</field>
+    </record>
+
+    <record id="action_insurance_policy_all" model="ir.actions.act_window">
+        <field name="name">Registro de póliza</field>
+        <field name="res_model">insurance.policy</field>
+        <field name="view_mode">kanban,list,form,calendar,pivot,graph,activity</field>
+        <field name="search_view_id" ref="view_insurance_policy_search"/>
+    </record>
+</odoo>

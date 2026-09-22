@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_move_form_insurance_cfdi" model="ir.ui.view">
+        <field name="name">account.move.form.insurance.cfdi</field>
+        <field name="model">account.move</field>
+        <field name="inherit_id" ref="account.view_move_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//notebook" position="inside">
+                <page string="CFDI 4.0 / Seguros" name="insurance_cfdi"
+                      invisible="not insurance_policy_id">
+                    <group>
+                        <group string="CFDI 4.0">
+                            <field name="insurance_policy_id"/>
+                            <field name="is_insurance_cfdi_global"/>
+                            <field name="insurance_cfdi_usage"/>
+                            <field name="insurance_cfdi_payment_method"/>
+                            <field name="insurance_cfdi_payment_form"/>
+                            <field name="insurance_sat_product_code"/>
+                        </group>
+                        <group string="Complemento de seguros">
+                            <field name="insurance_complement_policy"/>
+                            <field name="insurance_complement_ramo"/>
+                            <field name="insurance_complement_insured"/>
+                            <field name="insurance_complement_rfc"/>
+                            <field name="insurance_complement_date_from"/>
+                            <field name="insurance_complement_date_to"/>
+                            <field name="insurance_complement_installment"/>
+                        </group>
+                    </group>
+                    <group string="Montos de cobertura y prima">
+                        <group>
+                            <field name="insurance_complement_coverage"/>
+                            <field name="insurance_complement_coverage_used"/>
+                            <field name="insurance_complement_coverage_left"/>
+                        </group>
+                        <group>
+                            <field name="insurance_complement_prima_neta"/>
+                            <field name="insurance_complement_derechos"/>
+                            <field name="insurance_complement_recargos"/>
+                        </group>
+                    </group>
+                    <p class="text-muted">
+                        El timbrado CFDI 4.0 y el complemento de pagos 2.0 los emite
+                        Contabilidad / l10n_mx_edi. Esta pestaña concentra la addenda
+                        de la póliza (número, vigencia, asegurado y sumas aseguradas).
+                    </p>
+                </page>
+            </xpath>
+        </field>
+    </record>
+</odoo>

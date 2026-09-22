@@ -1,0 +1,144 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_insurance_scheme_list" model="ir.ui.view">
+        <field name="name">insurance.scheme.list</field>
+        <field name="model">insurance.scheme</field>
+        <field name="arch" type="xml">
+            <list string="Ofertas de seguro">
+                <field name="name"/>
+                <field name="policy_type_id"/>
+                <field name="insurance_company_id"/>
+                <field name="policy_code"/>
+                <field name="duration_months"/>
+                <field name="insured_amount_min"/>
+                <field name="insured_amount_max"/>
+                <field name="coverage_mode"/>
+                <field name="growth_percent"/>
+                <field name="auto_renew_default"/>
+                <field name="policy_count"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_insurance_scheme_form" model="ir.ui.view">
+        <field name="name">insurance.scheme.form</field>
+        <field name="model">insurance.scheme</field>
+        <field name="arch" type="xml">
+            <form string="Oferta de póliza">
+                <sheet>
+                    <div class="oe_button_box" name="button_box">
+                        <button name="action_open_policies" type="object" class="oe_stat_button" icon="fa-file-text-o">
+                            <field name="policy_count" widget="statinfo" string="Pólizas"/>
+                        </button>
+                    </div>
+                    <div class="oe_title">
+                        <label for="name"/>
+                        <h1>
+                            <field name="name" placeholder="Nombre de la oferta"/>
+                        </h1>
+                    </div>
+                    <group>
+                        <group>
+                            <field name="policy_type_id"/>
+                            <field name="insurance_company_id"/>
+                            <field name="policy_code"/>
+                            <field name="coverage_mode"/>
+                            <field name="duration_months"/>
+                            <field name="auto_renew_default"/>
+                        </group>
+                        <group>
+                            <field name="insured_amount_min"/>
+                            <field name="insured_amount_max"/>
+                            <field name="tax_id"/>
+                            <field name="interest_rate"/>
+                            <field name="growth_percent"/>
+                            <field name="currency_id" groups="base.group_multi_currency"/>
+                            <field name="product_id"/>
+                            <field name="sat_product_code"/>
+                            <field name="sequence_id"/>
+                            <field name="active"/>
+                        </group>
+                    </group>
+                    <notebook>
+                        <page string="Coberturas" name="coverages">
+                            <field name="coverage_ids">
+                                <list editable="bottom">
+                                    <field name="sequence" widget="handle"/>
+                                    <field name="name"/>
+                                    <field name="insured_amount"/>
+                                    <field name="deductible"/>
+                                    <field name="coinsurance"/>
+                                    <field name="currency_id" groups="base.group_multi_currency"/>
+                                    <field name="waiting_days"/>
+                                    <field name="description" optional="hide"/>
+                                </list>
+                            </field>
+                        </page>
+                        <page string="Características" name="features">
+                            <field name="feature_ids">
+                                <list editable="bottom">
+                                    <field name="sequence" widget="handle"/>
+                                    <field name="name"/>
+                                    <field name="included"/>
+                                </list>
+                            </field>
+                        </page>
+                        <page string="Descripción" name="description">
+                            <field name="description" placeholder="Descripción de la oferta..."/>
+                            <field name="note" placeholder="Notas internas..."/>
+                        </page>
+                        <page string="Agentes" name="agents">
+                            <field name="agent_line_ids">
+                                <list editable="bottom">
+                                    <field name="agent_id"/>
+                                    <field name="branch_id"/>
+                                    <field name="agent_code"/>
+                                    <field name="date"/>
+                                    <field name="mobile"/>
+                                    <field name="email"/>
+                                </list>
+                            </field>
+                        </page>
+                        <page string="Documentos requeridos" name="documents">
+                            <field name="document_type_ids" widget="many2many_tags"/>
+                        </page>
+                    </notebook>
+                </sheet>
+                <chatter/>
+            </form>
+        </field>
+    </record>
+
+    <record id="view_insurance_scheme_kanban" model="ir.ui.view">
+        <field name="name">insurance.scheme.kanban</field>
+        <field name="model">insurance.scheme</field>
+        <field name="arch" type="xml">
+            <kanban class="o_kanban_small_column">
+                <field name="name"/>
+                <field name="policy_type_id"/>
+                <field name="insurance_company_id"/>
+                <field name="policy_count"/>
+                <templates>
+                    <t t-name="card">
+                        <div class="d-flex flex-column gap-1">
+                            <strong><field name="name"/></strong>
+                            <span><field name="policy_type_id"/></span>
+                            <span><field name="insurance_company_id"/></span>
+                            <span>Pólizas: <field name="policy_count"/></span>
+                        </div>
+                    </t>
+                </templates>
+            </kanban>
+        </field>
+    </record>
+
+    <record id="action_insurance_scheme" model="ir.actions.act_window">
+        <field name="name">Ofertas</field>
+        <field name="res_model">insurance.scheme</field>
+        <field name="view_mode">kanban,list,form</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">Cree la primera oferta</p>
+            <p>Defina tipo de seguro, aseguradora, coberturas y descripción.</p>
+        </field>
+    </record>
+</odoo>

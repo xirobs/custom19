@@ -1,0 +1,75 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <data noupdate="1">
+        <record id="ir_cron_insurance_collection" model="ir.cron">
+            <field name="name">Seguros: actualizar cobranzas vencidas</field>
+            <field name="model_id" ref="model_insurance_installment"/>
+            <field name="state">code</field>
+            <field name="code">model._cron_update_collection_state()</field>
+            <field name="interval_number">1</field>
+            <field name="interval_type">days</field>
+            <field name="active" eval="True"/>
+        </record>
+
+        <record id="ir_cron_insurance_growth" model="ir.cron">
+            <field name="name">Seguros: seguimiento de fechas de crecimiento</field>
+            <field name="model_id" ref="model_insurance_policy"/>
+            <field name="state">code</field>
+            <field name="code">model._cron_growth_followup()</field>
+            <field name="interval_number">1</field>
+            <field name="interval_type">days</field>
+            <field name="active" eval="True"/>
+        </record>
+
+        <record id="ir_cron_insurance_invoice_due" model="ir.cron">
+            <field name="name">Seguros: facturar cuotas en su fecha</field>
+            <field name="model_id" ref="model_insurance_installment"/>
+            <field name="state">code</field>
+            <field name="code">model._cron_invoice_due_installments()</field>
+            <field name="interval_number">1</field>
+            <field name="interval_type">days</field>
+            <field name="active" eval="True"/>
+        </record>
+
+        <record id="ir_cron_insurance_collection_notice" model="ir.cron">
+            <field name="name">Seguros: avisos de cobranza</field>
+            <field name="model_id" ref="model_insurance_installment"/>
+            <field name="state">code</field>
+            <field name="code">model._cron_collection_notices()</field>
+            <field name="interval_number">1</field>
+            <field name="interval_type">days</field>
+            <field name="active" eval="True"/>
+        </record>
+
+        <record id="ir_cron_insurance_renewal" model="ir.cron">
+            <field name="name">Seguros: seguimiento de renovaciones</field>
+            <field name="model_id" ref="model_insurance_policy"/>
+            <field name="state">code</field>
+            <field name="code">model._cron_renewal_followup()</field>
+            <field name="interval_number">1</field>
+            <field name="interval_type">days</field>
+            <field name="active" eval="True"/>
+        </record>
+
+        <record id="ir_cron_insurance_documents" model="ir.cron">
+            <field name="name">Seguros: seguimiento de documentos y firmas</field>
+            <field name="model_id" ref="model_insurance_policy"/>
+            <field name="state">code</field>
+            <field name="code">model._cron_document_followup()</field>
+            <field name="interval_number">1</field>
+            <field name="interval_type">days</field>
+            <field name="active" eval="True"/>
+        </record>
+    </data>
+    <data>
+        <record id="ir_cron_insurance_expire" model="ir.cron">
+            <field name="name">Seguros: marcar pólizas vencidas</field>
+            <field name="model_id" ref="model_insurance_policy"/>
+            <field name="state">code</field>
+            <field name="code">model._cron_expire_policies()</field>
+            <field name="interval_number">1</field>
+            <field name="interval_type">days</field>
+            <field name="active" eval="True"/>
+        </record>
+    </data>
+</odoo>

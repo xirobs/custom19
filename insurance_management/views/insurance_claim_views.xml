@@ -1,0 +1,226 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_insurance_claim_list" model="ir.ui.view">
+        <field name="name">insurance.claim.list</field>
+        <field name="model">insurance.claim</field>
+        <field name="arch" type="xml">
+            <list string="Siniestros y casos médicos"
+                  decoration-info="state == 'draft'"
+                  decoration-warning="state in ('documents', 'review')"
+                  decoration-success="state in ('authorized', 'paid')"
+                  decoration-danger="state == 'rejected'">
+                <field name="name"/>
+                <field name="policy_id"/>
+                <field name="partner_id"/>
+                <field name="member_id"/>
+                <field name="claim_kind"/>
+                <field name="occurrence_date"/>
+                <field name="coverage_id"/>
+                <field name="claimed_amount"/>
+                <field name="authorized_amount"/>
+                <field name="consumption_type"/>
+                <field name="state" widget="badge"
+                       decoration-info="state == 'draft'"
+                       decoration-warning="state in ('documents', 'review')"
+                       decoration-success="state in ('authorized', 'paid')"
+                       decoration-danger="state == 'rejected'"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_insurance_claim_form" model="ir.ui.view">
+        <field name="name">insurance.claim.form</field>
+        <field name="model">insurance.claim</field>
+        <field name="arch" type="xml">
+            <form string="Siniestro / caso médico">
+                <header>
+                    <button name="action_request_documents" type="object" string="Solicitar documentos"
+                            class="btn-primary" invisible="state != 'draft'"/>
+                    <button name="action_submit_review" type="object" string="Enviar a evaluación"
+                            class="btn-primary" invisible="state != 'documents'"/>
+                    <button name="action_authorize" type="object" string="Autorizar y descontar cobertura"
+                            class="btn-primary" invisible="state != 'review'"/>
+                    <button name="action_mark_paid" type="object" string="Registrar pago / reembolso"
+                            invisible="state != 'authorized'"/>
+                    <button name="action_reject" type="object" string="Rechazar"
+                            invisible="state not in ('draft', 'documents', 'review')"/>
+                    <button name="action_close" type="object" string="Cerrar caso"
+                            invisible="state not in ('authorized', 'paid', 'rejected')"/>
+                    <button name="action_draft" type="object" string="Volver a aviso"
+                            invisible="state == 'draft'"/>
+                    <field name="state" widget="statusbar"
+                           statusbar_visible="draft,documents,review,authorized,paid,closed"/>
+                </header>
+                <sheet>
+                    <div class="oe_button_box" name="button_box">
+                        <button name="action_open_documents" type="object" class="oe_stat_button" icon="fa-folder-open">
+                            <div class="o_stat_info">
+                                <span class="o_stat_value"><field name="document_pending_count"/></span>
+                                <span class="o_stat_text">Docs. pendientes</span>
+                            </div>
+                        </button>
+                    </div>
+                    <div class="oe_title">
+                        <label for="name"/>
+                        <h1><field name="name" readonly="1"/></h1>
+                    </div>
+                    <group>
+                        <group>
+                            <field name="policy_id"/>
+                            <field name="partner_id"/>
+                            <field name="member_id"/>
+                            <field name="claim_kind"/>
+                            <field name="coverage_id"/>
+                            <field name="consumption_type"/>
+                            <field name="insurance_company_id"/>
+                        </group>
+                        <group>
+                            <field name="occurrence_date"/>
+                            <field name="report_date"/>
+                            <field name="provider_name"/>
+                            <field name="diagnosis"/>
+                            <field name="claimed_amount"/>
+                            <field name="deductible_amount"/>
+                            <field name="authorized_amount"/>
+                            <field name="paid_amount"/>
+                            <field name="coverage_limit"/>
+                            <field name="coverage_remaining"/>
+                            <field name="user_id"/>
+                        </group>
+                    </group>
+                    <group string="Relato del caso">
+                        <field name="description" nolabel="1" placeholder="Describa el siniestro o el caso clínico..."/>
+                    </group>
+                    <notebook>
+                        <page string="Documentación del caso" name="documents">
+                            <field name="document_ids">
+                                <list decoration-success="state == 'signed'" decoration-danger="state == 'rejected'">
+                                    <field name="document_type_id"/>
+                                    <field name="requires_signature"/>
+                                    <field name="state" widget="badge"/>
+                                    <field name="signed_date"/>
+                                    <button name="action_mark_signed" type="object" string="Firmar"
+                                            icon="fa-pencil" invisible="state == 'signed'"/>
+                                </list>
+                            </field>
+                        </page>
+                        <page string="Rechazo / notas" name="notes">
+                            <field name="rejection_reason" invisible="state != 'rejected'"/>
+                            <field name="note" placeholder="Notas internas del ajustador..."/>
+                        </page>
+                    </notebook>
+                </sheet>
+                <chatter/>
+            </form>
+        </field>
+    </record>
+
+    <record id="view_insurance_claim_kanban" model="ir.ui.view">
+        <field name="name">insurance.claim.kanban</field>
+        <field name="model">insurance.claim</field>
+        <field name="arch" type="xml">
+            <kanban default_group_by="state" class="o_kanban_small_column">
+                <field name="name"/>
+                <field name="partner_id"/>
+                <field name="policy_id"/>
+                <field name="claimed_amount"/>
+                <field name="state"/>
+                <templates>
+                    <t t-name="card">
+                        <div class="d-flex flex-column gap-1">
+                            <strong><field name="name"/></strong>
+                            <span><field name="partner_id"/></span>
+                            <span><field name="policy_id"/></span>
+                            <span><field name="claimed_amount" widget="monetary"/></span>
+                        </div>
+                    </t>
+                </templates>
+            </kanban>
+        </field>
+    </record>
+
+    <record id="view_insurance_claim_calendar" model="ir.ui.view">
+        <field name="name">insurance.claim.calendar</field>
+        <field name="model">insurance.claim</field>
+        <field name="arch" type="xml">
+            <calendar string="Siniestros" date_start="occurrence_date" color="state">
+                <field name="name"/>
+                <field name="partner_id"/>
+                <field name="policy_id"/>
+            </calendar>
+        </field>
+    </record>
+
+    <record id="view_insurance_claim_pivot" model="ir.ui.view">
+        <field name="name">insurance.claim.pivot</field>
+        <field name="model">insurance.claim</field>
+        <field name="arch" type="xml">
+            <pivot string="Siniestros">
+                <field name="claim_kind" type="row"/>
+                <field name="state" type="col"/>
+                <field name="claimed_amount" type="measure"/>
+                <field name="authorized_amount" type="measure"/>
+            </pivot>
+        </field>
+    </record>
+
+    <record id="view_insurance_claim_graph" model="ir.ui.view">
+        <field name="name">insurance.claim.graph</field>
+        <field name="model">insurance.claim</field>
+        <field name="arch" type="xml">
+            <graph string="Siniestros" type="bar">
+                <field name="claim_kind"/>
+                <field name="claimed_amount" type="measure"/>
+            </graph>
+        </field>
+    </record>
+
+    <record id="view_insurance_claim_activity" model="ir.ui.view">
+        <field name="name">insurance.claim.activity</field>
+        <field name="model">insurance.claim</field>
+        <field name="arch" type="xml">
+            <activity string="Actividades">
+                <field name="user_id"/>
+                <templates>
+                    <div t-name="activity-box">
+                        <field name="name"/>
+                        <div>
+                            <field name="partner_id"/>
+                            <field name="policy_id"/>
+                        </div>
+                    </div>
+                </templates>
+            </activity>
+        </field>
+    </record>
+
+    <record id="view_insurance_claim_search" model="ir.ui.view">
+        <field name="name">insurance.claim.search</field>
+        <field name="model">insurance.claim</field>
+        <field name="arch" type="xml">
+            <search>
+                <field name="name"/>
+                <field name="policy_id"/>
+                <field name="partner_id"/>
+                <field name="member_id"/>
+                <filter name="open" string="En proceso" domain="[('state', 'not in', ['closed', 'rejected'])]"/>
+                <filter name="docs" string="Faltan documentos" domain="[('state', '=', 'documents')]"/>
+                <filter name="gmm" string="Gastos médicos" domain="[('claim_kind', '=', 'gmm')]"/>
+                <filter name="auto" string="Auto" domain="[('claim_kind', '=', 'auto')]"/>
+                <group>
+                    <filter name="group_kind" string="Tipo de caso" context="{'group_by': 'claim_kind'}"/>
+                    <filter name="group_state" string="Estado" context="{'group_by': 'state'}"/>
+                    <filter name="group_policy" string="Póliza" context="{'group_by': 'policy_id'}"/>
+                </group>
+            </search>
+        </field>
+    </record>
+
+    <record id="action_insurance_claim" model="ir.actions.act_window">
+        <field name="name">Siniestros y casos médicos</field>
+        <field name="res_model">insurance.claim</field>
+        <field name="view_mode">kanban,list,form,calendar,pivot,graph,activity</field>
+        <field name="search_view_id" ref="view_insurance_claim_search"/>
+        <field name="context">{'search_default_open': 1}</field>
+    </record>
+</odoo>

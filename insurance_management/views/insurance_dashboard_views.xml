@@ -1,0 +1,184 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_insurance_branch_dashboard_kanban" model="ir.ui.view">
+        <field name="name">insurance.branch.dashboard.kanban</field>
+        <field name="model">insurance.branch</field>
+        <field name="arch" type="xml">
+            <kanban create="0" records_draggable="0" class="o_kanban_dashboard o_insurance_dash_kanban"
+                    default_order="dash_overdue_count desc, dash_renew_count desc">
+                <field name="name"/>
+                <field name="city"/>
+                <field name="currency_id"/>
+                <field name="dash_active_policies"/>
+                <field name="dash_renew_count"/>
+                <field name="dash_renew_premium"/>
+                <field name="dash_overdue_count"/>
+                <field name="dash_overdue_amount"/>
+                <field name="dash_coverage_limit"/>
+                <field name="dash_coverage_used"/>
+                <field name="dash_coverage_left"/>
+                <field name="dash_health_state"/>
+                <templates>
+                    <t t-name="card">
+                        <div class="o_insurance_dash_card">
+                            <div class="d-flex justify-content-between align-items-start gap-2">
+                                <div>
+                                    <strong class="fs-5"><field name="name"/></strong>
+                                    <div class="text-muted" invisible="not city">
+                                        <field name="city"/>
+                                    </div>
+                                </div>
+                                <field name="dash_health_state" widget="badge"
+                                       decoration-success="dash_health_state == 'ok'"
+                                       decoration-warning="dash_health_state == 'renew'"
+                                       decoration-danger="dash_health_state == 'overdue'"/>
+                            </div>
+                            <div class="o_insurance_dash_kpis">
+                                <div class="o_insurance_kpi success">
+                                    <span class="o_insurance_kpi_label">En servicio</span>
+                                    <span class="o_insurance_kpi_value">
+                                        <field name="dash_active_policies"/>
+                                    </span>
+                                </div>
+                                <div class="o_insurance_kpi warning">
+                                    <span class="o_insurance_kpi_label">Por renovar</span>
+                                    <span class="o_insurance_kpi_value">
+                                        <field name="dash_renew_count"/>
+                                    </span>
+                                    <span class="small">
+                                        <field name="dash_renew_premium" widget="monetary"/>
+                                    </span>
+                                </div>
+                                <div class="o_insurance_kpi danger">
+                                    <span class="o_insurance_kpi_label">Mora</span>
+                                    <span class="o_insurance_kpi_value">
+                                        <field name="dash_overdue_count"/>
+                                    </span>
+                                    <span class="small">
+                                        <field name="dash_overdue_amount" widget="monetary"/>
+                                    </span>
+                                </div>
+                                <div class="o_insurance_kpi">
+                                    <span class="o_insurance_kpi_label">Cobertura disponible</span>
+                                    <span class="o_insurance_kpi_value small">
+                                        <field name="dash_coverage_left" widget="monetary"/>
+                                    </span>
+                                    <span class="small text-muted">
+                                        de <field name="dash_coverage_limit" widget="monetary"/>
+                                    </span>
+                                </div>
+                            </div>
+                            <div class="d-flex flex-wrap gap-1">
+                                <button name="action_open_branch_policies" type="object"
+                                        class="btn btn-sm btn-primary" string="Pólizas"/>
+                                <button name="action_open_branch_renewals" type="object"
+                                        class="btn btn-sm btn-secondary" string="Renovaciones"/>
+                                <button name="action_open_branch_overdue" type="object"
+                                        class="btn btn-sm btn-secondary" string="Mora"/>
+                            </div>
+                        </div>
+                    </t>
+                </templates>
+            </kanban>
+        </field>
+    </record>
+
+    <record id="view_insurance_branch_dashboard_list" model="ir.ui.view">
+        <field name="name">insurance.branch.dashboard.list</field>
+        <field name="model">insurance.branch</field>
+        <field name="arch" type="xml">
+            <list string="Tablero por sucursal" create="0" edit="0" delete="0"
+                  decoration-danger="dash_health_state == 'overdue'"
+                  decoration-warning="dash_health_state == 'renew'">
+                <field name="name"/>
+                <field name="city"/>
+                <field name="dash_health_state" widget="badge"
+                       decoration-success="dash_health_state == 'ok'"
+                       decoration-warning="dash_health_state == 'renew'"
+                       decoration-danger="dash_health_state == 'overdue'"/>
+                <field name="dash_active_policies" sum="En servicio"/>
+                <field name="dash_renew_count" sum="Por renovar"/>
+                <field name="dash_renew_premium" sum="Prima a renovar"/>
+                <field name="dash_overdue_count" sum="Cuotas mora"/>
+                <field name="dash_overdue_amount" sum="Monto mora"/>
+                <field name="dash_coverage_used"/>
+                <field name="dash_coverage_left" sum="Disponible"/>
+                <field name="currency_id" column_invisible="1"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_insurance_branch_dashboard_search" model="ir.ui.view">
+        <field name="name">insurance.branch.dashboard.search</field>
+        <field name="model">insurance.branch</field>
+        <field name="arch" type="xml">
+            <search>
+                <field name="name"/>
+                <field name="city"/>
+                <filter name="overdue" string="Con mora" domain="[('dash_overdue_count', '&gt;', 0)]"/>
+                <filter name="renew" string="Por renovar" domain="[('dash_renew_count', '&gt;', 0)]"/>
+                <filter name="ok" string="Al día" domain="[('dash_health_state', '=', 'ok')]"/>
+                <group>
+                    <filter name="group_city" string="Ciudad" context="{'group_by': 'city'}"/>
+                    <filter name="group_health" string="Estado" context="{'group_by': 'dash_health_state'}"/>
+                </group>
+            </search>
+        </field>
+    </record>
+
+    <record id="action_insurance_dashboard_board" model="ir.actions.act_window">
+        <field name="name">Tablero</field>
+        <field name="res_model">insurance.branch</field>
+        <field name="view_mode">kanban,list</field>
+        <field name="search_view_id" ref="view_insurance_branch_dashboard_search"/>
+        <field name="context">{}</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">Aún no hay sucursales</p>
+            <p>Registre sucursales en Configuración. El tablero se actualiza solo al abrir o recargar la vista.</p>
+        </field>
+    </record>
+
+    <record id="action_insurance_dashboard_board_kanban" model="ir.actions.act_window.view">
+        <field name="sequence">1</field>
+        <field name="view_mode">kanban</field>
+        <field name="view_id" ref="view_insurance_branch_dashboard_kanban"/>
+        <field name="act_window_id" ref="action_insurance_dashboard_board"/>
+    </record>
+
+    <record id="action_insurance_dashboard_board_list" model="ir.actions.act_window.view">
+        <field name="sequence">2</field>
+        <field name="view_mode">list</field>
+        <field name="view_id" ref="view_insurance_branch_dashboard_list"/>
+        <field name="act_window_id" ref="action_insurance_dashboard_board"/>
+    </record>
+
+    <record id="action_insurance_dashboard" model="ir.actions.server">
+        <field name="name">Tablero renovación y mora</field>
+        <field name="model_id" ref="model_insurance_dashboard"/>
+        <field name="state">code</field>
+        <field name="code">action = model.action_open_dashboard()</field>
+    </record>
+
+    <record id="view_insurance_policy_pivot_branch" model="ir.ui.view">
+        <field name="name">insurance.policy.pivot.branch</field>
+        <field name="model">insurance.policy</field>
+        <field name="arch" type="xml">
+            <pivot string="Renovación y coberturas por sucursal">
+                <field name="branch_id" type="row"/>
+                <field name="lifecycle_stage" type="col"/>
+                <field name="policy_amount" type="measure"/>
+                <field name="insured_amount" type="measure"/>
+                <field name="coverage_consumed" type="measure"/>
+                <field name="coverage_remaining" type="measure"/>
+            </pivot>
+        </field>
+    </record>
+
+    <record id="action_insurance_policy_branch_analysis" model="ir.actions.act_window">
+        <field name="name">Análisis por sucursal</field>
+        <field name="res_model">insurance.policy</field>
+        <field name="view_mode">pivot,graph,list</field>
+        <field name="view_id" ref="view_insurance_policy_pivot_branch"/>
+        <field name="domain">[('state', 'in', ['confirmed', 'expired'])]</field>
+    </record>
+</odoo>

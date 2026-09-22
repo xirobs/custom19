@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="action_report_insurance_policy" model="ir.actions.report">
+        <field name="name">Póliza de seguro</field>
+        <field name="model">insurance.policy</field>
+        <field name="report_type">qweb-pdf</field>
+        <field name="report_name">insurance_management.report_insurance_policy_document</field>
+        <field name="report_file">insurance_management.report_insurance_policy_document</field>
+        <field name="print_report_name">'Póliza - %s' % (object.name)</field>
+        <field name="binding_type">report</field>
+        <field name="binding_model_id" ref="model_insurance_policy"/>
+    </record>
+</odoo>

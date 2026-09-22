@@ -1,0 +1,342 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <data noupdate="1">
+        <record id="policy_type_life" model="insurance.policy.type">
+            <field name="name">Seguro de vida</field>
+            <field name="code">SEGVIDA</field>
+            <field name="description">Protección de vida e indemnización a beneficiarios en México.</field>
+        </record>
+        <record id="policy_type_medical" model="insurance.policy.type">
+            <field name="name">Gastos médicos mayores</field>
+            <field name="code">SEGGMM</field>
+            <field name="description">Gastos médicos mayores, hospitalarios, honorarios y medicamentos.</field>
+        </record>
+        <record id="policy_type_auto" model="insurance.policy.type">
+            <field name="name">Seguro de auto</field>
+            <field name="code">SEGAUT</field>
+            <field name="description">Daños a vehículo, responsabilidad civil, robo y asistencia vial.</field>
+        </record>
+        <record id="policy_type_accident" model="insurance.policy.type">
+            <field name="name">Accidentes personales</field>
+            <field name="code">SEGACC</field>
+            <field name="description">Accidentes personales, invalidez temporal o permanente.</field>
+        </record>
+
+        <record id="company_gnp" model="insurance.company">
+            <field name="name">GNP Seguros</field>
+            <field name="code">GNP</field>
+            <field name="country_id" ref="base.mx"/>
+        </record>
+        <record id="company_axa" model="insurance.company">
+            <field name="name">AXA Seguros</field>
+            <field name="code">AXA</field>
+            <field name="country_id" ref="base.mx"/>
+        </record>
+        <record id="company_qualitas" model="insurance.company">
+            <field name="name">Qualitas</field>
+            <field name="code">QUA</field>
+            <field name="country_id" ref="base.mx"/>
+        </record>
+        <record id="company_metlife" model="insurance.company">
+            <field name="name">MetLife México</field>
+            <field name="code">MET</field>
+            <field name="country_id" ref="base.mx"/>
+        </record>
+        <record id="company_monterrey" model="insurance.company">
+            <field name="name">Seguros Monterrey New York Life</field>
+            <field name="code">SMNYL</field>
+            <field name="country_id" ref="base.mx"/>
+        </record>
+        <record id="company_inbursa" model="insurance.company">
+            <field name="name">Seguros Inbursa</field>
+            <field name="code">INB</field>
+            <field name="country_id" ref="base.mx"/>
+        </record>
+        <record id="company_mapfre" model="insurance.company">
+            <field name="name">Mapfre México</field>
+            <field name="code">MAP</field>
+            <field name="country_id" ref="base.mx"/>
+        </record>
+        <record id="company_allianz" model="insurance.company">
+            <field name="name">Allianz México</field>
+            <field name="code">ALL</field>
+            <field name="country_id" ref="base.mx"/>
+        </record>
+
+        <record id="document_type_id" model="insurance.document.type">
+            <field name="name">INE / identificación oficial</field>
+            <field name="code">INE</field>
+            <field name="sequence">10</field>
+            <field name="usage">both</field>
+            <field name="requires_signature" eval="False"/>
+            <field name="description">Credencial para votar vigente o pasaporte.</field>
+        </record>
+        <record id="document_type_curp" model="insurance.document.type">
+            <field name="name">CURP</field>
+            <field name="code">CURP</field>
+            <field name="sequence">15</field>
+            <field name="usage">contracting</field>
+            <field name="requires_signature" eval="False"/>
+        </record>
+        <record id="document_type_rfc" model="insurance.document.type">
+            <field name="name">Constancia de situación fiscal (RFC)</field>
+            <field name="code">RFC</field>
+            <field name="sequence">16</field>
+            <field name="usage">contracting</field>
+            <field name="requires_signature" eval="False"/>
+        </record>
+        <record id="document_type_address" model="insurance.document.type">
+            <field name="name">Comprobante de domicilio</field>
+            <field name="code">DOM</field>
+            <field name="sequence">17</field>
+            <field name="usage">contracting</field>
+            <field name="requires_signature" eval="False"/>
+        </record>
+        <record id="document_type_birth" model="insurance.document.type">
+            <field name="name">Acta de nacimiento (familiares)</field>
+            <field name="code">ACTA</field>
+            <field name="sequence">18</field>
+            <field name="usage">contracting</field>
+            <field name="requires_signature" eval="False"/>
+        </record>
+        <record id="document_type_application" model="insurance.document.type">
+            <field name="name">Solicitud de seguro firmada</field>
+            <field name="code">SOL</field>
+            <field name="sequence">20</field>
+            <field name="usage">contracting</field>
+            <field name="requires_signature" eval="True"/>
+        </record>
+        <record id="document_type_contract" model="insurance.document.type">
+            <field name="name">Carátula / contrato de póliza</field>
+            <field name="code">CON</field>
+            <field name="sequence">30</field>
+            <field name="usage">contracting</field>
+            <field name="requires_signature" eval="True"/>
+        </record>
+        <record id="document_type_beneficiaries" model="insurance.document.type">
+            <field name="name">Designación de beneficiarios</field>
+            <field name="code">BEN</field>
+            <field name="sequence">40</field>
+            <field name="usage">contracting</field>
+            <field name="requires_signature" eval="True"/>
+        </record>
+        <record id="document_type_debit" model="insurance.document.type">
+            <field name="name">Domiciliación / cargo a tarjeta</field>
+            <field name="code">DOMIC</field>
+            <field name="sequence">50</field>
+            <field name="usage">contracting</field>
+            <field name="requires_signature" eval="True"/>
+        </record>
+        <record id="document_type_inspection" model="insurance.document.type">
+            <field name="name">Inspección vehicular</field>
+            <field name="code">INS</field>
+            <field name="sequence">60</field>
+            <field name="usage">contracting</field>
+            <field name="requires_signature" eval="False"/>
+        </record>
+        <record id="document_type_claim_medical" model="insurance.document.type">
+            <field name="name">Informe médico / receta</field>
+            <field name="code">MED</field>
+            <field name="sequence">70</field>
+            <field name="usage">claim</field>
+            <field name="claim_kind">gmm</field>
+            <field name="requires_signature" eval="False"/>
+        </record>
+        <record id="document_type_claim_labs" model="insurance.document.type">
+            <field name="name">Estudios de laboratorio / imagen</field>
+            <field name="code">LAB</field>
+            <field name="sequence">71</field>
+            <field name="usage">claim</field>
+            <field name="claim_kind">gmm</field>
+            <field name="requires_signature" eval="False"/>
+        </record>
+        <record id="document_type_claim_cfdi" model="insurance.document.type">
+            <field name="name">Facturas CFDI del prestador</field>
+            <field name="code">CFDI</field>
+            <field name="sequence">72</field>
+            <field name="usage">claim</field>
+            <field name="claim_kind">all</field>
+            <field name="requires_signature" eval="False"/>
+        </record>
+        <record id="document_type_claim_discharge" model="insurance.document.type">
+            <field name="name">Alta médica</field>
+            <field name="code">ALTA</field>
+            <field name="sequence">73</field>
+            <field name="usage">claim</field>
+            <field name="claim_kind">gmm</field>
+            <field name="requires_signature" eval="False"/>
+        </record>
+        <record id="document_type_claim_transit" model="insurance.document.type">
+            <field name="name">Parte de tránsito / croquis</field>
+            <field name="code">TRANS</field>
+            <field name="sequence">80</field>
+            <field name="usage">claim</field>
+            <field name="claim_kind">auto</field>
+            <field name="requires_signature" eval="False"/>
+        </record>
+        <record id="document_type_claim_photos" model="insurance.document.type">
+            <field name="name">Fotografías del siniestro</field>
+            <field name="code">FOTO</field>
+            <field name="sequence">81</field>
+            <field name="usage">claim</field>
+            <field name="claim_kind">auto</field>
+            <field name="requires_signature" eval="False"/>
+        </record>
+        <record id="document_type_claim_report" model="insurance.document.type">
+            <field name="name">Denuncia / acta ministerial</field>
+            <field name="code">DENU</field>
+            <field name="sequence">82</field>
+            <field name="usage">claim</field>
+            <field name="claim_kind">all</field>
+            <field name="requires_signature" eval="False"/>
+        </record>
+
+        <record id="scheme_life" model="insurance.scheme">
+            <field name="name">Vida individual / familiar</field>
+            <field name="policy_type_id" ref="policy_type_life"/>
+            <field name="insurance_company_id" ref="company_metlife"/>
+            <field name="description"><![CDATA[<p>Oferta de vida con cobertura por fallecimiento y opción familiar.</p>]]></field>
+            <field name="policy_code">SEGVIDA</field>
+            <field name="coverage_mode">both</field>
+            <field name="duration_months">12</field>
+            <field name="duration_min">1</field>
+            <field name="duration_max">20</field>
+            <field name="amount_min">0.0</field>
+            <field name="amount_max">250000.0</field>
+            <field name="growth_percent">3.0</field>
+            <field name="auto_renew_default" eval="True"/>
+            <field name="product_id" ref="product_insurance_premium"/>
+            <field name="sat_product_code">84131500</field>
+            <field name="document_type_ids" eval="[(6, 0, [
+                ref('document_type_id'),
+                ref('document_type_curp'),
+                ref('document_type_rfc'),
+                ref('document_type_application'),
+                ref('document_type_contract'),
+                ref('document_type_beneficiaries'),
+                ref('document_type_debit'),
+            ])]"/>
+        </record>
+        <record id="scheme_medical" model="insurance.scheme">
+            <field name="name">Gastos médicos mayores</field>
+            <field name="policy_type_id" ref="policy_type_medical"/>
+            <field name="insurance_company_id" ref="company_gnp"/>
+            <field name="description"><![CDATA[<p>Oferta de GMM con hospitalización, honorarios y red de proveedores.</p>]]></field>
+            <field name="policy_code">SEGGMM</field>
+            <field name="coverage_mode">both</field>
+            <field name="duration_min">1</field>
+            <field name="duration_max">5</field>
+            <field name="amount_min">0.0</field>
+            <field name="amount_max">180000.0</field>
+            <field name="growth_percent">6.0</field>
+            <field name="auto_renew_default" eval="True"/>
+            <field name="product_id" ref="product_insurance_premium"/>
+            <field name="sat_product_code">84131500</field>
+            <field name="document_type_ids" eval="[(6, 0, [
+                ref('document_type_id'),
+                ref('document_type_curp'),
+                ref('document_type_rfc'),
+                ref('document_type_address'),
+                ref('document_type_birth'),
+                ref('document_type_application'),
+                ref('document_type_contract'),
+                ref('document_type_debit'),
+            ])]"/>
+        </record>
+        <record id="scheme_auto" model="insurance.scheme">
+            <field name="name">Auto particular</field>
+            <field name="policy_type_id" ref="policy_type_auto"/>
+            <field name="insurance_company_id" ref="company_qualitas"/>
+            <field name="description"><![CDATA[<p>Oferta de auto particular con RC y daños materiales.</p>]]></field>
+            <field name="policy_code">SEGAUT</field>
+            <field name="coverage_mode">individual</field>
+            <field name="duration_min">1</field>
+            <field name="duration_max">3</field>
+            <field name="amount_min">0.0</field>
+            <field name="amount_max">80000.0</field>
+            <field name="growth_percent">5.0</field>
+            <field name="auto_renew_default" eval="True"/>
+            <field name="product_id" ref="product_insurance_premium"/>
+            <field name="sat_product_code">84131500</field>
+            <field name="document_type_ids" eval="[(6, 0, [
+                ref('document_type_id'),
+                ref('document_type_rfc'),
+                ref('document_type_application'),
+                ref('document_type_contract'),
+                ref('document_type_debit'),
+                ref('document_type_inspection'),
+            ])]"/>
+        </record>
+        <record id="scheme_accident" model="insurance.scheme">
+            <field name="name">Accidentes personales</field>
+            <field name="policy_type_id" ref="policy_type_accident"/>
+            <field name="insurance_company_id" ref="company_axa"/>
+            <field name="description"><![CDATA[<p>Oferta de accidentes personales con invalidez y asistencia.</p>]]></field>
+            <field name="policy_code">SEGACC</field>
+            <field name="coverage_mode">both</field>
+            <field name="duration_min">1</field>
+            <field name="duration_max">5</field>
+            <field name="amount_min">0.0</field>
+            <field name="amount_max">60000.0</field>
+            <field name="auto_renew_default" eval="True"/>
+            <field name="product_id" ref="product_insurance_premium"/>
+            <field name="sat_product_code">84131500</field>
+            <field name="document_type_ids" eval="[(6, 0, [
+                ref('document_type_id'),
+                ref('document_type_curp'),
+                ref('document_type_application'),
+                ref('document_type_contract'),
+            ])]"/>
+        </record>
+
+        <record id="scheme_auto_coverage_rc" model="insurance.scheme.coverage">
+            <field name="scheme_id" ref="scheme_auto"/>
+            <field name="name">Responsabilidad civil</field>
+            <field name="insured_amount">3000000</field>
+        </record>
+        <record id="scheme_auto_coverage_own" model="insurance.scheme.coverage">
+            <field name="scheme_id" ref="scheme_auto"/>
+            <field name="name">Daños materiales</field>
+            <field name="insured_amount">250000</field>
+            <field name="deductible">5000</field>
+        </record>
+        <record id="scheme_life_coverage" model="insurance.scheme.coverage">
+            <field name="scheme_id" ref="scheme_life"/>
+            <field name="name">Fallecimiento</field>
+            <field name="insured_amount">1000000</field>
+        </record>
+        <record id="scheme_medical_coverage" model="insurance.scheme.coverage">
+            <field name="scheme_id" ref="scheme_medical"/>
+            <field name="name">Gastos hospitalarios y honorarios</field>
+            <field name="insured_amount">5000000</field>
+            <field name="deductible">15000</field>
+            <field name="coinsurance">10</field>
+            <field name="waiting_days">30</field>
+        </record>
+        <record id="scheme_accident_coverage" model="insurance.scheme.coverage">
+            <field name="scheme_id" ref="scheme_accident"/>
+            <field name="name">Invalidez por accidente</field>
+            <field name="insured_amount">500000</field>
+        </record>
+        <record id="scheme_medical_feature_red" model="insurance.scheme.feature">
+            <field name="scheme_id" ref="scheme_medical"/>
+            <field name="name">Red de hospitales preferentes</field>
+            <field name="included" eval="True"/>
+        </record>
+        <record id="scheme_medical_feature_intl" model="insurance.scheme.feature">
+            <field name="scheme_id" ref="scheme_medical"/>
+            <field name="name">Cobertura internacional</field>
+            <field name="included" eval="False"/>
+        </record>
+        <record id="scheme_life_feature_anticipada" model="insurance.scheme.feature">
+            <field name="scheme_id" ref="scheme_life"/>
+            <field name="name">Anticipo por enfermedad terminal</field>
+            <field name="included" eval="True"/>
+        </record>
+        <record id="scheme_auto_feature_asistencia" model="insurance.scheme.feature">
+            <field name="scheme_id" ref="scheme_auto"/>
+            <field name="name">Asistencia vial 24/7</field>
+            <field name="included" eval="True"/>
+        </record>
+    </data>
+</odoo>

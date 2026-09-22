@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <data noupdate="1">
+        <record id="mail_activity_insurance_collection" model="mail.activity.type">
+            <field name="name">Cobranza de prima</field>
+            <field name="summary">Seguimiento de cuota vencida</field>
+            <field name="res_model">insurance.installment</field>
+            <field name="delay_count">0</field>
+            <field name="delay_unit">days</field>
+            <field name="delay_from">current_date</field>
+            <field name="icon">fa-money</field>
+            <field name="default_note"><![CDATA[
+<p>Contactar al titular para regularizar la cuota vencida y conciliar el pago.</p>
+            ]]></field>
+        </record>
+
+        <record id="mail_activity_insurance_document" model="mail.activity.type">
+            <field name="name">Documentación / firma pendiente</field>
+            <field name="summary">Completar expediente de la póliza</field>
+            <field name="res_model">insurance.policy</field>
+            <field name="delay_count">3</field>
+            <field name="delay_unit">days</field>
+            <field name="delay_from">current_date</field>
+            <field name="icon">fa-pencil-square-o</field>
+            <field name="default_note"><![CDATA[
+<p>Solicitar documentos faltantes y firmas requeridas para dejar el expediente completo.</p>
+            ]]></field>
+        </record>
+
+        <record id="mail_activity_insurance_renewal" model="mail.activity.type">
+            <field name="name">Renovación anual</field>
+            <field name="summary">Contactar al cliente para renovar la póliza</field>
+            <field name="res_model">insurance.policy</field>
+            <field name="delay_count">0</field>
+            <field name="delay_unit">days</field>
+            <field name="delay_from">current_date</field>
+            <field name="icon">fa-refresh</field>
+            <field name="default_note"><![CDATA[
+<p>La vigencia está por terminar. Ofrezca la renovación y genere la nueva póliza.</p>
+            ]]></field>
+        </record>
+
+        <record id="mail_activity_insurance_claim" model="mail.activity.type">
+            <field name="name">Seguimiento de siniestro</field>
+            <field name="summary">Avanzar documentos o evaluación del caso</field>
+            <field name="res_model">insurance.claim</field>
+            <field name="delay_count">2</field>
+            <field name="delay_unit">days</field>
+            <field name="delay_from">current_date</field>
+            <field name="icon">fa-medkit</field>
+        </record>
+
+        <record id="mail_activity_insurance_growth" model="mail.activity.type">
+            <field name="name">Fecha de crecimiento</field>
+            <field name="summary">Revisar incremento de prima o suma asegurada</field>
+            <field name="res_model">insurance.policy</field>
+            <field name="delay_count">0</field>
+            <field name="delay_unit">days</field>
+            <field name="delay_from">current_date</field>
+            <field name="icon">fa-line-chart</field>
+            <field name="default_note"><![CDATA[
+<p>Revisar la fecha de crecimiento, comunicar al cliente y aplicar el incremento si corresponde.</p>
+            ]]></field>
+        </record>
+    </data>
+</odoo>
