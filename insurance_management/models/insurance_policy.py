@@ -31,7 +31,7 @@ class InsurancePolicy(models.Model):
     )
     partner_id = fields.Many2one(
         "res.partner",
-        string="Titular de la póliza",
+        string="Contratante",
         required=True,
         tracking=True,
         index=True,
@@ -305,6 +305,16 @@ class InsurancePolicy(models.Model):
         string="Cuotas de prima",
         copy=False,
     )
+    installment_to_pay_ids = fields.Many2many(
+        "insurance.installment",
+        compute="_compute_installment_history",
+        string="Cuotas por pagar",
+    )
+    installment_paid_ids = fields.Many2many(
+        "insurance.installment",
+        compute="_compute_installment_history",
+        string="Cuotas pagadas",
+    )
     coverage_ids = fields.One2many(
         "insurance.policy.coverage",
         "policy_id",
@@ -393,6 +403,15 @@ class InsurancePolicy(models.Model):
                 total += policy.policy_amount * (policy.scheme_id.interest_rate / 100.0) * years
             policy.installment_count = count
             policy.installment_amount = total / count if count else 0.0
+
+    @api.depends("installment_ids", "installment_ids.state")
+    def _compute_installment_history(self):
+        for policy in self:
+            lines = policy.installment_ids
+            policy.installment_to_pay_ids = lines.filtered(
+                lambda line: line.state in ("pending", "invoiced", "overdue")
+            )
+            policy.installment_paid_ids = lines.filtered(lambda line: line.state == "paid")
 
     @api.depends(
         "installment_ids.state",
@@ -649,9 +668,13 @@ class InsurancePolicy(models.Model):
             "price_unit": self.policy_amount,
             "tax_ids": [(6, 0, tax_ids)],
         }
+        company = self.company_id or self.env.company
+        journal = self.env["insurance.installment"]._get_sale_journal(company)
         vals = {
             "move_type": "out_invoice",
             "partner_id": self.partner_id.id,
+            "company_id": company.id,
+            "journal_id": journal.id,
             "invoice_date": self.issue_date or fields.Date.context_today(self),
             "invoice_date_due": self.issue_date or fields.Date.context_today(self),
             "invoice_origin": self.name,
@@ -668,7 +691,7 @@ class InsurancePolicy(models.Model):
             payment_method=self.cfdi_payment_method or "PPD",
             payment_form=self.cfdi_payment_form or "99",
         )
-        invoice = self.env["account.move"].create(vals)
+        invoice = self.env["account.move"].with_company(company).create(vals)
         invoice._fill_insurance_complement_from_policy(self)
         self.cfdi_global_move_id = invoice.id
         self.installment_ids.filtered(lambda l: not l.invoice_id).write({
@@ -803,11 +826,12 @@ class InsurancePolicy(models.Model):
         self.member_ids = [(0, 0, {
             "partner_id": self.partner_id.id,
             "name": self.partner_id.name,
+            "insured_role": "insured",
             "relationship": "holder",
             "mx_rfc": self.partner_id.vat,
             "mx_curp": self.partner_id.mx_curp,
             "birth_date": self.partner_id.mx_birth_date,
-            "phone": self.partner_id.mobile or self.partner_id.phone,
+            "phone": self.partner_id._insurance_phone(),
             "email": self.partner_id.email,
         })]
 

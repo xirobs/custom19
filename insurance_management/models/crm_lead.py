@@ -1,12 +1,18 @@
 # -*- coding: utf-8 -*-
 
-from odoo import fields, models, _
+from odoo import api, fields, models, _
 from odoo.exceptions import UserError
 
 
 class CrmLead(models.Model):
     _inherit = "crm.lead"
 
+    is_insurance_opportunity = fields.Boolean(
+        string="Oportunidad de seguros",
+        default=False,
+        index=True,
+        copy=True,
+    )
     insurance_scheme_id = fields.Many2one(
         "insurance.scheme",
         string="Esquema de seguro",
@@ -43,6 +49,49 @@ class CrmLead(models.Model):
         string="Contratación",
         default="individual",
     )
+
+    def _auto_init(self):
+        res = super()._auto_init()
+        self.env.cr.execute(
+            """
+            UPDATE crm_lead
+               SET is_insurance_opportunity = true
+             WHERE COALESCE(is_insurance_opportunity, false) = false
+               AND (insurance_scheme_id IS NOT NULL OR insurance_policy_id IS NOT NULL)
+            """
+        )
+        self.env.cr.execute(
+            """
+            UPDATE crm_lead
+               SET is_insurance_opportunity = false
+             WHERE is_insurance_opportunity IS NULL
+            """
+        )
+        return res
+
+    @api.model_create_multi
+    def create(self, vals_list):
+        for vals in vals_list:
+            if (
+                self.env.context.get("default_is_insurance_opportunity")
+                or vals.get("is_insurance_opportunity")
+                or vals.get("insurance_scheme_id")
+                or vals.get("insurance_policy_id")
+            ):
+                vals["is_insurance_opportunity"] = True
+        return super().create(vals_list)
+
+    def write(self, vals):
+        if vals.get("insurance_scheme_id") or vals.get("insurance_policy_id"):
+            vals = dict(vals, is_insurance_opportunity=True)
+        return super().write(vals)
+
+    @api.onchange("insurance_scheme_id")
+    def _onchange_insurance_scheme_id(self):
+        if self.insurance_scheme_id:
+            self.is_insurance_opportunity = True
+            if self.insurance_scheme_id.insurance_company_id and not self.insurance_company_id:
+                self.insurance_company_id = self.insurance_scheme_id.insurance_company_id
 
     def action_create_insurance_policy(self):
         self.ensure_one()

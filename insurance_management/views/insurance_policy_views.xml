@@ -48,9 +48,6 @@
                     <button name="action_create_all_pending_invoices" type="object"
                             string="Facturar cuotas pendientes"
                             invisible="state != 'confirmed' or invoice_mode == 'global_ppd'"/>
-                    <button name="action_create_commission_bill" type="object"
-                            string="Facturar comisión"
-                            invisible="state not in ('confirmed', 'expired') or not agent_id"/>
                     <button name="action_apply_growth" type="object" string="Aplicar crecimiento"
                             invisible="state != 'confirmed'"/>
                     <button name="action_renew" type="object" string="Activar renovación"
@@ -102,7 +99,7 @@
                     </div>
                     <div class="oe_title">
                         <h1>
-                            <field name="display_title" placeholder="Titular — oferta"/>
+                            <field name="display_title" placeholder="Contratante — oferta"/>
                         </h1>
                         <label for="name"/>
                         <h2>
@@ -118,12 +115,8 @@
                             <field name="payment_term_id" readonly="state != 'draft'"/>
                             <field name="branch_id" readonly="state != 'draft'"/>
                             <field name="agent_id" readonly="state != 'draft'"/>
-                            <field name="commission_rate" readonly="state != 'draft'"/>
-                            <field name="commission_amount"/>
-                            <field name="commission_move_id" readonly="1"/>
                             <field name="coverage_mode" readonly="state != 'draft'"/>
                             <field name="lead_id" readonly="state != 'draft'"/>
-                            <field name="project_id"/>
                             <field name="calendar_event_id" readonly="1"/>
                             <field name="lifecycle_stage"/>
                         </group>
@@ -200,12 +193,11 @@
                         <page string="Partes aseguradas" name="members">
                             <field name="member_ids">
                                 <list editable="bottom">
+                                    <field name="insured_role"/>
                                     <field name="relationship"/>
                                     <field name="partner_id"/>
-                                    <field name="name"/>
                                     <field name="birth_date"/>
                                     <field name="seniority_date"/>
-                                    <field name="premium_share"/>
                                     <field name="mx_curp" optional="hide"/>
                                     <field name="mx_rfc" optional="hide"/>
                                     <field name="phone" optional="hide"/>
@@ -231,10 +223,14 @@
                                 </list>
                             </field>
                         </page>
-                        <page string="Cuotas y pagos" name="installments">
-                            <field name="installment_ids" readonly="state == 'cancelled'">
-                                <list editable="bottom" decoration-danger="state == 'overdue'" decoration-success="state == 'paid'">
+                        <page string="Historial de pagos" name="installments">
+                            <separator string="Cuotas por pagar"/>
+                            <field name="installment_to_pay_ids" nolabel="1" readonly="1">
+                                <list create="false" delete="false" edit="false"
+                                      decoration-danger="state == 'overdue'"
+                                      decoration-warning="state == 'invoiced'">
                                     <field name="number"/>
+                                    <field name="due_month" optional="hide"/>
                                     <field name="date_from"/>
                                     <field name="date_to"/>
                                     <field name="due_date"/>
@@ -242,17 +238,23 @@
                                     <field name="state" widget="badge"
                                            decoration-info="state == 'pending'"
                                            decoration-warning="state == 'invoiced'"
-                                           decoration-success="state == 'paid'"
                                            decoration-danger="state == 'overdue'"/>
                                     <field name="invoice_id"/>
-                                    <button name="action_create_invoice" type="object" string="Crear factura"
-                                            icon="fa-plus" invisible="invoice_id or state == 'cancelled'"/>
-                                    <button name="action_register_payment" type="object" string="Registrar pago"
-                                            icon="fa-money" invisible="state == 'paid' or state == 'cancelled'"/>
-                                    <button name="action_send_collection_notice" type="object" string="Avisar cobranza"
-                                            icon="fa-envelope" invisible="state in ('paid', 'cancelled')"/>
-                                    <button name="action_open_invoice" type="object" string="Ver factura"
-                                            icon="fa-external-link" invisible="not invoice_id"/>
+                                    <field name="payment_state" optional="hide"/>
+                                </list>
+                            </field>
+                            <separator string="Cuotas pagadas"/>
+                            <field name="installment_paid_ids" nolabel="1" readonly="1">
+                                <list create="false" delete="false" edit="false"
+                                      decoration-success="state == 'paid'">
+                                    <field name="number"/>
+                                    <field name="date_from"/>
+                                    <field name="date_to"/>
+                                    <field name="due_date"/>
+                                    <field name="amount"/>
+                                    <field name="state" widget="badge" decoration-success="state == 'paid'"/>
+                                    <field name="invoice_id"/>
+                                    <field name="payment_state"/>
                                 </list>
                             </field>
                         </page>

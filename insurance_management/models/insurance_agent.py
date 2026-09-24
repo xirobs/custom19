@@ -27,7 +27,7 @@ class InsuranceAgent(models.Model):
     def _onchange_partner_id(self):
         if self.partner_id:
             self.name = self.partner_id.name
-            self.mobile = self.partner_id.mobile or self.partner_id.phone
+            self.mobile = self.partner_id._insurance_phone()
             self.email = self.partner_id.email
 
     def _compute_policy_count(self):

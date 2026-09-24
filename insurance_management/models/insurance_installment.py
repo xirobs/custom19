@@ -10,7 +10,7 @@ class InsuranceInstallment(models.Model):
     _name = "insurance.installment"
     _description = "Cuota / prima periódica"
     _inherit = ["mail.thread", "mail.activity.mixin"]
-    _order = "policy_id, number"
+    _order = "due_date, policy_id, number"
 
     name = fields.Char(string="Referencia", compute="_compute_name", store=True)
     policy_id = fields.Many2one(
@@ -46,6 +46,12 @@ class InsuranceInstallment(models.Model):
     )
     company_id = fields.Many2one(related="policy_id.company_id", store=True)
     branch_id = fields.Many2one(related="policy_id.branch_id", store=True, string="Sucursal")
+    due_month = fields.Date(
+        string="Mes de cobro",
+        compute="_compute_due_month",
+        store=True,
+        index=True,
+    )
     notified_upcoming = fields.Boolean(string="Aviso previo enviado", copy=False)
     notified_overdue = fields.Boolean(string="Aviso de mora enviado", copy=False)
 
@@ -54,6 +60,43 @@ class InsuranceInstallment(models.Model):
         for line in self:
             policy_name = line.policy_id.name or _("Póliza")
             line.name = _("%s — Cuota %s") % (policy_name, line.number)
+
+    @api.depends("due_date")
+    def _compute_due_month(self):
+        for line in self:
+            line.due_month = line.due_date.replace(day=1) if line.due_date else False
+
+    @api.model
+    def _get_sale_journal(self, company):
+        """Diario de ventas de la empresa; si no existe, se crea uno de seguros."""
+        company = company or self.env.company
+        Journal = self.env["account.journal"].sudo().with_company(company)
+        domain = [("type", "=", "sale")]
+        if "company_id" in Journal._fields:
+            domain.append(("company_id", "=", company.id))
+        journal = Journal.search(domain, limit=1)
+        if journal:
+            return journal
+        used_codes = set(Journal.search([("company_id", "=", company.id)]).mapped("code"))
+        code = "SEG"
+        suffix = 1
+        while code in used_codes:
+            suffix += 1
+            code = "SG%s" % suffix
+        try:
+            journal = Journal.create({
+                "name": _("Facturas de seguros"),
+                "code": code,
+                "type": "sale",
+                "company_id": company.id,
+            })
+        except Exception as err:
+            raise UserError(_(
+                "La empresa %(company)s no tiene un diario de ventas. "
+                "En Contabilidad → Configuración → Diarios cree uno de tipo Ventas "
+                "o instale el plan de cuentas mexicano. Detalle: %(error)s"
+            ) % {"company": company.display_name, "error": err})
+        return journal
 
     def action_create_invoice(self):
         invoices = self.env["account.move"]
@@ -125,9 +168,13 @@ class InsuranceInstallment(models.Model):
         from .cfdi_utils import apply_cfdi_invoice_values, apply_sat_product_code
 
         apply_sat_product_code(product)
+        company = policy.company_id or self.env.company
+        journal = self._get_sale_journal(company)
         vals = {
             "move_type": "out_invoice",
             "partner_id": policy.partner_id.id,
+            "company_id": company.id,
+            "journal_id": journal.id,
             "invoice_date": fields.Date.context_today(self),
             "invoice_date_due": self.due_date,
             "invoice_origin": policy.name,
@@ -144,7 +191,7 @@ class InsuranceInstallment(models.Model):
             payment_method="PUE" if policy.premium_type == "unique" else "PPD",
             payment_form=policy.cfdi_payment_form or "99",
         )
-        invoice = self.env["account.move"].create(vals)
+        invoice = self.env["account.move"].with_company(company).create(vals)
         invoice._fill_insurance_complement_from_policy(policy, installment=self)
         self.write({
             "invoice_id": invoice.id,

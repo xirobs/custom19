@@ -17,6 +17,7 @@
                 <page string="Seguros" name="insurance">
                     <group>
                         <group>
+                            <field name="is_insurance_opportunity"/>
                             <field name="insurance_scheme_id"/>
                             <field name="insurance_policy_type_id"/>
                             <field name="insurance_company_id"/>
@@ -34,14 +35,74 @@
         </field>
     </record>
 
+    <record id="view_crm_lead_search_insurance" model="ir.ui.view">
+        <field name="name">crm.lead.search.insurance</field>
+        <field name="model">crm.lead</field>
+        <field name="inherit_id" ref="crm.view_crm_case_opportunities_filter"/>
+        <field name="arch" type="xml">
+            <xpath expr="//search" position="inside">
+                <separator/>
+                <filter name="insurance_opps" string="Oportunidades de seguros"
+                        domain="['|', '|', ('is_insurance_opportunity', '=', True), ('insurance_scheme_id', '!=', False), ('insurance_policy_id', '!=', False)]"/>
+                <filter name="insurance_with_offer" string="Con oferta o póliza"
+                        domain="['|', ('insurance_scheme_id', '!=', False), ('insurance_policy_id', '!=', False)]"/>
+            </xpath>
+        </field>
+    </record>
+
+    <record id="view_crm_lead_search_insurance_pipeline" model="ir.ui.view">
+        <field name="name">crm.lead.search.insurance.pipeline</field>
+        <field name="model">crm.lead</field>
+        <field name="priority">32</field>
+        <field name="arch" type="xml">
+            <search string="Oportunidades de seguros">
+                <field name="name"/>
+                <field name="partner_id"/>
+                <field name="user_id"/>
+                <field name="insurance_scheme_id"/>
+                <field name="insurance_company_id"/>
+                <filter name="assigned_to_me" string="Mis oportunidades" domain="[('user_id', '=', uid)]"/>
+                <filter name="unassigned" string="Sin asignar" domain="[('user_id', '=', False)]"/>
+                <filter name="insurance_with_offer" string="Con oferta o póliza"
+                        domain="['|', ('insurance_scheme_id', '!=', False), ('insurance_policy_id', '!=', False)]"/>
+                <separator/>
+                <filter name="inactive" string="Archivadas" domain="[('active', '=', False)]"/>
+                <group>
+                    <filter name="group_stage" string="Etapa" context="{'group_by': 'stage_id'}"/>
+                    <filter name="group_user" string="Comercial" context="{'group_by': 'user_id'}"/>
+                    <filter name="group_scheme" string="Oferta" context="{'group_by': 'insurance_scheme_id'}"/>
+                </group>
+            </search>
+        </field>
+    </record>
+
     <record id="action_insurance_crm_leads" model="ir.actions.act_window">
         <field name="name">Oportunidades de seguros</field>
         <field name="res_model">crm.lead</field>
         <field name="view_mode">kanban,list,form</field>
-        <field name="domain">['|', ('insurance_scheme_id', '!=', False), ('insurance_policy_id', '!=', False)]</field>
+        <field name="search_view_id" ref="view_crm_lead_search_insurance_pipeline"/>
+        <field name="domain">['&amp;', ('type', '=', 'opportunity'), '|', '|', ('is_insurance_opportunity', '=', True), ('insurance_scheme_id', '!=', False), ('insurance_policy_id', '!=', False)]</field>
         <field name="context">{
             'default_type': 'opportunity',
-            'search_default_assigned_to_me': 1,
+            'default_is_insurance_opportunity': True,
         }</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">Cree la primera oportunidad de seguros</p>
+            <p>Queda en este tablero, no en el CRM comercial, aunque todavía no elija la oferta.</p>
+        </field>
+    </record>
+
+    <!-- El tablero del CRM comercial no mezcla oportunidades de seguros. -->
+    <record id="crm.crm_lead_opportunities" model="ir.actions.act_window">
+        <field name="domain">[('type', '=', 'opportunity'), ('is_insurance_opportunity', '=', False)]</field>
+    </record>
+    <record id="crm.crm_lead_action_pipeline" model="ir.actions.act_window">
+        <field name="domain">[('type', '=', 'opportunity'), ('is_insurance_opportunity', '=', False)]</field>
+    </record>
+    <record id="crm.crm_lead_action_forecast" model="ir.actions.act_window">
+        <field name="domain">[('type', '=', 'opportunity'), ('is_insurance_opportunity', '=', False)]</field>
+    </record>
+    <record id="crm.crm_case_form_view_salesteams_opportunity" model="ir.actions.act_window">
+        <field name="domain">[('type', '=', 'opportunity'), ('is_insurance_opportunity', '=', False)]</field>
     </record>
 </odoo>

@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 {
     "name": "Gestión de Aseguradoras",
-    "version": "19.0.4.2.0",
+    "version": "19.0.4.8.1",
     "author": "Jhuliana Delgado",
     "maintainer": "Jhuliana Delgado",
     "website": "",
@@ -69,4 +69,5 @@ Ver static/description/index.html para la ficha completa.
     "application": True,
     "auto_install": False,
     "license": "LGPL-3",
+    "post_init_hook": "post_init_hook",
 }

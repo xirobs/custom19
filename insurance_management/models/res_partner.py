@@ -125,6 +125,13 @@ class ResPartner(models.Model):
             "context": {"default_partner_id": self.id},
         }
 
+    def _insurance_phone(self):
+        """Odoo 19 ya no tiene mobile en res.partner."""
+        self.ensure_one()
+        if "mobile" in self._fields:
+            return self.mobile or self.phone
+        return self.phone
+
     def action_open_insurance_policies(self):
         self.ensure_one()
         return {
