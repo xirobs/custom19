@@ -18,9 +18,24 @@ class CrmLead(models.Model):
         string="Esquema de seguro",
     )
     insurance_policy_type_id = fields.Many2one(
-        related="insurance_scheme_id.policy_type_id",
-        store=True,
-        string="Tipo de póliza",
+        "insurance.policy.type",
+        string="Ramo",
+        index=True,
+    )
+    insurance_offer_id = fields.Many2one(
+        "insurance.offer",
+        string="Oferta / sub-ramo",
+        domain="[('ramo_id', '=', insurance_policy_type_id), ('parent_id', '=', False)]",
+    )
+    insurance_origin = fields.Selection(
+        [
+            ("new", "Cliente nuevo"),
+            ("cross_sell", "Venta cruzada"),
+            ("referral", "Referido"),
+            ("renewal", "Renovación"),
+        ],
+        string="Origen del prospecto",
+        default="new",
     )
     insurance_company_id = fields.Many2one(
         "insurance.company",
@@ -86,9 +101,25 @@ class CrmLead(models.Model):
             vals = dict(vals, is_insurance_opportunity=True)
         return super().write(vals)
 
+    def action_send_insurance_message(self):
+        return self.env["insurance.message.wizard"].action_open(self)
+
+    @api.onchange("insurance_policy_type_id")
+    def _onchange_insurance_ramo(self):
+        if self.insurance_policy_type_id:
+            self.is_insurance_opportunity = True
+            if self.insurance_offer_id.ramo_id != self.insurance_policy_type_id:
+                self.insurance_offer_id = False
+            if self.insurance_scheme_id.policy_type_id != self.insurance_policy_type_id:
+                self.insurance_scheme_id = self.env["insurance.scheme"].search(
+                    [("policy_type_id", "=", self.insurance_policy_type_id.id)], limit=1
+                )
+
     @api.onchange("insurance_scheme_id")
     def _onchange_insurance_scheme_id(self):
         if self.insurance_scheme_id:
+            if not self.insurance_policy_type_id:
+                self.insurance_policy_type_id = self.insurance_scheme_id.policy_type_id
             self.is_insurance_opportunity = True
             if self.insurance_scheme_id.insurance_company_id and not self.insurance_company_id:
                 self.insurance_company_id = self.insurance_scheme_id.insurance_company_id
@@ -99,11 +130,13 @@ class CrmLead(models.Model):
             return self.action_open_insurance_policy()
         if not self.partner_id:
             raise UserError(_("Asigne un cliente a la oportunidad antes de crear la póliza."))
-        if not self.insurance_scheme_id:
-            raise UserError(_("Seleccione el esquema de seguro."))
+        if not self.insurance_scheme_id and not self.insurance_policy_type_id:
+            raise UserError(_("Seleccione el ramo del seguro."))
         policy = self.env["insurance.policy"].create({
             "partner_id": self.partner_id.id,
-            "scheme_id": self.insurance_scheme_id.id,
+            "scheme_id": self.insurance_scheme_id.id or False,
+            "policy_type_id": self.insurance_policy_type_id.id or self.insurance_scheme_id.policy_type_id.id,
+            "offer_id": self.insurance_offer_id.id or False,
             "insurance_company_id": self.insurance_company_id.id,
             "policy_amount": self.estimated_premium or self.insurance_scheme_id.amount_min or 0.0,
             "insured_amount": self.estimated_insured_amount or self.insurance_scheme_id.insured_amount_min or 0.0,

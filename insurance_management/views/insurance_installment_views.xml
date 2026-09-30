@@ -8,14 +8,41 @@
                   decoration-danger="state == 'overdue'"
                   decoration-success="state == 'paid'"
                   decoration-muted="state == 'cancelled'">
+                <header>
+                    <button name="action_send_message" type="object" string="Enviar mensaje"/>
+                    <button name="action_open_payment_wizard" type="object" string="Realizar pago"/>
+                </header>
                 <field name="due_month" optional="hide"/>
                 <field name="policy_id"/>
                 <field name="partner_id"/>
+                <field name="policy_type_id" optional="show"/>
+                <field name="insurance_company_id" optional="show"/>
+                <field name="agent_id" optional="hide"/>
+                <field name="partner_phone" optional="hide"/>
                 <field name="number"/>
                 <field name="date_from"/>
-                <field name="date_to"/>
+                <field name="date_to" optional="hide"/>
+                <field name="emission_date" optional="show"/>
+                <field name="grace_end_date" optional="show"/>
                 <field name="due_date"/>
-                <field name="amount"/>
+                <field name="extension_end_date" optional="show"/>
+                <field name="protection_end_date" optional="show"/>
+                <field name="collection_channel" optional="show"/>
+                <field name="amount" sum="Total"/>
+                <field name="paid_amount" sum="Pagado"/>
+                <field name="balance" sum="Saldo"/>
+                <field name="payment_date" optional="show"/>
+                <field name="currency_id" optional="hide"/>
+                <field name="collection_status" widget="badge"
+                       decoration-success="collection_status == 'paid'"
+                       decoration-warning="collection_status == 'due_soon'"
+                       decoration-danger="collection_status == 'overdue'"/>
+                <field name="collection_stage" widget="badge" optional="show"
+                       decoration-info="collection_stage == 'grace'"
+                       decoration-primary="collection_stage == 'auto_charge'"
+                       decoration-warning="collection_stage in ('extension', 'protection')"
+                       decoration-danger="collection_stage == 'lapsed'"
+                       decoration-success="collection_stage == 'paid'"/>
                 <field name="state" widget="badge"
                        decoration-info="state == 'pending'"
                        decoration-warning="state == 'invoiced'"
@@ -25,8 +52,12 @@
                 <field name="payment_state"/>
                 <button name="action_create_invoice" type="object" string="Crear factura"
                         icon="fa-plus" invisible="invoice_id or state == 'cancelled'"/>
+                <button name="action_mark_paid" type="object" string="Marcar pagada"
+                        icon="fa-check" invisible="state in ('paid', 'cancelled')"/>
                 <button name="action_register_payment" type="object" string="Registrar pago"
                         icon="fa-money" invisible="state in ('paid', 'cancelled')"/>
+                <button name="action_send_message" type="object" string="Mensaje" icon="fa-whatsapp"
+                        invisible="state in ('paid', 'cancelled')"/>
                 <button name="action_send_collection_notice" type="object" string="Avisar"
                         icon="fa-envelope" invisible="state in ('paid', 'cancelled')"/>
             </list>
@@ -41,8 +72,10 @@
                 <header>
                     <button name="action_create_invoice" type="object" string="Crear factura"
                             class="btn-primary" invisible="invoice_id or state == 'cancelled'"/>
-                    <button name="action_register_payment" type="object" string="Registrar pago"
+                    <button name="action_mark_paid" type="object" string="Marcar pagada"
                             class="btn-primary" invisible="state in ('paid', 'cancelled')"/>
+                    <button name="action_register_payment" type="object" string="Registrar pago contable"
+                            invisible="state in ('paid', 'cancelled')"/>
                     <button name="action_send_collection_notice" type="object" string="Enviar aviso de cobranza"
                             invisible="state in ('paid', 'cancelled')"/>
                     <button name="action_open_invoice" type="object" string="Ver factura"
@@ -56,14 +89,30 @@
                             <field name="partner_id"/>
                             <field name="number"/>
                             <field name="amount"/>
+                            <field name="paid_amount"/>
+                            <field name="payment_date"/>
+                            <field name="payment_reference"/>
+                            <field name="collection_channel"/>
                         </group>
                         <group>
                             <field name="date_from"/>
                             <field name="date_to"/>
                             <field name="due_month"/>
-                            <field name="due_date"/>
                             <field name="invoice_id"/>
                             <field name="payment_state"/>
+                        </group>
+                    </group>
+                    <group string="Calendario de cobro">
+                        <group>
+                            <field name="emission_date"/>
+                            <field name="grace_end_date"/>
+                            <field name="due_date"/>
+                        </group>
+                        <group>
+                            <field name="auto_charge_end_date" invisible="collection_channel != 'domiciled'"/>
+                            <field name="extension_end_date"/>
+                            <field name="protection_end_date"/>
+                            <field name="collection_stage" widget="badge"/>
                         </group>
                     </group>
                 </sheet>
@@ -77,13 +126,27 @@
         <field name="model">insurance.installment</field>
         <field name="arch" type="xml">
             <search>
-                <field name="policy_id"/>
+                <field name="policy_id" string="N.º de póliza"/>
                 <field name="partner_id"/>
+                <field name="policy_type_id" string="Ramo"/>
+                <field name="insurance_company_id" string="Aseguradora"/>
+                <field name="agent_id"/>
                 <field name="invoice_id"/>
+                <filter name="status_paid" string="Pagadas" domain="[('collection_status', '=', 'paid')]"/>
+                <filter name="status_due_soon" string="Por vencer" domain="[('collection_status', '=', 'due_soon')]"/>
+                <filter name="status_overdue" string="Vencidas" domain="[('collection_status', '=', 'overdue')]"/>
+                <separator/>
+                <filter name="mxn" string="Pesos" domain="[('currency_id.name', '=', 'MXN')]"/>
+                <filter name="usd" string="Dólares" domain="[('currency_id.name', '=', 'USD')]"/>
+                <filter name="udi" string="UDIS" domain="[('currency_id.name', '=', 'UDI')]"/>
+                <separator/>
                 <filter name="pending" string="Pendientes" domain="[('state', '=', 'pending')]"/>
                 <filter name="invoiced" string="Facturadas" domain="[('state', '=', 'invoiced')]"/>
                 <filter name="overdue" string="Vencidas" domain="[('state', '=', 'overdue')]"/>
                 <filter name="paid" string="Pagadas" domain="[('state', '=', 'paid')]"/>
+                <separator/>
+                <filter name="direct" string="Cobro directo" domain="[('collection_channel', '=', 'direct')]"/>
+                <filter name="domiciled" string="Domiciliado" domain="[('collection_channel', '=', 'domiciled')]"/>
                 <separator/>
                 <filter name="this_month" string="Vencen este mes"
                         domain="[('due_date', '&gt;=', (context_today()).strftime('%Y-%m-01')), ('due_date', '&lt;', (context_today() + relativedelta(months=1)).strftime('%Y-%m-01'))]"/>
@@ -96,7 +159,12 @@
                     <filter name="group_partner" string="Cliente" context="{'group_by': 'partner_id'}"/>
                     <filter name="group_policy" string="Póliza" context="{'group_by': 'policy_id'}"/>
                     <filter name="group_state" string="Estado" context="{'group_by': 'state'}"/>
-                    <filter name="group_due" string="Vencimiento" context="{'group_by': 'due_date'}"/>
+                    <filter name="group_due" string="Fecha de cobro" context="{'group_by': 'due_date'}"/>
+                    <filter name="group_channel" string="Conducto de cobro" context="{'group_by': 'collection_channel'}"/>
+                    <filter name="group_status" string="Estatus de cobro" context="{'group_by': 'collection_status'}"/>
+                    <filter name="group_currency" string="Moneda" context="{'group_by': 'currency_id'}"/>
+                    <filter name="group_ramo" string="Ramo" context="{'group_by': 'policy_type_id'}"/>
+                    <filter name="group_company" string="Aseguradora" context="{'group_by': 'insurance_company_id'}"/>
                     <filter name="group_branch" string="Sucursal" context="{'group_by': 'branch_id'}"/>
                 </group>
             </search>
@@ -108,9 +176,10 @@
         <field name="model">insurance.installment</field>
         <field name="arch" type="xml">
             <pivot string="Cobranzas">
-                <field name="branch_id" type="row"/>
-                <field name="state" type="col"/>
+                <field name="currency_id" type="row"/>
+                <field name="collection_status" type="col"/>
                 <field name="amount" type="measure"/>
+                <field name="paid_amount" type="measure"/>
             </pivot>
         </field>
     </record>
@@ -129,7 +198,7 @@
     <record id="action_insurance_installment" model="ir.actions.act_window">
         <field name="name">Cuotas por cobrar</field>
         <field name="res_model">insurance.installment</field>
-        <field name="view_mode">list,pivot,graph,form</field>
+        <field name="view_mode">list,kanban,pivot,graph,form</field>
         <field name="search_view_id" ref="view_insurance_installment_search"/>
         <field name="domain">[('state', 'in', ['pending', 'invoiced', 'overdue'])]</field>
         <field name="context">{
@@ -152,5 +221,60 @@
         <field name="view_mode">list,form</field>
         <field name="domain">[('insurance_policy_id', '!=', False), ('move_type', '=', 'out_invoice')]</field>
         <field name="context">{'default_move_type': 'out_invoice'}</field>
+    </record>
+    <!-- ================= Tablero de cobranza ================= -->
+    <record id="view_insurance_installment_kanban" model="ir.ui.view">
+        <field name="name">insurance.installment.kanban</field>
+        <field name="model">insurance.installment</field>
+        <field name="arch" type="xml">
+            <kanban default_group_by="collection_status" class="o_kanban_small_column" records_draggable="0"
+                    quick_create="0" group_create="0" group_delete="0" group_edit="0" create="0">
+                <field name="collection_status"/>
+                <field name="state"/>
+                <field name="currency_id"/>
+                <progressbar field="collection_status"
+                             colors='{"paid": "success", "due_soon": "warning", "overdue": "danger", "scheduled": "info"}'
+                             sum_field="amount"/>
+                <templates>
+                    <t t-name="card">
+                        <div class="d-flex justify-content-between">
+                            <strong><field name="partner_id"/></strong>
+                            <field name="collection_status" widget="badge"
+                                   decoration-success="collection_status == 'paid'"
+                                   decoration-warning="collection_status == 'due_soon'"
+                                   decoration-danger="collection_status == 'overdue'"/>
+                        </div>
+                        <div class="small"><field name="policy_id"/> · cuota <field name="number"/></div>
+                        <div class="small text-muted"><field name="policy_type_id"/> · <field name="insurance_company_id"/></div>
+                        <div>Cobro: <field name="due_date"/></div>
+                        <div class="fw-bold" invisible="state == 'paid'">Saldo: <field name="balance" widget="monetary"/> <field name="currency_id"/></div>
+                        <div class="fw-bold text-success" invisible="state != 'paid'">Pagado: <field name="paid_amount" widget="monetary"/> <field name="currency_id"/> · <field name="payment_date"/></div>
+                        <footer class="d-flex gap-1">
+                            <button name="action_open_payment_wizard" type="object" class="btn btn-sm btn-primary"
+                                    invisible="state in ('paid', 'cancelled')">Realizar pago</button>
+                            <button name="action_send_message" type="object" class="btn btn-sm btn-secondary"
+                                    invisible="state in ('paid', 'cancelled')">Mensaje</button>
+                            <field name="activity_ids" widget="kanban_activity"/>
+                        </footer>
+                    </t>
+                </templates>
+            </kanban>
+        </field>
+    </record>
+    <record id="action_insurance_collection_board" model="ir.actions.act_window">
+        <field name="name">Tablero de cobranza</field>
+        <field name="res_model">insurance.installment</field>
+        <field name="view_mode">kanban,list,pivot,graph,form</field>
+        <field name="search_view_id" ref="view_insurance_installment_search"/>
+        <field name="domain">[('collection_status', 'in', ['paid', 'due_soon', 'overdue'])]</field>
+        <field name="context">{}</field>
+    </record>
+    <record id="action_insurance_collection_by_currency" model="ir.actions.act_window">
+        <field name="name">Cobranza por moneda</field>
+        <field name="res_model">insurance.installment</field>
+        <field name="view_mode">list,pivot,kanban,form</field>
+        <field name="search_view_id" ref="view_insurance_installment_search"/>
+        <field name="domain">[('state', '!=', 'cancelled')]</field>
+        <field name="context">{'search_default_group_currency': 1, 'search_default_group_status': 1}</field>
     </record>
 </odoo>

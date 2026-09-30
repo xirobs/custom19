@@ -5,25 +5,39 @@
         <field name="model">insurance.policy</field>
         <field name="arch" type="xml">
             <list string="Pólizas"
-                  decoration-info="state == 'draft'"
-                  decoration-success="state == 'done'"
-                  decoration-warning="state == 'expired'"
+                  decoration-danger="attention_level == 'danger'"
+                  decoration-warning="attention_level == 'warning'"
                   decoration-muted="state == 'cancelled'">
+                <header>
+                    <button name="%(insurance_management.action_insurance_policy_pdf_import)d" type="action"
+                            string="Cargar carátula PDF" class="btn-secondary" display="always"/>
+                </header>
                 <field name="display_title"/>
-                <field name="scheme_id"/>
+                <field name="policy_type_id"/>
+                <field name="offer_id"/>
+                <field name="plan_basic" optional="show"/>
                 <field name="partner_id"/>
+                <field name="insured_partner_id" optional="hide"/>
                 <field name="name"/>
                 <field name="insurance_company_id"/>
-                <field name="branch_id"/>
                 <field name="agent_id"/>
                 <field name="duration_months"/>
                 <field name="coverage_start_date"/>
                 <field name="coverage_end_date"/>
-                <field name="policy_amount"/>
-                <field name="currency_id" optional="hide" groups="base.group_multi_currency"/>
+                <field name="policy_amount" sum="Prima emitida"/>
+                <field name="amount_paid" sum="Prima pagada"/>
+                <field name="currency_id"/>
                 <field name="coverage_mode"/>
                 <field name="premium_type"/>
-                <field name="lifecycle_stage" widget="badge"/>
+                <field name="collection_channel" optional="show"/>
+                <field name="lifecycle_stage" widget="badge" optional="hide"/>
+                <field name="attention_level" widget="badge"
+                       decoration-success="attention_level == 'ok'"
+                       decoration-warning="attention_level == 'warning'"
+                       decoration-danger="attention_level == 'danger'"/>
+                <field name="attention_reason" optional="show"/>
+                <field name="renewal_state" optional="hide"/>
+                <field name="agent_key_id" optional="hide"/>
                 <field name="state" widget="badge"
                        decoration-info="state == 'draft'"
                        decoration-success="state == 'confirmed'"
@@ -48,6 +62,18 @@
                     <button name="action_create_all_pending_invoices" type="object"
                             string="Facturar cuotas pendientes"
                             invisible="state != 'confirmed' or invoice_mode == 'global_ppd'"/>
+                    <button name="action_send_message" type="object" string="Enviar mensaje" icon="fa-envelope"
+                            invisible="state == 'cancelled'"/>
+                    <button name="action_register_customer_payment" type="object" string="Realizar pago" icon="fa-money"
+                            invisible="state not in ('confirmed', 'expired')"/>
+                    <button name="action_create_task" type="object" string="Nueva tarea" icon="fa-tasks"/>
+                    <button name="action_send_renewal_notice" type="object" string="Enviar aviso de renovación"
+                            invisible="renewal_state not in ('pending', 'in_progress')"/>
+                    <button name="action_open_caratula_import" type="object" string="Cargar carátula PDF"
+                            invisible="state in ('done', 'cancelled')"/>
+                    <button name="action_generate_installments" type="object" string="Generar cuotas"
+                            invisible="state not in ('draft', 'confirmed')"
+                            confirm="Se generará la lista de cuotas con el importe capturado. ¿Continuar?"/>
                     <button name="action_apply_growth" type="object" string="Aplicar crecimiento"
                             invisible="state != 'confirmed'"/>
                     <button name="action_renew" type="object" string="Activar renovación"
@@ -97,6 +123,13 @@
                             <span class="o_stat_text">Cliente</span>
                         </button>
                     </div>
+                    <field name="attention_level" invisible="1"/>
+                    <div class="alert alert-danger" role="alert" invisible="attention_level != 'danger'">
+                        <strong>Atención urgente:</strong> <field name="attention_reason" readonly="1" class="oe_inline"/>
+                    </div>
+                    <div class="alert alert-warning" role="alert" invisible="attention_level != 'warning'">
+                        <strong>Requiere seguimiento:</strong> <field name="attention_reason" readonly="1" class="oe_inline"/>
+                    </div>
                     <div class="oe_title">
                         <h1>
                             <field name="display_title" placeholder="Contratante — oferta"/>
@@ -108,29 +141,47 @@
                     </div>
                     <group>
                         <group>
-                            <field name="scheme_id" readonly="state != 'draft'"/>
-                            <field name="partner_id" readonly="state != 'draft'"/>
+                            <field name="policy_type_id" required="1" readonly="state != 'draft'"
+                                   options="{'no_create': True}"/>
+                            <field name="offer_id" readonly="state != 'draft'"
+                                   invisible="not policy_type_id"
+                                   options="{'no_create': True}"/>
+                            <field name="offer_free_text" invisible="1"/>
+                            <field name="offer_has_children" invisible="1"/>
+                            <field name="sub_offer_id" readonly="state != 'draft'"
+                                   invisible="not offer_id or offer_free_text or not offer_has_children"
+                                   options="{'no_create': True}"/>
+                            <field name="sub_offer_text" readonly="state != 'draft'"
+                                   invisible="not offer_free_text"
+                                   placeholder="Escriba la sub-oferta..."/>
+                            <field name="plan_basic"/>
+                            <field name="partner_id" readonly="state != 'draft'" string="Contratante"/>
+                            <field name="insured_partner_id"/>
                             <field name="insurance_company_id" readonly="state != 'draft'"/>
-                            <field name="policy_type_id"/>
                             <field name="payment_term_id" readonly="state != 'draft'"/>
-                            <field name="branch_id" readonly="state != 'draft'"/>
                             <field name="agent_id" readonly="state != 'draft'"/>
+                            <field name="agent_key_id" options="{'no_create': True}"/>
+                            <field name="renewal_state" widget="badge"
+                                   decoration-success="renewal_state in ('renewed', 'not_due')"
+                                   decoration-warning="renewal_state in ('pending', 'in_progress')"
+                                   decoration-danger="renewal_state == 'lost'"/>
                             <field name="coverage_mode" readonly="state != 'draft'"/>
                             <field name="lead_id" readonly="state != 'draft'"/>
                             <field name="calendar_event_id" readonly="1"/>
                             <field name="lifecycle_stage"/>
                         </group>
                         <group>
+                            <field name="emission_date" readonly="state != 'draft'"/>
+                            <field name="maturity_date"/>
                             <field name="duration_months" readonly="state != 'draft'"/>
                             <field name="coverage_start_date" readonly="state != 'draft'"/>
                             <field name="coverage_end_date"/>
                             <field name="next_growth_date"/>
+                            <field name="currency_id" required="1" readonly="state != 'draft'"
+                                   options="{'no_create': True, 'no_open': True}"/>
                             <field name="insured_amount" readonly="state != 'draft'"/>
                             <field name="policy_amount" readonly="state != 'draft'"/>
-                            <field name="premium_type" readonly="state != 'draft'"/>
-                            <field name="installment_count"/>
-                            <field name="installment_amount"/>
-                            <field name="currency_id" groups="base.group_multi_currency"/>
+                            <field name="amount_paid"/>
                             <field name="user_id"/>
                             <field name="company_id" groups="base.group_multi_company"/>
                         </group>
@@ -149,11 +200,45 @@
                                     invisible="lifecycle_stage != 'renewal'"/>
                         </group>
                     </group>
+                    <group string="Forma de pago y conducto de cobro">
+                        <group>
+                            <field name="premium_type" readonly="state != 'draft'"/>
+                            <field name="installment_count"/>
+                            <field name="installment_amount"/>
+                            <field name="installment_total"/>
+                        </group>
+                        <group>
+                            <field name="collection_channel" widget="radio" options="{'horizontal': true}"/>
+                            <field name="direct_payment_method"
+                                   invisible="collection_channel != 'direct'"/>
+                            <field name="domiciled_bank_account_id"
+                                   invisible="collection_channel != 'domiciled'"
+                                   context="{'default_partner_id': partner_id}"/>
+                        </group>
+                    </group>
+                    <group string="Calendario de cobranza">
+                        <group>
+                            <field name="collection_date_mode" widget="radio"/>
+                            <field name="collection_day"
+                                   invisible="collection_date_mode != 'fixed'"
+                                   required="collection_date_mode == 'fixed'"/>
+                            <field name="grace_days"/>
+                        </group>
+                        <group>
+                            <field name="extension_days"/>
+                            <field name="auto_charge_days"/>
+                            <field name="protection_days"/>
+                        </group>
+                        <div class="text-muted" colspan="2">
+                            Emisión del recibo → días de gracia → fecha de cobro (fin de gracia o día fijo del cliente,
+                            siempre dentro de la gracia) → prórroga, con cobro automático los primeros días si es domiciliado
+                            → amparo, en el que el cliente paga directo a la aseguradora.
+                        </div>
+                    </group>
                     <group string="Cobranzas">
                         <group>
                             <field name="amount_invoiced"/>
                             <field name="amount_to_invoice"/>
-                            <field name="amount_paid"/>
                         </group>
                         <group>
                             <field name="amount_due"/>
@@ -163,6 +248,45 @@
                         </group>
                     </group>
                     <notebook>
+                        <page string="Carátula" name="caratula">
+                            <group>
+                                <group string="Asegurado">
+                                    <field name="insured_partner_id"/>
+                                    <field name="insured_birth_date"/>
+                                    <field name="insured_age"/>
+                                    <field name="insured_gender"/>
+                                    <field name="residence"/>
+                                    <field name="insured_address"/>
+                                </group>
+                                <group string="Póliza según carátula">
+                                    <field name="policy_kind"/>
+                                    <field name="plan_basic"/>
+                                    <field name="emission_date"/>
+                                    <field name="maturity_date"/>
+                                    <field name="settlement_option"/>
+                                    <field name="caratula_document_id" readonly="1"/>
+                                </group>
+                            </group>
+                            <separator string="Beneficios"/>
+                            <field name="benefit_ids">
+                                <list editable="bottom">
+                                    <field name="sequence" widget="handle"/>
+                                    <field name="section" optional="show"/>
+                                    <field name="benefit_id" context="{'default_ramo_id': parent.policy_type_id}"/>
+                                    <field name="insured_amount"/>
+                                    <field name="annex"/>
+                                    <field name="effective_date"/>
+                                    <field name="coverage_years"/>
+                                    <field name="payment_years"/>
+                                    <field name="premium" sum="Prima total"/>
+                                    <field name="no_cost"/>
+                                    <field name="currency_id" column_invisible="1"/>
+                                </list>
+                            </field>
+                            <group class="oe_subtotal_footer">
+                                <field name="benefit_premium_total"/>
+                            </group>
+                        </page>
                         <page string="Coberturas" name="coverages">
                             <field name="coverage_ids">
                                 <list editable="bottom">
@@ -191,13 +315,23 @@
                             </field>
                         </page>
                         <page string="Partes aseguradas" name="members">
+                            <div class="text-muted mb-2">
+                                Puede agregar personas en cualquier momento, también después del inicio de la póliza,
+                                indicando su fecha de ingreso.
+                            </div>
                             <field name="member_ids">
-                                <list editable="bottom">
+                                <list editable="bottom" decoration-muted="exit_date">
                                     <field name="insured_role"/>
                                     <field name="relationship"/>
                                     <field name="partner_id"/>
+                                    <field name="name" optional="show"/>
                                     <field name="birth_date"/>
-                                    <field name="seniority_date"/>
+                                    <field name="age"/>
+                                    <field name="gender" optional="show"/>
+                                    <field name="zone" optional="show"/>
+                                    <field name="entry_date"/>
+                                    <field name="exit_date" optional="show"/>
+                                    <field name="seniority_date" optional="hide"/>
                                     <field name="mx_curp" optional="hide"/>
                                     <field name="mx_rfc" optional="hide"/>
                                     <field name="phone" optional="hide"/>
@@ -223,38 +357,48 @@
                                 </list>
                             </field>
                         </page>
-                        <page string="Historial de pagos" name="installments">
-                            <separator string="Cuotas por pagar"/>
-                            <field name="installment_to_pay_ids" nolabel="1" readonly="1">
-                                <list create="false" delete="false" edit="false"
+                        <page string="Cuotas y pagos" name="installments">
+                            <div class="mb-2">
+                                <button name="action_generate_installments" type="object"
+                                        string="Generar cuotas" class="btn-secondary"
+                                        invisible="state not in ('draft', 'confirmed')"
+                                        confirm="Se generará la lista de cuotas con el importe capturado. ¿Continuar?"/>
+                                <span class="text-muted ms-2">
+                                    Registre en cada cuota el importe y la fecha del pago; al cubrir el importe queda como pagada.
+                                </span>
+                            </div>
+                            <field name="installment_ids" nolabel="1">
+                                <list editable="bottom" create="false" delete="false"
                                       decoration-danger="state == 'overdue'"
-                                      decoration-warning="state == 'invoiced'">
-                                    <field name="number"/>
-                                    <field name="due_month" optional="hide"/>
-                                    <field name="date_from"/>
-                                    <field name="date_to"/>
-                                    <field name="due_date"/>
-                                    <field name="amount"/>
-                                    <field name="state" widget="badge"
+                                      decoration-success="state == 'paid'"
+                                      decoration-muted="state == 'cancelled'">
+                                    <field name="number" readonly="1"/>
+                                    <field name="date_from" readonly="1"/>
+                                    <field name="date_to" readonly="1" optional="hide"/>
+                                    <field name="emission_date" readonly="1" optional="show"/>
+                                    <field name="grace_end_date" optional="show"/>
+                                    <field name="due_date" readonly="state in ('paid', 'cancelled')"/>
+                                    <field name="auto_charge_end_date" optional="hide"/>
+                                    <field name="extension_end_date" optional="show"/>
+                                    <field name="protection_end_date" optional="show"/>
+                                    <field name="amount" readonly="state in ('paid', 'cancelled')" sum="Total"/>
+                                    <field name="paid_amount" readonly="state == 'cancelled'" sum="Pagado"/>
+                                    <field name="payment_date" readonly="state == 'cancelled'"/>
+                                    <field name="payment_reference" optional="hide"/>
+                                    <field name="collection_stage" widget="badge"
+                                           decoration-info="collection_stage == 'grace'"
+                                           decoration-primary="collection_stage == 'auto_charge'"
+                                           decoration-warning="collection_stage in ('extension', 'protection')"
+                                           decoration-danger="collection_stage == 'lapsed'"
+                                           decoration-success="collection_stage == 'paid'"/>
+                                    <field name="state" widget="badge" optional="hide"
                                            decoration-info="state == 'pending'"
                                            decoration-warning="state == 'invoiced'"
-                                           decoration-danger="state == 'overdue'"/>
-                                    <field name="invoice_id"/>
-                                    <field name="payment_state" optional="hide"/>
-                                </list>
-                            </field>
-                            <separator string="Cuotas pagadas"/>
-                            <field name="installment_paid_ids" nolabel="1" readonly="1">
-                                <list create="false" delete="false" edit="false"
-                                      decoration-success="state == 'paid'">
-                                    <field name="number"/>
-                                    <field name="date_from"/>
-                                    <field name="date_to"/>
-                                    <field name="due_date"/>
-                                    <field name="amount"/>
-                                    <field name="state" widget="badge" decoration-success="state == 'paid'"/>
-                                    <field name="invoice_id"/>
-                                    <field name="payment_state"/>
+                                           decoration-danger="state == 'overdue'"
+                                           decoration-success="state == 'paid'"/>
+                                    <field name="invoice_id" optional="hide"/>
+                                    <button name="action_mark_paid" type="object" string="Marcar pagada"
+                                            icon="fa-check" invisible="state in ('paid', 'cancelled')"/>
                                 </list>
                             </field>
                         </page>
@@ -277,6 +421,8 @@
                         <page string="CFDI 4.0 y prima" name="cfdi">
                             <group>
                                 <group string="Facturación SAT">
+                                    <field name="scheme_id" readonly="state != 'draft'"
+                                           options="{'no_create': True}"/>
                                     <field name="invoice_mode"/>
                                     <field name="cfdi_usage"/>
                                     <field name="cfdi_payment_method"/>
@@ -294,6 +440,40 @@
                                     <field name="coverage_remaining"/>
                                 </group>
                             </group>
+                        </page>
+                        <page string="Comisiones" name="commissions" invisible="not agent_id">
+                            <group>
+                                <group>
+                                    <field name="commission_rate"/>
+                                    <field name="commission_earned"/>
+                                </group>
+                            </group>
+                            <field name="commission_ids" readonly="1">
+                                <list>
+                                    <field name="date"/>
+                                    <field name="agent_id"/>
+                                    <field name="installment_id"/>
+                                    <field name="commission_type"/>
+                                    <field name="base_amount"/>
+                                    <field name="rate"/>
+                                    <field name="amount" sum="Total"/>
+                                    <field name="currency_id" column_invisible="1"/>
+                                    <field name="state" widget="badge"/>
+                                </list>
+                            </field>
+                        </page>
+                        <page string="Retiros" name="withdrawals">
+                            <field name="withdrawal_ids" context="{'default_policy_id': id}">
+                                <list editable="bottom">
+                                    <field name="withdrawal_type_id"/>
+                                    <field name="date"/>
+                                    <field name="amount" sum="Total"/>
+                                    <field name="currency_id" column_invisible="1"/>
+                                    <field name="paid_date"/>
+                                    <field name="state"/>
+                                    <field name="note"/>
+                                </list>
+                            </field>
                         </page>
                         <page string="Notas" name="notes">
                             <field name="note" placeholder="Observaciones de la póliza..."/>
@@ -313,6 +493,10 @@
                 <field name="name"/>
                 <field name="display_title"/>
                 <field name="partner_id"/>
+                <field name="policy_type_id"/>
+                <field name="offer_id"/>
+                <field name="plan_basic"/>
+                <field name="insured_partner_id"/>
                 <field name="scheme_id"/>
                 <field name="insurance_company_id"/>
                 <field name="agent_id"/>
@@ -328,16 +512,37 @@
                 <filter name="in_service" string="En servicio" domain="[('lifecycle_stage', '=', 'active')]"/>
                 <filter name="prospect" string="Prospección" domain="[('lifecycle_stage', '=', 'prospecting')]"/>
                 <separator/>
+                <filter name="attention_danger" string="Atención urgente (rojo)" domain="[('attention_level', '=', 'danger')]"/>
+                <filter name="attention_warning" string="Requiere seguimiento" domain="[('attention_level', '=', 'warning')]"/>
+                <filter name="attention_ok" string="Al día (verde)" domain="[('attention_level', '=', 'ok')]"/>
+                <separator/>
+                <filter name="renewal_pending" string="Por renovar" domain="[('renewal_state', '=', 'pending')]"/>
+                <filter name="renewal_progress" string="Renovación en trámite" domain="[('renewal_state', '=', 'in_progress')]"/>
+                <filter name="renewal_done" string="Renovadas" domain="[('renewal_state', '=', 'renewed')]"/>
+                <filter name="renewal_lost" string="No renovadas" domain="[('renewal_state', '=', 'lost')]"/>
+                <field name="agent_key_id"/>
+                <separator/>
+                <filter name="direct" string="Cobro directo" domain="[('collection_channel', '=', 'direct')]"/>
+                <filter name="domiciled" string="Domiciliado" domain="[('collection_channel', '=', 'domiciled')]"/>
+                <separator/>
                 <filter name="growth_soon" string="Crecimiento próximo"
                         domain="[('next_growth_date', '!=', False), ('next_growth_date', '&lt;=', (context_today() + datetime.timedelta(days=30)).strftime('%Y-%m-%d'))]"/>
                 <group>
-                    <filter name="group_scheme" string="Oferta" context="{'group_by': 'scheme_id'}"/>
+                    <filter name="group_ramo" string="Ramo" context="{'group_by': 'policy_type_id'}"/>
+                    <filter name="group_offer" string="Oferta" context="{'group_by': 'offer_id'}"/>
+                    <filter name="group_currency" string="Moneda" context="{'group_by': 'currency_id'}"/>
+                    <filter name="group_channel" string="Conducto de cobro" context="{'group_by': 'collection_channel'}"/>
+                    <filter name="group_premium" string="Forma de pago" context="{'group_by': 'premium_type'}"/>
                     <filter name="group_company" string="Aseguradora" context="{'group_by': 'insurance_company_id'}"/>
                     <filter name="group_agent" string="Agente" context="{'group_by': 'agent_id'}"/>
                     <filter name="group_state" string="Estado" context="{'group_by': 'state'}"/>
                     <filter name="group_stage" string="Etapa" context="{'group_by': 'lifecycle_stage'}"/>
                     <filter name="group_mode" string="Individual / familiar" context="{'group_by': 'coverage_mode'}"/>
                     <filter name="group_branch" string="Sucursal" context="{'group_by': 'branch_id'}"/>
+                    <filter name="group_attention" string="Atención" context="{'group_by': 'attention_level'}"/>
+                    <filter name="group_renewal" string="Renovación" context="{'group_by': 'renewal_state'}"/>
+                    <filter name="group_end_month" string="Mes de vencimiento" context="{'group_by': 'end_date:month'}"/>
+                    <filter name="group_key" string="Clave / cartera" context="{'group_by': 'agent_key_id'}"/>
                 </group>
             </search>
         </field>
@@ -351,17 +556,27 @@
                 <field name="name"/>
                 <field name="display_title"/>
                 <field name="partner_id"/>
-                <field name="scheme_id"/>
+                <field name="policy_type_id"/>
+                <field name="offer_id"/>
                 <field name="policy_amount"/>
+                <field name="currency_id"/>
                 <field name="coverage_end_date"/>
                 <field name="state"/>
+                <field name="attention_level"/>
                 <templates>
                     <t t-name="card">
                         <div class="d-flex flex-column gap-1">
-                            <strong><field name="display_title"/></strong>
+                            <div class="d-flex justify-content-between gap-1">
+                                <strong><field name="display_title"/></strong>
+                                <field name="attention_level" widget="badge"
+                                       decoration-success="attention_level == 'ok'"
+                                       decoration-warning="attention_level == 'warning'"
+                                       decoration-danger="attention_level == 'danger'"/>
+                            </div>
+                            <span class="text-muted small" invisible="not attention_reason"><field name="attention_reason"/></span>
                             <span><field name="name"/></span>
-                            <span><field name="scheme_id"/></span>
-                            <span><field name="policy_amount" widget="monetary"/></span>
+                            <span><field name="policy_type_id"/> <field name="offer_id"/></span>
+                            <span>Prima emitida: <field name="policy_amount" widget="monetary"/></span>
                             <span>Vigencia: <field name="coverage_end_date"/></span>
                         </div>
                     </t>
@@ -389,9 +604,10 @@
         <field name="model">insurance.policy</field>
         <field name="arch" type="xml">
             <pivot string="Análisis de pólizas">
-                <field name="scheme_id" type="row"/>
+                <field name="policy_type_id" type="row"/>
                 <field name="state" type="col"/>
                 <field name="policy_amount" type="measure"/>
+                <field name="amount_paid" type="measure"/>
                 <field name="insured_amount" type="measure"/>
                 <field name="commission_amount" type="measure"/>
                 <field name="coverage_consumed" type="measure"/>
@@ -438,7 +654,7 @@
         <field name="context">{}</field>
         <field name="help" type="html">
             <p class="o_view_nocontent_smiling_face">Registre la primera póliza</p>
-            <p>Capture oferta, titular, vigencia (normalmente 12 meses) y genere cuotas al confirmar.</p>
+            <p>Capture ramo, oferta, titular, vigencia, forma de pago e importe de cuota; luego genere las cuotas.</p>
         </field>
     </record>
 
@@ -455,5 +671,156 @@
         <field name="res_model">insurance.policy</field>
         <field name="view_mode">kanban,list,form,calendar,pivot,graph,activity</field>
         <field name="search_view_id" ref="view_insurance_policy_search"/>
+    </record>
+    <!-- ================= Renovaciones ================= -->
+    <record id="view_insurance_policy_renewal_kanban" model="ir.ui.view">
+        <field name="name">insurance.policy.renewal.kanban</field>
+        <field name="model">insurance.policy</field>
+        <field name="priority">30</field>
+        <field name="arch" type="xml">
+            <kanban default_group_by="renewal_state" class="o_kanban_small_column" records_draggable="0" quick_create="0">
+                <field name="renewal_state"/>
+                <field name="attention_level"/>
+                <templates>
+                    <t t-name="card">
+                        <div class="d-flex justify-content-between">
+                            <strong><field name="name"/></strong>
+                            <field name="attention_level" widget="badge"
+                                   decoration-success="attention_level == 'ok'"
+                                   decoration-warning="attention_level == 'warning'"
+                                   decoration-danger="attention_level == 'danger'"/>
+                        </div>
+                        <div><field name="partner_id"/></div>
+                        <div class="text-muted small"><field name="policy_type_id"/> · <field name="insurance_company_id"/></div>
+                        <div>Vence: <strong><field name="end_date"/></strong></div>
+                        <div><field name="policy_amount" widget="monetary"/> <field name="currency_id" invisible="1"/></div>
+                        <footer>
+                            <field name="renewal_notified" invisible="1"/>
+                            <span class="badge text-bg-info" invisible="not renewal_notified">Aviso enviado</span>
+                            <field name="activity_ids" widget="kanban_activity"/>
+                            <field name="user_id" widget="many2one_avatar_user"/>
+                        </footer>
+                    </t>
+                </templates>
+            </kanban>
+        </field>
+    </record>
+    <record id="view_insurance_policy_renewal_list" model="ir.ui.view">
+        <field name="name">insurance.policy.renewal.list</field>
+        <field name="model">insurance.policy</field>
+        <field name="priority">30</field>
+        <field name="arch" type="xml">
+            <list string="Renovaciones" create="0"
+                  decoration-danger="renewal_state == 'lost'"
+                  decoration-warning="renewal_state == 'pending'"
+                  decoration-success="renewal_state == 'renewed'">
+                <header>
+                    <button name="action_send_renewal_notice" type="object" string="Enviar aviso de renovación"/>
+                    <button name="action_send_message" type="object" string="Enviar mensaje"/>
+                </header>
+                <field name="end_date"/>
+                <field name="name"/>
+                <field name="partner_id"/>
+                <field name="policy_type_id"/>
+                <field name="offer_id" optional="show"/>
+                <field name="insurance_company_id"/>
+                <field name="agent_id" optional="show"/>
+                <field name="policy_amount" sum="Prima"/>
+                <field name="currency_id"/>
+                <field name="renewal_state" widget="badge"
+                       decoration-success="renewal_state == 'renewed'"
+                       decoration-warning="renewal_state in ('pending', 'in_progress')"
+                       decoration-danger="renewal_state == 'lost'"/>
+                <field name="renewal_notified" optional="show"/>
+                <field name="activity_ids" widget="list_activity" optional="show"/>
+                <button name="action_renew" type="object" string="Renovar" icon="fa-refresh"
+                        invisible="renewal_state not in ('pending', 'lost')"/>
+            </list>
+        </field>
+    </record>
+    <record id="view_insurance_policy_renewal_graph" model="ir.ui.view">
+        <field name="name">insurance.policy.renewal.graph</field>
+        <field name="model">insurance.policy</field>
+        <field name="priority">30</field>
+        <field name="arch" type="xml">
+            <graph string="Renovaciones por mes y aseguradora" type="bar" stacked="1">
+                <field name="end_date" interval="month"/>
+                <field name="insurance_company_id"/>
+            </graph>
+        </field>
+    </record>
+    <record id="view_insurance_policy_renewal_pivot" model="ir.ui.view">
+        <field name="name">insurance.policy.renewal.pivot</field>
+        <field name="model">insurance.policy</field>
+        <field name="priority">30</field>
+        <field name="arch" type="xml">
+            <pivot string="Renovaciones">
+                <field name="end_date" interval="month" type="row"/>
+                <field name="insurance_company_id" type="col"/>
+                <field name="policy_amount" type="measure"/>
+            </pivot>
+        </field>
+    </record>
+    <record id="action_insurance_renewals" model="ir.actions.act_window">
+        <field name="name">Renovaciones</field>
+        <field name="res_model">insurance.policy</field>
+        <field name="view_mode">kanban,list,graph,pivot,calendar,activity,form</field>
+        <field name="search_view_id" ref="view_insurance_policy_search"/>
+        <field name="domain">[('state', 'in', ['confirmed', 'expired', 'done']), ('renewal_state', '!=', 'not_due')]</field>
+    </record>
+    <record id="action_insurance_renewals_kanban" model="ir.actions.act_window.view">
+        <field name="sequence">1</field>
+        <field name="view_mode">kanban</field>
+        <field name="view_id" ref="view_insurance_policy_renewal_kanban"/>
+        <field name="act_window_id" ref="action_insurance_renewals"/>
+    </record>
+    <record id="action_insurance_renewals_list" model="ir.actions.act_window.view">
+        <field name="sequence">2</field>
+        <field name="view_mode">list</field>
+        <field name="view_id" ref="view_insurance_policy_renewal_list"/>
+        <field name="act_window_id" ref="action_insurance_renewals"/>
+    </record>
+    <record id="action_insurance_renewals_graph" model="ir.actions.act_window.view">
+        <field name="sequence">3</field>
+        <field name="view_mode">graph</field>
+        <field name="view_id" ref="view_insurance_policy_renewal_graph"/>
+        <field name="act_window_id" ref="action_insurance_renewals"/>
+    </record>
+    <record id="action_insurance_renewals_pivot" model="ir.actions.act_window.view">
+        <field name="sequence">4</field>
+        <field name="view_mode">pivot</field>
+        <field name="view_id" ref="view_insurance_policy_renewal_pivot"/>
+        <field name="act_window_id" ref="action_insurance_renewals"/>
+    </record>
+
+    <!-- Pólizas que requieren atención -->
+    <record id="action_insurance_policy_attention" model="ir.actions.act_window">
+        <field name="name">Pólizas con atención</field>
+        <field name="res_model">insurance.policy</field>
+        <field name="view_mode">list,kanban,form,activity</field>
+        <field name="search_view_id" ref="view_insurance_policy_search"/>
+        <field name="domain">[('attention_level', 'in', ['danger', 'warning']), ('state', 'in', ['draft', 'confirmed', 'expired'])]</field>
+        <field name="context">{'search_default_group_attention': 1}</field>
+    </record>
+
+    <!-- Ventas cruzadas: pólizas por cliente y ramo -->
+    <record id="view_insurance_policy_cross_sell_pivot" model="ir.ui.view">
+        <field name="name">insurance.policy.cross.sell.pivot</field>
+        <field name="model">insurance.policy</field>
+        <field name="priority">40</field>
+        <field name="arch" type="xml">
+            <pivot string="Ventas cruzadas">
+                <field name="partner_id" type="row"/>
+                <field name="policy_type_id" type="col"/>
+                <field name="policy_amount" type="measure"/>
+            </pivot>
+        </field>
+    </record>
+    <record id="action_insurance_cross_sell_pivot" model="ir.actions.act_window">
+        <field name="name">Pólizas por cliente y ramo</field>
+        <field name="res_model">insurance.policy</field>
+        <field name="view_mode">pivot,list,form</field>
+        <field name="view_id" ref="view_insurance_policy_cross_sell_pivot"/>
+        <field name="domain">[('state', 'in', ['confirmed', 'expired'])]</field>
     </record>
 </odoo>

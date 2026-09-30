@@ -1,0 +1,92 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <data noupdate="1">
+        <!-- ============ Gastos médicos mayores ============ -->
+        <record id="offer_gmm_tradicional" model="insurance.offer">
+            <field name="name">Tradicional</field>
+            <field name="ramo_id" ref="policy_type_medical"/>
+            <field name="sequence">10</field>
+        </record>
+        <record id="offer_gmm_tradicional_practicos" model="insurance.offer">
+            <field name="name">Prácticos</field>
+            <field name="ramo_id" ref="policy_type_medical"/>
+            <field name="parent_id" ref="offer_gmm_tradicional"/>
+            <field name="sequence">10</field>
+        </record>
+        <record id="offer_gmm_tradicional_integros" model="insurance.offer">
+            <field name="name">Íntegros</field>
+            <field name="ramo_id" ref="policy_type_medical"/>
+            <field name="parent_id" ref="offer_gmm_tradicional"/>
+            <field name="sequence">20</field>
+        </record>
+        <record id="offer_gmm_tradicional_plenos" model="insurance.offer">
+            <field name="name">Plenos</field>
+            <field name="ramo_id" ref="policy_type_medical"/>
+            <field name="parent_id" ref="offer_gmm_tradicional"/>
+            <field name="sequence">30</field>
+        </record>
+        <record id="offer_gmm_internacional" model="insurance.offer">
+            <field name="name">Internacional</field>
+            <field name="ramo_id" ref="policy_type_medical"/>
+            <field name="sequence">20</field>
+        </record>
+        <record id="offer_gmm_flexible" model="insurance.offer">
+            <field name="name">Flexible</field>
+            <field name="ramo_id" ref="policy_type_medical"/>
+            <field name="sequence">30</field>
+        </record>
+        <record id="offer_gmm_flexible_flexa" model="insurance.offer">
+            <field name="name">FlexA</field>
+            <field name="ramo_id" ref="policy_type_medical"/>
+            <field name="parent_id" ref="offer_gmm_flexible"/>
+            <field name="sequence">10</field>
+        </record>
+        <record id="offer_gmm_flexible_flexb" model="insurance.offer">
+            <field name="name">FlexB</field>
+            <field name="ramo_id" ref="policy_type_medical"/>
+            <field name="parent_id" ref="offer_gmm_flexible"/>
+            <field name="sequence">20</field>
+        </record>
+
+        <!-- ============ Seguro de vida (sub-oferta en texto libre) ============ -->
+        <record id="offer_vida_orvi" model="insurance.offer">
+            <field name="name">ORVI</field>
+            <field name="ramo_id" ref="policy_type_life"/>
+            <field name="sub_offer_free_text" eval="True"/>
+            <field name="sequence">10</field>
+        </record>
+        <record id="offer_vida_dotal" model="insurance.offer">
+            <field name="name">Dotal</field>
+            <field name="ramo_id" ref="policy_type_life"/>
+            <field name="sub_offer_free_text" eval="True"/>
+            <field name="sequence">20</field>
+        </record>
+        <record id="offer_vida_segubeca" model="insurance.offer">
+            <field name="name">SEGUBECA</field>
+            <field name="ramo_id" ref="policy_type_life"/>
+            <field name="sub_offer_free_text" eval="True"/>
+            <field name="sequence">30</field>
+        </record>
+        <record id="offer_vida_mujer" model="insurance.offer">
+            <field name="name">Vida Mujer</field>
+            <field name="ramo_id" ref="policy_type_life"/>
+            <field name="sub_offer_free_text" eval="True"/>
+            <field name="sequence">40</field>
+        </record>
+        <record id="offer_vida_imagina_ser" model="insurance.offer">
+            <field name="name">Imagina Ser</field>
+            <field name="ramo_id" ref="policy_type_life"/>
+            <field name="sub_offer_free_text" eval="True"/>
+            <field name="sequence">50</field>
+        </record>
+        <record id="offer_vida_nuevo_plenitud" model="insurance.offer">
+            <field name="name">Nuevo Plenitud</field>
+            <field name="ramo_id" ref="policy_type_life"/>
+            <field name="sub_offer_free_text" eval="True"/>
+            <field name="sequence">60</field>
+        </record>
+    </data>
+
+    <!-- Monedas de pólizas: MXN, USD y UDI (se crea si no existe) -->
+    <function model="insurance.policy" name="_ensure_insurance_currencies"/>
+</odoo>

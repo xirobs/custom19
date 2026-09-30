@@ -8,18 +8,22 @@
             <xpath expr="//header" position="inside">
                 <button name="action_create_insurance_policy" type="object"
                         string="Crear póliza" class="btn-primary"
-                        invisible="not insurance_scheme_id or insurance_policy_id"/>
+                        invisible="not (insurance_scheme_id or insurance_policy_type_id) or insurance_policy_id"/>
                 <button name="action_open_insurance_policy" type="object"
                         string="Ver póliza"
                         invisible="not insurance_policy_id"/>
+                <button name="action_send_insurance_message" type="object"
+                        string="Enviar mensaje" invisible="not is_insurance_opportunity"/>
             </xpath>
             <xpath expr="//notebook" position="inside">
                 <page string="Seguros" name="insurance">
                     <group>
                         <group>
                             <field name="is_insurance_opportunity"/>
+                            <field name="insurance_origin"/>
+                            <field name="insurance_policy_type_id" options="{'no_create': True}"/>
+                            <field name="insurance_offer_id" options="{'no_create': True}"/>
                             <field name="insurance_scheme_id"/>
-                            <field name="insurance_policy_type_id"/>
                             <field name="insurance_company_id"/>
                             <field name="insurance_policy_id" readonly="1"/>
                         </group>
@@ -59,8 +63,11 @@
                 <field name="name"/>
                 <field name="partner_id"/>
                 <field name="user_id"/>
+                <field name="insurance_policy_type_id"/>
                 <field name="insurance_scheme_id"/>
                 <field name="insurance_company_id"/>
+                <filter name="cross_sell" string="Venta cruzada" domain="[('insurance_origin', '=', 'cross_sell')]"/>
+                <filter name="this_month" string="Creados este mes" domain="[('create_date', '&gt;=', context_today().strftime('%Y-%m-01'))]"/>
                 <filter name="assigned_to_me" string="Mis oportunidades" domain="[('user_id', '=', uid)]"/>
                 <filter name="unassigned" string="Sin asignar" domain="[('user_id', '=', False)]"/>
                 <filter name="insurance_with_offer" string="Con oferta o póliza"
@@ -71,6 +78,9 @@
                     <filter name="group_stage" string="Etapa" context="{'group_by': 'stage_id'}"/>
                     <filter name="group_user" string="Comercial" context="{'group_by': 'user_id'}"/>
                     <filter name="group_scheme" string="Oferta" context="{'group_by': 'insurance_scheme_id'}"/>
+                    <filter name="group_ramo" string="Ramo" context="{'group_by': 'insurance_policy_type_id'}"/>
+                    <filter name="group_origin" string="Origen" context="{'group_by': 'insurance_origin'}"/>
+                    <filter name="group_month" string="Mes de creación" context="{'group_by': 'create_date:month'}"/>
                 </group>
             </search>
         </field>
@@ -79,7 +89,7 @@
     <record id="action_insurance_crm_leads" model="ir.actions.act_window">
         <field name="name">Oportunidades de seguros</field>
         <field name="res_model">crm.lead</field>
-        <field name="view_mode">kanban,list,form</field>
+        <field name="view_mode">kanban,list,form,calendar,pivot,graph,activity</field>
         <field name="search_view_id" ref="view_crm_lead_search_insurance_pipeline"/>
         <field name="domain">['&amp;', ('type', '=', 'opportunity'), '|', '|', ('is_insurance_opportunity', '=', True), ('insurance_scheme_id', '!=', False), ('insurance_policy_id', '!=', False)]</field>
         <field name="context">{

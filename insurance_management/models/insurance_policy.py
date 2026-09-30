@@ -11,8 +11,10 @@ PREMIUM_PERIODS = {
     "quarterly": 3,
     "semiannual": 6,
     "yearly": 12,
-    "unique": 0,
 }
+
+# Monedas permitidas en pólizas (res.currency.name)
+INSURANCE_CURRENCIES = ("MXN", "USD", "UDI")
 
 
 class InsurancePolicy(models.Model):
@@ -38,21 +40,47 @@ class InsurancePolicy(models.Model):
     )
     scheme_id = fields.Many2one(
         "insurance.scheme",
-        string="Oferta de póliza",
-        required=True,
+        string="Esquema de producto",
         tracking=True,
+        domain="[('policy_type_id', '=', policy_type_id)]",
+        help="Esquema técnico del catálogo: numeración de pólizas, coberturas, "
+             "producto e impuesto de facturación. Se propone al elegir el ramo.",
     )
+    # --- Ramo → Oferta → Sub-oferta ---------------------------------------
     policy_type_id = fields.Many2one(
-        related="scheme_id.policy_type_id",
-        store=True,
-        string="Tipo de póliza",
+        "insurance.policy.type",
+        string="Ramo",
+        tracking=True,
+        index=True,
     )
+    offer_id = fields.Many2one(
+        "insurance.offer",
+        string="Oferta",
+        tracking=True,
+        domain="[('ramo_id', '=', policy_type_id), ('parent_id', '=', False)]",
+    )
+    offer_free_text = fields.Boolean(related="offer_id.sub_offer_free_text")
+    offer_has_children = fields.Boolean(compute="_compute_offer_has_children")
+    sub_offer_id = fields.Many2one(
+        "insurance.offer",
+        string="Sub-oferta",
+        tracking=True,
+        domain="[('parent_id', '=', offer_id)]",
+    )
+    sub_offer_text = fields.Char(string="Sub-oferta (texto libre)", tracking=True)
     insurance_company_id = fields.Many2one(
         "insurance.company",
         string="Compañía de seguros",
         tracking=True,
     )
-    branch_id = fields.Many2one("insurance.branch", string="Rama")
+    # Se conserva para el tablero por sucursal; ya no se muestra en el formulario.
+    branch_id = fields.Many2one(
+        "insurance.branch",
+        string="Sucursal",
+        compute="_compute_branch_id",
+        store=True,
+        readonly=False,
+    )
     agent_id = fields.Many2one("insurance.agent", string="Nombre del agente", tracking=True)
     payment_term_id = fields.Many2one("account.payment.term", string="Plazo de pago")
     duration_months = fields.Integer(
@@ -106,6 +134,14 @@ class InsurancePolicy(models.Model):
         store=True,
         string="Fecha de inicio",
     )
+    emission_date = fields.Date(
+        string="Fecha de emisión",
+        compute="_compute_emission_date",
+        store=True,
+        readonly=False,
+        tracking=True,
+        help="Fecha de emisión de la póliza. A partir de ella corren los días de gracia del primer recibo.",
+    )
     end_date = fields.Date(
         related="coverage_end_date",
         store=True,
@@ -123,10 +159,11 @@ class InsurancePolicy(models.Model):
         tracking=True,
     )
     policy_amount = fields.Monetary(
-        string="Monto de la póliza (prima)",
+        string="Prima emitida",
         currency_field="currency_id",
         required=True,
         tracking=True,
+        help="Valor completo de la póliza por el año (prima total anual emitida).",
     )
     premium_type = fields.Selection(
         [
@@ -134,7 +171,6 @@ class InsurancePolicy(models.Model):
             ("quarterly", "Trimestral"),
             ("semiannual", "Semestral"),
             ("yearly", "Anual"),
-            ("unique", "Pago de contado"),
         ],
         string="Forma de pago",
         default="monthly",
@@ -142,20 +178,125 @@ class InsurancePolicy(models.Model):
         tracking=True,
     )
     installment_amount = fields.Monetary(
-        string="Importe de cuota",
-        compute="_compute_installment_amount",
-        store=True,
+        string="Importe de la cuota",
         currency_field="currency_id",
+        tracking=True,
+        help="Se captura manualmente. Con este importe se genera la lista de cuotas.",
     )
     installment_count = fields.Integer(
         string="N.º de cuotas",
-        compute="_compute_installment_amount",
+        compute="_compute_installment_count",
         store=True,
+    )
+    installment_total = fields.Monetary(
+        string="Total de cuotas",
+        compute="_compute_installment_total",
+        currency_field="currency_id",
+        help="Importe de la cuota × número de cuotas. Compárelo con la prima emitida.",
     )
     currency_id = fields.Many2one(
         "res.currency",
         string="Moneda",
         default=lambda self: self.env.company.currency_id,
+        domain="[('name', 'in', ('MXN', 'USD', 'UDI'))]",
+        tracking=True,
+    )
+    # --- Datos de la carátula de la aseguradora ------------------------------
+    plan_basic = fields.Char(string="Plan básico", tracking=True)
+    insured_partner_id = fields.Many2one("res.partner", string="Asegurado", tracking=True)
+    residence = fields.Char(string="Residencia", help="Zona de residencia (ciudad, estado).")
+    policy_kind = fields.Char(string="Tipo de póliza", help="Tal como aparece en la carátula. Ej. NORMAL.")
+    maturity_date = fields.Date(
+        string="Fecha de vencimiento",
+        tracking=True,
+        help="Vencimiento del contrato según la carátula (fin del plazo del seguro).",
+    )
+    insured_birth_date = fields.Date(string="Fecha de nacimiento")
+    insured_age = fields.Integer(string="Edad")
+    insured_gender = fields.Selection(
+        [("female", "Femenino"), ("male", "Masculino")],
+        string="Sexo",
+    )
+    insured_address = fields.Text(string="Domicilio")
+    settlement_option = fields.Char(string="Opción de liquidación")
+    benefit_ids = fields.One2many(
+        "insurance.policy.benefit",
+        "policy_id",
+        string="Beneficios",
+        copy=True,
+    )
+    benefit_premium_total = fields.Monetary(
+        string="Prima total de beneficios",
+        compute="_compute_benefit_premium_total",
+        currency_field="currency_id",
+    )
+    caratula_document_id = fields.Many2one(
+        "insurance.document",
+        string="Carátula en expediente",
+        copy=False,
+    )
+    # --- Conducto de cobro --------------------------------------------------
+    collection_channel = fields.Selection(
+        [
+            ("direct", "Directo"),
+            ("domiciled", "Domiciliado"),
+        ],
+        string="Conducto de cobro",
+        default="direct",
+        required=True,
+        tracking=True,
+        help="Directo: el cliente paga manualmente (liga, banco o portal). "
+             "Domiciliado: cargo automático a su cuenta o tarjeta.",
+    )
+    direct_payment_method = fields.Selection(
+        [
+            ("link", "Liga de pago"),
+            ("bank", "Banco"),
+            ("portal", "Portal de la aseguradora"),
+        ],
+        string="Medio de pago directo",
+        tracking=True,
+    )
+    domiciled_bank_account_id = fields.Many2one(
+        "res.partner.bank",
+        string="Cuenta / tarjeta domiciliada",
+        domain="[('partner_id', '=', partner_id)]",
+    )
+    # --- Calendario de cobranza ----------------------------------------------
+    grace_days = fields.Integer(
+        string="Días de gracia",
+        default=30,
+        help="Días desde la emisión del recibo para pagar.",
+    )
+    collection_date_mode = fields.Selection(
+        [
+            ("grace_end", "Al terminar los días de gracia"),
+            ("fixed", "Día fijo solicitado por el cliente"),
+        ],
+        string="Fecha de cobro",
+        default="grace_end",
+        required=True,
+        tracking=True,
+    )
+    collection_day = fields.Integer(
+        string="Día fijo de cobro",
+        help="Día del mes en que el cliente pidió que se le cobre. "
+             "Siempre debe quedar dentro de los días de gracia.",
+    )
+    extension_days = fields.Integer(
+        string="Días de prórroga",
+        default=15,
+        help="Días de prórroga que corren a partir de la fecha de cobro.",
+    )
+    auto_charge_days = fields.Integer(
+        string="Días de cobro automático",
+        default=12,
+        help="Dentro de la prórroga, días en que el sistema intenta el cargo automático (domiciliado).",
+    )
+    protection_days = fields.Integer(
+        string="Días de amparo",
+        default=5,
+        help="Días posteriores a la prórroga en que el cliente debe pagar directo a la aseguradora.",
     )
     company_id = fields.Many2one(
         "res.company",
@@ -339,9 +480,11 @@ class InsurancePolicy(models.Model):
         currency_field="currency_id",
     )
     amount_paid = fields.Monetary(
+        string="Prima pagada",
         compute="_compute_collection_stats",
         store=True,
         currency_field="currency_id",
+        help="Suma de todos los pagos registrados por el cliente (pago completo o cuotas).",
     )
     amount_due = fields.Monetary(
         compute="_compute_collection_stats",
@@ -353,12 +496,61 @@ class InsurancePolicy(models.Model):
     document_signed_count = fields.Integer(compute="_compute_document_stats", store=True)
     invoice_count = fields.Integer(compute="_compute_invoice_count", store=True)
 
-    @api.depends("partner_id", "scheme_id")
+    @api.depends(
+        "partner_id",
+        "scheme_id",
+        "policy_type_id",
+        "offer_id",
+        "sub_offer_id",
+        "sub_offer_text",
+    )
     def _compute_display_title(self):
         for policy in self:
             holder = policy.partner_id.name or _("Titular")
-            offer = policy.scheme_id.name or _("Seguro")
+            parts = [
+                policy.policy_type_id.name,
+                policy.offer_id.name,
+                policy.sub_offer_id.name or policy.sub_offer_text,
+            ]
+            offer = " / ".join(p for p in parts if p) or policy.scheme_id.name or _("Seguro")
             policy.display_title = "%s — %s" % (holder, offer)
+
+    @api.depends("benefit_ids.premium")
+    def _compute_benefit_premium_total(self):
+        for policy in self:
+            policy.benefit_premium_total = sum(policy.benefit_ids.mapped("premium"))
+
+    def action_open_caratula_import(self):
+        self.ensure_one()
+        return {
+            "type": "ir.actions.act_window",
+            "name": _("Cargar carátula PDF"),
+            "res_model": "insurance.policy.pdf.import",
+            "view_mode": "form",
+            "target": "new",
+            "context": {"default_policy_id": self.id},
+        }
+
+    @api.depends("offer_id")
+    def _compute_offer_has_children(self):
+        for policy in self:
+            policy.offer_has_children = bool(policy.offer_id.child_ids)
+
+    @api.depends("agent_id")
+    def _compute_branch_id(self):
+        for policy in self:
+            if policy.agent_id.branch_id:
+                policy.branch_id = policy.agent_id.branch_id
+            else:
+                policy.branch_id = policy.branch_id
+
+    @api.depends("coverage_start_date")
+    def _compute_emission_date(self):
+        for policy in self:
+            if not policy.emission_date:
+                policy.emission_date = policy.coverage_start_date
+            else:
+                policy.emission_date = policy.emission_date
 
     @api.depends("duration_months")
     def _compute_duration_years(self):
@@ -393,16 +585,15 @@ class InsurancePolicy(models.Model):
         for policy in self:
             policy.commission_amount = (policy.policy_amount or 0.0) * ((policy.commission_rate or 0.0) / 100.0)
 
-    @api.depends("policy_amount", "premium_type", "duration_months", "duration_years", "scheme_id.interest_rate")
-    def _compute_installment_amount(self):
+    @api.depends("premium_type", "duration_months", "duration_years")
+    def _compute_installment_count(self):
         for policy in self:
-            count = policy._get_installment_count()
-            total = policy.policy_amount
-            years = (policy.duration_months or 12) / 12.0
-            if policy.scheme_id.interest_rate:
-                total += policy.policy_amount * (policy.scheme_id.interest_rate / 100.0) * years
-            policy.installment_count = count
-            policy.installment_amount = total / count if count else 0.0
+            policy.installment_count = policy._get_installment_count()
+
+    @api.depends("installment_amount", "installment_count")
+    def _compute_installment_total(self):
+        for policy in self:
+            policy.installment_total = (policy.installment_amount or 0.0) * (policy.installment_count or 0)
 
     @api.depends("installment_ids", "installment_ids.state")
     def _compute_installment_history(self):
@@ -416,6 +607,7 @@ class InsurancePolicy(models.Model):
     @api.depends(
         "installment_ids.state",
         "installment_ids.amount",
+        "installment_ids.paid_amount",
         "installment_ids.invoice_id",
     )
     def _compute_collection_stats(self):
@@ -423,9 +615,11 @@ class InsurancePolicy(models.Model):
             lines = policy.installment_ids.filtered(lambda l: l.state != "cancelled")
             policy.installment_count_done = len(lines.filtered(lambda l: l.state == "paid"))
             policy.amount_invoiced = sum(lines.filtered(lambda l: l.invoice_id).mapped("amount"))
-            policy.amount_paid = sum(lines.filtered(lambda l: l.state == "paid").mapped("amount"))
+            # Prima pagada = suma de todos los pagos registrados por el cliente
+            policy.amount_paid = sum(lines.mapped("paid_amount"))
             policy.amount_due = sum(
-                lines.filtered(lambda l: l.state in ("pending", "invoiced", "overdue")).mapped("amount")
+                max((l.amount or 0.0) - (l.paid_amount or 0.0), 0.0)
+                for l in lines.filtered(lambda l: l.state in ("pending", "invoiced", "overdue"))
             )
             policy.amount_to_invoice = sum(
                 lines.filtered(lambda l: not l.invoice_id).mapped("amount")
@@ -503,19 +697,73 @@ class InsurancePolicy(models.Model):
 
     def _get_installment_count(self):
         self.ensure_one()
-        if self.premium_type == "unique":
-            return 1
         months = PREMIUM_PERIODS.get(self.premium_type, 1)
         total_months = self.duration_months or ((self.duration_years or 1) * 12)
-        if not months:
-            return 1
         return max(1, int(total_months / months))
+
+    def _get_collection_date(self, emission):
+        """Fecha de cobro de un recibo emitido en `emission`.
+
+        - Sin fecha fija: al terminar los días de gracia.
+        - Con día fijo: el primer día del mes solicitado a partir de la emisión,
+          nunca después del fin de la gracia.
+        """
+        self.ensure_one()
+        grace_end = emission + relativedelta(days=self.grace_days or 0)
+        if self.collection_date_mode == "fixed" and self.collection_day:
+            candidate = emission + relativedelta(day=self.collection_day)
+            if candidate < emission:
+                candidate = emission + relativedelta(months=1, day=self.collection_day)
+            return min(candidate, grace_end)
+        return grace_end
+
+    @api.model
+    def _ensure_insurance_currencies(self):
+        """Activa MXN y USD y crea la moneda UDI (Unidades de Inversión) si no existe."""
+        Currency = self.env["res.currency"].sudo().with_context(active_test=False)
+        for code in ("MXN", "USD"):
+            currency = Currency.search([("name", "=", code)], limit=1)
+            if currency and not currency.active:
+                currency.active = True
+        udi = Currency.search([("name", "=", "UDI")], limit=1)
+        if not udi:
+            Currency.create({
+                "name": "UDI",
+                "full_name": "Unidades de Inversión",
+                "symbol": "UDI",
+                "position": "after",
+                "rounding": 0.01,
+                "currency_unit_label": "UDIS",
+                "active": True,
+            })
+        elif not udi.active:
+            udi.active = True
+
+    @api.onchange("policy_type_id")
+    def _onchange_policy_type_id(self):
+        if self.offer_id and self.offer_id.ramo_id != self.policy_type_id:
+            self.offer_id = False
+            self.sub_offer_id = False
+            self.sub_offer_text = False
+        if self.policy_type_id and self.scheme_id.policy_type_id != self.policy_type_id:
+            self.scheme_id = self.env["insurance.scheme"].search(
+                [("policy_type_id", "=", self.policy_type_id.id)], limit=1
+            )
+
+    @api.onchange("offer_id")
+    def _onchange_offer_id(self):
+        if self.sub_offer_id and self.sub_offer_id.parent_id != self.offer_id:
+            self.sub_offer_id = False
+        if not self.offer_id.sub_offer_free_text:
+            self.sub_offer_text = False
 
     @api.onchange("scheme_id")
     def _onchange_scheme_id(self):
         if not self.scheme_id:
             return
         scheme = self.scheme_id
+        if scheme.policy_type_id and not self.policy_type_id:
+            self.policy_type_id = scheme.policy_type_id
         if scheme.duration_months:
             self.duration_months = scheme.duration_months
         elif not self.duration_months:
@@ -561,6 +809,37 @@ class InsurancePolicy(models.Model):
             if self.agent_id.commission_rate and not self.commission_rate:
                 self.commission_rate = self.agent_id.commission_rate
 
+    @api.constrains("policy_type_id", "offer_id", "sub_offer_id")
+    def _check_offer_hierarchy(self):
+        for policy in self:
+            if policy.offer_id and policy.offer_id.ramo_id != policy.policy_type_id:
+                raise ValidationError(_("La oferta %s no pertenece al ramo seleccionado.") % policy.offer_id.name)
+            if policy.sub_offer_id and policy.sub_offer_id.parent_id != policy.offer_id:
+                raise ValidationError(_("La sub-oferta %s no pertenece a la oferta seleccionada.") % policy.sub_offer_id.name)
+
+    @api.constrains(
+        "collection_date_mode",
+        "collection_day",
+        "grace_days",
+        "extension_days",
+        "auto_charge_days",
+        "protection_days",
+    )
+    def _check_collection_calendar(self):
+        for policy in self:
+            if policy.collection_date_mode == "fixed" and not (1 <= (policy.collection_day or 0) <= 31):
+                raise ValidationError(_("Indique un día fijo de cobro entre 1 y 31."))
+            if min(policy.grace_days, policy.extension_days, policy.auto_charge_days, policy.protection_days) < 0:
+                raise ValidationError(_("Los días del calendario de cobranza no pueden ser negativos."))
+            if policy.auto_charge_days > policy.extension_days:
+                raise ValidationError(_("Los días de cobro automático deben estar dentro de los días de prórroga."))
+
+    @api.constrains("installment_amount")
+    def _check_installment_amount(self):
+        for policy in self:
+            if policy.installment_amount < 0:
+                raise ValidationError(_("El importe de la cuota no puede ser negativo."))
+
     @api.constrains("commission_rate")
     def _check_commission_rate(self):
         for policy in self:
@@ -600,6 +879,9 @@ class InsurancePolicy(models.Model):
     @api.model_create_multi
     def create(self, vals_list):
         for vals in vals_list:
+            if vals.get("scheme_id") and not vals.get("policy_type_id"):
+                scheme = self.env["insurance.scheme"].browse(vals["scheme_id"])
+                vals["policy_type_id"] = scheme.policy_type_id.id
             if vals.get("name", _("Nuevo")) in (False, "/", _("Nuevo")):
                 scheme = self.env["insurance.scheme"].browse(vals.get("scheme_id"))
                 vals["name"] = scheme.next_policy_number() if scheme else self.env["ir.sequence"].next_by_code("insurance.policy") or _("Nuevo")
@@ -611,12 +893,19 @@ class InsurancePolicy(models.Model):
                 raise UserError(_("Solo se pueden confirmar pólizas en borrador."))
             if not policy.partner_id:
                 raise UserError(_("Debe indicar el titular de la póliza."))
+            if not policy.policy_type_id:
+                raise UserError(_("Debe indicar el ramo de la póliza."))
             if policy.name in (False, _("Nuevo"), "/"):
-                policy.name = policy.scheme_id.next_policy_number()
+                policy.name = (
+                    policy.scheme_id.next_policy_number()
+                    if policy.scheme_id
+                    else self.env["ir.sequence"].next_by_code("insurance.policy") or _("Nuevo")
+                )
             policy._generate_members()
             policy._generate_coverages()
             policy._generate_features()
-            policy._generate_installments()
+            if not policy.installment_ids.filtered(lambda l: l.state != "cancelled"):
+                policy._generate_installments()
             policy._generate_required_documents()
             try:
                 policy._sync_calendar_event()
@@ -628,7 +917,7 @@ class InsurancePolicy(models.Model):
                 policy.message_post(body=_("No se creó el proyecto de seguimiento: %s") % err)
             if not policy.prima_neta:
                 policy.prima_neta = policy.policy_amount
-            if policy.premium_type == "unique":
+            if policy.installment_count == 1:
                 policy.cfdi_payment_method = "PUE"
                 if policy.cfdi_payment_form == "99":
                     policy.cfdi_payment_form = "03"
@@ -711,10 +1000,17 @@ class InsurancePolicy(models.Model):
             for line in policy.installment_ids.sorted("number"):
                 if line.state == "cancelled":
                     continue
-                if leftover >= (line.amount or 0.0) - 0.01:
-                    line.state = "paid"
+                if line.state == "paid":
                     leftover -= line.amount
-                elif line.due_date and line.due_date < today:
+                    continue
+                if leftover >= (line.amount or 0.0) - 0.01:
+                    line.write({
+                        "paid_amount": line.paid_amount or line.amount,
+                        "payment_date": line.payment_date or today,
+                        "state": "paid",
+                    })
+                    leftover -= line.amount
+                elif (line.extension_end_date or line.due_date) and (line.extension_end_date or line.due_date) < today:
                     line.state = "overdue"
                 elif invoice.state != "cancel":
                     line.state = "invoiced"
@@ -723,7 +1019,7 @@ class InsurancePolicy(models.Model):
         self.ensure_one()
         if "sale.order" not in self.env or "is_subscription" not in self.env["sale.order"]._fields:
             return
-        if self.subscription_id or self.premium_type == "unique":
+        if self.subscription_id or self.installment_count <= 1:
             return
         product = self.scheme_id.product_id or self.env.ref(
             "insurance_management.product_insurance_premium",
@@ -846,14 +1142,17 @@ class InsurancePolicy(models.Model):
         percent = self.scheme_id.growth_percent or 0.0
         new_premium = self.policy_amount * (1 + percent / 100.0) if percent else self.policy_amount
         new_insured = self.insured_amount * (1 + percent / 100.0) if percent and self.insured_amount else self.insured_amount
+        new_installment = self.installment_amount * (1 + percent / 100.0) if percent else self.installment_amount
         new_policy = self.copy({
             "name": _("Nuevo"),
             "state": "draft",
             "origin_policy_id": self.id,
             "coverage_start_date": issue,
+            "emission_date": issue,
             "lead_id": False,
             "policy_amount": new_premium,
             "insured_amount": new_insured,
+            "installment_amount": new_installment,
             "next_growth_date": False,
         })
         new_policy.coverage_ids.write({"consumed_amount": 0.0})
@@ -988,31 +1287,66 @@ class InsurancePolicy(models.Model):
             for coverage in self.scheme_id.coverage_ids
         ]
 
+    def action_generate_installments(self):
+        """Botón: genera la lista de cuotas con el importe capturado manualmente."""
+        for policy in self:
+            if policy.state not in ("draft", "confirmed"):
+                raise UserError(_("Solo se generan cuotas en pólizas en borrador o activas."))
+            policy._generate_installments()
+        return True
+
     def _generate_installments(self):
+        """Crea una cuota por periodo según la forma de pago.
+
+        Cada cuota lleva su calendario: emisión del recibo → días de gracia →
+        fecha de cobro → prórroga (con cobro automático) → amparo.
+        """
         self.ensure_one()
-        self.installment_ids.filtered(lambda l: not l.invoice_id).unlink()
+        if not self.installment_amount or self.installment_amount <= 0:
+            raise UserError(_(
+                "Capture el importe de la cuota antes de generar la lista de cuotas."
+            ))
+        active_lines = self.installment_ids.filtered(lambda l: l.state != "cancelled")
+        if active_lines.filtered(lambda l: l.state == "paid" or l.paid_amount):
+            raise UserError(_(
+                "Ya hay cuotas con pagos registrados. No se puede regenerar la lista; "
+                "ajuste las cuotas pendientes directamente."
+            ))
+        global_move = self.cfdi_global_move_id
+        own_invoice = active_lines.filtered(lambda l: l.invoice_id and l.invoice_id != global_move)
+        if own_invoice:
+            raise UserError(_(
+                "Hay cuotas con factura propia. Cancele esas facturas antes de regenerar las cuotas."
+            ))
+        self.installment_ids.filtered(lambda l: l.state != "paid").unlink()
+
         count = self._get_installment_count()
-        months = PREMIUM_PERIODS.get(self.premium_type) or (self.duration_months or self.duration_years * 12)
-        start = self.issue_date or fields.Date.context_today(self)
-        amount = self.installment_amount
+        months = PREMIUM_PERIODS.get(self.premium_type, 1)
+        start = self.coverage_start_date or fields.Date.context_today(self)
         lines = []
         for index in range(count):
             date_from = start + relativedelta(months=months * index)
-            if self.premium_type == "unique":
-                date_to = self.end_date or date_from
-            else:
-                date_to = date_from + relativedelta(months=months) - relativedelta(days=1)
-            due_date = date_from
-            if self.payment_term_id:
-                due_date = date_from
-            lines.append((0, 0, {
+            date_to = date_from + relativedelta(months=months) - relativedelta(days=1)
+            emission = self.emission_date if index == 0 and self.emission_date else date_from
+            vals = {
                 "number": index + 1,
                 "date_from": date_from,
                 "date_to": date_to,
-                "due_date": due_date,
-                "amount": amount,
-            }))
+                "emission_date": emission,
+                "due_date": self._get_collection_date(emission),
+                "amount": self.installment_amount,
+            }
+            if global_move:
+                vals.update({"invoice_id": global_move.id, "state": "invoiced"})
+            lines.append((0, 0, vals))
         self.installment_ids = lines
+        self.message_post(body=_(
+            "Se generaron %(count)s cuotas de %(amount)s %(currency)s."
+        ) % {
+            "count": count,
+            "amount": self.installment_amount,
+            "currency": self.currency_id.name or "",
+        })
 
     def _generate_required_documents(self):
         self.ensure_one()
@@ -1045,9 +1379,11 @@ class InsurancePolicy(models.Model):
             old_insured = policy.insured_amount
             new_premium = old_premium * (1 + percent / 100.0)
             new_insured = old_insured * (1 + percent / 100.0) if old_insured else old_insured
+            new_installment = (policy.installment_amount or 0.0) * (1 + percent / 100.0)
             policy.write({
                 "policy_amount": new_premium,
                 "insured_amount": new_insured,
+                "installment_amount": new_installment,
                 "next_growth_date": (policy.next_growth_date or fields.Date.context_today(policy)) + relativedelta(years=1),
             })
             self.env["insurance.policy.growth"].create({

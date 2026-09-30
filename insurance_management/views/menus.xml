@@ -1,161 +1,288 @@
 <?xml version="1.0" encoding="utf-8"?>
 <odoo>
-    <menuitem id="menu_insurance_root"
+    <menuitem id="menu_insurance_root" active="True"
               name="Gestión de Seguros"
-              action="action_insurance_dashboard_board"
+              action="action_insurance_control_dashboard"
               sequence="45"
               web_icon="insurance_management,static/description/icon.png"
               groups="group_insurance_user"/>
 
-    <menuitem id="menu_insurance_dashboard" active="False"
+    <menuitem id="menu_insurance_dashboard" active="True"
               name="Tablero"
               parent="menu_insurance_root"
-              action="action_insurance_dashboard_board"
+              action="action_insurance_control_dashboard"
+              sequence="1"/>
+
+    <menuitem id="menu_insurance_agenda_root" active="True"
+              name="Agenda"
+              parent="menu_insurance_root"
               sequence="5"/>
 
-    <menuitem id="menu_insurance_crm_root"
-              name="CRM"
-              parent="menu_insurance_root"
-              action="action_insurance_crm_leads"
+    <menuitem id="menu_insurance_agenda_today" active="True"
+              name="Qué hacer hoy"
+              parent="menu_insurance_agenda_root"
+              action="action_insurance_task_today"
+              sequence="1"/>
+
+    <menuitem id="menu_insurance_agenda" active="True"
+              name="Agenda del equipo"
+              parent="menu_insurance_agenda_root"
+              action="action_insurance_task"
+              sequence="5"/>
+
+    <menuitem id="menu_insurance_activities" active="True"
+              name="Actividades del equipo"
+              parent="menu_insurance_agenda_root"
+              action="action_insurance_mail_activity"
               sequence="10"/>
 
-    <menuitem id="menu_insurance_crm_leads" active="False"
+    <menuitem id="menu_insurance_calendar" active="True"
+              name="Calendario de citas"
+              parent="menu_insurance_agenda_root"
+              action="calendar.action_calendar_event"
+              sequence="15"/>
+
+    <menuitem id="menu_insurance_crm_root" active="True"
+              name="CRM"
+              parent="menu_insurance_root"
+              sequence="10"/>
+
+    <menuitem id="menu_insurance_crm_leads" active="True"
               name="Oportunidades de seguros"
               parent="menu_insurance_crm_root"
               action="action_insurance_crm_leads"
               sequence="10"/>
 
-    <menuitem id="menu_insurance_policy_root"
-              name="Pólizas"
-              parent="menu_insurance_root"
-              action="action_insurance_policy"
+    <menuitem id="menu_insurance_customers" active="True"
+              name="Clientes"
+              parent="menu_insurance_crm_root"
+              action="action_insurance_customers"
               sequence="20"/>
 
-    <menuitem id="menu_insurance_offers" active="False"
-              name="Ofertas"
-              parent="menu_insurance_policy_root"
-              action="action_insurance_scheme"
-              sequence="5"/>
+    <menuitem id="menu_insurance_cross_sell" active="True"
+              name="Ventas cruzadas por cliente"
+              parent="menu_insurance_crm_root"
+              action="action_insurance_cross_sell"
+              sequence="30"/>
 
-    <menuitem id="menu_insurance_policy_sale" active="False"
-              name="Venta de póliza"
+    <menuitem id="menu_insurance_cross_sell_pivot" active="True"
+              name="Pólizas por cliente y ramo"
+              parent="menu_insurance_crm_root"
+              action="action_insurance_cross_sell_pivot"
+              sequence="40"/>
+
+    <menuitem id="menu_insurance_policy_root" active="True"
+              name="Pólizas"
+              parent="menu_insurance_root"
+              sequence="20"/>
+
+    <menuitem id="menu_insurance_policy_sale" active="True"
+              name="Pólizas"
               parent="menu_insurance_policy_root"
               action="action_insurance_policy"
               sequence="10"/>
 
-    <menuitem id="menu_insurance_policy_register" active="False"
-              name="Registro de póliza"
+    <menuitem id="menu_insurance_policy_attention" active="True"
+              name="Requieren atención"
               parent="menu_insurance_policy_root"
-              action="action_insurance_policy_all"
+              action="action_insurance_policy_attention"
+              sequence="15"/>
+
+    <menuitem id="menu_insurance_caratula_import" active="True"
+              name="Cargar carátula PDF"
+              parent="menu_insurance_policy_root"
+              action="action_insurance_policy_pdf_import"
               sequence="20"/>
 
-    <menuitem id="menu_insurance_policy_renewal" active="False"
-              name="Por renovar"
+    <menuitem id="menu_insurance_withdrawals" active="True"
+              name="Retiros y rescates"
               parent="menu_insurance_policy_root"
-              action="action_insurance_policy_renewal"
-              sequence="25"/>
-
-    <menuitem id="menu_insurance_customers" active="False"
-              name="Clientes asegurados"
-              parent="menu_insurance_policy_root"
-              action="action_insurance_customers"
+              action="action_insurance_policy_withdrawal"
               sequence="30"/>
 
-    <menuitem id="menu_insurance_claims_root"
+    <menuitem id="menu_insurance_documents" active="True"
+              name="Expedientes y firmas"
+              parent="menu_insurance_policy_root"
+              action="action_insurance_document"
+              sequence="40"/>
+
+    <menuitem id="menu_insurance_renewals" active="True"
+              name="Renovaciones"
+              parent="menu_insurance_root"
+              action="action_insurance_renewals"
+              sequence="25"/>
+
+    <menuitem id="menu_insurance_claims_root" active="True"
               name="Siniestros"
               parent="menu_insurance_root"
               action="action_insurance_claim"
               sequence="30"/>
 
-    <menuitem id="menu_insurance_claims" active="False"
-              name="Siniestros y casos médicos"
-              parent="menu_insurance_claims_root"
-              action="action_insurance_claim"
-              sequence="10"/>
-
-    <menuitem id="menu_insurance_collection_root"
+    <menuitem id="menu_insurance_collection_root" active="True"
               name="Cobranza"
               parent="menu_insurance_root"
               sequence="40"/>
 
-    <menuitem id="menu_insurance_installments"
+    <menuitem id="menu_insurance_collection_board" active="True"
+              name="Tablero de cobranza"
+              parent="menu_insurance_collection_root"
+              action="action_insurance_collection_board"
+              sequence="5"/>
+
+    <menuitem id="menu_insurance_installments" active="True"
               name="Cuotas por cobrar"
               parent="menu_insurance_collection_root"
               action="action_insurance_installment"
               sequence="10"/>
 
-    <menuitem id="menu_insurance_overdue"
+    <menuitem id="menu_insurance_overdue" active="True"
               name="Cuotas vencidas"
               parent="menu_insurance_collection_root"
               action="action_insurance_installment_overdue"
               sequence="20"/>
 
-    <menuitem id="menu_insurance_invoices"
+    <menuitem id="menu_insurance_collection_currency" active="True"
+              name="Cobranza por moneda"
+              parent="menu_insurance_collection_root"
+              action="action_insurance_collection_by_currency"
+              sequence="25"/>
+
+    <menuitem id="menu_insurance_invoices" active="True"
               name="Facturas de seguros"
               parent="menu_insurance_collection_root"
               action="action_insurance_invoices"
               sequence="30"/>
 
-    <menuitem id="menu_insurance_branch_analysis"
-              name="Análisis por sucursal"
-              parent="menu_insurance_collection_root"
-              action="action_insurance_policy_branch_analysis"
-              sequence="40"/>
-
-    <menuitem id="menu_insurance_agent_root"
-              name="Detalle agente"
+    <menuitem id="menu_insurance_agent_root" active="True"
+              name="Asesores"
               parent="menu_insurance_root"
-              action="action_insurance_agent"
-              sequence="50"/>
+              sequence="45"/>
 
-    <menuitem id="menu_insurance_documents_root" active="False"
-              name="Documentación"
-              parent="menu_insurance_root"
-              sequence="30"/>
-
-    <menuitem id="menu_insurance_documents" active="False"
-              name="Expedientes y firmas"
-              parent="menu_insurance_documents_root"
-              action="action_insurance_document"
+    <menuitem id="menu_insurance_commissions" active="True"
+              name="Comisiones"
+              parent="menu_insurance_agent_root"
+              action="action_insurance_commission"
               sequence="10"/>
 
-    <menuitem id="menu_insurance_config"
+    <menuitem id="menu_insurance_agents" active="True"
+              name="Asesores / agentes"
+              parent="menu_insurance_agent_root"
+              action="action_insurance_agent"
+              sequence="20"/>
+
+    <menuitem id="menu_insurance_agent_keys" active="True"
+              name="Claves y carteras"
+              parent="menu_insurance_agent_root"
+              action="action_insurance_agent_key"
+              sequence="30"/>
+
+    <menuitem id="menu_insurance_messaging_root" active="True"
+              name="Mensajería"
+              parent="menu_insurance_root"
+              sequence="60"/>
+
+    <menuitem id="menu_insurance_broadcast" active="True"
+              name="Grupos de difusión"
+              parent="menu_insurance_messaging_root"
+              action="action_insurance_broadcast_group"
+              sequence="10"/>
+
+    <menuitem id="menu_insurance_templates" active="True"
+              name="Plantillas de mensajes"
+              parent="menu_insurance_messaging_root"
+              action="action_insurance_mail_templates"
+              sequence="20"/>
+
+    <menuitem id="menu_insurance_reports_root" active="True"
+              name="Reportes"
+              parent="menu_insurance_root"
+              sequence="70"/>
+
+    <menuitem id="menu_insurance_branch_board" active="True"
+              name="Tablero por sucursal"
+              parent="menu_insurance_reports_root"
+              action="action_insurance_dashboard_board"
+              sequence="10"/>
+
+    <menuitem id="menu_insurance_branch_analysis" active="True"
+              name="Análisis por sucursal"
+              parent="menu_insurance_reports_root"
+              action="action_insurance_policy_branch_analysis"
+              sequence="20"/>
+
+    <menuitem id="menu_insurance_config" active="True"
               name="Configuración"
               parent="menu_insurance_root"
               sequence="90"
               groups="group_insurance_manager"/>
 
-    <menuitem id="menu_insurance_scheme"
-              name="Ofertas"
+    <menuitem id="menu_insurance_settings" active="True"
+              name="Ajustes"
+              parent="menu_insurance_config"
+              action="action_insurance_settings"
+              sequence="1"/>
+
+    <menuitem id="menu_insurance_policy_type" active="True"
+              name="Ramos (siglas)"
+              parent="menu_insurance_config"
+              action="action_insurance_policy_type"
+              sequence="5"/>
+
+    <menuitem id="menu_insurance_offer" active="True"
+              name="Sub-ramos / ofertas"
+              parent="menu_insurance_config"
+              action="action_insurance_offer"
+              sequence="6"/>
+
+    <menuitem id="menu_insurance_benefit" active="True"
+              name="Beneficios"
+              parent="menu_insurance_config"
+              action="action_insurance_benefit"
+              sequence="7"/>
+
+    <menuitem id="menu_insurance_scheme" active="True"
+              name="Esquemas de producto"
               parent="menu_insurance_config"
               action="action_insurance_scheme"
               sequence="10"/>
 
-    <menuitem id="menu_insurance_policy_type"
-              name="Tipos de póliza"
+    <menuitem id="menu_insurance_claim_type" active="True"
+              name="Tipos de siniestro"
               parent="menu_insurance_config"
-              action="action_insurance_policy_type"
-              sequence="20"/>
+              action="action_insurance_claim_type"
+              sequence="12"/>
 
-    <menuitem id="menu_insurance_company"
+    <menuitem id="menu_insurance_withdrawal_type" active="True"
+              name="Tipos de retiro"
+              parent="menu_insurance_config"
+              action="action_insurance_withdrawal_type"
+              sequence="14"/>
+
+    <menuitem id="menu_insurance_profession" active="True"
+              name="Profesiones"
+              parent="menu_insurance_config"
+              action="action_insurance_profession"
+              sequence="16"/>
+
+    <menuitem id="menu_insurance_goal" active="True"
+              name="Metas"
+              parent="menu_insurance_config"
+              action="action_insurance_goal"
+              sequence="18"/>
+
+    <menuitem id="menu_insurance_company" active="True"
               name="Compañías aseguradoras"
               parent="menu_insurance_config"
               action="action_insurance_company"
               sequence="30"/>
 
-    <menuitem id="menu_insurance_branch"
+    <menuitem id="menu_insurance_branch" active="True"
               name="Sucursales"
               parent="menu_insurance_config"
               action="action_insurance_branch"
               sequence="40"/>
 
-    <menuitem id="menu_insurance_agent" active="False"
-              name="Detalle del agente"
-              parent="menu_insurance_config"
-              action="action_insurance_agent"
-              sequence="50"/>
-
-    <menuitem id="menu_insurance_document_type"
+    <menuitem id="menu_insurance_document_type" active="True"
               name="Tipos de documento"
               parent="menu_insurance_config"
               action="action_insurance_document_type"

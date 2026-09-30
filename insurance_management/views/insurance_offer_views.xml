@@ -1,0 +1,81 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_insurance_offer_list" model="ir.ui.view">
+        <field name="name">insurance.offer.list</field>
+        <field name="model">insurance.offer</field>
+        <field name="arch" type="xml">
+            <list string="Ofertas por ramo" editable="bottom">
+                <field name="sequence" widget="handle"/>
+                <field name="ramo_id" options="{'no_create': True}"/>
+                <field name="parent_id" string="Sub-oferta de" options="{'no_create': True}"/>
+                <field name="name"/>
+                <field name="level" readonly="1"/>
+                <field name="sub_offer_free_text"/>
+                <field name="active" optional="hide"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_insurance_offer_form" model="ir.ui.view">
+        <field name="name">insurance.offer.form</field>
+        <field name="model">insurance.offer</field>
+        <field name="arch" type="xml">
+            <form string="Oferta">
+                <sheet>
+                    <div class="oe_title">
+                        <h1><field name="name" placeholder="Ej. Tradicional"/></h1>
+                    </div>
+                    <group>
+                        <group>
+                            <field name="ramo_id" options="{'no_create': True}"/>
+                            <field name="parent_id" options="{'no_create': True}"/>
+                            <field name="level"/>
+                        </group>
+                        <group>
+                            <field name="sub_offer_free_text" invisible="parent_id"/>
+                            <field name="sequence"/>
+                            <field name="active"/>
+                        </group>
+                    </group>
+                    <field name="description" placeholder="Descripción..."/>
+                    <separator string="Sub-ofertas" invisible="parent_id or sub_offer_free_text"/>
+                    <field name="child_ids" invisible="parent_id or sub_offer_free_text"
+                           context="{'default_ramo_id': ramo_id}">
+                        <list editable="bottom">
+                            <field name="sequence" widget="handle"/>
+                            <field name="name"/>
+                        </list>
+                    </field>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="view_insurance_offer_search" model="ir.ui.view">
+        <field name="name">insurance.offer.search</field>
+        <field name="model">insurance.offer</field>
+        <field name="arch" type="xml">
+            <search>
+                <field name="name"/>
+                <field name="ramo_id"/>
+                <field name="parent_id"/>
+                <filter name="offers" string="Ofertas" domain="[('parent_id', '=', False)]"/>
+                <filter name="sub_offers" string="Sub-ofertas" domain="[('parent_id', '!=', False)]"/>
+                <separator/>
+                <filter name="archived" string="Archivadas" domain="[('active', '=', False)]"/>
+                <group>
+                    <filter name="group_ramo" string="Ramo" context="{'group_by': 'ramo_id'}"/>
+                    <filter name="group_parent" string="Oferta principal" context="{'group_by': 'parent_id'}"/>
+                </group>
+            </search>
+        </field>
+    </record>
+
+    <record id="action_insurance_offer" model="ir.actions.act_window">
+        <field name="name">Ofertas por ramo</field>
+        <field name="res_model">insurance.offer</field>
+        <field name="view_mode">list,form</field>
+        <field name="search_view_id" ref="view_insurance_offer_search"/>
+        <field name="context">{'search_default_group_ramo': 1}</field>
+    </record>
+</odoo>

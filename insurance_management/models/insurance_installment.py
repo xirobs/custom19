@@ -3,7 +3,7 @@
 from dateutil.relativedelta import relativedelta
 
 from odoo import api, fields, models, _
-from odoo.exceptions import UserError
+from odoo.exceptions import UserError, ValidationError
 
 
 class InsuranceInstallment(models.Model):
@@ -24,8 +24,65 @@ class InsuranceInstallment(models.Model):
     number = fields.Integer(string="N.º de cuota", required=True)
     date_from = fields.Date(string="Desde", required=True)
     date_to = fields.Date(string="Hasta", required=True)
-    due_date = fields.Date(string="Fecha de vencimiento", required=True)
+    emission_date = fields.Date(
+        string="Emisión del recibo",
+        help="Fecha desde la que corren los días de gracia de esta cuota.",
+    )
+    grace_end_date = fields.Date(
+        string="Fin de gracia",
+        compute="_compute_collection_calendar",
+        store=True,
+    )
+    due_date = fields.Date(
+        string="Fecha de cobro",
+        required=True,
+        help="Fecha en que se cobra la cuota. Por defecto al terminar la gracia, "
+             "o el día fijo que pidió el cliente (siempre dentro de la gracia).",
+    )
+    auto_charge_end_date = fields.Date(
+        string="Fin de cobro automático",
+        compute="_compute_collection_calendar",
+        store=True,
+        help="Último día en que el sistema intenta el cargo automático (domiciliado).",
+    )
+    extension_end_date = fields.Date(
+        string="Fin de prórroga",
+        compute="_compute_collection_calendar",
+        store=True,
+    )
+    protection_end_date = fields.Date(
+        string="Fin de amparo",
+        compute="_compute_collection_calendar",
+        store=True,
+        help="Hasta esta fecha el cliente puede pagar directo a la aseguradora.",
+    )
+    collection_channel = fields.Selection(
+        related="policy_id.collection_channel",
+        store=True,
+        string="Conducto de cobro",
+    )
+    collection_stage = fields.Selection(
+        [
+            ("grace", "En gracia"),
+            ("auto_charge", "Cobro automático"),
+            ("extension", "Prórroga"),
+            ("protection", "Amparo: pago directo a la aseguradora"),
+            ("lapsed", "Sin pago"),
+            ("paid", "Pagada"),
+            ("cancelled", "Cancelada"),
+        ],
+        string="Situación de cobro",
+        compute="_compute_collection_stage",
+    )
     amount = fields.Monetary(string="Importe", currency_field="currency_id", required=True)
+    paid_amount = fields.Monetary(
+        string="Importe pagado",
+        currency_field="currency_id",
+        tracking=True,
+        copy=False,
+    )
+    payment_date = fields.Date(string="Fecha de pago", tracking=True, copy=False)
+    payment_reference = fields.Char(string="Referencia de pago", copy=False)
     currency_id = fields.Many2one(related="policy_id.currency_id", store=True)
     invoice_id = fields.Many2one("account.move", string="Factura", copy=False)
     invoice_state = fields.Selection(related="invoice_id.state", string="Estado factura")
@@ -65,6 +122,111 @@ class InsuranceInstallment(models.Model):
     def _compute_due_month(self):
         for line in self:
             line.due_month = line.due_date.replace(day=1) if line.due_date else False
+
+    @api.depends(
+        "emission_date",
+        "date_from",
+        "due_date",
+        "policy_id.grace_days",
+        "policy_id.extension_days",
+        "policy_id.auto_charge_days",
+        "policy_id.protection_days",
+    )
+    def _compute_collection_calendar(self):
+        for line in self:
+            policy = line.policy_id
+            emission = line.emission_date or line.date_from
+            line.grace_end_date = emission and emission + relativedelta(days=policy.grace_days or 0)
+            if line.due_date:
+                line.auto_charge_end_date = line.due_date + relativedelta(days=policy.auto_charge_days or 0)
+                line.extension_end_date = line.due_date + relativedelta(days=policy.extension_days or 0)
+                line.protection_end_date = line.extension_end_date + relativedelta(days=policy.protection_days or 0)
+            else:
+                line.auto_charge_end_date = False
+                line.extension_end_date = False
+                line.protection_end_date = False
+
+    @api.depends(
+        "state",
+        "due_date",
+        "auto_charge_end_date",
+        "extension_end_date",
+        "protection_end_date",
+        "collection_channel",
+    )
+    def _compute_collection_stage(self):
+        today = fields.Date.context_today(self)
+        for line in self:
+            if line.state in ("paid", "cancelled"):
+                line.collection_stage = line.state
+            elif not line.due_date or today < line.due_date:
+                line.collection_stage = "grace"
+            elif (
+                line.collection_channel == "domiciled"
+                and line.auto_charge_end_date
+                and today <= line.auto_charge_end_date
+            ):
+                line.collection_stage = "auto_charge"
+            elif line.extension_end_date and today <= line.extension_end_date:
+                line.collection_stage = "extension"
+            elif line.protection_end_date and today <= line.protection_end_date:
+                line.collection_stage = "protection"
+            else:
+                line.collection_stage = "lapsed"
+
+    @api.constrains("due_date", "emission_date", "grace_end_date")
+    def _check_due_date_in_grace(self):
+        for line in self:
+            if not (line.emission_date and line.due_date and line.grace_end_date):
+                continue
+            if not (line.emission_date <= line.due_date <= line.grace_end_date):
+                raise ValidationError(_(
+                    "La fecha de cobro de la cuota %(number)s debe estar dentro de los días de gracia "
+                    "(del %(start)s al %(end)s)."
+                ) % {
+                    "number": line.number,
+                    "start": line.emission_date,
+                    "end": line.grace_end_date,
+                })
+
+    @api.constrains("paid_amount")
+    def _check_paid_amount(self):
+        for line in self:
+            if line.paid_amount < 0:
+                raise ValidationError(_("El importe pagado no puede ser negativo."))
+
+    def write(self, vals):
+        res = super().write(vals)
+        if "paid_amount" in vals or "amount" in vals:
+            fully_paid = self.filtered(
+                lambda l: l.state not in ("paid", "cancelled")
+                and l.amount
+                and (l.paid_amount or 0.0) >= l.amount - 0.01
+            )
+            if fully_paid:
+                fully_paid.filtered(lambda l: not l.payment_date).write({
+                    "payment_date": fields.Date.context_today(self),
+                })
+                fully_paid.write({"state": "paid"})
+                for line in fully_paid:
+                    line.policy_id.message_post(body=_(
+                        "Pago registrado de la cuota %(number)s por %(amount)s."
+                    ) % {"number": line.number, "amount": line.paid_amount})
+        return res
+
+    def action_mark_paid(self):
+        """Registro manual del pago de la cuota (sin pasar por Contabilidad)."""
+        today = fields.Date.context_today(self)
+        for line in self:
+            if line.state == "cancelled":
+                raise UserError(_("No se puede pagar una cuota cancelada."))
+            line.write({
+                "paid_amount": line.paid_amount if line.paid_amount >= line.amount - 0.01 else line.amount,
+                "payment_date": line.payment_date or today,
+            })
+            if line.state != "paid":
+                line.state = "paid"
+        return True
 
     @api.model
     def _get_sale_journal(self, company):
@@ -225,9 +387,17 @@ class InsuranceInstallment(models.Model):
             "insurance_management.email_template_collection_notice",
             raise_if_not_found=False,
         )
+        overdue_template = self.env.ref(
+            "insurance_management.mail_template_installment_overdue",
+            raise_if_not_found=False,
+        )
         for line in self:
-            if template and line.partner_id.email:
-                template.send_mail(line.id, force_send=False)
+            line_template = overdue_template if (line.state == "overdue" and overdue_template) else template
+            if line_template and line.partner_id.email:
+                line.message_post_with_source(
+                    line_template, message_type="comment", subtype_xmlid="mail.mt_comment",
+                )
+                line.last_reminder_date = fields.Date.context_today(self)
             line.activity_schedule(
                 "insurance_management.mail_activity_insurance_collection",
                 user_id=line.policy_id.user_id.id or self.env.user.id,
@@ -264,9 +434,21 @@ class InsuranceInstallment(models.Model):
         for line in self:
             if line.state == "cancelled":
                 continue
-            if line.invoice_id and line.invoice_id.payment_state in ("paid", "in_payment"):
+            if line.state == "paid":
+                continue
+            if line.amount and (line.paid_amount or 0.0) >= line.amount - 0.01:
                 line.state = "paid"
-            elif line.due_date and line.due_date < today and line.state != "paid":
+            elif (
+                line.invoice_id
+                and line.invoice_id.payment_state in ("paid", "in_payment")
+            ):
+                line.write({
+                    "paid_amount": line.paid_amount or line.amount,
+                    "payment_date": line.payment_date or today,
+                    "state": "paid",
+                })
+            elif (line.extension_end_date or line.due_date) and (line.extension_end_date or line.due_date) < today:
+                # Vencida al terminar la prórroga (queda en amparo o sin pago)
                 line.state = "overdue"
             elif line.invoice_id and line.state != "paid":
                 line.state = "invoiced"
@@ -319,6 +501,8 @@ class InsuranceInstallment(models.Model):
 
     @api.model
     def _cron_collection_notices(self):
+        if not self.env["ir.config_parameter"].sudo().get_param("insurance_management.auto_collection"):
+            return
         today = fields.Date.context_today(self)
         upcoming = self.search([
             ("state", "in", ["pending", "invoiced"]),

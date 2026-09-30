@@ -1,14 +1,14 @@
 # -*- coding: utf-8 -*-
 {
     "name": "Gestión de Aseguradoras",
-    "version": "19.0.4.8.1",
+    "version": "19.0.6.0.0",
     "author": "Jhuliana Delgado",
     "maintainer": "Jhuliana Delgado",
     "website": "",
     "category": "Services/Insurance",
     "summary": (
-        "Seguros México: tablero, ofertas, pólizas, cobranza CFDI 4.0, "
-        "renovación, siniestros y expediente en el contacto."
+        "Pólizas, carátulas PDF, cobranza en pesos, dólares y UDIS, renovaciones, "
+        "agenda del equipo, mensajes a clientes y tablero con metas."
     ),
     "description": """
 Gestión de Aseguradoras
@@ -37,17 +37,25 @@ Ver static/description/index.html para la ficha completa.
         "data/ir_sequence_data.xml",
         "data/product_data.xml",
         "data/insurance_data.xml",
+        "data/insurance_offer_data.xml",
+        "data/insurance_catalog_data.xml",
         "data/mail_activity_data.xml",
         "data/mail_template_data.xml",
         "data/cron_data.xml",
+        "data/insurance_mail_templates.xml",
+        "data/insurance_automation_data.xml",
         "report/insurance_policy_report.xml",
         "report/insurance_policy_templates.xml",
         "views/insurance_company_views.xml",
         "views/insurance_branch_views.xml",
+        "views/insurance_offer_views.xml",
+        "views/insurance_benefit_views.xml",
         "views/insurance_policy_type_views.xml",
         "views/insurance_scheme_views.xml",
         "views/insurance_agent_views.xml",
         "views/insurance_document_views.xml",
+        "wizard/insurance_policy_pdf_import_views.xml",
+        "views/insurance_crm_views.xml",
         "views/insurance_policy_views.xml",
         "views/insurance_claim_views.xml",
         "views/insurance_installment_views.xml",
@@ -63,6 +71,9 @@ Ver static/description/index.html para la ficha completa.
     "assets": {
         "web.assets_backend": [
             "insurance_management/static/src/scss/dashboard.scss",
+            "insurance_management/static/src/dashboard/insurance_dashboard.scss",
+            "insurance_management/static/src/dashboard/insurance_dashboard.js",
+            "insurance_management/static/src/dashboard/insurance_dashboard.xml",
         ],
     },
     "installable": True,

@@ -1,0 +1,119 @@
+.o_insurance_control {
+    background: var(--o-view-background-color, $o-view-background-color);
+
+    .o_ic_container {
+        max-width: 1500px;
+        margin: 0 auto;
+        padding: 16px;
+    }
+    .o_ic_header {
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: space-between;
+        align-items: center;
+        gap: 12px;
+        margin-bottom: 12px;
+    }
+    .o_ic_period {
+        min-width: 80px;
+        text-align: center;
+    }
+    .o_ic_shortcuts {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        margin-bottom: 16px;
+    }
+    .o_ic_shortcut {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        border: 1px solid $border-color;
+    }
+    .o_ic_grid {
+        display: grid;
+        gap: 16px;
+        margin-bottom: 16px;
+    }
+    .o_ic_kpis {
+        grid-template-columns: repeat(auto-fill, minmax(210px, 1fr));
+    }
+    .o_ic_two {
+        grid-template-columns: repeat(auto-fit, minmax(420px, 1fr));
+    }
+    .o_ic_three {
+        grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+    }
+    .o_ic_card {
+        border: 1px solid $border-color;
+        border-radius: 10px;
+        padding: 14px 16px;
+        background: $o-view-background-color;
+        h5 {
+            font-size: 1rem;
+            margin-bottom: 10px;
+        }
+    }
+    .o_ic_label {
+        color: $text-muted;
+        font-size: 0.85rem;
+    }
+    .o_ic_value {
+        font-size: 1.6rem;
+        font-weight: 600;
+        line-height: 1.3;
+        font-variant-numeric: tabular-nums;
+    }
+    .o_ic_deltas {
+        display: flex;
+        flex-direction: column;
+        font-size: 0.8rem;
+        margin-top: 4px;
+    }
+    .o_ic_goal {
+        margin-top: 8px;
+    }
+    .o_ic_chart {
+        position: relative;
+        height: 280px;
+    }
+    .o_ic_mini {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 10px;
+        > div {
+            display: flex;
+            flex-direction: column;
+            padding: 8px;
+            border-radius: 8px;
+            background: rgba(128, 128, 128, 0.07);
+        }
+        span:last-child {
+            font-size: 0.8rem;
+            color: $text-muted;
+        }
+    }
+    .o_ic_mini_value {
+        font-size: 1.4rem;
+        font-weight: 600;
+        font-variant-numeric: tabular-nums;
+    }
+    .o_ic_clickable {
+        cursor: pointer;
+        td:hover,
+        > div:hover {
+            background: rgba(128, 128, 128, 0.12);
+        }
+    }
+    .o_ic_attention {
+        cursor: pointer;
+        padding: 6px 4px;
+        border-bottom: 1px solid $border-color;
+        &:hover {
+            background: rgba(128, 128, 128, 0.08);
+        }
+    }
+    td {
+        font-variant-numeric: tabular-nums;
+    }
+}

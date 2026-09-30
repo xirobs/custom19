@@ -1,0 +1,205 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<templates xml:space="preserve">
+    <t t-name="insurance_management.ControlDashboard">
+        <div class="o_action o_insurance_control h-100 overflow-auto">
+            <div class="o_ic_container">
+                <!-- Encabezado -->
+                <div class="o_ic_header">
+                    <div>
+                        <h2 class="mb-0">Tablero de control</h2>
+                        <small class="text-muted">Actualizado <t t-esc="state.updatedAt"/> · se refresca cada minuto</small>
+                    </div>
+                    <div class="d-flex align-items-center gap-2">
+                        <button class="btn btn-light" t-on-click="() => this.shiftMonth(-1)" title="Mes anterior">
+                            <i class="fa fa-chevron-left"/>
+                        </button>
+                        <strong class="o_ic_period" t-esc="state.data ? state.data.month_label : ''"/>
+                        <button class="btn btn-light" t-on-click="() => this.shiftMonth(1)" title="Mes siguiente">
+                            <i class="fa fa-chevron-right"/>
+                        </button>
+                        <button class="btn btn-primary" t-on-click="() => this.load()">
+                            <i t-attf-class="fa fa-refresh {{ state.loading ? 'fa-spin' : '' }}"/> Actualizar
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Accesos directos -->
+                <div class="o_ic_shortcuts">
+                    <t t-foreach="shortcuts" t-as="s" t-key="s.xmlid">
+                        <button class="btn btn-light o_ic_shortcut" t-on-click="() => this.open(s.xmlid)">
+                            <i t-attf-class="fa {{ s.icon }}"/>
+                            <span t-esc="s.label"/>
+                        </button>
+                    </t>
+                </div>
+
+                <t t-set="d" t-value="state.data"/>
+                <t t-if="d">
+                    <!-- Puntos débiles -->
+                    <div t-if="d.weak_points.length" class="alert alert-warning d-flex align-items-center gap-2" role="alert">
+                        <i class="fa fa-exclamation-triangle"/>
+                        <span>Atención a la tendencia de: <strong t-esc="d.weak_points.join(', ')"/> (bajan contra el mes o año anterior, o van por debajo de la meta).</span>
+                    </div>
+
+                    <!-- KPIs con comparativos -->
+                    <div class="o_ic_grid o_ic_kpis">
+                        <t t-foreach="d.kpis" t-as="k" t-key="k.key">
+                            <div class="o_ic_card">
+                                <div class="o_ic_label" t-esc="k.label"/>
+                                <div class="o_ic_value">
+                                    <t t-if="k.money" t-esc="d.currency_symbol"/><t t-esc="fmt(k.value, k.money)"/>
+                                </div>
+                                <div class="o_ic_deltas">
+                                    <span t-att-class="deltaClass(k.delta_month)">
+                                        <i t-attf-class="fa {{ deltaIcon(k.delta_month) }}"/>
+                                        <t t-if="k.delta_month !== null" t-esc="Math.abs(k.delta_month) + '%'"/> vs mes ant.
+                                    </span>
+                                    <span t-att-class="deltaClass(k.delta_year)">
+                                        <i t-attf-class="fa {{ deltaIcon(k.delta_year) }}"/>
+                                        <t t-if="k.delta_year !== null" t-esc="Math.abs(k.delta_year) + '%'"/> vs año ant.
+                                    </span>
+                                </div>
+                                <div t-if="k.goal" class="o_ic_goal">
+                                    <div class="d-flex justify-content-between small text-muted">
+                                        <span>Meta <t t-esc="fmt(k.goal, k.money)"/></span>
+                                        <span t-esc="k.goal_pct + '%'"/>
+                                    </div>
+                                    <div class="progress" style="height: 6px;">
+                                        <div t-attf-class="progress-bar {{ goalClass(k.goal_pct) }}"
+                                             t-attf-style="width: {{ Math.min(k.goal_pct, 100) }}%"/>
+                                    </div>
+                                </div>
+                            </div>
+                        </t>
+                    </div>
+
+                    <div class="o_ic_grid o_ic_two">
+                        <!-- Ingresos vs año anterior vs meta -->
+                        <div class="o_ic_card o_ic_chart_card">
+                            <div class="d-flex justify-content-between align-items-baseline">
+                                <h5>Ingresos por mes (comisiones)</h5>
+                                <small class="text-muted">
+                                    Año: <strong><t t-esc="d.currency_symbol"/><t t-esc="fmt(d.year_income, true)"/></strong>
+                                    · año ant. <t t-esc="d.currency_symbol"/><t t-esc="fmt(d.year_income_prev, true)"/>
+                                    <t t-if="d.year_goal"> · meta <t t-esc="d.currency_symbol"/><t t-esc="fmt(d.year_goal, true)"/></t>
+                                </small>
+                            </div>
+                            <div class="o_ic_chart"><canvas t-ref="incomeChart"/></div>
+                        </div>
+                        <!-- Tendencia -->
+                        <div class="o_ic_card o_ic_chart_card">
+                            <h5>Tendencia 12 meses</h5>
+                            <div class="o_ic_chart"><canvas t-ref="trendChart"/></div>
+                        </div>
+                    </div>
+
+                    <div class="o_ic_grid o_ic_three">
+                        <!-- Cartera activa por moneda -->
+                        <div class="o_ic_card">
+                            <h5>Pólizas activas <span class="badge text-bg-primary" t-esc="d.active_total"/></h5>
+                            <table class="table table-sm mb-2">
+                                <thead><tr><th>Moneda</th><th class="text-end">Pólizas</th><th class="text-end">Prima emitida</th></tr></thead>
+                                <tbody>
+                                    <tr t-foreach="d.portfolio" t-as="p" t-key="p.currency">
+                                        <td t-esc="p.currency"/>
+                                        <td class="text-end" t-esc="p.count"/>
+                                        <td class="text-end" t-esc="fmt(p.premium, true)"/>
+                                    </tr>
+                                </tbody>
+                            </table>
+                            <div class="small">
+                                <t t-foreach="d.by_ramo" t-as="r" t-key="r.name">
+                                    <span class="badge text-bg-light me-1 mb-1"><t t-esc="r.name"/>: <t t-esc="r.count"/></span>
+                                </t>
+                            </div>
+                        </div>
+                        <!-- Cobranza -->
+                        <div class="o_ic_card">
+                            <h5>Cobranza</h5>
+                            <table class="table table-sm mb-0 o_ic_clickable">
+                                <thead><tr><th>Moneda</th><th class="text-end text-success">Pagado mes</th><th class="text-end text-warning">Por vencer</th><th class="text-end text-danger">Vencido</th></tr></thead>
+                                <tbody>
+                                    <tr t-foreach="d.collection" t-as="c" t-key="c.currency">
+                                        <td t-esc="c.currency"/>
+                                        <td class="text-end" t-on-click="() => this.openCollection(c.currency, 'paid')" t-esc="fmt(c.paid, true)"/>
+                                        <td class="text-end" t-on-click="() => this.openCollection(c.currency, 'due_soon')">
+                                            <t t-esc="fmt(c.due_soon, true)"/> <small class="text-muted">(<t t-esc="c.due_soon_count"/>)</small>
+                                        </td>
+                                        <td class="text-end fw-bold text-danger" t-on-click="() => this.openCollection(c.currency, 'overdue')">
+                                            <t t-esc="fmt(c.overdue, true)"/> <small>(<t t-esc="c.overdue_count"/>)</small>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                        <!-- Tipos de cambio -->
+                        <div class="o_ic_card">
+                            <h5>Tipos de cambio a la fecha</h5>
+                            <t t-if="!d.rates.length"><p class="text-muted">Sin monedas USD/UDI registradas.</p></t>
+                            <div t-foreach="d.rates" t-as="r" t-key="r.code" class="d-flex justify-content-between align-items-center mb-2">
+                                <strong t-esc="r.label"/>
+                                <span t-if="r.outdated" class="badge text-bg-danger">Sin actualizar hoy <t t-if="r.date">(<t t-esc="r.date"/>)</t></span>
+                                <span t-else="" class="badge text-bg-success">Al día</span>
+                            </div>
+                            <button class="btn btn-sm btn-link px-0" t-on-click="() => this.open('base.action_currency_form')">Ver monedas y tasas</button>
+                        </div>
+                    </div>
+
+                    <div class="o_ic_grid o_ic_three">
+                        <!-- Atención -->
+                        <div class="o_ic_card">
+                            <h5>
+                                Puntos de atención
+                                <span class="badge text-bg-danger" t-esc="d.attention_counts.danger"/>
+                                <span class="badge text-bg-warning" t-esc="d.attention_counts.warning"/>
+                            </h5>
+                            <t t-if="!d.attention.length"><p class="text-success mb-0"><i class="fa fa-check-circle"/> Todo al día.</p></t>
+                            <ul class="list-unstyled mb-0">
+                                <li t-foreach="d.attention" t-as="a" t-key="a.id" class="o_ic_attention" t-on-click="() => this.openPolicy(a.id)">
+                                    <i t-attf-class="fa fa-circle me-1 {{ a.level == 'danger' ? 'text-danger' : 'text-warning' }}"/>
+                                    <strong t-esc="a.name"/> · <t t-esc="a.partner"/>
+                                    <div class="small text-muted" t-esc="a.reason"/>
+                                </li>
+                            </ul>
+                            <button class="btn btn-sm btn-link px-0" t-on-click="() => this.open('insurance_management.action_insurance_policy_attention')">Ver todas</button>
+                        </div>
+                        <!-- Renovaciones -->
+                        <div class="o_ic_card o_ic_clickable" t-on-click="() => this.open('insurance_management.action_insurance_renewals')">
+                            <h5>Renovaciones</h5>
+                            <div class="o_ic_mini">
+                                <div><span class="o_ic_mini_value text-warning" t-esc="d.renewals.pending"/><span>Por renovar</span></div>
+                                <div><span class="o_ic_mini_value text-primary" t-esc="d.renewals.in_progress"/><span>En trámite</span></div>
+                                <div><span class="o_ic_mini_value text-success" t-esc="d.renewals.renewed_month"/><span>Renovadas en el mes</span></div>
+                                <div><span class="o_ic_mini_value text-danger" t-esc="d.renewals.lost"/><span>No renovadas</span></div>
+                            </div>
+                        </div>
+                        <!-- Agenda -->
+                        <div class="o_ic_card">
+                            <h5>Agenda</h5>
+                            <div class="o_ic_mini o_ic_clickable">
+                                <div t-on-click="() => this.open('insurance_management.action_insurance_task_today')">
+                                    <span class="o_ic_mini_value" t-esc="d.agenda.today"/><span>Tareas de hoy</span>
+                                </div>
+                                <div t-on-click="() => this.open('insurance_management.action_insurance_task', {search_default_late: 1})">
+                                    <span t-attf-class="o_ic_mini_value {{ d.agenda.overdue ? 'text-danger' : 'text-success' }}" t-esc="d.agenda.overdue"/><span>Atrasadas</span>
+                                </div>
+                                <div t-on-click="() => this.open('insurance_management.action_insurance_task')">
+                                    <span class="o_ic_mini_value" t-esc="d.agenda.week"/><span>Esta semana</span>
+                                </div>
+                                <div t-on-click="() => this.open('insurance_management.action_insurance_mail_activity')">
+                                    <span t-attf-class="o_ic_mini_value {{ d.agenda.activities_overdue ? 'text-danger' : 'text-success' }}" t-esc="d.agenda.activities_overdue"/><span>Actividades vencidas</span>
+                                </div>
+                                <div>
+                                    <span class="o_ic_mini_value text-primary" t-esc="d.agenda.birthdays"/><span>Cumpleaños hoy</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </t>
+                <t t-elif="state.loading">
+                    <div class="text-center text-muted p-5"><i class="fa fa-spinner fa-spin"/> Cargando…</div>
+                </t>
+            </div>
+        </div>
+    </t>
+</templates>

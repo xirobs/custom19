@@ -1,0 +1,288 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <data noupdate="1">
+        <record id="mail_template_installment_overdue" model="mail.template">
+            <field name="name">Seguros: pago atrasado</field>
+            <field name="model_id" ref="model_insurance_installment"/>
+            <field name="insurance_category">overdue</field>
+            <field name="subject">Pago pendiente de su póliza {{ object.policy_id.name }}</field>
+            <field name="email_from">{{ (user.company_id.email_formatted or user.email_formatted) }}</field>
+            <field name="partner_to">{{ object.partner_id.id }}</field>
+            <field name="auto_delete" eval="False"/>
+            <field name="body_html" type="html">
+<div style="margin:0;padding:0;font-family:Arial,Helvetica,sans-serif;font-size:14px;color:#333;">
+<p>Hola <t t-out="object.partner_id.name or ''"/>,</p>
+<p>No hemos recibido el pago de la siguiente cuota de su póliza. Para no perder su cobertura, le pedimos regularizarlo a la brevedad:</p>
+<table style="border-collapse:collapse;margin:8px 0;">
+<tr><td style="padding:2px 12px 2px 0;color:#777;">Póliza</td><td><strong><t t-out="object.policy_id.name or ''"/></strong> — <t t-out="object.policy_id.policy_type_id.name or ''"/></td></tr>
+<tr><td style="padding:2px 12px 2px 0;color:#777;">Aseguradora</td><td><t t-out="object.policy_id.insurance_company_id.name or ''"/></td></tr>
+<tr><td style="padding:2px 12px 2px 0;color:#777;">Cuota</td><td><t t-out="object.number"/> de <t t-out="object.policy_id.installment_count"/> (<t t-out="format_date(object.date_from)"/> al <t t-out="format_date(object.date_to)"/>)</td></tr>
+<tr><td style="padding:2px 12px 2px 0;color:#777;">Fecha de cobro</td><td><t t-out="format_date(object.due_date)"/></td></tr>
+<tr><td style="padding:2px 12px 2px 0;color:#777;">Importe</td><td><strong><t t-out="format_amount(object.balance or object.amount, object.currency_id)"/></strong></td></tr>
+</table>
+<p t-if="object.extension_end_date">La prórroga termina el <strong><t t-out="format_date(object.extension_end_date)"/></strong><t t-if="object.protection_end_date"> y el periodo de amparo (pago directo a la aseguradora) el <strong><t t-out="format_date(object.protection_end_date)"/></strong></t>.</p>
+<p>Si ya realizó el pago, por favor envíenos su comprobante y omita este mensaje.</p>
+<p style="margin-top:16px;">Saludos cordiales,<br/><t t-out="user.name or ''"/><br/><t t-out="user.company_id.name or ''"/></p></div>
+            </field>
+        </record>
+
+        <record id="mail_template_payment_receipt" model="mail.template">
+            <field name="name">Seguros: comprobante de pago</field>
+            <field name="model_id" ref="model_insurance_installment"/>
+            <field name="insurance_category">receipt</field>
+            <field name="subject">Recibimos su pago — póliza {{ object.policy_id.name }}</field>
+            <field name="email_from">{{ (user.company_id.email_formatted or user.email_formatted) }}</field>
+            <field name="partner_to">{{ object.partner_id.id }}</field>
+            <field name="auto_delete" eval="False"/>
+            <field name="body_html" type="html">
+<div style="margin:0;padding:0;font-family:Arial,Helvetica,sans-serif;font-size:14px;color:#333;">
+<p>Hola <t t-out="object.partner_id.name or ''"/>,</p>
+<p>¡Gracias! Registramos su pago de <strong><t t-out="format_amount(object.paid_amount, object.currency_id)"/></strong> el <t t-out="format_date(object.payment_date) if object.payment_date else ''"/>.</p>
+<table style="border-collapse:collapse;margin:8px 0;">
+<tr><td style="padding:2px 12px 2px 0;color:#777;">Póliza</td><td><strong><t t-out="object.policy_id.name or ''"/></strong> — <t t-out="object.policy_id.policy_type_id.name or ''"/></td></tr>
+<tr><td style="padding:2px 12px 2px 0;color:#777;">Aseguradora</td><td><t t-out="object.policy_id.insurance_company_id.name or ''"/></td></tr>
+<tr><td style="padding:2px 12px 2px 0;color:#777;">Cuota</td><td><t t-out="object.number"/> de <t t-out="object.policy_id.installment_count"/> (<t t-out="format_date(object.date_from)"/> al <t t-out="format_date(object.date_to)"/>)</td></tr>
+<tr><td style="padding:2px 12px 2px 0;color:#777;">Fecha de cobro</td><td><t t-out="format_date(object.due_date)"/></td></tr>
+<tr><td style="padding:2px 12px 2px 0;color:#777;">Importe</td><td><strong><t t-out="format_amount(object.balance or object.amount, object.currency_id)"/></strong></td></tr>
+</table>
+<p t-if="object.policy_id.pending_installment_count">Le quedan <t t-out="object.policy_id.pending_installment_count"/> cuota(s) por pagar en esta póliza.</p>
+<p style="margin-top:16px;">Saludos cordiales,<br/><t t-out="user.name or ''"/><br/><t t-out="user.company_id.name or ''"/></p></div>
+            </field>
+        </record>
+
+        <record id="mail_template_policy_collection" model="mail.template">
+            <field name="name">Seguros: estado de cuenta de la póliza</field>
+            <field name="model_id" ref="model_insurance_policy"/>
+            <field name="insurance_category">collection</field>
+            <field name="subject">Estado de cuenta de su póliza {{ object.name }}</field>
+            <field name="email_from">{{ (user.company_id.email_formatted or user.email_formatted) }}</field>
+            <field name="partner_to">{{ object.partner_id.id }}</field>
+            <field name="auto_delete" eval="False"/>
+            <field name="body_html" type="html">
+<div style="margin:0;padding:0;font-family:Arial,Helvetica,sans-serif;font-size:14px;color:#333;">
+<p>Hola <t t-out="object.partner_id.name or ''"/>,</p>
+<p>Le compartimos el estado de pagos de su póliza:</p>
+<table style="border-collapse:collapse;margin:8px 0;">
+<tr><td style="padding:2px 12px 2px 0;color:#777;">Póliza</td><td><strong><t t-out="object.name or ''"/></strong></td></tr>
+<tr><td style="padding:2px 12px 2px 0;color:#777;">Ramo / plan</td><td><t t-out="object.policy_type_id.name or ''"/> <t t-if="object.offer_id">— <t t-out="object.offer_id.name"/></t> <t t-if="object.plan_basic">(<t t-out="object.plan_basic"/>)</t></td></tr>
+<tr><td style="padding:2px 12px 2px 0;color:#777;">Aseguradora</td><td><t t-out="object.insurance_company_id.name or ''"/></td></tr>
+<tr><td style="padding:2px 12px 2px 0;color:#777;">Vigencia</td><td><t t-out="format_date(object.coverage_start_date) if object.coverage_start_date else ''"/> al <t t-out="format_date(object.coverage_end_date) if object.coverage_end_date else ''"/></td></tr>
+<tr t-if="object.insured_amount"><td style="padding:2px 12px 2px 0;color:#777;">Suma asegurada</td><td><t t-out="format_amount(object.insured_amount, object.currency_id)"/></td></tr>
+</table>
+<table style="border-collapse:collapse;margin:8px 0;" border="1" cellpadding="4">
+<tr style="background:#f3f3f3;"><th>Cuota</th><th>Fecha de cobro</th><th>Importe</th><th>Estatus</th></tr>
+<tr t-foreach="object.installment_ids.filtered(lambda l: l.state != 'cancelled')" t-as="line">
+<td><t t-out="line.number"/></td><td><t t-out="format_date(line.due_date)"/></td>
+<td><t t-out="format_amount(line.amount, line.currency_id)"/></td>
+<td><t t-out="dict(line._fields['collection_status']._description_selection(line.env)).get(line.collection_status)"/></td>
+</tr></table>
+<p>Prima pagada a la fecha: <strong><t t-out="format_amount(object.amount_paid, object.currency_id)"/></strong>.</p>
+<p style="margin-top:16px;">Saludos cordiales,<br/><t t-out="user.name or ''"/><br/><t t-out="user.company_id.name or ''"/></p></div>
+            </field>
+        </record>
+
+        <record id="mail_template_policy_renewal" model="mail.template">
+            <field name="name">Seguros: aviso de renovación</field>
+            <field name="model_id" ref="model_insurance_policy"/>
+            <field name="insurance_category">renewal</field>
+            <field name="subject">Su póliza {{ object.name }} está por renovarse</field>
+            <field name="email_from">{{ (user.company_id.email_formatted or user.email_formatted) }}</field>
+            <field name="partner_to">{{ object.partner_id.id }}</field>
+            <field name="auto_delete" eval="False"/>
+            <field name="body_html" type="html">
+<div style="margin:0;padding:0;font-family:Arial,Helvetica,sans-serif;font-size:14px;color:#333;">
+<p>Hola <t t-out="object.partner_id.name or ''"/>,</p>
+<p>La vigencia de su póliza termina el <strong><t t-out="format_date(object.end_date) if object.end_date else ''"/></strong>. Queremos asegurarnos de que siga protegido(a) sin interrupciones.</p>
+<table style="border-collapse:collapse;margin:8px 0;">
+<tr><td style="padding:2px 12px 2px 0;color:#777;">Póliza</td><td><strong><t t-out="object.name or ''"/></strong></td></tr>
+<tr><td style="padding:2px 12px 2px 0;color:#777;">Ramo / plan</td><td><t t-out="object.policy_type_id.name or ''"/> <t t-if="object.offer_id">— <t t-out="object.offer_id.name"/></t> <t t-if="object.plan_basic">(<t t-out="object.plan_basic"/>)</t></td></tr>
+<tr><td style="padding:2px 12px 2px 0;color:#777;">Aseguradora</td><td><t t-out="object.insurance_company_id.name or ''"/></td></tr>
+<tr><td style="padding:2px 12px 2px 0;color:#777;">Vigencia</td><td><t t-out="format_date(object.coverage_start_date) if object.coverage_start_date else ''"/> al <t t-out="format_date(object.coverage_end_date) if object.coverage_end_date else ''"/></td></tr>
+<tr t-if="object.insured_amount"><td style="padding:2px 12px 2px 0;color:#777;">Suma asegurada</td><td><t t-out="format_amount(object.insured_amount, object.currency_id)"/></td></tr>
+</table>
+<p>Con gusto revisamos con usted las condiciones de renovación y cualquier ajuste que necesite en su suma asegurada o beneficios. Responda este correo o llámenos para agendar.</p>
+<p style="margin-top:16px;">Saludos cordiales,<br/><t t-out="user.name or ''"/><br/><t t-out="user.company_id.name or ''"/></p></div>
+            </field>
+        </record>
+
+        <record id="mail_template_policy_last_payments" model="mail.template">
+            <field name="name">Seguros: últimos pagos</field>
+            <field name="model_id" ref="model_insurance_policy"/>
+            <field name="insurance_category">last_payments</field>
+            <field name="subject">¡Ya casi! Últimos pagos de su póliza {{ object.name }}</field>
+            <field name="email_from">{{ (user.company_id.email_formatted or user.email_formatted) }}</field>
+            <field name="partner_to">{{ object.partner_id.id }}</field>
+            <field name="auto_delete" eval="False"/>
+            <field name="body_html" type="html">
+<div style="margin:0;padding:0;font-family:Arial,Helvetica,sans-serif;font-size:14px;color:#333;">
+<p>Hola <t t-out="object.partner_id.name or ''"/>,</p>
+<p>Le quedan solo <strong><t t-out="object.pending_installment_count"/></strong> pago(s) para completar la prima de este periodo de su póliza:</p>
+<table style="border-collapse:collapse;margin:8px 0;">
+<tr><td style="padding:2px 12px 2px 0;color:#777;">Póliza</td><td><strong><t t-out="object.name or ''"/></strong></td></tr>
+<tr><td style="padding:2px 12px 2px 0;color:#777;">Ramo / plan</td><td><t t-out="object.policy_type_id.name or ''"/> <t t-if="object.offer_id">— <t t-out="object.offer_id.name"/></t> <t t-if="object.plan_basic">(<t t-out="object.plan_basic"/>)</t></td></tr>
+<tr><td style="padding:2px 12px 2px 0;color:#777;">Aseguradora</td><td><t t-out="object.insurance_company_id.name or ''"/></td></tr>
+<tr><td style="padding:2px 12px 2px 0;color:#777;">Vigencia</td><td><t t-out="format_date(object.coverage_start_date) if object.coverage_start_date else ''"/> al <t t-out="format_date(object.coverage_end_date) if object.coverage_end_date else ''"/></td></tr>
+<tr t-if="object.insured_amount"><td style="padding:2px 12px 2px 0;color:#777;">Suma asegurada</td><td><t t-out="format_amount(object.insured_amount, object.currency_id)"/></td></tr>
+</table>
+<ul><li t-foreach="object.installment_ids.filtered(lambda l: l.state in ('pending', 'invoiced', 'overdue'))" t-as="line">Cuota <t t-out="line.number"/>: <t t-out="format_amount(line.balance, line.currency_id)"/> — cobro el <t t-out="format_date(line.due_date)"/></li></ul>
+<p>Gracias por su puntualidad.</p>
+<p style="margin-top:16px;">Saludos cordiales,<br/><t t-out="user.name or ''"/><br/><t t-out="user.company_id.name or ''"/></p></div>
+            </field>
+        </record>
+
+        <record id="mail_template_policy_welcome" model="mail.template">
+            <field name="name">Seguros: contratación y beneficios</field>
+            <field name="model_id" ref="model_insurance_policy"/>
+            <field name="insurance_category">welcome</field>
+            <field name="subject">Bienvenido(a): su póliza {{ object.name }} está activa</field>
+            <field name="email_from">{{ (user.company_id.email_formatted or user.email_formatted) }}</field>
+            <field name="partner_to">{{ object.partner_id.id }}</field>
+            <field name="auto_delete" eval="False"/>
+            <field name="body_html" type="html">
+<div style="margin:0;padding:0;font-family:Arial,Helvetica,sans-serif;font-size:14px;color:#333;">
+<p>Hola <t t-out="object.partner_id.name or ''"/>,</p>
+<p>¡Gracias por su confianza! Su póliza quedó contratada con las siguientes condiciones:</p>
+<table style="border-collapse:collapse;margin:8px 0;">
+<tr><td style="padding:2px 12px 2px 0;color:#777;">Póliza</td><td><strong><t t-out="object.name or ''"/></strong></td></tr>
+<tr><td style="padding:2px 12px 2px 0;color:#777;">Ramo / plan</td><td><t t-out="object.policy_type_id.name or ''"/> <t t-if="object.offer_id">— <t t-out="object.offer_id.name"/></t> <t t-if="object.plan_basic">(<t t-out="object.plan_basic"/>)</t></td></tr>
+<tr><td style="padding:2px 12px 2px 0;color:#777;">Aseguradora</td><td><t t-out="object.insurance_company_id.name or ''"/></td></tr>
+<tr><td style="padding:2px 12px 2px 0;color:#777;">Vigencia</td><td><t t-out="format_date(object.coverage_start_date) if object.coverage_start_date else ''"/> al <t t-out="format_date(object.coverage_end_date) if object.coverage_end_date else ''"/></td></tr>
+<tr t-if="object.insured_amount"><td style="padding:2px 12px 2px 0;color:#777;">Suma asegurada</td><td><t t-out="format_amount(object.insured_amount, object.currency_id)"/></td></tr>
+</table>
+<t t-if="object.benefit_ids">
+<p><strong>Beneficios contratados</strong></p>
+<table style="border-collapse:collapse;margin:8px 0;" border="1" cellpadding="4">
+<tr style="background:#f3f3f3;"><th>Beneficio</th><th>Suma asegurada</th><th>Cobertura (años)</th></tr>
+<tr t-foreach="object.benefit_ids" t-as="b"><td><t t-out="b.benefit_id.display_name"/></td>
+<td><t t-if="b.insured_amount" t-out="format_amount(b.insured_amount, object.currency_id)"/><t t-else="">—</t></td>
+<td><t t-out="b.coverage_years or ''"/></td></tr></table>
+</t>
+<p>Forma de pago: <t t-out="dict(object._fields['premium_type']._description_selection(object.env)).get(object.premium_type)"/><t t-if="object.installment_amount"> de <t t-out="format_amount(object.installment_amount, object.currency_id)"/></t>.</p>
+<p>Estamos a sus órdenes para cualquier duda o siniestro.</p>
+<p style="margin-top:16px;">Saludos cordiales,<br/><t t-out="user.name or ''"/><br/><t t-out="user.company_id.name or ''"/></p></div>
+            </field>
+        </record>
+
+        <record id="mail_template_signature_reminder" model="mail.template">
+            <field name="name">Seguros: recordatorio de firma</field>
+            <field name="model_id" ref="model_insurance_policy"/>
+            <field name="insurance_category">signature</field>
+            <field name="subject">Pendiente: firma de documentos de su póliza {{ object.name }}</field>
+            <field name="email_from">{{ (user.company_id.email_formatted or user.email_formatted) }}</field>
+            <field name="partner_to">{{ object.partner_id.id }}</field>
+            <field name="auto_delete" eval="False"/>
+            <field name="body_html" type="html">
+<div style="margin:0;padding:0;font-family:Arial,Helvetica,sans-serif;font-size:14px;color:#333;">
+<p>Hola <t t-out="object.partner_id.name or ''"/>,</p>
+<p>Para dejar completo el expediente de su póliza <strong><t t-out="object.name or ''"/></strong> necesitamos su firma en: <strong><t t-out="object.unsigned_document_names or 'los documentos de contratación'"/></strong>.</p>
+<p>Puede firmar en línea desde el enlace que le enviamos o agendar una cita con nosotros.</p>
+<p style="margin-top:16px;">Saludos cordiales,<br/><t t-out="user.name or ''"/><br/><t t-out="user.company_id.name or ''"/></p></div>
+            </field>
+        </record>
+
+        <record id="mail_template_partner_birthday" model="mail.template">
+            <field name="name">Seguros: felicitación de cumpleaños</field>
+            <field name="model_id" ref="base.model_res_partner"/>
+            <field name="insurance_category">birthday</field>
+            <field name="subject">¡Feliz cumpleaños, {{ object.name }}!</field>
+            <field name="email_from">{{ (user.company_id.email_formatted or user.email_formatted) }}</field>
+            <field name="partner_to">{{ object.id }}</field>
+            <field name="auto_delete" eval="False"/>
+            <field name="body_html" type="html">
+<div style="margin:0;padding:0;font-family:Arial,Helvetica,sans-serif;font-size:14px;color:#333;">
+<p style="font-size:18px;">¡Feliz cumpleaños, <strong><t t-out="object.name or ''"/></strong>! 🎉</p>
+<p>En este día tan especial le deseamos salud, alegría y muchos éxitos. Gracias por permitirnos cuidar de usted y de los suyos.</p>
+<p style="margin-top:16px;">Saludos cordiales,<br/><t t-out="user.name or ''"/><br/><t t-out="user.company_id.name or ''"/></p></div>
+            </field>
+        </record>
+
+        <record id="mail_template_partner_profession" model="mail.template">
+            <field name="name">Seguros: felicitación día de la profesión</field>
+            <field name="model_id" ref="base.model_res_partner"/>
+            <field name="insurance_category">profession</field>
+            <field name="subject">¡Feliz {{ object.insurance_profession_id.celebration_label or 'día' }}!</field>
+            <field name="email_from">{{ (user.company_id.email_formatted or user.email_formatted) }}</field>
+            <field name="partner_to">{{ object.id }}</field>
+            <field name="auto_delete" eval="False"/>
+            <field name="body_html" type="html">
+<div style="margin:0;padding:0;font-family:Arial,Helvetica,sans-serif;font-size:14px;color:#333;">
+<p>Hola <t t-out="object.name or ''"/>,</p>
+<p>Hoy celebramos el <strong><t t-out="object.insurance_profession_id.celebration_label or ''"/></strong> y queremos reconocer su labor como <t t-out="object.insurance_profession_id.name or ''"/>. ¡Muchas felicidades!</p>
+<p style="margin-top:16px;">Saludos cordiales,<br/><t t-out="user.name or ''"/><br/><t t-out="user.company_id.name or ''"/></p></div>
+            </field>
+        </record>
+
+        <record id="mail_template_partner_general" model="mail.template">
+            <field name="name">Seguros: mensaje general al cliente</field>
+            <field name="model_id" ref="base.model_res_partner"/>
+            <field name="insurance_category">general</field>
+            <field name="subject">Información de sus seguros</field>
+            <field name="email_from">{{ (user.company_id.email_formatted or user.email_formatted) }}</field>
+            <field name="partner_to">{{ object.id }}</field>
+            <field name="auto_delete" eval="False"/>
+            <field name="body_html" type="html">
+<div style="margin:0;padding:0;font-family:Arial,Helvetica,sans-serif;font-size:14px;color:#333;">
+<p>Hola <t t-out="object.name or ''"/>,</p>
+<p>Escriba aquí su mensaje.</p>
+<t t-if="object.insurance_policy_ids.filtered(lambda p: p.state == 'confirmed')">
+<p>Sus pólizas activas:</p>
+<ul><li t-foreach="object.insurance_policy_ids.filtered(lambda p: p.state == 'confirmed')" t-as="p"><t t-out="p.name"/> — <t t-out="p.policy_type_id.name or ''"/> (<t t-out="p.insurance_company_id.name or ''"/>), vigente al <t t-out="format_date(p.coverage_end_date) if p.coverage_end_date else ''"/></li></ul>
+</t>
+<p style="margin-top:16px;">Saludos cordiales,<br/><t t-out="user.name or ''"/><br/><t t-out="user.company_id.name or ''"/></p></div>
+            </field>
+        </record>
+
+        <record id="mail_template_lead_followup" model="mail.template">
+            <field name="name">Seguros: seguimiento de propuesta</field>
+            <field name="model_id" ref="crm.model_crm_lead"/>
+            <field name="insurance_category">sales</field>
+            <field name="subject">Su propuesta de seguro</field>
+            <field name="email_from">{{ (user.company_id.email_formatted or user.email_formatted) }}</field>
+            <field name="partner_to">{{ object.partner_id.id }}</field>
+            <field name="auto_delete" eval="False"/>
+            <field name="body_html" type="html">
+<div style="margin:0;padding:0;font-family:Arial,Helvetica,sans-serif;font-size:14px;color:#333;">
+<p>Hola <t t-out="object.partner_id.name or object.contact_name or ''"/>,</p>
+<p>Gracias por su interés en proteger lo que más le importa. Le compartimos el seguimiento de su propuesta<t t-if="object.insurance_policy_type_id"> de <strong><t t-out="object.insurance_policy_type_id.name"/></strong></t>.</p>
+<p t-if="object.estimated_premium">Prima estimada: <t t-out="format_amount(object.estimated_premium, object.company_currency)"/>.</p>
+<p>¿Le parece si agendamos una llamada para resolver sus dudas?</p>
+<p style="margin-top:16px;">Saludos cordiales,<br/><t t-out="user.name or ''"/><br/><t t-out="user.company_id.name or ''"/></p></div>
+            </field>
+        </record>
+
+        <record id="mail_template_task_message" model="mail.template">
+            <field name="name">Seguros: mensaje desde la agenda</field>
+            <field name="model_id" ref="model_insurance_task"/>
+            <field name="insurance_category">general</field>
+            <field name="subject">{{ object.name }}</field>
+            <field name="email_from">{{ (user.company_id.email_formatted or user.email_formatted) }}</field>
+            <field name="partner_to">{{ object.partner_id.id }}</field>
+            <field name="auto_delete" eval="False"/>
+            <field name="body_html" type="html">
+<div style="margin:0;padding:0;font-family:Arial,Helvetica,sans-serif;font-size:14px;color:#333;">
+<p>Hola <t t-out="object.partner_id.name or ''"/>,</p>
+<p>Escriba aquí su mensaje.</p>
+<p style="margin-top:16px;">Saludos cordiales,<br/><t t-out="user.name or ''"/><br/><t t-out="user.company_id.name or ''"/></p></div>
+            </field>
+        </record>
+
+        <record id="mail_template_claim_update" model="mail.template">
+            <field name="name">Seguros: seguimiento de siniestro</field>
+            <field name="model_id" ref="model_insurance_claim"/>
+            <field name="insurance_category">general</field>
+            <field name="subject">Seguimiento de su siniestro {{ object.name }}</field>
+            <field name="email_from">{{ (user.company_id.email_formatted or user.email_formatted) }}</field>
+            <field name="partner_to">{{ object.partner_id.id }}</field>
+            <field name="auto_delete" eval="False"/>
+            <field name="body_html" type="html">
+<div style="margin:0;padding:0;font-family:Arial,Helvetica,sans-serif;font-size:14px;color:#333;">
+<p>Hola <t t-out="object.partner_id.name or ''"/>,</p>
+<p>Le informamos el estado de su siniestro <strong><t t-out="object.name or ''"/></strong> (póliza <t t-out="object.policy_id.name or ''"/>): <strong><t t-out="dict(object._fields['state']._description_selection(object.env)).get(object.state)"/></strong>.</p>
+<p style="margin-top:16px;">Saludos cordiales,<br/><t t-out="user.name or ''"/><br/><t t-out="user.company_id.name or ''"/></p></div>
+            </field>
+        </record>
+
+    </data>
+    <function model="mail.template" name="write"
+              eval="[[ref('insurance_management.email_template_collection_notice')], {'insurance_category': 'collection', 'name': 'Seguros: recordatorio de pago'}]"/>
+</odoo>

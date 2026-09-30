@@ -12,6 +12,9 @@
                 <field name="mobile"/>
                 <field name="email"/>
                 <field name="policy_count"/>
+                <field name="commission_month" optional="show"/>
+                <field name="commission_to_pay" optional="show"/>
+                <field name="company_currency_id" column_invisible="1"/>
             </list>
         </field>
     </record>
@@ -26,6 +29,13 @@
                         <button name="action_open_policies" type="object" class="oe_stat_button" icon="fa-file-text-o">
                             <field name="policy_count" widget="statinfo" string="Pólizas"/>
                         </button>
+                        <button name="action_open_commissions" type="object" class="oe_stat_button" icon="fa-percent">
+                            <div class="o_stat_info">
+                                <span class="o_stat_value"><field name="commission_to_pay" widget="monetary"/></span>
+                                <span class="o_stat_text">Comisión por liquidar</span>
+                            </div>
+                        </button>
+                        <field name="company_currency_id" invisible="1"/>
                     </div>
                     <group>
                         <group>
@@ -40,10 +50,41 @@
                             <field name="mobile"/>
                             <field name="email"/>
                             <field name="date_start"/>
-                            <field name="commission_rate"/>
+                            <field name="commission_rate" string="Comisión por defecto (%)"/>
+                            <field name="commission_month"/>
                             <field name="active"/>
                         </group>
                     </group>
+                    <notebook>
+                        <page string="Comisiones según contrato" name="rules">
+                            <div class="text-muted mb-2">
+                                Se aplica la regla más específica (aseguradora y ramo). Si no hay regla, se usa la comisión por defecto.
+                            </div>
+                            <field name="commission_rule_ids">
+                                <list editable="bottom">
+                                    <field name="sequence" widget="handle"/>
+                                    <field name="insurance_company_id" placeholder="Todas"/>
+                                    <field name="ramo_id" placeholder="Todos"/>
+                                    <field name="rate_first_year"/>
+                                    <field name="rate_renewal"/>
+                                    <field name="note"/>
+                                </list>
+                            </field>
+                        </page>
+                        <page string="Claves y carteras" name="keys">
+                            <field name="key_ids">
+                                <list editable="bottom">
+                                    <field name="insurance_company_id"/>
+                                    <field name="name"/>
+                                    <field name="portfolio_name"/>
+                                    <field name="date_start"/>
+                                    <field name="policy_count"/>
+                                    <field name="customer_count"/>
+                                    <button name="action_open_portfolio" type="object" string="Ver cartera" icon="fa-folder-open"/>
+                                </list>
+                            </field>
+                        </page>
+                    </notebook>
                 </sheet>
                 <chatter/>
             </form>

@@ -15,28 +15,33 @@
                                 <td><span t-field="o.duration_months"/> mes(es)</td>
                             </tr>
                             <tr>
-                                <th>Oferta</th>
-                                <td><span t-field="o.scheme_id"/></td>
+                                <th>Ramo / oferta</th>
+                                <td>
+                                    <span t-field="o.policy_type_id"/>
+                                    <t t-if="o.offer_id"> / <span t-field="o.offer_id"/></t>
+                                    <t t-if="o.sub_offer_id"> / <span t-field="o.sub_offer_id"/></t>
+                                    <t t-if="o.sub_offer_text"> / <span t-field="o.sub_offer_text"/></t>
+                                </td>
                                 <th>Inicio de cobertura</th>
                                 <td><span t-field="o.coverage_start_date"/></td>
                             </tr>
                             <tr>
-                                <th>Sucursal</th>
-                                <td><span t-field="o.branch_id"/></td>
+                                <th>Conducto de cobro</th>
+                                <td><span t-field="o.collection_channel"/></td>
                                 <th>Fin de cobertura</th>
                                 <td><span t-field="o.coverage_end_date"/></td>
                             </tr>
                             <tr>
                                 <th>Agente</th>
                                 <td><span t-field="o.agent_id"/></td>
-                                <th>Monto de la póliza</th>
+                                <th>Prima emitida</th>
                                 <td><span t-field="o.policy_amount"/></td>
                             </tr>
                             <tr>
                                 <th>Plazo de pago</th>
                                 <td><span t-field="o.payment_term_id"/></td>
-                                <th>Tipo de prima</th>
-                                <td><span t-field="o.premium_type"/></td>
+                                <th>Forma de pago</th>
+                                <td><span t-field="o.premium_type"/> (<span t-field="o.installment_amount"/>)</td>
                             </tr>
                             <tr>
                                 <th>Compañía de seguros</th>

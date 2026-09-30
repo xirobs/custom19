@@ -4,9 +4,10 @@
         <field name="name">insurance.policy.type.list</field>
         <field name="model">insurance.policy.type</field>
         <field name="arch" type="xml">
-            <list string="Tipos de póliza">
+            <list string="Ramos">
                 <field name="name"/>
                 <field name="code"/>
+                <field name="offer_count"/>
                 <field name="scheme_count"/>
             </list>
         </field>
@@ -16,7 +17,7 @@
         <field name="name">insurance.policy.type.form</field>
         <field name="model">insurance.policy.type</field>
         <field name="arch" type="xml">
-            <form string="Tipo de póliza">
+            <form string="Ramo">
                 <sheet>
                     <group>
                         <group>
@@ -27,14 +28,23 @@
                             <field name="active"/>
                         </group>
                     </group>
-                    <field name="description" placeholder="Descripción del tipo de póliza..."/>
+                    <field name="description" placeholder="Descripción del ramo..."/>
+                    <separator string="Ofertas del ramo"/>
+                    <field name="offer_ids" context="{'default_ramo_id': id}">
+                        <list editable="bottom">
+                            <field name="sequence" widget="handle"/>
+                            <field name="name"/>
+                            <field name="parent_id" string="Sub-oferta de"/>
+                            <field name="sub_offer_free_text"/>
+                        </list>
+                    </field>
                 </sheet>
             </form>
         </field>
     </record>
 
     <record id="action_insurance_policy_type" model="ir.actions.act_window">
-        <field name="name">Tipos de póliza</field>
+        <field name="name">Ramos</field>
         <field name="res_model">insurance.policy.type</field>
         <field name="view_mode">list,form</field>
     </record>

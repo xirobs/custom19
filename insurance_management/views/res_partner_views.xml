@@ -5,7 +5,26 @@
         <field name="model">res.partner</field>
         <field name="inherit_id" ref="base.view_partner_form"/>
         <field name="arch" type="xml">
+            <xpath expr="//sheet" position="before">
+                <header>
+                    <button name="action_send_insurance_message" type="object" string="Enviar mensaje"
+                            icon="fa-envelope" invisible="not is_insurance_customer"/>
+                    <button name="action_register_insurance_payment" type="object" string="Realizar pago"
+                            icon="fa-money" class="btn-primary" invisible="insurance_amount_due == 0"/>
+                    <button name="action_create_cross_sell_lead" type="object" string="Oportunidad de venta cruzada"
+                            icon="fa-plus" invisible="not is_insurance_customer"/>
+                </header>
+            </xpath>
             <xpath expr="//div[@name='button_box']" position="inside">
+                <field name="is_insurance_customer" invisible="1"/>
+                <button name="action_register_insurance_payment" type="object"
+                        class="oe_stat_button" icon="fa-money"
+                        invisible="insurance_amount_due == 0">
+                    <div class="o_stat_info">
+                        <span class="o_stat_value"><field name="insurance_amount_due" widget="monetary"/></span>
+                        <span class="o_stat_text">Por cobrar</span>
+                    </div>
+                </button>
                 <field name="has_documents_module" invisible="1"/>
                 <field name="has_sign_module" invisible="1"/>
                 <button name="action_open_insurance_policies" type="object"
@@ -37,6 +56,9 @@
             <xpath expr="//field[@name='vat']" position="after">
                 <field name="mx_curp"/>
                 <field name="mx_birth_date"/>
+                <field name="insurance_age" invisible="not mx_birth_date"/>
+                <field name="insurance_profession_id" options="{'no_create': True}"/>
+                <field name="insurance_zone"/>
                 <field name="insurance_fiscal_regime"/>
                 <field name="insurance_cfdi_usage"/>
             </xpath>
@@ -69,10 +91,59 @@
                     <field name="has_sign_module" invisible="1"/>
                     <field name="has_documents_module" invisible="1"/>
                 </page>
+                <page string="Seguros: resumen" name="insurance_summary">
+                    <group>
+                        <group string="Cliente">
+                            <field name="insurance_attention_level" widget="badge"
+                                   decoration-success="insurance_attention_level == 'ok'"
+                                   decoration-warning="insurance_attention_level == 'warning'"
+                                   decoration-danger="insurance_attention_level == 'danger'"/>
+                            <field name="insurance_next_birthday"/>
+                            <field name="insurance_next_profession_day"/>
+                            <field name="insurance_active_policy_count"/>
+                            <field name="insurance_premium_total"/>
+                            <field name="insurance_company_currency_id" invisible="1"/>
+                        </group>
+                        <group string="Ventas cruzadas">
+                            <field name="insurance_ramo_ids" widget="many2many_tags"/>
+                            <field name="insurance_missing_ramo_ids" widget="many2many_tags"/>
+                        </group>
+                    </group>
+                    <separator string="Cuotas por cobrar"/>
+                    <field name="insurance_pending_installment_ids" readonly="1">
+                        <list decoration-danger="collection_status == 'overdue'"
+                              decoration-warning="collection_status == 'due_soon'">
+                            <field name="policy_id"/>
+                            <field name="number"/>
+                            <field name="due_date"/>
+                            <field name="balance"/>
+                            <field name="currency_id"/>
+                            <field name="collection_status" widget="badge"
+                                   decoration-danger="collection_status == 'overdue'"
+                                   decoration-warning="collection_status == 'due_soon'"/>
+                            <button name="action_open_payment_wizard" type="object" string="Pagar" icon="fa-money"/>
+                        </list>
+                    </field>
+                    <separator string="Agenda"/>
+                    <field name="insurance_task_ids" context="{'default_partner_id': id}">
+                        <list decoration-danger="status_color == 'red'" decoration-success="status_color in ('green', 'done')">
+                            <field name="date_deadline"/>
+                            <field name="name"/>
+                            <field name="task_type"/>
+                            <field name="user_id" widget="many2one_avatar_user"/>
+                            <field name="status_color" widget="badge"
+                                   decoration-danger="status_color == 'red'"
+                                   decoration-warning="status_color == 'orange'"
+                                   decoration-success="status_color in ('green', 'done')"/>
+                            <field name="state" column_invisible="1"/>
+                        </list>
+                    </field>
+                </page>
                 <page string="Seguros contratados" name="insurance_policies">
                     <field name="insurance_policy_ids">
                         <list>
-                            <field name="scheme_id"/>
+                            <field name="policy_type_id"/>
+                            <field name="offer_id"/>
                             <field name="name"/>
                             <field name="coverage_mode"/>
                             <field name="insurance_company_id"/>
@@ -80,7 +151,10 @@
                             <field name="coverage_start_date"/>
                             <field name="coverage_end_date"/>
                             <field name="policy_amount"/>
+                            <field name="amount_paid"/>
+                            <field name="currency_id"/>
                             <field name="premium_type"/>
+                            <field name="collection_channel"/>
                             <field name="lifecycle_stage" widget="badge"/>
                             <field name="state" widget="badge"/>
                         </list>
@@ -98,6 +172,13 @@
             <xpath expr="//search" position="inside">
                 <filter name="insurance_customers" string="Clientes de seguros"
                         domain="[('is_insurance_customer', '=', True)]"/>
+                <field name="insurance_profession_id"/>
+                <field name="insurance_zone"/>
+                <field name="insurance_ramo_ids" string="Ramo contratado"/>
+                <filter name="insurance_single_ramo" string="Con un solo ramo (venta cruzada)"
+                        domain="[('insurance_ramo_count', '=', 1)]"/>
+                <filter name="group_insurance_profession" string="Profesión" context="{'group_by': 'insurance_profession_id'}"/>
+                <filter name="group_insurance_zone" string="Zona" context="{'group_by': 'insurance_zone'}"/>
             </xpath>
         </field>
     </record>
@@ -111,5 +192,35 @@
             'res_partner_search_mode': 'customer',
             'search_default_customer': 1,
         }</field>
+    </record>
+    <!-- ================= Reporte de ventas cruzadas ================= -->
+    <record id="view_res_partner_cross_sell_list" model="ir.ui.view">
+        <field name="name">res.partner.cross.sell.list</field>
+        <field name="model">res.partner</field>
+        <field name="priority">50</field>
+        <field name="arch" type="xml">
+            <list string="Ventas cruzadas" create="0">
+                <field name="name"/>
+                <field name="phone" optional="show"/>
+                <field name="email" optional="show"/>
+                <field name="insurance_zone" optional="hide"/>
+                <field name="insurance_profession_id" optional="hide"/>
+                <field name="insurance_active_policy_count" sum="Pólizas"/>
+                <field name="insurance_ramo_count"/>
+                <field name="insurance_ramo_ids" widget="many2many_tags"/>
+                <field name="insurance_premium_total" sum="Prima"/>
+                <field name="insurance_company_currency_id" column_invisible="1"/>
+                <button name="action_open_cross_sell_policies" type="object" string="Ver pólizas" icon="fa-shield"/>
+                <button name="action_create_cross_sell_lead" type="object" string="Ofrecer otro ramo" icon="fa-plus"/>
+            </list>
+        </field>
+    </record>
+    <record id="action_insurance_cross_sell" model="ir.actions.act_window">
+        <field name="name">Ventas cruzadas por cliente</field>
+        <field name="res_model">res.partner</field>
+        <field name="view_mode">list,form</field>
+        <field name="view_id" ref="view_res_partner_cross_sell_list"/>
+        <field name="domain">[('insurance_active_policy_count', '&gt;', 0)]</field>
+        <field name="context">{'search_default_insurance_customers': 1}</field>
     </record>
 </odoo>

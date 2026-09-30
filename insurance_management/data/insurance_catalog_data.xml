@@ -1,0 +1,420 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <data noupdate="1">
+        <!-- Ramos adicionales (los de vida, GMM, auto y accidentes ya existen) -->
+        <record id="policy_type_home" model="insurance.policy.type">
+            <field name="name">Hogar</field>
+            <field name="code">SEGHOG</field>
+        </record>
+        <record id="policy_type_business" model="insurance.policy.type">
+            <field name="name">Daños empresariales</field>
+            <field name="code">SEGEMP</field>
+        </record>
+        <record id="policy_type_liability" model="insurance.policy.type">
+            <field name="name">Responsabilidad civil</field>
+            <field name="code">SEGRC</field>
+        </record>
+        <record id="policy_type_transport" model="insurance.policy.type">
+            <field name="name">Transporte</field>
+            <field name="code">SEGTRA</field>
+        </record>
+        <record id="policy_type_savings" model="insurance.policy.type">
+            <field name="name">Ahorro y retiro</field>
+            <field name="code">SEGAHO</field>
+        </record>
+        <record id="policy_type_travel" model="insurance.policy.type">
+            <field name="name">Viajero</field>
+            <field name="code">SEGVIA</field>
+        </record>
+        <!-- Sub-ramos / ofertas -->
+        <record id="offer_vida_temporal" model="insurance.offer">
+            <field name="name">Temporal</field>
+            <field name="ramo_id" ref="policy_type_life"/>
+            <field name="sequence">100</field>
+            <field name="sub_offer_free_text" eval="True"/>
+        </record>
+        <record id="offer_vida_ordinario" model="insurance.offer">
+            <field name="name">Vida entera / ordinario</field>
+            <field name="ramo_id" ref="policy_type_life"/>
+            <field name="sequence">110</field>
+            <field name="sub_offer_free_text" eval="True"/>
+        </record>
+        <record id="offer_vida_grupo" model="insurance.offer">
+            <field name="name">Vida grupo / colectivo</field>
+            <field name="ramo_id" ref="policy_type_life"/>
+            <field name="sequence">120</field>
+            <field name="sub_offer_free_text" eval="True"/>
+        </record>
+        <record id="offer_gmm_colectivo" model="insurance.offer">
+            <field name="name">Colectivo</field>
+            <field name="ramo_id" ref="policy_type_medical"/>
+            <field name="sequence">100</field>
+        </record>
+        <record id="offer_auto_individual" model="insurance.offer">
+            <field name="name">Individual</field>
+            <field name="ramo_id" ref="policy_type_auto"/>
+            <field name="sequence">100</field>
+        </record>
+        <record id="offer_auto_individual_0" model="insurance.offer">
+            <field name="name">Amplia</field>
+            <field name="ramo_id" ref="policy_type_auto"/>
+            <field name="parent_id" ref="offer_auto_individual"/>
+            <field name="sequence">10</field>
+        </record>
+        <record id="offer_auto_individual_1" model="insurance.offer">
+            <field name="name">Limitada</field>
+            <field name="ramo_id" ref="policy_type_auto"/>
+            <field name="parent_id" ref="offer_auto_individual"/>
+            <field name="sequence">20</field>
+        </record>
+        <record id="offer_auto_individual_2" model="insurance.offer">
+            <field name="name">Responsabilidad civil</field>
+            <field name="ramo_id" ref="policy_type_auto"/>
+            <field name="parent_id" ref="offer_auto_individual"/>
+            <field name="sequence">30</field>
+        </record>
+        <record id="offer_auto_flotilla" model="insurance.offer">
+            <field name="name">Flotilla</field>
+            <field name="ramo_id" ref="policy_type_auto"/>
+            <field name="sequence">110</field>
+        </record>
+        <record id="offer_auto_moto" model="insurance.offer">
+            <field name="name">Motocicleta</field>
+            <field name="ramo_id" ref="policy_type_auto"/>
+            <field name="sequence">120</field>
+        </record>
+        <record id="offer_ap_individual" model="insurance.offer">
+            <field name="name">Individual</field>
+            <field name="ramo_id" ref="policy_type_accident"/>
+            <field name="sequence">100</field>
+        </record>
+        <record id="offer_ap_escolar" model="insurance.offer">
+            <field name="name">Escolar</field>
+            <field name="ramo_id" ref="policy_type_accident"/>
+            <field name="sequence">110</field>
+        </record>
+        <record id="offer_ap_colectivo" model="insurance.offer">
+            <field name="name">Colectivo</field>
+            <field name="ramo_id" ref="policy_type_accident"/>
+            <field name="sequence">120</field>
+        </record>
+        <record id="offer_hogar_propia" model="insurance.offer">
+            <field name="name">Casa propia</field>
+            <field name="ramo_id" ref="policy_type_home"/>
+            <field name="sequence">100</field>
+        </record>
+        <record id="offer_hogar_rentada" model="insurance.offer">
+            <field name="name">Casa rentada (arrendatario)</field>
+            <field name="ramo_id" ref="policy_type_home"/>
+            <field name="sequence">110</field>
+        </record>
+        <record id="offer_emp_pyme" model="insurance.offer">
+            <field name="name">Paquete empresarial / PyME</field>
+            <field name="ramo_id" ref="policy_type_business"/>
+            <field name="sequence">100</field>
+        </record>
+        <record id="offer_emp_incendio" model="insurance.offer">
+            <field name="name">Incendio</field>
+            <field name="ramo_id" ref="policy_type_business"/>
+            <field name="sequence">110</field>
+        </record>
+        <record id="offer_emp_equipo" model="insurance.offer">
+            <field name="name">Equipo electrónico</field>
+            <field name="ramo_id" ref="policy_type_business"/>
+            <field name="sequence">120</field>
+        </record>
+        <record id="offer_rc_general" model="insurance.offer">
+            <field name="name">General</field>
+            <field name="ramo_id" ref="policy_type_liability"/>
+            <field name="sequence">100</field>
+        </record>
+        <record id="offer_rc_profesional" model="insurance.offer">
+            <field name="name">Profesional</field>
+            <field name="ramo_id" ref="policy_type_liability"/>
+            <field name="sequence">110</field>
+        </record>
+        <record id="offer_tra_carga" model="insurance.offer">
+            <field name="name">Carga</field>
+            <field name="ramo_id" ref="policy_type_transport"/>
+            <field name="sequence">100</field>
+        </record>
+        <record id="offer_tra_casco" model="insurance.offer">
+            <field name="name">Casco</field>
+            <field name="ramo_id" ref="policy_type_transport"/>
+            <field name="sequence">110</field>
+        </record>
+        <record id="offer_aho_ppr" model="insurance.offer">
+            <field name="name">Plan personal de retiro (PPR)</field>
+            <field name="ramo_id" ref="policy_type_savings"/>
+            <field name="sequence">100</field>
+            <field name="sub_offer_free_text" eval="True"/>
+        </record>
+        <record id="offer_aho_educacion" model="insurance.offer">
+            <field name="name">Educación</field>
+            <field name="ramo_id" ref="policy_type_savings"/>
+            <field name="sequence">110</field>
+            <field name="sub_offer_free_text" eval="True"/>
+        </record>
+        <record id="offer_aho_inversion" model="insurance.offer">
+            <field name="name">Inversión</field>
+            <field name="ramo_id" ref="policy_type_savings"/>
+            <field name="sequence">120</field>
+            <field name="sub_offer_free_text" eval="True"/>
+        </record>
+        <record id="offer_via_nacional" model="insurance.offer">
+            <field name="name">Nacional</field>
+            <field name="ramo_id" ref="policy_type_travel"/>
+            <field name="sequence">100</field>
+        </record>
+        <record id="offer_via_internacional" model="insurance.offer">
+            <field name="name">Internacional</field>
+            <field name="ramo_id" ref="policy_type_travel"/>
+            <field name="sequence">110</field>
+        </record>
+        <!-- Tipos de siniestro -->
+        <record id="claim_type_gmm_enfermedad" model="insurance.claim.type">
+            <field name="name">Enfermedad</field>
+            <field name="code">ENF</field>
+            <field name="ramo_id" ref="policy_type_medical"/>
+            <field name="claim_kind">gmm</field>
+            <field name="sequence">10</field>
+        </record>
+        <record id="claim_type_gmm_accidente" model="insurance.claim.type">
+            <field name="name">Accidente (gastos médicos)</field>
+            <field name="code">ACC</field>
+            <field name="ramo_id" ref="policy_type_medical"/>
+            <field name="claim_kind">gmm</field>
+            <field name="sequence">20</field>
+        </record>
+        <record id="claim_type_gmm_maternidad" model="insurance.claim.type">
+            <field name="name">Maternidad</field>
+            <field name="code">MAT</field>
+            <field name="ramo_id" ref="policy_type_medical"/>
+            <field name="claim_kind">gmm</field>
+            <field name="sequence">30</field>
+        </record>
+        <record id="claim_type_gmm_reembolso" model="insurance.claim.type">
+            <field name="name">Reembolso</field>
+            <field name="code">REE</field>
+            <field name="ramo_id" ref="policy_type_medical"/>
+            <field name="claim_kind">gmm</field>
+            <field name="sequence">40</field>
+        </record>
+        <record id="claim_type_gmm_pago_directo" model="insurance.claim.type">
+            <field name="name">Pago directo / programación de cirugía</field>
+            <field name="code">PD</field>
+            <field name="ramo_id" ref="policy_type_medical"/>
+            <field name="claim_kind">gmm</field>
+            <field name="sequence">50</field>
+        </record>
+        <record id="claim_type_vida_fallecimiento" model="insurance.claim.type">
+            <field name="name">Fallecimiento</field>
+            <field name="code">FAL</field>
+            <field name="ramo_id" ref="policy_type_life"/>
+            <field name="claim_kind">life</field>
+            <field name="sequence">60</field>
+        </record>
+        <record id="claim_type_vida_invalidez" model="insurance.claim.type">
+            <field name="name">Invalidez</field>
+            <field name="code">INV</field>
+            <field name="ramo_id" ref="policy_type_life"/>
+            <field name="claim_kind">life</field>
+            <field name="sequence">70</field>
+        </record>
+        <record id="claim_type_vida_enf_grave" model="insurance.claim.type">
+            <field name="name">Enfermedad grave</field>
+            <field name="code">EG</field>
+            <field name="ramo_id" ref="policy_type_life"/>
+            <field name="claim_kind">life</field>
+            <field name="sequence">80</field>
+        </record>
+        <record id="claim_type_auto_colision" model="insurance.claim.type">
+            <field name="name">Colisión</field>
+            <field name="code">COL</field>
+            <field name="ramo_id" ref="policy_type_auto"/>
+            <field name="claim_kind">auto</field>
+            <field name="sequence">90</field>
+        </record>
+        <record id="claim_type_auto_robo_total" model="insurance.claim.type">
+            <field name="name">Robo total</field>
+            <field name="code">RT</field>
+            <field name="ramo_id" ref="policy_type_auto"/>
+            <field name="claim_kind">auto</field>
+            <field name="sequence">100</field>
+        </record>
+        <record id="claim_type_auto_robo_parcial" model="insurance.claim.type">
+            <field name="name">Robo parcial</field>
+            <field name="code">RP</field>
+            <field name="ramo_id" ref="policy_type_auto"/>
+            <field name="claim_kind">auto</field>
+            <field name="sequence">110</field>
+        </record>
+        <record id="claim_type_auto_cristales" model="insurance.claim.type">
+            <field name="name">Cristales</field>
+            <field name="code">CRI</field>
+            <field name="ramo_id" ref="policy_type_auto"/>
+            <field name="claim_kind">auto</field>
+            <field name="sequence">120</field>
+        </record>
+        <record id="claim_type_auto_rc" model="insurance.claim.type">
+            <field name="name">Responsabilidad civil (auto)</field>
+            <field name="code">RCA</field>
+            <field name="ramo_id" ref="policy_type_auto"/>
+            <field name="claim_kind">auto</field>
+            <field name="sequence">130</field>
+        </record>
+        <record id="claim_type_ap_accidente" model="insurance.claim.type">
+            <field name="name">Accidente personal</field>
+            <field name="code">AP</field>
+            <field name="ramo_id" ref="policy_type_accident"/>
+            <field name="claim_kind">accident</field>
+            <field name="sequence">140</field>
+        </record>
+        <record id="claim_type_ap_funerarios" model="insurance.claim.type">
+            <field name="name">Gastos funerarios</field>
+            <field name="code">GF</field>
+            <field name="ramo_id" ref="policy_type_accident"/>
+            <field name="claim_kind">accident</field>
+            <field name="sequence">150</field>
+        </record>
+        <record id="claim_type_danos_incendio" model="insurance.claim.type">
+            <field name="name">Incendio</field>
+            <field name="code">INC</field>
+            <field name="ramo_id" ref="policy_type_home"/>
+            <field name="claim_kind">other</field>
+            <field name="sequence">160</field>
+        </record>
+        <record id="claim_type_danos_hidro" model="insurance.claim.type">
+            <field name="name">Fenómenos hidrometeorológicos</field>
+            <field name="code">FH</field>
+            <field name="ramo_id" ref="policy_type_home"/>
+            <field name="claim_kind">other</field>
+            <field name="sequence">170</field>
+        </record>
+        <record id="claim_type_danos_terremoto" model="insurance.claim.type">
+            <field name="name">Terremoto</field>
+            <field name="code">TER</field>
+            <field name="ramo_id" ref="policy_type_home"/>
+            <field name="claim_kind">other</field>
+            <field name="sequence">180</field>
+        </record>
+        <record id="claim_type_danos_robo" model="insurance.claim.type">
+            <field name="name">Robo con violencia</field>
+            <field name="code">ROB</field>
+            <field name="ramo_id" ref="policy_type_business"/>
+            <field name="claim_kind">other</field>
+            <field name="sequence">190</field>
+        </record>
+        <!-- Tipos de retiro -->
+        <record id="withdrawal_type_parcial" model="insurance.withdrawal.type">
+            <field name="name">Retiro parcial</field>
+            <field name="code">RP</field>
+            <field name="sequence">10</field>
+        </record>
+        <record id="withdrawal_type_rescate" model="insurance.withdrawal.type">
+            <field name="name">Rescate total</field>
+            <field name="code">RES</field>
+            <field name="sequence">20</field>
+        </record>
+        <record id="withdrawal_type_prestamo" model="insurance.withdrawal.type">
+            <field name="name">Préstamo sobre póliza</field>
+            <field name="code">PRE</field>
+            <field name="sequence">30</field>
+        </record>
+        <record id="withdrawal_type_vencimiento" model="insurance.withdrawal.type">
+            <field name="name">Retiro por vencimiento (dotal)</field>
+            <field name="code">VEN</field>
+            <field name="sequence">40</field>
+        </record>
+        <record id="withdrawal_type_fondo" model="insurance.withdrawal.type">
+            <field name="name">Retiro de fondo de ahorro</field>
+            <field name="code">FON</field>
+            <field name="sequence">50</field>
+        </record>
+        <!-- Profesiones y su día de felicitación (editable) -->
+        <record id="profession_medico" model="insurance.profession">
+            <field name="name">Médico(a)</field>
+            <field name="celebration_day">23</field>
+            <field name="celebration_month">10</field>
+            <field name="celebration_label">Día del Médico</field>
+        </record>
+        <record id="profession_enfermeria" model="insurance.profession">
+            <field name="name">Enfermero(a)</field>
+            <field name="celebration_day">6</field>
+            <field name="celebration_month">1</field>
+            <field name="celebration_label">Día de la Enfermera</field>
+        </record>
+        <record id="profession_maestro" model="insurance.profession">
+            <field name="name">Maestro(a)</field>
+            <field name="celebration_day">15</field>
+            <field name="celebration_month">5</field>
+            <field name="celebration_label">Día del Maestro</field>
+        </record>
+        <record id="profession_abogado" model="insurance.profession">
+            <field name="name">Abogado(a)</field>
+            <field name="celebration_day">12</field>
+            <field name="celebration_month">7</field>
+            <field name="celebration_label">Día del Abogado</field>
+        </record>
+        <record id="profession_contador" model="insurance.profession">
+            <field name="name">Contador(a)</field>
+            <field name="celebration_day">25</field>
+            <field name="celebration_month">5</field>
+            <field name="celebration_label">Día del Contador</field>
+        </record>
+        <record id="profession_ingeniero" model="insurance.profession">
+            <field name="name">Ingeniero(a)</field>
+            <field name="celebration_day">1</field>
+            <field name="celebration_month">7</field>
+            <field name="celebration_label">Día del Ingeniero</field>
+        </record>
+        <record id="profession_arquitecto" model="insurance.profession">
+            <field name="name">Arquitecto(a)</field>
+            <field name="celebration_day">1</field>
+            <field name="celebration_month">10</field>
+            <field name="celebration_label">Día del Arquitecto</field>
+        </record>
+        <record id="profession_odontologo" model="insurance.profession">
+            <field name="name">Odontólogo(a)</field>
+            <field name="celebration_day">9</field>
+            <field name="celebration_month">2</field>
+            <field name="celebration_label">Día del Odontólogo</field>
+        </record>
+        <record id="profession_psicologo" model="insurance.profession">
+            <field name="name">Psicólogo(a)</field>
+            <field name="celebration_day">20</field>
+            <field name="celebration_month">5</field>
+            <field name="celebration_label">Día del Psicólogo</field>
+        </record>
+        <record id="profession_quimico" model="insurance.profession">
+            <field name="name">Químico(a)</field>
+            <field name="celebration_day">1</field>
+            <field name="celebration_month">12</field>
+            <field name="celebration_label">Día del Químico</field>
+        </record>
+        <record id="profession_periodista" model="insurance.profession">
+            <field name="name">Periodista</field>
+            <field name="celebration_day">4</field>
+            <field name="celebration_month">1</field>
+            <field name="celebration_label">Día del Periodista</field>
+        </record>
+        <record id="profession_bombero" model="insurance.profession">
+            <field name="name">Bombero(a)</field>
+            <field name="celebration_day">22</field>
+            <field name="celebration_month">8</field>
+            <field name="celebration_label">Día del Bombero</field>
+        </record>
+        <record id="profession_nutriologo" model="insurance.profession">
+            <field name="name">Nutriólogo(a)</field>
+            <field name="celebration_day">27</field>
+            <field name="celebration_month">1</field>
+            <field name="celebration_label">Día del Nutriólogo</field>
+        </record>
+        <record id="profession_empresario" model="insurance.profession">
+            <field name="name">Empresario(a)</field>
+        </record>
+        <record id="profession_otro" model="insurance.profession">
+            <field name="name">Otra profesión</field>
+        </record>
+    </data>
+</odoo>

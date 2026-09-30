@@ -26,7 +26,15 @@ class InsuranceClaim(models.Model):
         index=True,
         domain="[('state', 'in', ['confirmed', 'expired', 'done'])]",
     )
-    partner_id = fields.Many2one(related="policy_id.partner_id", store=True, string="Titular")
+    partner_id = fields.Many2one(
+        "res.partner",
+        string="Cliente",
+        compute="_compute_partner_from_policy",
+        store=True,
+        readonly=False,
+        index=True,
+        tracking=True,
+    )
     member_id = fields.Many2one(
         "insurance.policy.member",
         string="Asegurado afectado",

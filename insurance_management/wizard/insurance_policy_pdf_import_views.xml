@@ -1,0 +1,93 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_insurance_policy_pdf_import_form" model="ir.ui.view">
+        <field name="name">insurance.policy.pdf.import.form</field>
+        <field name="model">insurance.policy.pdf.import</field>
+        <field name="arch" type="xml">
+            <form string="Cargar carátula PDF">
+                <field name="state" invisible="1"/>
+                <div invisible="state != 'upload'">
+                    <p class="text-muted">
+                        Adjunte la carátula en PDF que genera la plataforma de la aseguradora.
+                        Se leerán los datos principales y los beneficios para revisarlos antes de guardar.
+                    </p>
+                    <group>
+                        <field name="pdf_file" filename="pdf_filename" widget="binary"/>
+                        <field name="pdf_filename" invisible="1"/>
+                        <field name="policy_id" options="{'no_create': True}"/>
+                    </group>
+                </div>
+                <div invisible="state != 'preview'">
+                    <div class="alert alert-warning" role="alert" invisible="not warning">
+                        <field name="warning" nolabel="1"/>
+                    </div>
+                    <group>
+                        <group string="Póliza">
+                            <field name="policy_number" required="state == 'preview'"/>
+                            <field name="policy_id" readonly="1" invisible="not policy_id" string="Se actualizará"/>
+                            <field name="ramo_id" required="state == 'preview'" options="{'no_create': True}"/>
+                            <field name="plan_basic"/>
+                            <field name="offer_id" options="{'no_create': True}"/>
+                            <field name="sub_offer_id" invisible="not offer_id" options="{'no_create': True}"/>
+                            <field name="sub_offer_text"/>
+                            <field name="policy_kind"/>
+                            <field name="emission_date"/>
+                            <field name="maturity_date"/>
+                            <field name="premium_type"/>
+                            <field name="currency_id" options="{'no_create': True}"/>
+                            <field name="premium_total"/>
+                            <field name="settlement_option" invisible="not settlement_option"/>
+                        </group>
+                        <group string="Contratante y asegurado">
+                            <field name="contractor_name"/>
+                            <field name="contractor_partner_id" placeholder="Se creará un contacto nuevo"/>
+                            <field name="insured_name"/>
+                            <field name="insured_partner_id" placeholder="Igual al contratante o contacto nuevo"/>
+                            <field name="residence"/>
+                            <field name="birth_date"/>
+                            <field name="age"/>
+                            <field name="gender"/>
+                            <field name="address"/>
+                            <field name="street"/>
+                            <field name="zip"/>
+                            <field name="city"/>
+                            <field name="state_id" options="{'no_create': True}"/>
+                        </group>
+                    </group>
+                    <separator string="Beneficios"/>
+                    <field name="line_ids">
+                        <list editable="bottom">
+                            <field name="sequence" widget="handle"/>
+                            <field name="section" optional="show"/>
+                            <field name="code"/>
+                            <field name="insured_amount"/>
+                            <field name="annex"/>
+                            <field name="effective_date"/>
+                            <field name="coverage_years"/>
+                            <field name="payment_years"/>
+                            <field name="premium" sum="Total"/>
+                            <field name="no_cost"/>
+                            <field name="currency_id" column_invisible="1"/>
+                        </list>
+                    </field>
+                </div>
+                <footer>
+                    <button name="action_read_pdf" type="object" string="Leer PDF"
+                            class="btn-primary" invisible="state != 'upload'"/>
+                    <button name="action_create_policy" type="object" string="Guardar en la póliza"
+                            class="btn-primary" invisible="state != 'preview'"/>
+                    <button name="action_back" type="object" string="Cambiar PDF"
+                            invisible="state != 'preview'"/>
+                    <button string="Cancelar" special="cancel"/>
+                </footer>
+            </form>
+        </field>
+    </record>
+
+    <record id="action_insurance_policy_pdf_import" model="ir.actions.act_window">
+        <field name="name">Cargar carátula PDF</field>
+        <field name="res_model">insurance.policy.pdf.import</field>
+        <field name="view_mode">form</field>
+        <field name="target">new</field>
+    </record>
+</odoo>

@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <data noupdate="1">
+        <!-- Cobranza y resumen diario activos; los avisos nuevos al cliente se activan en Ajustes
+             (evita enviar un lote de correos a toda la cartera justo al actualizar). -->
+        <record id="param_auto_collection" model="ir.config_parameter">
+            <field name="key">insurance_management.auto_collection</field>
+            <field name="value">True</field>
+        </record>
+        <record id="param_daily_digest" model="ir.config_parameter">
+            <field name="key">insurance_management.daily_digest</field>
+            <field name="value">True</field>
+        </record>
+
+        <!-- Canal de conversación del equipo para avisos diarios -->
+        <record id="channel_insurance_alerts" model="discuss.channel">
+            <field name="name">Seguros · Avisos</field>
+            <field name="channel_type">channel</field>
+            <field name="description">Resumen diario: tipos de cambio, cobranza, renovaciones y agenda.</field>
+        </record>
+
+        <!-- Tareas programadas -->
+        <record id="ir_cron_insurance_refresh_status" model="ir.cron">
+            <field name="name">Seguros: actualizar semáforos, renovaciones y estatus de cobro</field>
+            <field name="model_id" ref="model_insurance_policy"/>
+            <field name="state">code</field>
+            <field name="code">env['insurance.installment']._cron_refresh_collection_status()
+model._cron_refresh_status()</field>
+            <field name="interval_number">1</field>
+            <field name="interval_type">days</field>
+            <field name="active" eval="True"/>
+        </record>
+        <record id="ir_cron_insurance_policy_notifications" model="ir.cron">
+            <field name="name">Seguros: avisos de renovación, últimos pagos y firma</field>
+            <field name="model_id" ref="model_insurance_policy"/>
+            <field name="state">code</field>
+            <field name="code">model._cron_policy_notifications()</field>
+            <field name="interval_number">1</field>
+            <field name="interval_type">days</field>
+            <field name="active" eval="True"/>
+        </record>
+        <record id="ir_cron_insurance_greetings" model="ir.cron">
+            <field name="name">Seguros: felicitaciones de cumpleaños y profesión</field>
+            <field name="model_id" ref="base.model_res_partner"/>
+            <field name="state">code</field>
+            <field name="code">model._cron_greetings()</field>
+            <field name="interval_number">1</field>
+            <field name="interval_type">days</field>
+            <field name="active" eval="True"/>
+        </record>
+        <record id="ir_cron_insurance_daily_digest" model="ir.cron">
+            <field name="name">Seguros: resumen diario al equipo</field>
+            <field name="model_id" ref="model_insurance_control_dashboard"/>
+            <field name="state">code</field>
+            <field name="code">model._cron_daily_digest()</field>
+            <field name="interval_number">1</field>
+            <field name="interval_type">days</field>
+            <field name="active" eval="True"/>
+        </record>
+    </data>
+</odoo>

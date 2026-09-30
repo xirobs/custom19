@@ -1,0 +1,667 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- ================= Catálogos ================= -->
+    <record id="view_insurance_claim_type_list" model="ir.ui.view">
+        <field name="name">insurance.claim.type.list</field>
+        <field name="model">insurance.claim.type</field>
+        <field name="arch" type="xml">
+            <list string="Tipos de siniestro" editable="bottom">
+                <field name="sequence" widget="handle"/>
+                <field name="code"/>
+                <field name="name"/>
+                <field name="ramo_id" options="{'no_create': True}"/>
+                <field name="claim_kind"/>
+                <field name="active" optional="hide"/>
+            </list>
+        </field>
+    </record>
+    <record id="action_insurance_claim_type" model="ir.actions.act_window">
+        <field name="name">Tipos de siniestro</field>
+        <field name="res_model">insurance.claim.type</field>
+        <field name="view_mode">list</field>
+        <field name="context">{'group_by': 'ramo_id'}</field>
+    </record>
+
+    <record id="view_insurance_withdrawal_type_list" model="ir.ui.view">
+        <field name="name">insurance.withdrawal.type.list</field>
+        <field name="model">insurance.withdrawal.type</field>
+        <field name="arch" type="xml">
+            <list string="Tipos de retiro" editable="bottom">
+                <field name="sequence" widget="handle"/>
+                <field name="code"/>
+                <field name="name"/>
+                <field name="description"/>
+                <field name="active" optional="hide"/>
+            </list>
+        </field>
+    </record>
+    <record id="action_insurance_withdrawal_type" model="ir.actions.act_window">
+        <field name="name">Tipos de retiro</field>
+        <field name="res_model">insurance.withdrawal.type</field>
+        <field name="view_mode">list</field>
+    </record>
+
+    <record id="view_insurance_policy_withdrawal_list" model="ir.ui.view">
+        <field name="name">insurance.policy.withdrawal.list</field>
+        <field name="model">insurance.policy.withdrawal</field>
+        <field name="arch" type="xml">
+            <list string="Retiros" editable="bottom"
+                  decoration-success="state == 'paid'" decoration-danger="state == 'rejected'">
+                <field name="policy_id"/>
+                <field name="partner_id" optional="show"/>
+                <field name="withdrawal_type_id"/>
+                <field name="date"/>
+                <field name="amount" sum="Total"/>
+                <field name="currency_id" column_invisible="1"/>
+                <field name="paid_date"/>
+                <field name="state" widget="badge"
+                       decoration-info="state == 'requested'" decoration-warning="state == 'in_process'"
+                       decoration-success="state == 'paid'" decoration-danger="state == 'rejected'"/>
+                <field name="note"/>
+            </list>
+        </field>
+    </record>
+    <record id="action_insurance_policy_withdrawal" model="ir.actions.act_window">
+        <field name="name">Retiros y rescates</field>
+        <field name="res_model">insurance.policy.withdrawal</field>
+        <field name="view_mode">list,pivot</field>
+    </record>
+
+    <record id="view_insurance_profession_list" model="ir.ui.view">
+        <field name="name">insurance.profession.list</field>
+        <field name="model">insurance.profession</field>
+        <field name="arch" type="xml">
+            <list string="Profesiones" editable="bottom">
+                <field name="name"/>
+                <field name="celebration_label"/>
+                <field name="celebration_day"/>
+                <field name="celebration_month"/>
+                <field name="partner_count"/>
+                <field name="active" optional="hide"/>
+            </list>
+        </field>
+    </record>
+    <record id="action_insurance_profession" model="ir.actions.act_window">
+        <field name="name">Profesiones</field>
+        <field name="res_model">insurance.profession</field>
+        <field name="view_mode">list</field>
+    </record>
+
+    <record id="view_insurance_agent_key_list" model="ir.ui.view">
+        <field name="name">insurance.agent.key.list</field>
+        <field name="model">insurance.agent.key</field>
+        <field name="arch" type="xml">
+            <list string="Claves y carteras" editable="bottom">
+                <field name="insurance_company_id" options="{'no_create': True}"/>
+                <field name="name"/>
+                <field name="portfolio_name"/>
+                <field name="agent_id"/>
+                <field name="date_start"/>
+                <field name="policy_count"/>
+                <field name="customer_count"/>
+                <button name="action_open_portfolio" type="object" string="Ver cartera" icon="fa-folder-open"/>
+                <field name="active" optional="hide"/>
+            </list>
+        </field>
+    </record>
+    <record id="action_insurance_agent_key" model="ir.actions.act_window">
+        <field name="name">Claves de seguros / carteras</field>
+        <field name="res_model">insurance.agent.key</field>
+        <field name="view_mode">list</field>
+        <field name="context">{'group_by': 'insurance_company_id'}</field>
+    </record>
+
+    <record id="view_insurance_goal_list" model="ir.ui.view">
+        <field name="name">insurance.goal.list</field>
+        <field name="model">insurance.goal</field>
+        <field name="arch" type="xml">
+            <list string="Metas" editable="bottom">
+                <field name="year"/>
+                <field name="month" placeholder="Anual"/>
+                <field name="agent_id" placeholder="Toda la agencia"/>
+                <field name="income_target" sum="Total"/>
+                <field name="premium_target" sum="Total"/>
+                <field name="new_policies_target" sum="Total"/>
+                <field name="new_customers_target" sum="Total"/>
+                <field name="currency_id" column_invisible="1"/>
+            </list>
+        </field>
+    </record>
+    <record id="action_insurance_goal" model="ir.actions.act_window">
+        <field name="name">Metas mensuales y anuales</field>
+        <field name="res_model">insurance.goal</field>
+        <field name="view_mode">list</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">Defina sus metas</p>
+            <p>Una fila por mes (o sin mes = meta anual). El tablero compara lo real contra estas metas.</p>
+        </field>
+    </record>
+
+    <!-- ================= Comisiones ================= -->
+    <record id="view_insurance_commission_list" model="ir.ui.view">
+        <field name="name">insurance.commission.list</field>
+        <field name="model">insurance.commission</field>
+        <field name="arch" type="xml">
+            <list string="Comisiones" create="0"
+                  decoration-muted="state == 'cancelled'" decoration-success="state == 'paid'">
+                <header>
+                    <button name="action_create_bill" type="object" string="Generar factura de comisión"/>
+                    <button name="action_mark_paid" type="object" string="Marcar liquidadas"/>
+                </header>
+                <field name="date"/>
+                <field name="agent_id"/>
+                <field name="policy_id"/>
+                <field name="partner_id" optional="show"/>
+                <field name="ramo_id" optional="show"/>
+                <field name="insurance_company_id" optional="show"/>
+                <field name="commission_type"/>
+                <field name="base_amount"/>
+                <field name="rate"/>
+                <field name="amount"/>
+                <field name="currency_id" optional="hide"/>
+                <field name="amount_company" sum="Total"/>
+                <field name="company_currency_id" column_invisible="1"/>
+                <field name="state" widget="badge"
+                       decoration-warning="state == 'to_pay'" decoration-success="state == 'paid'"/>
+                <field name="bill_id" optional="hide"/>
+            </list>
+        </field>
+    </record>
+    <record id="view_insurance_commission_search" model="ir.ui.view">
+        <field name="name">insurance.commission.search</field>
+        <field name="model">insurance.commission</field>
+        <field name="arch" type="xml">
+            <search>
+                <field name="agent_id"/>
+                <field name="policy_id"/>
+                <field name="partner_id"/>
+                <filter name="to_pay" string="Por liquidar" domain="[('state', '=', 'to_pay')]"/>
+                <filter name="paid" string="Liquidadas" domain="[('state', '=', 'paid')]"/>
+                <separator/>
+                <filter name="this_month" string="Este mes" domain="[('date', '&gt;=', context_today().strftime('%Y-%m-01'))]"/>
+                <filter name="date" string="Fecha" date="date"/>
+                <group>
+                    <filter name="group_agent" string="Asesor" context="{'group_by': 'agent_id'}"/>
+                    <filter name="group_month" string="Mes" context="{'group_by': 'date:month'}"/>
+                    <filter name="group_ramo" string="Ramo" context="{'group_by': 'ramo_id'}"/>
+                    <filter name="group_company" string="Aseguradora" context="{'group_by': 'insurance_company_id'}"/>
+                </group>
+            </search>
+        </field>
+    </record>
+    <record id="view_insurance_commission_pivot" model="ir.ui.view">
+        <field name="name">insurance.commission.pivot</field>
+        <field name="model">insurance.commission</field>
+        <field name="arch" type="xml">
+            <pivot string="Comisiones">
+                <field name="agent_id" type="row"/>
+                <field name="date" interval="month" type="col"/>
+                <field name="amount_company" type="measure"/>
+            </pivot>
+        </field>
+    </record>
+    <record id="view_insurance_commission_graph" model="ir.ui.view">
+        <field name="name">insurance.commission.graph</field>
+        <field name="model">insurance.commission</field>
+        <field name="arch" type="xml">
+            <graph string="Comisiones" type="bar">
+                <field name="date" interval="month"/>
+                <field name="amount_company" type="measure"/>
+            </graph>
+        </field>
+    </record>
+    <record id="action_insurance_commission" model="ir.actions.act_window">
+        <field name="name">Comisiones de asesores</field>
+        <field name="res_model">insurance.commission</field>
+        <field name="view_mode">list,pivot,graph</field>
+        <field name="search_view_id" ref="view_insurance_commission_search"/>
+        <field name="context">{'search_default_to_pay': 1, 'search_default_group_agent': 1}</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">Aún no hay comisiones</p>
+            <p>Se generan solas cada vez que se registra el pago de una cuota, según las reglas de comisión del asesor.</p>
+        </field>
+    </record>
+
+    <!-- ================= Agenda / tareas ================= -->
+    <record id="view_insurance_task_list" model="ir.ui.view">
+        <field name="name">insurance.task.list</field>
+        <field name="model">insurance.task</field>
+        <field name="arch" type="xml">
+            <list string="Agenda"
+                  decoration-danger="status_color == 'red'"
+                  decoration-warning="status_color == 'orange'"
+                  decoration-success="status_color == 'green'"
+                  decoration-muted="state == 'cancelled'">
+                <field name="date_deadline"/>
+                <field name="status_color" widget="badge"
+                       decoration-danger="status_color == 'red'"
+                       decoration-warning="status_color == 'orange'"
+                       decoration-success="status_color in ('green', 'done')"/>
+                <field name="name"/>
+                <field name="task_type"/>
+                <field name="partner_id"/>
+                <field name="email" optional="show"/>
+                <field name="phone" optional="show"/>
+                <field name="policy_id" optional="show"/>
+                <field name="description" optional="hide"/>
+                <field name="user_id" widget="many2one_avatar_user"/>
+                <field name="create_uid" string="Creado por" optional="show" widget="many2one_avatar_user"/>
+                <field name="activity_ids" widget="list_activity" optional="show"/>
+                <field name="state" column_invisible="1"/>
+                <button name="action_done" type="object" string="Hecho" icon="fa-check" invisible="state != 'todo'"/>
+                <button name="action_send_message" type="object" string="Mensaje" icon="fa-envelope" invisible="not partner_id"/>
+            </list>
+        </field>
+    </record>
+    <record id="view_insurance_task_form" model="ir.ui.view">
+        <field name="name">insurance.task.form</field>
+        <field name="model">insurance.task</field>
+        <field name="arch" type="xml">
+            <form string="Tarea">
+                <header>
+                    <button name="action_done" type="object" string="Marcar realizada" class="btn-primary" invisible="state != 'todo'"/>
+                    <button name="action_send_message" type="object" string="Enviar correo / WhatsApp" invisible="not partner_id"/>
+                    <button name="action_schedule_meeting" type="object" string="Agendar cita"/>
+                    <button name="action_reopen" type="object" string="Reabrir" invisible="state == 'todo'"/>
+                    <field name="state" widget="statusbar" statusbar_visible="todo,done"/>
+                </header>
+                <sheet>
+                    <div class="alert alert-danger" role="alert" invisible="status_color != 'red'">
+                        Esta tarea está atrasada.
+                    </div>
+                    <div class="oe_title">
+                        <h1><field name="name" placeholder="Título de la tarea"/></h1>
+                    </div>
+                    <group>
+                        <group>
+                            <field name="task_type"/>
+                            <field name="date_deadline"/>
+                            <field name="date_start"/>
+                            <field name="priority" widget="priority"/>
+                            <field name="user_id" widget="many2one_avatar_user"/>
+                            <field name="create_uid" string="Creado por" readonly="1" widget="many2one_avatar_user"/>
+                            <field name="status_color" widget="badge"
+                                   decoration-danger="status_color == 'red'"
+                                   decoration-warning="status_color == 'orange'"
+                                   decoration-success="status_color in ('green', 'done')"/>
+                        </group>
+                        <group>
+                            <field name="partner_id"/>
+                            <field name="email" widget="email"/>
+                            <field name="phone" widget="phone"/>
+                            <field name="policy_id"/>
+                            <field name="claim_id"/>
+                            <field name="lead_id"/>
+                            <field name="calendar_event_id" readonly="1"/>
+                        </group>
+                    </group>
+                    <field name="description" placeholder="Descripción de la tarea..."/>
+                    <group string="Resultado" invisible="state == 'todo'">
+                        <field name="date_done"/>
+                        <field name="result" nolabel="1" colspan="2"/>
+                    </group>
+                </sheet>
+                <chatter/>
+            </form>
+        </field>
+    </record>
+    <record id="view_insurance_task_kanban" model="ir.ui.view">
+        <field name="name">insurance.task.kanban</field>
+        <field name="model">insurance.task</field>
+        <field name="arch" type="xml">
+            <kanban default_group_by="user_id" highlight_color="color" class="o_kanban_small_column">
+                <field name="status_color"/>
+                <field name="state"/>
+                <templates>
+                    <t t-name="card">
+                        <div class="d-flex justify-content-between">
+                            <strong><field name="name"/></strong>
+                            <field name="priority" widget="priority"/>
+                        </div>
+                        <div><field name="task_type"/> · <field name="date_deadline"/></div>
+                        <div t-if="record.partner_id.raw_value"><i class="fa fa-user me-1" title="Cliente"/><field name="partner_id"/></div>
+                        <div t-if="record.phone.raw_value" class="text-muted small"><i class="fa fa-phone me-1" title="Teléfono"/><field name="phone"/></div>
+                        <footer class="d-flex justify-content-between align-items-center">
+                            <field name="status_color" widget="badge"
+                                   decoration-danger="status_color == 'red'"
+                                   decoration-warning="status_color == 'orange'"
+                                   decoration-success="status_color in ('green', 'done')"/>
+                            <field name="activity_ids" widget="kanban_activity"/>
+                            <field name="user_id" widget="many2one_avatar_user"/>
+                        </footer>
+                    </t>
+                </templates>
+            </kanban>
+        </field>
+    </record>
+    <record id="view_insurance_task_calendar" model="ir.ui.view">
+        <field name="name">insurance.task.calendar</field>
+        <field name="model">insurance.task</field>
+        <field name="arch" type="xml">
+            <calendar string="Agenda" date_start="date_deadline" color="user_id" mode="week" quick_create="1">
+                <field name="partner_id"/>
+                <field name="phone"/>
+                <field name="email"/>
+                <field name="task_type"/>
+                <field name="status_color"/>
+            </calendar>
+        </field>
+    </record>
+    <record id="view_insurance_task_search" model="ir.ui.view">
+        <field name="name">insurance.task.search</field>
+        <field name="model">insurance.task</field>
+        <field name="arch" type="xml">
+            <search>
+                <field name="name"/>
+                <field name="partner_id"/>
+                <field name="policy_id"/>
+                <field name="user_id"/>
+                <filter name="my" string="Mis tareas" domain="[('user_id', '=', uid)]"/>
+                <filter name="created_by_me" string="Creadas por mí" domain="[('create_uid', '=', uid)]"/>
+                <separator/>
+                <filter name="todo" string="Pendientes" domain="[('state', '=', 'todo')]"/>
+                <filter name="late" string="Atrasadas (rojo)" domain="[('status_color', '=', 'red')]"/>
+                <filter name="done" string="Realizadas" domain="[('state', '=', 'done')]"/>
+                <separator/>
+                <filter name="today" string="Hoy" domain="[('date_deadline', '=', context_today().strftime('%Y-%m-%d'))]"/>
+                <filter name="week" string="Esta semana"
+                        domain="[('date_deadline', '&gt;=', (context_today() + relativedelta(weeks=-1, days=1, weekday=0)).strftime('%Y-%m-%d')), ('date_deadline', '&lt;=', (context_today() + relativedelta(weekday=6)).strftime('%Y-%m-%d'))]"/>
+                <filter name="month" string="Este mes"
+                        domain="[('date_deadline', '&gt;=', context_today().strftime('%Y-%m-01')), ('date_deadline', '&lt;', (context_today() + relativedelta(months=1)).strftime('%Y-%m-01'))]"/>
+                <group>
+                    <filter name="group_user" string="Asignado a" context="{'group_by': 'user_id'}"/>
+                    <filter name="group_type" string="Tipo" context="{'group_by': 'task_type'}"/>
+                    <filter name="group_date" string="Fecha" context="{'group_by': 'date_deadline:day'}"/>
+                    <filter name="group_state" string="Estado" context="{'group_by': 'state'}"/>
+                </group>
+            </search>
+        </field>
+    </record>
+    <record id="view_insurance_task_activity" model="ir.ui.view">
+        <field name="name">insurance.task.activity</field>
+        <field name="model">insurance.task</field>
+        <field name="arch" type="xml">
+            <activity string="Actividades">
+                <templates>
+                    <div t-name="activity-box">
+                        <field name="name"/>
+                        <field name="partner_id" muted="1"/>
+                    </div>
+                </templates>
+            </activity>
+        </field>
+    </record>
+    <record id="action_insurance_task" model="ir.actions.act_window">
+        <field name="name">Agenda del equipo</field>
+        <field name="res_model">insurance.task</field>
+        <field name="view_mode">list,calendar,kanban,form,activity</field>
+        <field name="search_view_id" ref="view_insurance_task_search"/>
+        <field name="context">{'search_default_todo': 1}</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">Programe la primera tarea</p>
+            <p>Asigne tareas al equipo con fecha: en rojo las atrasadas, en verde las que van al día.</p>
+        </field>
+    </record>
+    <record id="action_insurance_task_today" model="ir.actions.act_window">
+        <field name="name">Qué hacer hoy</field>
+        <field name="res_model">insurance.task</field>
+        <field name="view_mode">list,kanban,calendar,form</field>
+        <field name="search_view_id" ref="view_insurance_task_search"/>
+        <field name="domain">[('state', '=', 'todo'), ('date_deadline', '&lt;=', context_today().strftime('%Y-%m-%d'))]</field>
+    </record>
+
+    <!-- Todas las actividades de seguros (rojo vencida / verde a tiempo) -->
+    <record id="view_insurance_mail_activity_list" model="ir.ui.view">
+        <field name="name">mail.activity.list.insurance</field>
+        <field name="model">mail.activity</field>
+        <field name="priority">90</field>
+        <field name="arch" type="xml">
+            <list string="Actividades" create="0"
+                  decoration-danger="state == 'overdue'"
+                  decoration-warning="state == 'today'"
+                  decoration-success="state == 'planned'">
+                <field name="date_deadline"/>
+                <field name="state" widget="badge"
+                       decoration-danger="state == 'overdue'"
+                       decoration-warning="state == 'today'"
+                       decoration-success="state == 'planned'"/>
+                <field name="activity_type_id"/>
+                <field name="summary"/>
+                <field name="res_name" string="Documento"/>
+                <field name="res_model_id" optional="hide"/>
+                <field name="note" optional="hide"/>
+                <field name="user_id" widget="many2one_avatar_user"/>
+                <field name="create_uid" string="Creado por" optional="show" widget="many2one_avatar_user"/>
+                <button name="action_done" type="object" string="Hecho" icon="fa-check"/>
+            </list>
+        </field>
+    </record>
+    <record id="action_insurance_mail_activity" model="ir.actions.act_window">
+        <field name="name">Actividades del equipo</field>
+        <field name="res_model">mail.activity</field>
+        <field name="view_mode">list,calendar,form</field>
+        <field name="view_id" ref="view_insurance_mail_activity_list"/>
+        <field name="domain">[('res_model', 'in', ['insurance.policy', 'insurance.installment', 'insurance.claim', 'insurance.task', 'insurance.document', 'crm.lead', 'res.partner'])]</field>
+    </record>
+
+    <!-- ================= Comunicación ================= -->
+    <record id="action_insurance_mail_templates" model="ir.actions.act_window">
+        <field name="name">Plantillas de mensajes</field>
+        <field name="res_model">mail.template</field>
+        <field name="view_mode">list,form</field>
+        <field name="domain">[('insurance_category', '!=', False)]</field>
+        <field name="context">{'group_by': 'insurance_category'}</field>
+    </record>
+    <record id="view_mail_template_form_insurance" model="ir.ui.view">
+        <field name="name">mail.template.form.insurance</field>
+        <field name="model">mail.template</field>
+        <field name="inherit_id" ref="mail.email_template_form"/>
+        <field name="arch" type="xml">
+            <field name="model_id" position="after">
+                <field name="insurance_category"/>
+            </field>
+        </field>
+    </record>
+
+    <record id="view_insurance_broadcast_group_list" model="ir.ui.view">
+        <field name="name">insurance.broadcast.group.list</field>
+        <field name="model">insurance.broadcast.group</field>
+        <field name="arch" type="xml">
+            <list string="Grupos de difusión">
+                <field name="name"/>
+                <field name="member_count"/>
+                <field name="ramo_id" optional="show"/>
+                <field name="insurance_company_id" optional="show"/>
+                <field name="channel_id" optional="show"/>
+            </list>
+        </field>
+    </record>
+    <record id="view_insurance_broadcast_group_form" model="ir.ui.view">
+        <field name="name">insurance.broadcast.group.form</field>
+        <field name="model">insurance.broadcast.group</field>
+        <field name="arch" type="xml">
+            <form string="Grupo de difusión">
+                <header>
+                    <button name="action_send_message" type="object" string="Enviar mensaje al grupo" class="btn-primary"/>
+                    <button name="action_fill_members" type="object" string="Agregar clientes por ramo / aseguradora"/>
+                    <button name="action_open_channel" type="object" string="Abrir conversación del equipo"/>
+                </header>
+                <sheet>
+                    <div class="oe_title"><h1><field name="name" placeholder="Ej. Clientes GMM Puebla"/></h1></div>
+                    <group>
+                        <group>
+                            <field name="ramo_id"/>
+                            <field name="insurance_company_id"/>
+                        </group>
+                        <group>
+                            <field name="user_ids" widget="many2many_avatar_user"/>
+                            <field name="channel_id" readonly="1"/>
+                        </group>
+                    </group>
+                    <field name="description" placeholder="Descripción del grupo..."/>
+                    <separator string="Integrantes"/>
+                    <field name="partner_ids">
+                        <list>
+                            <field name="name"/>
+                            <field name="email"/>
+                            <field name="phone"/>
+                        </list>
+                    </field>
+                </sheet>
+                <chatter/>
+            </form>
+        </field>
+    </record>
+    <record id="action_insurance_broadcast_group" model="ir.actions.act_window">
+        <field name="name">Grupos de difusión</field>
+        <field name="res_model">insurance.broadcast.group</field>
+        <field name="view_mode">list,form</field>
+    </record>
+
+    <!-- ================= Asistentes ================= -->
+    <record id="view_insurance_message_wizard_form" model="ir.ui.view">
+        <field name="name">insurance.message.wizard.form</field>
+        <field name="model">insurance.message.wizard</field>
+        <field name="arch" type="xml">
+            <form string="Enviar mensaje">
+                <field name="res_model" invisible="1"/>
+                <field name="res_ids" invisible="1"/>
+                <field name="whatsapp_enterprise" invisible="1"/>
+                <group>
+                    <group>
+                        <field name="channel" widget="radio" options="{'horizontal': true}"/>
+                        <field name="category"/>
+                        <field name="template_id" options="{'no_create': True}"/>
+                    </group>
+                    <group>
+                        <field name="record_count"/>
+                        <field name="partner_ids" widget="many2many_tags" readonly="1"/>
+                    </group>
+                </group>
+                <div class="alert alert-warning" role="alert" invisible="not missing_contact">
+                    Sin correo / teléfono: <field name="missing_contact" nolabel="1"/>
+                </div>
+                <div class="text-muted mb-2" invisible="record_count &lt;= 1">
+                    Cada destinatario recibe el mensaje con sus propios datos (nombre, póliza, importes).
+                    La vista previa muestra el primero.
+                </div>
+                <div class="text-muted mb-2" invisible="channel != 'whatsapp' or not whatsapp_enterprise">
+                    Se abrirá el envío de WhatsApp de Odoo con sus plantillas aprobadas por Meta.
+                </div>
+                <div class="text-muted mb-2" invisible="channel != 'whatsapp' or whatsapp_enterprise">
+                    Se abrirá WhatsApp con el mensaje listo para enviar.
+                </div>
+                <field name="subject" placeholder="Asunto" invisible="channel != 'email'"/>
+                <field name="body" class="oe-bordered-editor" options="{'height': 260}"/>
+                <footer>
+                    <button name="action_send_email" type="object" string="Enviar correo" class="btn-primary"
+                            invisible="channel != 'email'"/>
+                    <button name="action_send_whatsapp" type="object" string="Enviar por WhatsApp" class="btn-primary"
+                            invisible="channel != 'whatsapp'"/>
+                    <button string="Cancelar" special="cancel"/>
+                </footer>
+            </form>
+        </field>
+    </record>
+
+    <record id="view_insurance_payment_wizard_form" model="ir.ui.view">
+        <field name="name">insurance.payment.wizard.form</field>
+        <field name="model">insurance.payment.wizard</field>
+        <field name="arch" type="xml">
+            <form string="Registrar pago">
+                <group>
+                    <group>
+                        <field name="partner_id" options="{'no_create': True}"/>
+                        <field name="policy_id" options="{'no_create': True}"/>
+                        <field name="payment_date"/>
+                        <field name="payment_method"/>
+                        <field name="reference"/>
+                    </group>
+                    <group>
+                        <field name="currency_id" invisible="1"/>
+                        <field name="amount_due"/>
+                        <field name="amount"/>
+                        <field name="send_receipt"/>
+                    </group>
+                </group>
+                <field name="installment_ids" options="{'no_create': True}">
+                    <list>
+                        <field name="policy_id"/>
+                        <field name="number"/>
+                        <field name="due_date"/>
+                        <field name="amount"/>
+                        <field name="paid_amount"/>
+                        <field name="balance"/>
+                        <field name="currency_id" optional="show"/>
+                        <field name="collection_status" widget="badge"
+                               decoration-danger="collection_status == 'overdue'"
+                               decoration-warning="collection_status == 'due_soon'"/>
+                    </list>
+                </field>
+                <footer>
+                    <button name="action_apply" type="object" string="Aplicar pago" class="btn-primary"/>
+                    <button string="Cancelar" special="cancel"/>
+                </footer>
+            </form>
+        </field>
+    </record>
+
+    <!-- ================= Ajustes ================= -->
+    <record id="res_config_settings_view_form_insurance" model="ir.ui.view">
+        <field name="name">res.config.settings.view.form.insurance</field>
+        <field name="model">res.config.settings</field>
+        <field name="inherit_id" ref="base.res_config_settings_view_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//form" position="inside">
+                <app data-string="Seguros" string="Seguros" name="insurance_management" groups="insurance_management.group_insurance_manager">
+                    <block title="Avisos automáticos por correo" name="insurance_notifications">
+                        <setting string="Cobranza" help="Recordatorio antes de la fecha de cobro y aviso de pago atrasado.">
+                            <field name="insurance_auto_collection"/>
+                        </setting>
+                        <setting string="Renovación" help="Aviso al cliente antes del fin de vigencia.">
+                            <field name="insurance_auto_renewal"/>
+                            <div class="mt-2" invisible="not insurance_auto_renewal">
+                                <field name="insurance_renewal_notice_days" class="oe_inline"/> días antes
+                            </div>
+                        </setting>
+                        <setting string="Últimos pagos" help="Aviso cuando quedan 2 cuotas o menos.">
+                            <field name="insurance_auto_last_payments"/>
+                        </setting>
+                        <setting string="Firma de contrato" help="Recordatorio semanal de documentos sin firma.">
+                            <field name="insurance_auto_signature"/>
+                        </setting>
+                        <setting string="Bienvenida" help="Al confirmar la póliza: suma asegurada y beneficios.">
+                            <field name="insurance_auto_welcome"/>
+                        </setting>
+                        <setting string="Cumpleaños" help="Felicitación automática el día de su cumpleaños.">
+                            <field name="insurance_auto_birthday"/>
+                        </setting>
+                        <setting string="Día de la profesión" help="Felicitación según la profesión del cliente.">
+                            <field name="insurance_auto_profession"/>
+                        </setting>
+                    </block>
+                    <block title="Cobranza y equipo" name="insurance_team">
+                        <setting string="Cuotas por vencer" help="Días antes de la fecha de cobro para marcarla «por vencer».">
+                            <field name="insurance_due_soon_days"/>
+                        </setting>
+                        <setting string="Resumen diario" help="Publica en el canal «Seguros · Avisos» los tipos de cambio y pendientes del día.">
+                            <field name="insurance_daily_digest"/>
+                        </setting>
+                    </block>
+                </app>
+            </xpath>
+        </field>
+    </record>
+    <record id="action_insurance_settings" model="ir.actions.act_window">
+        <field name="name">Ajustes de seguros</field>
+        <field name="res_model">res.config.settings</field>
+        <field name="view_mode">form</field>
+        <field name="target">current</field>
+        <field name="context">{'module': 'insurance_management'}</field>
+    </record>
+    <!-- ================= Tablero de control ================= -->
+    <record id="action_insurance_control_dashboard" model="ir.actions.client">
+        <field name="name">Tablero de control</field>
+        <field name="tag">insurance_management.control_dashboard</field>
+    </record>
+</odoo>

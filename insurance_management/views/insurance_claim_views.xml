@@ -13,7 +13,8 @@
                 <field name="policy_id"/>
                 <field name="partner_id"/>
                 <field name="member_id"/>
-                <field name="claim_kind"/>
+                <field name="claim_type_id" optional="show"/>
+                <field name="claim_kind" optional="hide"/>
                 <field name="occurrence_date"/>
                 <field name="coverage_id"/>
                 <field name="claimed_amount"/>
@@ -48,6 +49,7 @@
                             invisible="state not in ('authorized', 'paid', 'rejected')"/>
                     <button name="action_draft" type="object" string="Volver a aviso"
                             invisible="state == 'draft'"/>
+                    <button name="action_send_message" type="object" string="Enviar mensaje" icon="fa-envelope"/>
                     <field name="state" widget="statusbar"
                            statusbar_visible="draft,documents,review,authorized,paid,closed"/>
                 </header>
@@ -65,11 +67,30 @@
                         <h1><field name="name" readonly="1"/></h1>
                     </div>
                     <group>
-                        <group>
-                            <field name="policy_id"/>
-                            <field name="partner_id"/>
-                            <field name="member_id"/>
+                        <group string="Cliente y póliza">
+                            <field name="partner_id" options="{'no_create': True}"/>
+                            <field name="policy_id"
+                                   domain="[('state', 'in', ['confirmed', 'expired', 'done']), '|', ('partner_id', '=?', partner_id), ('insured_partner_id', '=?', partner_id)]"/>
+                            <field name="policy_type_id"/>
+                            <field name="offer_id"/>
+                            <field name="policy_insured_amount"/>
+                            <field name="policy_start"/>
+                            <field name="policy_end"/>
+                            <field name="policy_overdue_count" invisible="not policy_overdue_count"
+                                   decoration-danger="policy_overdue_count &gt; 0"/>
+                        </group>
+                        <group string="¿Quién tuvo el siniestro?">
+                            <field name="member_id" options="{'no_create': True}"/>
+                            <field name="member_relationship"/>
+                            <field name="member_birth_date"/>
+                            <field name="contact_phone" widget="phone"/>
+                        </group>
+                    </group>
+                    <group>
+                        <group string="Detalle del siniestro">
+                            <field name="claim_type_id" options="{'no_create': True}"/>
                             <field name="claim_kind"/>
+                            <field name="occurrence_place"/>
                             <field name="coverage_id"/>
                             <field name="consumption_type"/>
                             <field name="insurance_company_id"/>
@@ -209,6 +230,8 @@
                 <filter name="auto" string="Auto" domain="[('claim_kind', '=', 'auto')]"/>
                 <group>
                     <filter name="group_kind" string="Tipo de caso" context="{'group_by': 'claim_kind'}"/>
+                    <filter name="group_type" string="Tipo de siniestro" context="{'group_by': 'claim_type_id'}"/>
+                    <filter name="group_partner" string="Cliente" context="{'group_by': 'partner_id'}"/>
                     <filter name="group_state" string="Estado" context="{'group_by': 'state'}"/>
                     <filter name="group_policy" string="Póliza" context="{'group_by': 'policy_id'}"/>
                 </group>
