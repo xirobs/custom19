@@ -4,7 +4,7 @@
     'version': '19.0.3.1.0',
     'summary': 'Grupo scout sobre Contactos, Calendario, Contabilidad y Conversaciones: miembros, actividades, asistencia, adelantos, actas, tesorería y portal para padres',
     'description': """
-Gestión de Grupo Scout
+Gestión de Grupo Scout.
 ======================
 * Miembros como Contactos: expediente con padres, emergencia, ficha médica, sección, adelantos, registro y adeudos.
 * Actividades en el Calendario (grupo o sección): responsables, temática, objetivos, horario, asistencia y "realizada".
