@@ -1,0 +1,148 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo noupdate="1">
+    <!-- Comunes -->
+    <record id="stage_promise" model="scout.progression.stage">
+        <field name="name">Promesa</field>
+        <field name="stage_type">promise</field>
+        <field name="sequence">1</field>
+    </record>
+
+    <!-- Colonia de Castores -->
+    <record id="stage_castor_colitas" model="scout.progression.stage">
+        <field name="name">Colitas de colores</field>
+        <field name="sequence">10</field>
+        <field name="section_ids" eval="[Command.link(ref('section_castores'))]"/>
+    </record>
+    <record id="stage_castor_keo" model="scout.progression.stage">
+        <field name="name">Castor Keo</field>
+        <field name="stage_type">terminal</field>
+        <field name="sequence">90</field>
+        <field name="section_ids" eval="[Command.link(ref('section_castores'))]"/>
+    </record>
+
+    <!-- Manada de Lobatos -->
+    <record id="stage_lobo_seonee" model="scout.progression.stage">
+        <field name="name">Seonee</field>
+        <field name="sequence">10</field>
+        <field name="section_ids" eval="[Command.link(ref('section_lobatos'))]"/>
+    </record>
+    <record id="stage_lobo_kaniwara" model="scout.progression.stage">
+        <field name="name">Kaniwara (Flor Roja)</field>
+        <field name="sequence">20</field>
+        <field name="section_ids" eval="[Command.link(ref('section_lobatos'))]"/>
+    </record>
+    <record id="stage_lobo_selva" model="scout.progression.stage">
+        <field name="name">Recorrido de la Selva</field>
+        <field name="sequence">25</field>
+        <field name="section_ids" eval="[Command.link(ref('section_lobatos'))]"/>
+    </record>
+    <record id="stage_lobo_explorador" model="scout.progression.stage">
+        <field name="name">Lobo explorador</field>
+        <field name="sequence">30</field>
+        <field name="section_ids" eval="[Command.link(ref('section_lobatos'))]"/>
+    </record>
+    <record id="stage_lobo_cazador" model="scout.progression.stage">
+        <field name="name">Lobo cazador</field>
+        <field name="sequence">40</field>
+        <field name="section_ids" eval="[Command.link(ref('section_lobatos'))]"/>
+    </record>
+    <record id="stage_lobo_recorrido" model="scout.progression.stage">
+        <field name="name">Recorrido del Lobo</field>
+        <field name="sequence">45</field>
+        <field name="section_ids" eval="[Command.link(ref('section_lobatos'))]"/>
+    </record>
+    <record id="stage_lobo_rampante" model="scout.progression.stage">
+        <field name="name">Lobo Rampante</field>
+        <field name="stage_type">terminal</field>
+        <field name="sequence">90</field>
+        <field name="section_ids" eval="[Command.link(ref('section_lobatos'))]"/>
+    </record>
+
+    <!-- Manada de Gacelas -->
+    <record id="stage_gacela_coa" model="scout.progression.stage">
+        <field name="name">Sendero de Coa</field>
+        <field name="sequence">10</field>
+        <field name="section_ids" eval="[Command.link(ref('section_gacelas'))]"/>
+    </record>
+    <record id="stage_gacela_shirma" model="scout.progression.stage">
+        <field name="name">Shirma</field>
+        <field name="sequence">20</field>
+        <field name="section_ids" eval="[Command.link(ref('section_gacelas'))]"/>
+    </record>
+    <record id="stage_gacela_basvi" model="scout.progression.stage">
+        <field name="name">Basvi</field>
+        <field name="sequence">30</field>
+        <field name="section_ids" eval="[Command.link(ref('section_gacelas'))]"/>
+    </record>
+    <record id="stage_gacela_recorrido" model="scout.progression.stage">
+        <field name="name">Recorrido de la Gacela</field>
+        <field name="sequence">40</field>
+        <field name="section_ids" eval="[Command.link(ref('section_gacelas'))]"/>
+    </record>
+    <record id="stage_gacela_bosque" model="scout.progression.stage">
+        <field name="name">Recorrido del Bosque</field>
+        <field name="sequence">50</field>
+        <field name="section_ids" eval="[Command.link(ref('section_gacelas'))]"/>
+    </record>
+    <record id="stage_gacela_pradera" model="scout.progression.stage">
+        <field name="name">Recorrido de la Pradera</field>
+        <field name="sequence">60</field>
+        <field name="section_ids" eval="[Command.link(ref('section_gacelas'))]"/>
+    </record>
+    <record id="stage_gacela_arcoiris" model="scout.progression.stage">
+        <field name="name">Insignia terminal Arcoíris</field>
+        <field name="stage_type">terminal</field>
+        <field name="sequence">90</field>
+        <field name="section_ids" eval="[Command.link(ref('section_gacelas'))]"/>
+    </record>
+
+    <!-- Tropas -->
+    <record id="stage_tropa_primera" model="scout.progression.stage">
+        <field name="name">Primera clase</field>
+        <field name="sequence">10</field>
+        <field name="section_ids" eval="[Command.link(ref('section_tropa_hydra')), Command.link(ref('section_tropa_atlas'))]"/>
+    </record>
+    <record id="stage_tropa_segunda" model="scout.progression.stage">
+        <field name="name">Segunda clase</field>
+        <field name="sequence">20</field>
+        <field name="section_ids" eval="[Command.link(ref('section_tropa_hydra')), Command.link(ref('section_tropa_atlas'))]"/>
+    </record>
+    <record id="stage_tropa_tercera" model="scout.progression.stage">
+        <field name="name">Tercera clase</field>
+        <field name="stage_type">terminal</field>
+        <field name="sequence">30</field>
+        <field name="section_ids" eval="[Command.link(ref('section_tropa_hydra')), Command.link(ref('section_tropa_atlas'))]"/>
+    </record>
+
+    <!-- Especialidades (manadas y tropas) -->
+    <record id="stage_spec_deportes" model="scout.progression.stage">
+        <field name="name">Especialidad: Deportes</field>
+        <field name="stage_type">specialty</field>
+        <field name="sequence">10</field>
+    </record>
+    <record id="stage_spec_arte" model="scout.progression.stage">
+        <field name="name">Especialidad: Arte y expresión</field>
+        <field name="stage_type">specialty</field>
+        <field name="sequence">20</field>
+    </record>
+    <record id="stage_spec_salud" model="scout.progression.stage">
+        <field name="name">Especialidad: Primeros auxilios y salud</field>
+        <field name="stage_type">specialty</field>
+        <field name="sequence">30</field>
+    </record>
+    <record id="stage_spec_ciencia" model="scout.progression.stage">
+        <field name="name">Especialidad: Ciencia y tecnología</field>
+        <field name="stage_type">specialty</field>
+        <field name="sequence">40</field>
+    </record>
+    <record id="stage_spec_espiritualidad" model="scout.progression.stage">
+        <field name="name">Especialidad: Espiritualidad</field>
+        <field name="stage_type">specialty</field>
+        <field name="sequence">50</field>
+    </record>
+    <record id="stage_spec_naturaleza" model="scout.progression.stage">
+        <field name="name">Especialidad: Naturaleza y servicio</field>
+        <field name="stage_type">specialty</field>
+        <field name="sequence">60</field>
+    </record>
+</odoo>

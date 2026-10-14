@@ -1,0 +1,249 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Encabezado común con la estructura de la ficha de registro -->
+    <template id="scout_doc_header">
+        <!-- Variables: company, title, subtitle -->
+        <table class="sc-row sc-head">
+            <tr>
+                <td style="width: 18%; text-align: left;">
+                    <img t-if="company.logo" class="sc-logo" t-att-src="image_data_uri(company.logo)"/>
+                </td>
+                <td>
+                    <h1 t-out="(company.name or '').upper()"/>
+                    <div class="sub" t-if="company.report_header" t-out="company.report_header"/>
+                    <h2 t-out="title"/>
+                    <div t-if="subtitle" t-out="subtitle"/>
+                </td>
+                <td style="width: 18%; text-align: right;">
+                    <img t-if="company.scout_emblem" class="sc-logo" t-att-src="image_data_uri(company.scout_emblem)"/>
+                    <span t-else="" style="font-size: 52px;">⚜</span>
+                </td>
+            </tr>
+        </table>
+        <t t-call="scout_management.scout_greca"/>
+    </template>
+
+    <!-- ================= Expediente del miembro (Contactos) ================= -->
+    <template id="report_member_document">
+        <t t-call="web.html_container">
+            <t t-foreach="docs" t-as="doc">
+                <t t-call="web.basic_layout">
+                    <t t-call="scout_management.scout_report_styles"/>
+                    <t t-set="company" t-value="doc.company_id or env.company"/>
+                    <t t-set="chk" t-value="lambda flag: 'X' if flag else ' '"/>
+                    <div class="page sc-doc">
+                        <t t-call="scout_management.scout_doc_header">
+                            <t t-set="title">EXPEDIENTE DEL MIEMBRO</t>
+                            <t t-set="subtitle" t-value="'%s · %s' % (doc.scout_section_id.display_name or '', dict(doc._fields['scout_state'].selection).get(doc.scout_state, ''))"/>
+                        </t>
+
+                        <div class="sc-box">
+                            <div class="sc-title"><span class="sc-num">1</span>DATOS PERSONALES</div>
+                            <table class="sc-row">
+                                <tr>
+                                    <td rowspan="3" style="width: 80px;"><img t-if="doc.image_128" t-att-src="image_data_uri(doc.image_128)" style="max-height: 70px;"/></td>
+                                    <td class="sc-label">Nombre:</td><td class="sc-val" t-out="doc.name"/>
+                                    <td class="sc-label">Nombre scout:</td><td class="sc-val" t-out="doc.scout_name or ''"/>
+                                </tr>
+                                <tr>
+                                    <td class="sc-label">Fecha de nacimiento:</td>
+                                    <td class="sc-val" t-out="doc.scout_birthdate and doc.scout_birthdate.strftime('%d / %m / %Y') or ''"/>
+                                    <td class="sc-label">Edad:</td><td class="sc-val" t-out="doc.scout_age or ''"/>
+                                </tr>
+                                <tr>
+                                    <td class="sc-label">Domicilio:</td><td class="sc-val" t-out="doc.contact_address_inline or doc.street or ''"/>
+                                    <td class="sc-label">Talla:</td><td class="sc-val" t-out="dict(doc._fields['scout_shirt_size'].selection).get(doc.scout_shirt_size, '')"/>
+                                </tr>
+                            </table>
+                            <table class="sc-row">
+                                <tr>
+                                    <td class="sc-label">Sección:</td><td class="sc-val" t-out="doc.scout_section_id.display_name or ''"/>
+                                    <td class="sc-label"><t t-out="doc.scout_section_id.patrol_label or 'Equipo'"/>:</td>
+                                    <td class="sc-val" t-out="doc.scout_patrol_id.name or ''"/>
+                                    <td class="sc-label">Ingreso:</td><td class="sc-val" t-out="doc.scout_join_date and doc.scout_join_date.strftime('%d/%m/%Y') or ''"/>
+                                    <td class="sc-label">Ruta de enlace:</td><td class="sc-val" t-out="doc.scout_transition_date and doc.scout_transition_date.strftime('%d/%m/%Y') or 'No'"/>
+                                </tr>
+                            </table>
+                        </div>
+
+                        <div class="sc-box">
+                            <div class="sc-title"><span class="sc-num">2</span>PADRES, TUTOR Y CONTACTOS DE EMERGENCIA</div>
+                            <table class="sc-table">
+                                <tr><th>Nombre</th><th>Parentesco</th><th>Teléfono</th><th>Teléfono alterno</th><th>Correo</th></tr>
+                                <tr t-if="doc.scout_guardian_id">
+                                    <td t-out="doc.scout_guardian_id.name"/><td t-out="doc.scout_guardian_relationship or 'Tutor'"/>
+                                    <td t-out="doc.scout_guardian_id.phone or ''"/><td t-out="doc.scout_guardian_phone_alt or ''"/>
+                                    <td t-out="doc.scout_guardian_id.email or ''"/>
+                                </tr>
+                                <tr t-if="doc.scout_guardian2_id">
+                                    <td t-out="doc.scout_guardian2_id.name"/><td t-out="doc.scout_guardian2_relationship or ''"/>
+                                    <td t-out="doc.scout_guardian2_id.phone or ''"/><td/><td t-out="doc.scout_guardian2_id.email or ''"/>
+                                </tr>
+                                <tr t-foreach="doc.scout_emergency_ids" t-as="em">
+                                    <td><t t-out="em.name"/> <i>(emergencia)</i></td><td t-out="em.relationship or ''"/>
+                                    <td t-out="em.phone"/><td t-out="em.phone_alt or ''"/><td t-out="em.note or ''"/>
+                                </tr>
+                            </table>
+                        </div>
+
+                        <div class="sc-box">
+                            <div class="sc-title"><span class="sc-num">3</span>FICHA MÉDICA</div>
+                            <t t-if="can_see_medical">
+                                <t t-set="med" t-value="doc.sudo()"/>
+                                <table class="sc-row">
+                                    <tr>
+                                        <td style="width: 45%; vertical-align: top;">
+                                            <span class="sc-opt"><span class="sc-chk" t-out="chk(med.scout_medical_service == 'imss')"/>IMSS</span>
+                                            <span class="sc-opt"><span class="sc-chk" t-out="chk(med.scout_medical_service == 'issste')"/>ISSSTE</span>
+                                            <span class="sc-opt"><span class="sc-chk" t-out="chk(med.scout_medical_service == 'private')"/>Particular</span>
+                                            <span class="sc-opt"><span class="sc-chk" t-out="chk(med.scout_medical_service == 'none')"/>No tiene</span>
+                                            <table class="sc-row">
+                                                <tr><td class="sc-label">Afiliación / póliza:</td><td class="sc-val" t-out="med.scout_medical_policy or ''"/></tr>
+                                                <tr><td class="sc-label">Tipo de sangre:</td><td class="sc-val"><span t-field="med.scout_blood_type"/></td></tr>
+                                                <tr><td class="sc-label">Médico / hospital:</td><td class="sc-val" t-out="med.scout_doctor or ''"/></tr>
+                                            </table>
+                                        </td>
+                                        <td style="vertical-align: top;">
+                                            <div><b>Alergias:</b> <t t-out="med.scout_allergies or 'Ninguna registrada'"/></div>
+                                            <div><b>Medicamentos:</b> <t t-out="med.scout_medications or 'Ninguno registrado'"/></div>
+                                            <div style="white-space: pre-line;"><b>Condiciones:</b> <t t-out="med.scout_medical_conditions or 'Ninguna registrada'"/></div>
+                                        </td>
+                                    </tr>
+                                </table>
+                            </t>
+                            <div t-else="" class="text-muted">Información confidencial: visible solo para jefatura y dirigentes.</div>
+                        </div>
+
+                        <div class="sc-box">
+                            <div class="sc-title"><span class="sc-num">4</span>ADELANTOS, INSIGNIAS Y ASISTENCIA</div>
+                            <table class="sc-row">
+                                <tr>
+                                    <td style="width: 60%; vertical-align: top;">
+                                        <div t-if="doc.scout_promise_date"><b>⚜ Promesa:</b> <t t-out="doc.scout_promise_date.strftime('%d/%m/%Y')"/></div>
+                                        <table class="sc-table" t-if="doc.scout_progress_ids">
+                                            <tr><th>Adelanto / insignia</th><th>Estado</th><th>Fecha</th></tr>
+                                            <tr t-foreach="doc.scout_progress_ids.filtered(lambda p: p.stage_type != 'promise').sorted(lambda p: (p.state != 'achieved', p.date_achieved or p.date_start))" t-as="pr">
+                                                <td t-out="pr.stage_id.name"/>
+                                                <td t-out="'Logrado' if pr.state == 'achieved' else 'En curso'"/>
+                                                <td t-out="pr.date_achieved and pr.date_achieved.strftime('%d/%m/%Y') or ''"/>
+                                            </tr>
+                                        </table>
+                                        <div t-else="" class="text-muted">Sin adelantos registrados.</div>
+                                    </td>
+                                    <td style="vertical-align: top; text-align: center;">
+                                        <div class="sc-label">Asistencia del ciclo</div>
+                                        <div style="font-size: 26px; font-weight: 900;"><t t-out="round(doc.scout_attendance_pct)"/> %</div>
+                                        <div><t t-out="doc.scout_attendance_count"/> de <t t-out="doc.scout_attendance_total"/> sesiones</div>
+                                    </td>
+                                </tr>
+                            </table>
+                        </div>
+
+                        <div class="sc-box">
+                            <div class="sc-title"><span class="sc-num">5</span>REGISTRO Y ADEUDOS</div>
+                            <table class="sc-table">
+                                <tr><th>Ficha</th><th>Ciclo</th><th>Estado</th><th>Pago</th></tr>
+                                <tr t-foreach="doc.scout_registration_ids" t-as="reg">
+                                    <td t-out="reg.name"/><td t-out="reg.cycle_id.name"/>
+                                    <td t-out="dict(reg._fields['state'].selection).get(reg.state)"/>
+                                    <td t-out="dict(reg._fields['payment_state'].selection).get(reg.payment_state)"/>
+                                </tr>
+                            </table>
+                            <table class="sc-table" style="margin-top: 4px;">
+                                <tr><th>Cargo</th><th>Concepto</th><th style="text-align: right;">Saldo</th></tr>
+                                <tr t-foreach="pending_by_member[doc.id]" t-as="inv">
+                                    <td t-out="inv.name"/><td t-out="inv.invoice_line_ids[:1].name or ''"/>
+                                    <td style="text-align: right;" t-out="money(inv.amount_residual)"/>
+                                </tr>
+                                <tr><td colspan="2"><b>Adeudo total</b></td><td style="text-align: right;"><b t-out="money(doc.scout_amount_due)"/></td></tr>
+                            </table>
+                        </div>
+                        <div t-if="doc.scout_notes" class="sc-box"><b>Observaciones:</b> <span style="white-space: pre-line;" t-out="doc.scout_notes"/></div>
+                        <t t-call="scout_management.scout_greca"><t t-set="greca_class" t-value="'sc-greca-foot'"/></t><div class="sc-motto">⚜ SIEMPRE LISTOS PARA SERVIR ⚜</div>
+                    </div>
+                </t>
+            </t>
+        </t>
+    </template>
+
+    <!-- ================= Acta de consejo / junta ================= -->
+    <template id="report_meeting_document">
+        <t t-call="web.html_container">
+            <t t-foreach="docs" t-as="doc">
+                <t t-call="web.basic_layout">
+                    <t t-call="scout_management.scout_report_styles"/>
+                    <t t-set="company" t-value="doc.company_id"/>
+                    <div class="page sc-doc">
+                        <t t-call="scout_management.scout_doc_header">
+                            <t t-set="title" t-value="'ACTA DE %s' % (dict(doc._fields['meeting_type'].selection).get(doc.meeting_type, '') or '').upper()"/>
+                            <t t-set="subtitle" t-value="'FOLIO: %s · %s' % (doc.name, 'APROBADA' if doc.state == 'approved' else 'BORRADOR — SIN VALIDEZ OFICIAL')"/>
+                        </t>
+                        <div class="sc-box">
+                            <div class="sc-title"><span class="sc-num">1</span>DATOS DE LA SESIÓN</div>
+                            <table class="sc-row">
+                                <tr>
+                                    <td class="sc-label">Asunto:</td><td class="sc-val" colspan="3" t-out="doc.title"/>
+                                </tr>
+                                <tr>
+                                    <td class="sc-label">Fecha y hora:</td><td class="sc-val" t-out="local_dt(doc.date)"/>
+                                    <td class="sc-label">Modalidad:</td><td class="sc-val" t-out="dict(doc._fields['mode'].selection).get(doc.mode, '')"/>
+                                </tr>
+                                <tr>
+                                    <td class="sc-label">Lugar / enlace:</td><td class="sc-val" t-out="doc.location or ''"/>
+                                    <td class="sc-label">Quórum:</td><td class="sc-val" t-out="'Sí' if doc.quorum else 'No'"/>
+                                </tr>
+                                <tr>
+                                    <td class="sc-label">Preside:</td><td class="sc-val" t-out="doc.chair_id.name or ''"/>
+                                    <td class="sc-label">Secretaría:</td><td class="sc-val" t-out="doc.secretary_id.name or ''"/>
+                                </tr>
+                            </table>
+                        </div>
+                        <div class="sc-box">
+                            <div class="sc-title"><span class="sc-num">2</span>ASISTENCIA (<t t-out="doc.attendee_count"/>)</div>
+                            <div><b>Presentes:</b> <t t-out="', '.join(doc.attendee_ids.mapped('name'))"/></div>
+                            <div t-if="doc.absent_ids"><b>Ausentes / justificados:</b> <t t-out="', '.join(doc.absent_ids.mapped('name'))"/></div>
+                        </div>
+                        <div class="sc-box">
+                            <div class="sc-title"><span class="sc-num">3</span>ORDEN DEL DÍA</div>
+                            <div t-out="doc.agenda"/>
+                        </div>
+                        <div class="sc-box">
+                            <div class="sc-title"><span class="sc-num">4</span>DESARROLLO DE LA SESIÓN</div>
+                            <div t-out="doc.minutes"/>
+                        </div>
+                        <div class="sc-box">
+                            <div class="sc-title"><span class="sc-num">5</span>ACUERDOS</div>
+                            <table class="sc-table">
+                                <tr><th style="width: 4%;">#</th><th>Acuerdo</th><th style="width: 22%;">Responsable</th><th style="width: 12%;">Fecha</th><th style="width: 10%;">Estado</th></tr>
+                                <tr t-foreach="doc.agreement_ids" t-as="ag">
+                                    <td t-out="ag_index + 1"/>
+                                    <td style="white-space: pre-line;" t-out="ag.name"/>
+                                    <td t-out="ag.responsible_id.name or ''"/>
+                                    <td t-out="ag.due_date and ag.due_date.strftime('%d/%m/%Y') or ''"/>
+                                    <td t-out="dict(ag._fields['state'].selection).get(ag.state)"/>
+                                </tr>
+                            </table>
+                            <div t-if="doc.next_meeting" style="margin-top: 4px;"><b>Próxima reunión:</b> <t t-out="local_dt(doc.next_meeting)"/></div>
+                        </div>
+                        <table class="sc-row" style="margin-top: 30px;">
+                            <tr>
+                                <td class="sc-sign" style="width: 45%;">
+                                    <div style="height: 30px;"/>
+                                    <div t-out="doc.secretary_id.name or ''"/>
+                                    <div class="line">SECRETARÍA<br/><span style="font-weight: 400;">Elaboró</span></div>
+                                </td>
+                                <td style="width: 10%;"/>
+                                <td class="sc-sign" style="width: 45%;">
+                                    <div style="height: 30px;"/>
+                                    <div t-out="doc.approved_by_id.name or ''"/>
+                                    <div class="line">JEFATURA DE GRUPO<br/><span style="font-weight: 400;">Aprobó<t t-if="doc.approved_date"> el <t t-out="local_dt(doc.approved_date)"/></t></span></div>
+                                </td>
+                            </tr>
+                        </table>
+                        <t t-call="scout_management.scout_greca"><t t-set="greca_class" t-value="'sc-greca-foot'"/></t><div class="sc-motto">⚜ SIEMPRE LISTOS PARA SERVIR ⚜</div>
+                    </div>
+                </t>
+            </t>
+        </t>
+    </template>
+</odoo>

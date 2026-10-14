@@ -1,0 +1,284 @@
+.o_scout_card {
+    transition: box-shadow 0.15s ease-in-out;
+    &:hover {
+        box-shadow: 0 0.25rem 0.75rem rgba(0, 0, 0, 0.12);
+    }
+}
+.o_scout_signature canvas {
+    background: #fff;
+    cursor: crosshair;
+}
+
+// Identidad del grupo: azul marino, naranja y blanco con greca (como la pañoleta)
+$scout-navy: #0f3049;
+$scout-orange: #f36f45;
+.o_scout_greca {
+    height: 22px;
+    background: #fff url("/scout_management/static/img/greca.svg") repeat-x;
+}
+.o_scout_title {
+    color: $scout-navy;
+    font-weight: 800;
+    border-left: 5px solid $scout-orange;
+    padding-left: 10px;
+}
+.o_scout_card {
+    border-top: 4px solid $scout-navy;
+}
+.o_scout_pay_btn {
+    background: $scout-orange;
+    color: $scout-navy;
+    font-weight: 700;
+    &:hover { background: darken($scout-orange, 8%); color: $scout-navy; }
+}
+
+// ===================== Portal de dirigentes =====================
+$scout-wa: #25d366;
+.o_scout_leader {
+    max-width: 760px;
+    margin: 0 auto;
+    padding: 0 0 92px;
+    color: $scout-navy;
+    .o_scout_greca { margin-top: 0.5rem; }
+    .o_sl_head {
+        display: flex; align-items: center; gap: 0.75rem;
+        background: $scout-navy; color: #fff; padding: 0.75rem 1rem; border-radius: 0 0 14px 14px;
+        .o_sl_head_title { display: flex; align-items: center; gap: 0.6rem; color: #fff; text-decoration: none; }
+        img { width: 42px; height: 42px; }
+        .o_sl_kicker { font-size: 0.72rem; letter-spacing: 0.08em; text-transform: uppercase; color: $scout-orange; font-weight: 700; }
+        .o_sl_section { font-size: 1.15rem; font-weight: 800; line-height: 1.1; }
+    }
+    .o_sl_btn_ghost { color: #fff; border: 1px solid rgba(255, 255, 255, 0.5); }
+    .o_sl_main { padding: 0.75rem 0.75rem 0; }
+    .o_sl_alert { margin: 0.75rem 0.75rem 0; border-radius: 12px; }
+    .o_sl_h { color: $scout-navy; font-weight: 800; margin: 0.75rem 0 0.5rem; }
+    .o_sl_sub { color: $scout-orange; font-weight: 800; text-transform: uppercase; font-size: 0.78rem; letter-spacing: 0.06em; }
+    .o_sl_hint { color: #5c6b7a; font-size: 0.88rem; margin: 0.25rem 0 0.75rem; }
+    .o_sl_link { display: block; text-align: center; margin-top: 0.5rem; color: $scout-navy; }
+    .o_sl_title_row { display: flex; align-items: center; justify-content: space-between; gap: 0.5rem; margin: 0.5rem 0; }
+
+    // Botones grandes para el dedo
+    .btn { border-radius: 12px; font-weight: 700; }
+    .o_sl_btn { background: $scout-navy; color: #fff; border: 0; &:hover, &:focus { background: darken($scout-navy, 6%); color: #fff; } }
+    .o_sl_btn_orange { background: $scout-orange; color: $scout-navy; border: 0; &:hover { background: darken($scout-orange, 6%); color: $scout-navy; } }
+    .o_sl_btn_outline { background: #fff; color: $scout-navy; border: 2px solid $scout-navy; &:hover { background: #eef2f5; color: $scout-navy; } }
+    .o_sl_btn_wa { background: $scout-wa; color: #fff; border: 0; &:hover { color: #fff; filter: brightness(0.95); } }
+    .o_sl_btn_big { width: 100%; padding: 0.85rem 1rem; font-size: 1.1rem; }
+
+    // Tarjeta "hoy"
+    .o_sl_today {
+        background: #fff; border: 2px solid $scout-navy; border-left: 8px solid $scout-orange; border-radius: 16px;
+        padding: 1rem; margin: 0.25rem 0 1rem;
+        .o_sl_today_label { color: $scout-orange; font-weight: 800; font-size: 0.8rem; text-transform: uppercase; }
+        .o_sl_today_title { font-size: 1.25rem; font-weight: 800; margin: 0.15rem 0; }
+        .o_sl_today_meta { color: #5c6b7a; margin-bottom: 0.6rem; }
+    }
+
+    // Mosaicos
+    .o_sl_tiles { display: grid; grid-template-columns: repeat(2, 1fr); gap: 0.6rem; margin-bottom: 1rem; }
+    .o_sl_tile {
+        position: relative; display: flex; flex-direction: column; gap: 0.15rem; min-height: 96px;
+        background: #fff; border: 1px solid #d5dde5; border-radius: 14px; padding: 0.8rem; color: $scout-navy;
+        text-decoration: none; box-shadow: 0 1px 3px rgba(15, 48, 73, 0.08);
+        i { font-size: 1.5rem; color: $scout-orange; }
+        span { font-weight: 800; line-height: 1.15; }
+        small { color: #5c6b7a; }
+        &:active { transform: scale(0.98); }
+    }
+    .o_sl_badge {
+        display: inline-block; background: $scout-orange; color: $scout-navy; border-radius: 999px; font-size: 0.75rem;
+        font-weight: 800; padding: 0.1rem 0.5rem;
+    }
+    .o_sl_tile .o_sl_badge { position: absolute; top: 0.5rem; right: 0.5rem; }
+    .o_sl_badge_soft { background: #fde8df; }
+
+    // Filas de lista
+    .o_sl_row {
+        display: flex; align-items: center; gap: 0.75rem; background: #fff; border: 1px solid #e1e7ee;
+        border-radius: 12px; padding: 0.6rem 0.75rem; margin-bottom: 0.5rem; color: $scout-navy; text-decoration: none;
+    }
+    .o_sl_date {
+        display: flex; flex-direction: column; align-items: center; justify-content: center; width: 46px; height: 46px;
+        background: $scout-navy; color: #fff; border-radius: 10px; line-height: 1;
+        b { font-size: 1.1rem; } small { color: $scout-orange; text-transform: uppercase; font-weight: 700; font-size: 0.68rem; }
+    }
+    .o_sl_avatar { width: 44px; height: 44px; border-radius: 50%; object-fit: cover; flex: 0 0 auto; }
+    .o_sl_initials {
+        display: inline-flex; align-items: center; justify-content: center; background: #dfe7ee; color: $scout-navy;
+        font-weight: 800;
+    }
+
+    // Tarjetas de miembros (lista y adelantos)
+    .o_sl_counter {
+        text-align: right; font-size: 1.3rem; line-height: 1; white-space: nowrap;
+        b { color: $scout-navy; font-size: 1.6rem; } small { display: block; color: $scout-orange; font-weight: 800; font-size: 0.85rem; }
+    }
+    .o_sl_grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(104px, 1fr)); gap: 0.5rem; }
+    .o_sl_card {
+        position: relative; border-radius: 14px; background: #fff; border: 2px solid #d5dde5; overflow: hidden;
+        transition: border-color 0.12s, background 0.12s;
+        .o_sl_card_tap {
+            display: flex; flex-direction: column; align-items: center; gap: 0.2rem; width: 100%; padding: 0.7rem 0.35rem 0.5rem;
+            background: transparent; border: 0; color: inherit; text-align: center;
+        }
+        .o_sl_avatar { width: 56px; height: 56px; }
+        .o_sl_card_name { font-weight: 800; font-size: 0.92rem; line-height: 1.1; }
+        .o_sl_card_sub { font-size: 0.72rem; color: #5c6b7a; min-height: 0.9rem; }
+        .o_sl_card_state { font-size: 0.75rem; font-weight: 800; border-radius: 999px; padding: 0.05rem 0.5rem; }
+        .o_sl_more {
+            position: absolute; top: 4px; right: 4px; width: 30px; height: 26px; padding: 0; border-radius: 8px;
+            border: 1px solid #d5dde5; background: #fff; font-size: 0.8rem; text-align: center; appearance: none;
+        }
+        &.o_sl_st_ok { border-color: #2e9e5b; background: #eaf7ef; .o_sl_card_state { background: #2e9e5b; color: #fff; } }
+        &.o_sl_st_no { border-color: #d64545; background: #fdeeee; .o_sl_card_state { background: #d64545; color: #fff; } }
+        &.o_sl_st_na { border-color: #9aa7b4; background: #f2f4f6; .o_sl_card_state { background: #9aa7b4; color: #fff; } }
+        &.o_sl_saving { opacity: 0.6; }
+    }
+    .o_sl_closed .o_sl_card { opacity: 0.85; }
+    .o_sl_pick {
+        cursor: pointer; margin: 0;
+        input { position: absolute; opacity: 0; }
+        &:has(input:checked) { border-color: $scout-orange; background: #fff3ed; box-shadow: 0 0 0 2px $scout-orange inset; }
+        &.o_sl_has { opacity: 0.6; border-style: dashed; }
+    }
+
+    // Segmentos y chips
+    .o_sl_seg {
+        display: flex; background: #e8edf2; border-radius: 12px; padding: 3px;
+        label { flex: 1; margin: 0; } input { display: none; }
+        span { display: block; text-align: center; padding: 0.5rem; border-radius: 10px; font-weight: 700; cursor: pointer; }
+        input:checked + span { background: $scout-navy; color: #fff; }
+    }
+    .o_sl_chips { display: flex; flex-wrap: wrap; gap: 0.4rem; }
+    .o_sl_chip {
+        input { display: none; }
+        span { display: inline-block; border: 2px solid #c8d2dc; border-radius: 999px; padding: 0.3rem 0.8rem; font-weight: 700; cursor: pointer; }
+        input:checked + span { border-color: $scout-orange; background: #fff3ed; }
+    }
+    .o_sl_switch { display: flex; align-items: center; gap: 0.5rem; font-weight: 700; input { width: 1.4rem; height: 1.4rem; } }
+    .o_sl_form .form-control, .o_sl_form .form-select { border-radius: 10px; padding: 0.6rem 0.75rem; }
+    .o_sl_card_box { background: #fff; border: 1px solid #e1e7ee; border-radius: 14px; padding: 0.9rem; margin-bottom: 0.75rem;
+        h6 { font-weight: 800; color: $scout-navy; } }
+
+    // Caja rápida
+    .o_sl_products { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 0.5rem; }
+    .o_sl_product {
+        position: relative; display: flex; flex-direction: column; align-items: flex-start; gap: 0.15rem; min-height: 88px;
+        background: #fff; border: 2px solid #d5dde5; border-radius: 14px; padding: 0.65rem; text-align: left; color: $scout-navy;
+        &:active { transform: scale(0.97); border-color: $scout-orange; }
+    }
+    .o_sl_product.o_sl_out { opacity: 0.45; }
+    .o_sl_product_name { font-weight: 800; line-height: 1.15; }
+    .o_sl_product_price { color: $scout-orange; font-weight: 800; }
+    .o_sl_product_stock { font-size: 0.75rem; color: #5c6b7a; }
+    .o_sl_product_qty {
+        position: absolute; top: -8px; right: -8px; min-width: 28px; height: 28px; border-radius: 14px; background: $scout-orange;
+        color: $scout-navy; display: flex; align-items: center; justify-content: center; font-weight: 900;
+    }
+    .o_sl_cart { background: #fff; border: 2px solid $scout-navy; border-radius: 16px; padding: 0.9rem; margin-top: 0.9rem; }
+    .o_sl_cart_line { display: flex; align-items: center; gap: 0.5rem; padding: 0.3rem 0; border-bottom: 1px dashed #d5dde5; }
+    .o_sl_minus { width: 32px; height: 32px; border-radius: 50%; border: 2px solid $scout-navy; background: #fff; font-weight: 900; line-height: 1; }
+    .o_sl_cart_total { display: flex; justify-content: space-between; font-size: 1.3rem; margin-top: 0.4rem; b { color: $scout-navy; } }
+    .o_sl_cart_empty .o_sl_cart_total { opacity: 0.5; }
+
+    // Confirmaciones y QR
+    .o_sl_done { text-align: center; padding: 1rem 0.5rem; i.fa-check-circle { color: #2e9e5b; } i.fa-qrcode { color: $scout-orange; } }
+    .o_sl_done_total { font-size: 2rem; font-weight: 900; }
+    .o_sl_done_lines { list-style: none; padding: 0; color: #5c6b7a; }
+    .o_sl_qr { width: 260px; max-width: 80%; border: 8px solid #fff; box-shadow: 0 2px 10px rgba(15, 48, 73, 0.18); border-radius: 12px; margin: 0.5rem auto; display: block; }
+    .o_sl_empty { text-align: center; color: #5c6b7a; padding: 2rem 1rem; i { color: $scout-orange; margin-bottom: 0.5rem; } }
+
+    // Cobros
+    .o_sl_details {
+        background: #fff; border: 1px solid #e1e7ee; border-radius: 12px; margin-bottom: 0.5rem;
+        summary > b { white-space: nowrap; }
+        summary { display: flex; align-items: center; gap: 0.75rem; padding: 0.6rem 0.75rem; cursor: pointer; list-style: none; }
+        summary::-webkit-details-marker { display: none; }
+        &[open] summary { border-bottom: 1px solid #e1e7ee; }
+    }
+    .o_sl_charge { padding: 0.6rem 0.75rem; border-bottom: 1px dashed #e1e7ee; &:last-child { border-bottom: 0; } }
+
+    // Informe
+    .o_sl_stats {
+        display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.4rem; margin: 0.5rem 0 0.75rem;
+        div { background: $scout-navy; color: #fff; border-radius: 12px; padding: 0.5rem; text-align: center; }
+        b { display: block; font-size: 1.3rem; } small { color: $scout-orange; font-weight: 700; font-size: 0.72rem; }
+    }
+    .o_sl_block { margin-bottom: 0.8rem; }
+    .o_sl_auto { color: #6b7a88; font-size: 0.85rem; margin-bottom: 0.3rem; padding-left: 1.1rem; }
+
+    // Ficha
+    .o_sl_profile { display: flex; gap: 0.9rem; align-items: center; margin: 0.5rem 0 0.75rem; .o_sl_avatar { width: 72px; height: 72px; } }
+    .o_sl_dl { display: grid; grid-template-columns: max-content 1fr; gap: 0.2rem 0.75rem; margin: 0; dt { color: #5c6b7a; font-weight: 600; } dd { margin: 0; } }
+    .o_sl_emergency { border-left: 6px solid #d64545; }
+
+    // Pestañas y planificación
+    .o_sl_tabs {
+        a { flex: 1; text-align: center; padding: 0.5rem; border-radius: 10px; font-weight: 700; color: $scout-navy; text-decoration: none; }
+        a.active { background: $scout-navy; color: #fff; }
+    }
+    .o_sl_plan_day {
+        display: flex; gap: 0.75rem; align-items: flex-start; background: #fff; border: 1px solid #e1e7ee;
+        border-radius: 12px; padding: 0.6rem 0.75rem; margin-bottom: 0.5rem;
+        &.o_sl_past { opacity: 0.6; }
+    }
+    .o_sl_plan_event {
+        display: block; color: $scout-navy; text-decoration: none; border-left: 4px solid $scout-orange;
+        padding: 0.15rem 0 0.15rem 0.5rem; margin-top: 0.25rem;
+    }
+    .o_sl_plan_empty {
+        display: inline-block; margin-top: 0.25rem; border: 2px dashed $scout-orange; border-radius: 10px;
+        padding: 0.25rem 0.75rem; color: $scout-navy; font-weight: 700; text-decoration: none;
+    }
+    .o_sl_reg { font-size: 0.72rem; font-weight: 800; border-radius: 999px; padding: 0.1rem 0.5rem; white-space: nowrap; background: #e8edf2; }
+    .o_sl_reg_paid, .o_sl_reg_exempt { background: #2e9e5b; color: #fff; }
+    .o_sl_reg_not_paid, .o_sl_reg_partial, .o_sl_reg_pending { background: #ffd8a8; color: $scout-navy; }
+    .o_sl_reg_none { background: #fdeeee; color: #b23b3b; }
+
+    // Matriz de asistencia
+    .o_sl_matrix_wrap { overflow-x: auto; background: #fff; border: 1px solid #e1e7ee; border-radius: 12px; }
+    .o_sl_matrix {
+        border-collapse: separate; border-spacing: 0; font-size: 0.78rem; min-width: 100%;
+        th, td { padding: 0.3rem 0.35rem; border-bottom: 1px solid #edf1f4; text-align: center; white-space: nowrap; }
+        th { background: $scout-navy; color: #fff; font-weight: 700; small { display: block; color: $scout-orange; font-size: 0.65rem; } }
+        .o_sl_mx_name { position: sticky; left: 0; z-index: 1; text-align: left; background: #fff; min-width: 120px; max-width: 150px;
+            white-space: normal; font-weight: 700; box-shadow: 2px 0 0 #e1e7ee; }
+        th.o_sl_mx_name { background: $scout-navy; }
+        .o_sl_mx_sum { font-weight: 800; }
+        .o_sl_pct_ok { color: #2e9e5b; } .o_sl_pct_mid { color: #c98a00; } .o_sl_pct_low { color: #d64545; }
+        .o_sl_mx_present, .o_sl_mx_camp, .o_sl_mx_outing { color: #2e9e5b; font-weight: 800; }
+        .o_sl_mx_absent { color: #d64545; font-weight: 800; background: #fdeeee; }
+        .o_sl_mx_na, .o_sl_mx_dropped, .o_sl_mx_no_roll { color: #fff; background: #9aa7b4; }
+        .o_sl_mx_leader td { background: #f6f8fa; }
+        .o_sl_mx_total td { font-weight: 800; background: #eef2f5; }
+    }
+
+    // Barra inferior
+    .o_sl_nav {
+        position: fixed; left: 0; right: 0; bottom: 0; z-index: 1030; display: flex; justify-content: space-around;
+        background: $scout-navy; padding: 0.35rem 0 calc(0.35rem + env(safe-area-inset-bottom)); border-top: 3px solid $scout-orange;
+        a { display: flex; flex-direction: column; align-items: center; color: #c9d4de; font-size: 0.66rem; text-decoration: none; min-width: 58px; }
+        i { font-size: 1.3rem; } a.active { color: #fff; i { color: $scout-orange; } }
+    }
+}
+.o_sl_toast {
+    position: fixed; left: 50%; bottom: 84px; transform: translateX(-50%) translateY(20px); opacity: 0; z-index: 1060;
+    background: $scout-navy; color: #fff; padding: 0.6rem 1rem; border-radius: 12px; transition: all 0.2s; pointer-events: none;
+    max-width: 90vw; text-align: center;
+    &.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+}
+.o_sl_entry_card {
+    display: flex; align-items: center; gap: 0.9rem; background: $scout-navy; color: #fff; border-radius: 14px;
+    padding: 0.9rem 1rem; text-decoration: none; border-left: 8px solid $scout-orange;
+    img { width: 48px; height: 48px; }
+    .o_sl_entry_title { font-weight: 800; font-size: 1.1rem; }
+    .o_sl_entry_text { color: #c9d4de; font-size: 0.88rem; }
+    &:hover { color: #fff; filter: brightness(1.05); }
+}
+// Ícono de "Mis scouts" en Mi cuenta: tamaño de ícono, no de ilustración
+.o_portal_icon img[src$="scout_management/static/description/icon.png"] {
+    width: 64px !important;
+    height: 64px !important;
+    max-width: 64px;
+    object-fit: contain;
+}

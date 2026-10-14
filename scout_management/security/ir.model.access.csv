@@ -1,0 +1,49 @@
+id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink
+access_scout_cycle_user,scout.cycle user,model_scout_cycle,base.group_user,1,0,0,0
+access_scout_cycle_officer,scout.cycle officer,model_scout_cycle,group_scout_officer,1,1,1,1
+access_scout_section_user,scout.section user,model_scout_section,base.group_user,1,0,0,0
+access_scout_section_officer,scout.section officer,model_scout_section,group_scout_officer,1,1,1,1
+access_scout_patrol_user,scout.patrol user,model_scout_patrol,base.group_user,1,0,0,0
+access_scout_patrol_leader,scout.patrol leader,model_scout_patrol,group_scout_leader,1,1,1,1
+access_scout_emergency_leader,scout.emergency.contact leader,model_scout_emergency_contact,group_scout_leader,1,1,1,1
+access_scout_member_change_leader,scout.member.change leader,model_scout_member_change,group_scout_leader,1,1,1,0
+access_scout_member_change_manager,scout.member.change manager,model_scout_member_change,group_scout_manager,1,1,1,1
+access_scout_registration_leader,scout.registration leader,model_scout_registration,group_scout_leader,1,1,1,0
+access_scout_registration_officer,scout.registration officer,model_scout_registration,group_scout_officer,1,1,1,1
+access_scout_line_leader,scout.attendance.line leader,model_scout_attendance_line,group_scout_leader,1,1,1,1
+access_scout_stage_user,scout.progression.stage user,model_scout_progression_stage,base.group_user,1,0,0,0
+access_scout_stage_officer,scout.progression.stage officer,model_scout_progression_stage,group_scout_officer,1,1,1,1
+access_scout_progress_leader,scout.member.progress leader,model_scout_member_progress,group_scout_leader,1,1,1,1
+access_scout_report_leader,scout.section.report leader,model_scout_section_report,group_scout_leader,1,1,1,0
+access_scout_report_officer,scout.section.report officer,model_scout_section_report,group_scout_officer,1,1,1,1
+access_scout_report_item_leader,scout.section.report.item leader,model_scout_section_report_item,group_scout_leader,1,1,1,1
+access_scout_report_member_leader,scout.section.report.member leader,model_scout_section_report_member,group_scout_leader,1,1,1,1
+access_scout_conversation_leader,scout.family.conversation leader,model_scout_family_conversation,group_scout_leader,1,1,1,0
+access_scout_conversation_officer,scout.family.conversation officer,model_scout_family_conversation,group_scout_officer,1,1,1,1
+access_scout_meeting_officer,scout.meeting officer,model_scout_meeting,group_scout_officer,1,1,1,0
+access_scout_meeting_manager,scout.meeting manager,model_scout_meeting,group_scout_manager,1,1,1,1
+access_scout_agreement_officer,scout.meeting.agreement officer,model_scout_meeting_agreement,group_scout_officer,1,1,1,1
+access_scout_category_user,scout.treasury.category user,model_scout_treasury_category,base.group_user,1,0,0,0
+access_scout_category_treasurer,scout.treasury.category treasurer,model_scout_treasury_category,group_scout_treasurer,1,1,1,1
+access_scout_tmove_officer,scout.treasury.move officer,model_scout_treasury_move,group_scout_officer,1,0,0,0
+access_scout_tmove_treasurer,scout.treasury.move treasurer,model_scout_treasury_move,group_scout_treasurer,1,1,1,1
+access_account_move_scout_leader,account.move scout leader,account.model_account_move,group_scout_leader,1,0,0,0
+access_scout_event_generate_leader,scout.event.generate leader,model_scout_event_generate,group_scout_leader,1,1,1,1
+access_scout_attendance_wizard_leader,scout.attendance.report.wizard leader,model_scout_attendance_report_wizard,group_scout_leader,1,1,1,1
+access_scout_program_wizard_leader,scout.program.report.wizard leader,model_scout_program_report_wizard,group_scout_leader,1,1,1,1
+access_scout_calendar_wizard_leader,scout.calendar.report.wizard leader,model_scout_calendar_report_wizard,group_scout_leader,1,1,1,1
+access_scout_treasury_wizard_officer,scout.treasury.report.wizard officer,model_scout_treasury_report_wizard,group_scout_officer,1,1,1,1
+access_scout_position_user,scout.position user,model_scout_position,base.group_user,1,0,0,0
+access_scout_position_manager,scout.position manager,model_scout_position,group_scout_manager,1,1,1,1
+access_scout_store_move_officer,scout.store.stock.move officer,model_scout_store_stock_move,group_scout_officer,1,0,0,0
+access_scout_store_move_treasurer,scout.store.stock.move treasurer,model_scout_store_stock_move,group_scout_treasurer,1,1,1,1
+access_scout_store_sale_officer,scout.store.sale officer,model_scout_store_sale,group_scout_officer,1,0,0,0
+access_scout_store_sale_treasurer,scout.store.sale treasurer,model_scout_store_sale,group_scout_treasurer,1,1,1,1
+access_scout_store_line_officer,scout.store.sale.line officer,model_scout_store_sale_line,group_scout_officer,1,0,0,0
+access_scout_store_line_treasurer,scout.store.sale.line treasurer,model_scout_store_sale_line,group_scout_treasurer,1,1,1,1
+access_scout_daily_sales_wizard,scout.daily.sales.wizard officer,model_scout_daily_sales_wizard,group_scout_officer,1,1,1,1
+access_scout_member_import,scout.member.import officer,model_scout_member_import,group_scout_officer,1,1,1,1
+access_product_template_scout_treasurer,product.template scout treasurer,product.model_product_template,group_scout_treasurer,1,1,1,0
+access_product_product_scout_treasurer,product.product scout treasurer,product.model_product_product,group_scout_treasurer,1,1,1,0
+access_scout_payment_link_leader,scout.payment.link.wizard leader,model_scout_payment_link_wizard,group_scout_leader,1,1,1,0
+access_scout_leader_access_wizard,scout.leader.access.wizard officer,model_scout_leader_access_wizard,group_scout_officer,1,1,1,0

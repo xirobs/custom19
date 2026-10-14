@@ -1,0 +1,110 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Acciones de aprobación -->
+    <record id="action_scout_registration_to_validate" model="ir.actions.act_window">
+        <field name="name">Fichas por validar</field>
+        <field name="res_model">scout.registration</field>
+        <field name="view_mode">list,form</field>
+        <field name="domain">[('state', '=', 'reviewed')]</field>
+    </record>
+    <record id="action_scout_meeting_to_approve" model="ir.actions.act_window">
+        <field name="name">Actas por aprobar</field>
+        <field name="res_model">scout.meeting</field>
+        <field name="view_mode">list,form</field>
+        <field name="domain">[('state', '=', 'to_approve')]</field>
+    </record>
+
+    <record id="action_scout_setup_treasury" model="ir.actions.server">
+        <field name="name">Preparar cajas y bancos (tesorería simple)</field>
+        <field name="model_id" ref="account.model_account_journal"/>
+        <field name="state">code</field>
+        <field name="code">action = model.action_scout_setup_simple_treasury()</field>
+        <field name="group_ids" eval="[Command.link(ref('group_scout_treasurer'))]"/>
+    </record>
+
+    <menuitem id="menu_scout_root" name="Grupo Scout" sequence="40"
+              web_icon="scout_management,static/description/icon.png"
+              groups="group_scout_leader"/>
+
+    <!-- Miembros -->
+    <menuitem id="menu_scout_members" name="Miembros" parent="menu_scout_root" sequence="10"/>
+    <menuitem id="menu_scout_member" name="Miembros" parent="menu_scout_members" action="action_scout_member" sequence="10"/>
+    <menuitem id="menu_scout_registration" name="Fichas de registro" parent="menu_scout_members" action="action_scout_registration" sequence="20"/>
+    <menuitem id="menu_scout_member_import" name="Carga masiva desde Excel" parent="menu_scout_members" action="action_scout_member_import" sequence="25" groups="group_scout_officer"/>
+    <menuitem id="menu_scout_progress" name="Avances de recorridos" parent="menu_scout_members" action="action_scout_member_progress" sequence="30"/>
+    <menuitem id="menu_scout_member_change" name="Bajas y cambios de sección" parent="menu_scout_members" action="action_scout_member_change" sequence="40"/>
+    <menuitem id="menu_scout_family_chat" name="Chat con familias" parent="menu_scout_members" action="action_scout_family_conversation" sequence="50"/>
+    <menuitem id="menu_scout_section" name="Secciones" parent="menu_scout_members" action="action_scout_section" sequence="60"/>
+
+    <!-- Programa -->
+    <menuitem id="menu_scout_program_root" name="Programa" parent="menu_scout_root" sequence="20"/>
+    <menuitem id="menu_scout_calendar" name="Calendario" parent="menu_scout_program_root" action="action_scout_calendar" sequence="5"/>
+    <menuitem id="menu_scout_event_generate" name="Crear sesiones del trimestre" parent="menu_scout_program_root" action="action_scout_event_generate" sequence="10"/>
+    <menuitem id="menu_scout_section_report" name="Informes trimestrales" parent="menu_scout_program_root" action="action_scout_section_report" sequence="20"/>
+    <menuitem id="menu_scout_attendance_analysis" name="Análisis de asistencia" parent="menu_scout_program_root" action="action_scout_attendance_analysis" sequence="30"/>
+
+    <!-- Secretaría -->
+    <menuitem id="menu_scout_secretary" name="Secretaría" parent="menu_scout_root" sequence="25" groups="group_scout_officer"/>
+    <menuitem id="menu_scout_meeting" name="Actas" parent="menu_scout_secretary" action="action_scout_meeting" sequence="10"/>
+    <menuitem id="menu_scout_agreement" name="Seguimiento de acuerdos" parent="menu_scout_secretary" action="action_scout_agreement" sequence="20"/>
+
+    <!-- Tesorería (Contabilidad) -->
+    <menuitem id="menu_scout_treasury" name="Tesorería" parent="menu_scout_root" sequence="30" groups="group_scout_officer"/>
+    <menuitem id="menu_scout_treasury_income" name="Ingresos" parent="menu_scout_treasury" action="action_scout_treasury_income" sequence="5"/>
+    <menuitem id="menu_scout_treasury_expense" name="Egresos" parent="menu_scout_treasury" action="action_scout_treasury_expense" sequence="6"/>
+    <menuitem id="menu_scout_treasury_transfer" name="Traspasos" parent="menu_scout_treasury" action="action_scout_treasury_transfer" sequence="7"/>
+    <menuitem id="menu_scout_treasury_move" name="Todos los movimientos de caja y bancos" parent="menu_scout_treasury" action="action_scout_treasury_move" sequence="10"/>
+    <menuitem id="menu_scout_store" name="Tienda scout" parent="menu_scout_root" sequence="32" groups="group_scout_officer"/>
+    <menuitem id="menu_scout_store_sale" name="Ventas (tienda, alimentos, eventos)" parent="menu_scout_store" action="action_scout_store_sale" sequence="10"/>
+    <menuitem id="menu_scout_store_sale_line" name="Parte de ventas" parent="menu_scout_store" action="action_scout_store_sale_line" sequence="20"/>
+    <menuitem id="menu_scout_store_products" name="Productos y existencias" parent="menu_scout_store" action="action_scout_store_products" sequence="30"/>
+    <menuitem id="menu_scout_store_stock" name="Entradas de mercancía" parent="menu_scout_store" action="action_scout_store_stock_move" sequence="40"/>
+    <menuitem id="menu_scout_receivable" name="Cargos a miembros (por cobrar)" parent="menu_scout_treasury" action="action_scout_receivable" sequence="20"/>
+    <menuitem id="menu_scout_payable" name="Facturas de proveedor (por pagar)" parent="menu_scout_treasury" action="action_scout_payable" sequence="30"/>
+
+    <!-- Aprobaciones del jefe de grupo -->
+    <menuitem id="menu_scout_approvals" name="Aprobaciones" parent="menu_scout_root" sequence="35" groups="group_scout_manager"/>
+    <menuitem id="menu_scout_appr_registration" name="Fichas por validar" parent="menu_scout_approvals" action="action_scout_registration_to_validate" sequence="10"/>
+    <menuitem id="menu_scout_appr_change" name="Bajas y cambios de sección" parent="menu_scout_approvals" action="action_scout_member_change" sequence="20"/>
+    <menuitem id="menu_scout_appr_meeting" name="Actas por aprobar" parent="menu_scout_approvals" action="action_scout_meeting_to_approve" sequence="30"/>
+    <menuitem id="menu_scout_appr_treasury" name="Egresos y traspasos" parent="menu_scout_approvals" action="action_scout_treasury_to_approve" sequence="40"/>
+    <menuitem id="menu_scout_appr_bills" name="Facturas de proveedor" parent="menu_scout_approvals" action="action_scout_bills_to_approve" sequence="50"/>
+    <menuitem id="menu_scout_appr_payments" name="Pagos" parent="menu_scout_approvals" action="action_scout_payments_to_approve" sequence="60"/>
+
+    <!-- Reportes PDF -->
+    <menuitem id="menu_scout_reports" name="Reportes" parent="menu_scout_root" sequence="40"/>
+    <menuitem id="menu_scout_report_attendance" name="Lista de asistencia (PDF)" parent="menu_scout_reports" action="action_scout_attendance_report_wizard" sequence="10"/>
+    <menuitem id="menu_scout_report_program" name="Programa trimestral (PDF)" parent="menu_scout_reports" action="action_scout_program_report_wizard" sequence="20"/>
+    <menuitem id="menu_scout_report_calendar" name="Calendario del grupo (PDF)" parent="menu_scout_reports" action="action_scout_calendar_report_wizard" sequence="30"/>
+    <menuitem id="menu_scout_report_daily_sales" name="Parte de ventas (PDF)" parent="menu_scout_reports"
+              action="action_scout_daily_sales_wizard" sequence="35" groups="group_scout_officer"/>
+    <menuitem id="menu_scout_report_treasury" name="Balance de tesorería para el Consejo (PDF)" parent="menu_scout_reports"
+              action="action_scout_treasury_report_wizard" sequence="40" groups="group_scout_officer"/>
+
+    <!-- Configuración -->
+    <menuitem id="menu_scout_config" name="Configuración" parent="menu_scout_root" sequence="90" groups="group_scout_officer"/>
+    <menuitem id="menu_scout_company" name="Datos del grupo (logo y flor de lis)" parent="menu_scout_config" action="action_scout_company" sequence="5" groups="group_scout_manager"/>
+    <menuitem id="menu_scout_cycle" name="Ciclos scout" parent="menu_scout_config" action="action_scout_cycle" sequence="10"/>
+    <menuitem id="menu_scout_config_section" name="Secciones" parent="menu_scout_config" action="action_scout_section" sequence="20"/>
+    <menuitem id="menu_scout_stage" name="Adelantos e insignias" parent="menu_scout_config" action="action_scout_progression_stage" sequence="30"/>
+    <menuitem id="menu_scout_setup_treasury" name="Preparar cajas y bancos" parent="menu_scout_config"
+              action="action_scout_setup_treasury" sequence="50" groups="group_scout_treasurer"/>
+    <menuitem id="menu_scout_mercado_pago" name="Pago en línea (Mercado Pago)" parent="menu_scout_config"
+              action="action_scout_mercado_pago" sequence="45" groups="base.group_system"/>
+    <menuitem id="menu_scout_position" name="Roles y cargos" parent="menu_scout_config" action="action_scout_position" sequence="25"/>
+    <menuitem id="menu_scout_category" name="Conceptos de ingreso y egreso" parent="menu_scout_config" action="action_scout_treasury_category" sequence="40"/>
+
+    <!-- Accesos dentro de los módulos estándar -->
+    <menuitem id="menu_contacts_scout_members" name="Miembros scout" parent="contacts.menu_contacts"
+              action="action_scout_member" sequence="3" groups="group_scout_leader"/>
+    <menuitem id="menu_calendar_scout" name="Actividades scout" parent="calendar.mail_menu_calendar"
+              action="action_scout_calendar" sequence="5" groups="group_scout_leader"/>
+    <menuitem id="menu_calendar_scout_program" name="Programa trimestral (PDF)" parent="calendar.mail_menu_calendar"
+              action="action_scout_program_report_wizard" sequence="6" groups="group_scout_leader"/>
+    <menuitem id="menu_calendar_scout_group" name="Calendario del grupo (PDF)" parent="calendar.mail_menu_calendar"
+              action="action_scout_calendar_report_wizard" sequence="7" groups="group_scout_leader"/>
+    <menuitem id="menu_account_scout_treasury" name="Caja y bancos scout" parent="account.menu_finance_receivables"
+              action="action_scout_treasury_move" sequence="90" groups="group_scout_treasurer"/>
+    <menuitem id="menu_account_scout_balance" name="Balance para el Consejo (scout)" parent="account.menu_finance_reports"
+              action="action_scout_treasury_report_wizard" sequence="1" groups="group_scout_officer"/>
+</odoo>

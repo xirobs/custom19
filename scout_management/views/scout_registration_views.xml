@@ -1,0 +1,185 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_scout_registration_list" model="ir.ui.view">
+        <field name="name">scout.registration.list</field>
+        <field name="model">scout.registration</field>
+        <field name="arch" type="xml">
+            <list decoration-info="state in ('submitted', 'reviewed')" decoration-muted="state == 'cancel'">
+                <field name="name"/>
+                <field name="cycle_id"/>
+                <field name="first_name"/>
+                <field name="last_name"/>
+                <field name="last_name2" optional="hide"/>
+                <field name="section_id"/>
+                <field name="guardian_name"/>
+                <field name="guardian_phone" optional="show"/>
+                <field name="source" optional="show"/>
+                <field name="payment_state" widget="badge" decoration-success="payment_state in ('paid', 'exempt')"
+                       decoration-warning="payment_state == 'partial'" decoration-danger="payment_state == 'not_paid'"/>
+                <field name="state" widget="badge" decoration-success="state == 'validated'"
+                       decoration-info="state == 'submitted'"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_scout_registration_form" model="ir.ui.view">
+        <field name="name">scout.registration.form</field>
+        <field name="model">scout.registration</field>
+        <field name="arch" type="xml">
+            <form>
+                <header>
+                    <button name="action_submit" type="object" string="Marcar como recibida" invisible="state != 'draft'"/>
+                    <button name="action_review" type="object" string="Revisada: enviar a validación" class="btn-primary"
+                            invisible="state not in ('draft', 'submitted')" groups="scout_management.group_scout_officer"/>
+                    <button name="action_validate" type="object" string="Validar ficha" class="btn-primary"
+                            invisible="state not in ('draft', 'submitted', 'reviewed')" groups="scout_management.group_scout_manager"/>
+                    <button name="%(scout_management.action_report_registration)d" type="action" string="Imprimir ficha"/>
+                    <button name="action_draft" type="object" string="Regresar a borrador" invisible="state != 'cancel'"/>
+                    <button name="action_cancel" type="object" string="Cancelar" invisible="state in ('cancel', 'validated')"/>
+                    <field name="state" widget="statusbar" statusbar_visible="submitted,reviewed,validated"/>
+                </header>
+                <sheet>
+                    <div class="oe_title">
+                        <span class="text-muted">Ficha única de registro, consentimiento y responsiva</span>
+                        <h1><field name="name" readonly="1"/></h1>
+                    </div>
+                    <group>
+                        <group>
+                            <field name="cycle_id" readonly="state == 'validated'"/>
+                            <field name="member_id" readonly="state == 'validated'"
+                                   placeholder="Vacío si es aspirante nuevo"/>
+                        </group>
+                        <group>
+                            <field name="source"/>
+                            <field name="reviewed_by_id" invisible="not reviewed_by_id"/>
+                            <field name="validated_by_id" invisible="not validated_by_id"/>
+                            <field name="company_id" groups="base.group_multi_company"/>
+                        </group>
+                    </group>
+                    <notebook>
+                        <page string="1. Datos de registro" name="data">
+                            <group>
+                                <group>
+                                    <field name="first_name"/>
+                                    <field name="last_name"/>
+                                    <field name="last_name2"/>
+                                    <field name="birthdate"/>
+                                    <field name="age"/>
+                                </group>
+                                <group>
+                                    <field name="section_id"/>
+                                    <field name="leadership_position_id" options="{'no_create': True}"/>
+                                    <field name="leading_section_ids" widget="many2many_tags" invisible="not leadership_position_id"/>
+                                    <field name="street"/>
+                                </group>
+                            </group>
+                        </page>
+                        <page string="2. Padre, madre o tutor" name="guardian">
+                            <group>
+                                <group>
+                                    <field name="guardian_id"/>
+                                    <field name="guardian_name"/>
+                                    <field name="guardian_relationship"/>
+                                    <field name="guardian_email" widget="email"/>
+                                </group>
+                                <group>
+                                    <field name="guardian_phone" widget="phone"/>
+                                    <field name="guardian_phone_alt" widget="phone"/>
+                                    <field name="guardian_street"/>
+                                </group>
+                            </group>
+                        </page>
+                        <page string="3. Información médica" name="medical" groups="scout_management.group_scout_leader">
+                            <group>
+                                <group>
+                                    <field name="medical_service" widget="radio"/>
+                                    <field name="medical_policy"/>
+                                    <field name="blood_type"/>
+                                </group>
+                                <group>
+                                    <field name="medical_conditions"
+                                           placeholder="Alergias, asma, medicamentos permanentes, hospitalización, cirugía, diabetes, hipertensión, restricciones físicas u otras"/>
+                                </group>
+                            </group>
+                        </page>
+                        <page string="4. Pago de registro" name="payment">
+                            <group>
+                                <group>
+                                    <field name="declared_paid"/>
+                                    <field name="payment_reference" invisible="not declared_paid"/>
+                                    <field name="payment_date" invisible="not declared_paid"/>
+                                    <field name="payment_amount" invisible="not declared_paid"/>
+                                    <field name="payment_proof" filename="payment_proof_name" invisible="not declared_paid"/>
+                                    <field name="payment_proof_name" invisible="1"/>
+                                </group>
+                                <group>
+                                    <field name="registration_fee"/>
+                                    <field name="invoice_id"/>
+                                    <field name="manual_payment_state" invisible="invoice_id"/>
+                                    <field name="payment_state" widget="badge"/>
+                                    <field name="currency_id" invisible="1"/>
+                                </group>
+                            </group>
+                        </page>
+                        <page string="5. Consentimientos y firmas" name="consents">
+                            <group string="Autorizaciones">
+                                <field name="consent_participation"/>
+                                <field name="consent_first_aid"/>
+                                <field name="consent_image"/>
+                                <field name="consent_data"/>
+                                <field name="consent_risk"/>
+                                <field name="consent_update"/>
+                                <field name="consent_complete" invisible="1"/>
+                            </group>
+                            <group string="Firmas">
+                                <group>
+                                    <field name="guardian_signed_by"/>
+                                    <field name="guardian_signature" widget="signature" options="{'full_name': 'guardian_signed_by'}"/>
+                                    <field name="member_signed_by"/>
+                                    <field name="member_signature" widget="signature" options="{'full_name': 'member_signed_by'}"/>
+                                </group>
+                                <group>
+                                    <field name="leader_user_id"/>
+                                    <field name="leader_signature" widget="signature"/>
+                                    <field name="signed_date"/>
+                                </group>
+                            </group>
+                        </page>
+                    </notebook>
+                </sheet>
+                <chatter/>
+            </form>
+        </field>
+    </record>
+
+    <record id="view_scout_registration_search" model="ir.ui.view">
+        <field name="name">scout.registration.search</field>
+        <field name="model">scout.registration</field>
+        <field name="arch" type="xml">
+            <search>
+                <field name="name"/>
+                <field name="first_name"/>
+                <field name="last_name"/>
+                <field name="guardian_name"/>
+                <field name="cycle_id"/>
+                <field name="section_id"/>
+                <filter name="to_review" string="Por revisar" domain="[('state', 'in', ('draft', 'submitted'))]"/>
+                <filter name="to_validate" string="Por validar (jefe)" domain="[('state', '=', 'reviewed')]"/>
+                <filter name="from_portal" string="Desde el portal" domain="[('source', '=', 'portal')]"/>
+                <filter name="unpaid" string="Sin pagar" domain="[('payment_state', 'in', ('not_paid', 'partial'))]"/>
+                <group>
+                    <filter name="group_cycle" string="Ciclo" context="{'group_by': 'cycle_id'}"/>
+                    <filter name="group_section" string="Sección" context="{'group_by': 'section_id'}"/>
+                    <filter name="group_state" string="Estado" context="{'group_by': 'state'}"/>
+                </group>
+            </search>
+        </field>
+    </record>
+
+    <record id="action_scout_registration" model="ir.actions.act_window">
+        <field name="name">Fichas de registro</field>
+        <field name="res_model">scout.registration</field>
+        <field name="view_mode">list,form</field>
+        <field name="context">{}</field>
+    </record>
+</odoo>

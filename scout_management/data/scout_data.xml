@@ -1,0 +1,296 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo noupdate="1">
+    <!-- Secciones oficiales (Reglamento interno, art. 6). Las edades son editables. -->
+    <record id="section_clan_rover" model="scout.section">
+        <field name="report_color">#7a1f2b</field>
+        <field name="name">Clan Rover</field>
+        <field name="unit_name">Clan de Caballeros Rover Kairos</field>
+        <field name="code">ROV</field>
+        <field name="sequence">70</field>
+        <field name="age_min">17</field>
+        <field name="age_max">22</field>
+        <field name="patrol_label">Equipo</field>
+        <field name="color">4</field>
+    </record>
+    <record id="section_clan_precursoras" model="scout.section">
+        <field name="report_color">#8e3b8f</field>
+        <field name="name">Clan Precursoras</field>
+        <field name="unit_name">Clan de Precursoras Lidia de Tiatira</field>
+        <field name="code">PRE</field>
+        <field name="sequence">60</field>
+        <field name="age_min">17</field>
+        <field name="age_max">22</field>
+        <field name="patrol_label">Equipo</field>
+        <field name="color">9</field>
+    </record>
+    <record id="section_tropa_atlas" model="scout.section">
+        <field name="transition_age">15</field>
+        <field name="report_color">#1f6f3f</field>
+        <field name="name">Tropa masculina</field>
+        <field name="unit_name">Tropa Atlas</field>
+        <field name="code">TRA</field>
+        <field name="sequence">50</field>
+        <field name="age_min">11</field>
+        <field name="age_max">16</field>
+        <field name="next_section_id" ref="section_clan_rover"/>
+        <field name="patrol_label">Patrulla</field>
+        <field name="patrol_role_label">Guía de patrulla</field>
+        <field name="patrol_subrole_label">Subguía</field>
+        <field name="color">10</field>
+    </record>
+    <record id="section_tropa_hydra" model="scout.section">
+        <field name="transition_age">15</field>
+        <field name="report_color">#0f7c8c</field>
+        <field name="name">Tropa femenina</field>
+        <field name="unit_name">Tropa Hydra</field>
+        <field name="code">TRH</field>
+        <field name="sequence">40</field>
+        <field name="age_min">11</field>
+        <field name="age_max">16</field>
+        <field name="next_section_id" ref="section_clan_precursoras"/>
+        <field name="patrol_label">Patrulla</field>
+        <field name="patrol_role_label">Guía de patrulla</field>
+        <field name="patrol_subrole_label">Subguía</field>
+        <field name="color">8</field>
+    </record>
+    <record id="section_lobatos" model="scout.section">
+        <field name="transition_age">11</field>
+        <field name="report_color">#1d4f9a</field>
+        <field name="name">Lobatos</field>
+        <field name="unit_name">Manada de Lobatos Logos</field>
+        <field name="code">LOB</field>
+        <field name="sequence">30</field>
+        <field name="age_min">7</field>
+        <field name="age_max">11</field>
+        <field name="next_section_id" ref="section_tropa_atlas"/>
+        <field name="patrol_label">Seisena</field>
+        <field name="patrol_role_label">Seisenero</field>
+        <field name="patrol_subrole_label">Subseisenero</field>
+        <field name="color">3</field>
+    </record>
+    <record id="section_gacelas" model="scout.section">
+        <field name="transition_age">11</field>
+        <field name="report_color">#6b3fa0</field>
+        <field name="name">Gacelas</field>
+        <field name="unit_name">Manada de Gacelas Meraki</field>
+        <field name="code">GAC</field>
+        <field name="sequence">20</field>
+        <field name="age_min">7</field>
+        <field name="age_max">11</field>
+        <field name="next_section_id" ref="section_tropa_hydra"/>
+        <field name="patrol_label">Seisena</field>
+        <field name="patrol_role_label">Seisenera</field>
+        <field name="patrol_subrole_label">Subseisenera</field>
+        <field name="color">6</field>
+    </record>
+    <record id="section_castores" model="scout.section">
+        <field name="transition_age">6</field>
+        <field name="report_color">#8a5a2b</field>
+        <field name="name">Castores</field>
+        <field name="unit_name">Colonia de Castores Ágape</field>
+        <field name="code">CAS</field>
+        <field name="sequence">10</field>
+        <field name="age_min">4</field>
+        <field name="age_max">7</field>
+        <field name="next_section_id" ref="section_lobatos"/>
+        <field name="patrol_label">Madriguera</field>
+        <field name="patrol_role_label">Madera</field>
+        <field name="patrol_subrole_label">Submadera</field>
+        <field name="color">2</field>
+    </record>
+    <record id="section_jefatura" model="scout.section">
+        <field name="report_color">#0f3049</field>
+        <field name="name">Jefatura</field>
+        <field name="unit_name">Jefatura de Grupo</field>
+        <field name="code">JEF</field>
+        <field name="sequence">90</field>
+        <field name="is_leadership" eval="True"/>
+        <field name="color">1</field>
+    </record>
+
+    <!-- Roles y cargos (catálogo: solo la jefatura de grupo agrega nuevos) -->
+    <record id="position_member" model="scout.position">
+        <field name="name">Integrante</field>
+        <field name="kind">member</field>
+        <field name="applies_to">youth</field>
+        <field name="sequence">1</field>
+    </record>
+    <record id="position_guide" model="scout.position">
+        <field name="name">Guía (madera / seisenero / guía de patrulla)</field>
+        <field name="kind">guide</field>
+        <field name="applies_to">youth</field>
+        <field name="sequence">2</field>
+    </record>
+    <record id="position_subguide" model="scout.position">
+        <field name="name">Subguía (submadera / subseisenero / subguía)</field>
+        <field name="kind">subguide</field>
+        <field name="applies_to">youth</field>
+        <field name="sequence">3</field>
+    </record>
+    <record id="position_scouter" model="scout.position">
+        <field name="name">Scouter</field>
+        <field name="kind">scouter</field>
+        <field name="applies_to">leader</field>
+        <field name="sequence">10</field>
+    </record>
+    <record id="position_candidate" model="scout.position">
+        <field name="name">Candidato a subjefe</field>
+        <field name="kind">candidate</field>
+        <field name="applies_to">leader</field>
+        <field name="sequence">11</field>
+    </record>
+    <record id="position_assistant" model="scout.position">
+        <field name="name">Subjefe de sección</field>
+        <field name="kind">assistant</field>
+        <field name="applies_to">leader</field>
+        <field name="sequence">12</field>
+    </record>
+    <record id="position_chief" model="scout.position">
+        <field name="name">Jefe de sección</field>
+        <field name="kind">chief</field>
+        <field name="applies_to">leader</field>
+        <field name="sequence">13</field>
+    </record>
+    <record id="position_secretary" model="scout.position">
+        <field name="name">Secretaría</field>
+        <field name="kind">secretary</field>
+        <field name="applies_to">leader</field>
+        <field name="sequence">20</field>
+    </record>
+    <record id="position_treasurer" model="scout.position">
+        <field name="name">Tesorería</field>
+        <field name="kind">treasurer</field>
+        <field name="applies_to">leader</field>
+        <field name="sequence">21</field>
+    </record>
+    <record id="position_group_assistant" model="scout.position">
+        <field name="name">Subjefe de grupo</field>
+        <field name="kind">assistant</field>
+        <field name="applies_to">leader</field>
+        <field name="sequence">30</field>
+    </record>
+    <record id="position_group_chief" model="scout.position">
+        <field name="name">Jefe de grupo</field>
+        <field name="kind">group_chief</field>
+        <field name="applies_to">leader</field>
+        <field name="sequence">31</field>
+    </record>
+
+    <!-- Conceptos que se cobran con cargos (facturas) a los padres -->
+    <record id="product_registration" model="product.product">
+        <field name="name">Registro anual scout</field>
+        <field name="type">service</field>
+        <field name="sale_ok" eval="True"/>
+        <field name="purchase_ok" eval="False"/>
+        <field name="list_price">350</field>
+        <field name="taxes_id" eval="[Command.clear()]"/>
+    </record>
+    <record id="product_fee" model="product.product">
+        <field name="name">Cuota de sección</field>
+        <field name="type">service</field>
+        <field name="sale_ok" eval="True"/>
+        <field name="purchase_ok" eval="False"/>
+        <field name="taxes_id" eval="[Command.clear()]"/>
+    </record>
+    <record id="product_camp" model="product.product">
+        <field name="name">Campamento / actividad</field>
+        <field name="type">service</field>
+        <field name="scout_store_ok" eval="True"/>
+        <field name="scout_sale_type">event</field>
+        <field name="scout_track_qty" eval="False"/>
+        <field name="sale_ok" eval="True"/>
+        <field name="purchase_ok" eval="False"/>
+        <field name="taxes_id" eval="[Command.clear()]"/>
+    </record>
+    <record id="product_uniform" model="product.product">
+        <field name="name">Uniforme, playera o insignia</field>
+        <field name="type">consu</field>
+        <field name="scout_store_ok" eval="True"/>
+        <field name="scout_sale_type">store</field>
+        <field name="sale_ok" eval="True"/>
+        <field name="purchase_ok" eval="True"/>
+        <field name="taxes_id" eval="[Command.clear()]"/>
+        <field name="supplier_taxes_id" eval="[Command.clear()]"/>
+    </record>
+
+    <!-- Conceptos de ingreso -->
+    <record id="category_sales" model="scout.treasury.category">
+        <field name="name">Venta del día</field>
+        <field name="category_type">income</field>
+        <field name="report_group">sales</field>
+        <field name="sequence">1</field>
+    </record>
+    <record id="category_store" model="scout.treasury.category">
+        <field name="name">Venta tienda scout</field>
+        <field name="category_type">income</field>
+        <field name="report_group">store</field>
+        <field name="sequence">1</field>
+    </record>
+    <record id="category_food" model="scout.treasury.category">
+        <field name="name">Venta de alimentos</field>
+        <field name="category_type">income</field>
+        <field name="report_group">food</field>
+        <field name="sequence">1</field>
+    </record>
+    <record id="category_registration" model="scout.treasury.category">
+        <field name="name">Registro</field>
+        <field name="category_type">income</field>
+        <field name="report_group">registration</field>
+        <field name="sequence">2</field>
+    </record>
+    <record id="category_fees" model="scout.treasury.category">
+        <field name="name">Cuotas</field>
+        <field name="category_type">income</field>
+        <field name="report_group">fees</field>
+        <field name="sequence">3</field>
+    </record>
+    <record id="category_camp_income" model="scout.treasury.category">
+        <field name="name">Campamentos y actividades (cobro)</field>
+        <field name="category_type">income</field>
+        <field name="report_group">activity</field>
+        <field name="sequence">4</field>
+    </record>
+    <record id="category_donation" model="scout.treasury.category">
+        <field name="name">Donativos y colaboraciones</field>
+        <field name="category_type">income</field>
+        <field name="report_group">donation</field>
+        <field name="sequence">5</field>
+    </record>
+
+    <!-- Conceptos de egreso -->
+    <record id="category_uniforms" model="scout.treasury.category">
+        <field name="name">Uniformes, playeras e insignias</field>
+        <field name="category_type">expense</field>
+        <field name="sequence">1</field>
+    </record>
+    <record id="category_store_purchase" model="scout.treasury.category">
+        <field name="name">Compra de mercancía para tienda scout</field>
+        <field name="category_type">expense</field>
+        <field name="sequence">2</field>
+    </record>
+    <record id="category_material" model="scout.treasury.category">
+        <field name="name">Material de programa</field>
+        <field name="category_type">expense</field>
+        <field name="sequence">2</field>
+    </record>
+    <record id="category_camp_expense" model="scout.treasury.category">
+        <field name="name">Campamentos y actividades (gasto)</field>
+        <field name="category_type">expense</field>
+        <field name="sequence">3</field>
+    </record>
+    <record id="category_services" model="scout.treasury.category">
+        <field name="name">Servicios y suscripciones</field>
+        <field name="category_type">expense</field>
+        <field name="sequence">4</field>
+    </record>
+    <record id="category_national_fee" model="scout.treasury.category">
+        <field name="name">Cuota de registro a la asociación</field>
+        <field name="category_type">expense</field>
+        <field name="sequence">5</field>
+    </record>
+    <record id="category_other_expense" model="scout.treasury.category">
+        <field name="name">Otros gastos</field>
+        <field name="category_type">expense</field>
+        <field name="sequence">9</field>
+    </record>
+</odoo>

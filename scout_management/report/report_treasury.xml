@@ -1,0 +1,160 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <template id="report_treasury_document">
+        <t t-call="web.html_container">
+            <t t-call="web.basic_layout">
+                <t t-call="scout_management.scout_report_styles"/>
+                <style>
+                    .tr-sec { background: #0f3049; color: #fff; font-weight: 800; padding: 3px 6px; margin-top: 8px; }
+                    .tr-tot td { font-weight: 800; border-top: 2px solid #0f3049; }
+                    .num { text-align: right; white-space: nowrap; }
+                    .neg { color: #c00000; }
+                </style>
+                <div class="page sc-doc">
+                    <table class="sc-row">
+                        <tr>
+                            <td style="width: 70px;">
+                                <img t-if="company.logo" class="sc-logo" t-att-src="image_data_uri(company.logo)"/>
+                            </td>
+                            <td>
+                                <div style="font-size: 17px; font-weight: 900;" t-out="company.name"/>
+                                <div style="font-size: 14px; font-weight: 800;">REPORTE DE INGRESOS Y EGRESOS</div>
+                                <div>Del <b t-out="date_from"/> al <b t-out="date_to"/></div>
+                            </td>
+                        </tr>
+                    </table>
+
+                    <t t-call="scout_management.scout_greca"/>
+                    <div class="tr-sec">SALDOS INICIALES</div>
+                    <table class="sc-table">
+                        <thead><tr><th>Caja / banco</th><th class="num">Saldo inicial</th><th class="num">Ingresos</th><th class="num">Egresos</th><th class="num">Traspasos (+/-)</th><th class="num">Saldo final</th></tr></thead>
+                        <tbody>
+                            <tr t-foreach="accounts" t-as="row">
+                                <td><t t-out="row['journal'].name"/></td>
+                                <td class="num" t-out="money(row['opening'])"/>
+                                <td class="num" t-out="money(row['income'])"/>
+                                <td class="num" t-out="money(row['expense'])"/>
+                                <td class="num" t-out="money(row['transfer'])"/>
+                                <td t-attf-class="num #{'neg' if row['closing'] &lt; 0 else ''}" t-out="money(row['closing'])"/>
+                            </tr>
+                            <tr class="tr-tot">
+                                <td>TOTAL</td>
+                                <td class="num" t-out="money(opening_total)"/>
+                                <td class="num" t-out="money(total_income)"/>
+                                <td class="num" t-out="money(total_expense)"/>
+                                <td/>
+                                <td class="num" t-out="money(closing_total)"/>
+                            </tr>
+                        </tbody>
+                    </table>
+
+                    <div class="tr-sec">INGRESOS</div>
+                    <t t-if="not income_groups"><p class="text-muted">Sin ingresos en el periodo.</p></t>
+                    <t t-foreach="income_groups" t-as="grp">
+                        <div style="font-weight: 800; margin-top: 4px;" t-out="grp['label'].upper()"/>
+                        <table class="sc-table">
+                            <tr t-foreach="grp['moves']" t-as="mv">
+                                <td style="width: 12%;" t-out="mv['date'].strftime('%d/%m/%Y')"/>
+                                <td t-out="mv['label']"/>
+                                <td style="width: 18%;" t-out="mv['who']"/>
+                                <td style="width: 14%;" t-out="mv['journal']"/>
+                                <td style="width: 12%;" t-out="mv['ref']"/>
+                                <td class="num" style="width: 13%;" t-out="money(mv['amount'])"/>
+                            </tr>
+                            <tr class="tr-tot"><td colspan="5">TOTAL <t t-out="grp['label'].upper()"/></td><td class="num" t-out="money(grp['total'])"/></tr>
+                        </table>
+                    </t>
+                    <table class="sc-table" style="margin-top: 4px;">
+                        <tr class="tr-tot" style="color: #1b7f1b;"><td>TOTAL INGRESOS</td><td class="num" style="width: 18%;" t-out="money(total_income)"/></tr>
+                    </table>
+
+                    <div class="tr-sec">GASTOS</div>
+                    <t t-if="not expenses"><p class="text-muted">Sin gastos en el periodo.</p></t>
+                    <table t-else="" class="sc-table">
+                        <tr t-foreach="expenses" t-as="mv">
+                            <td style="width: 12%;" t-out="mv['date'].strftime('%d/%m/%Y')"/>
+                            <td t-out="mv['label']"/>
+                            <td style="width: 18%;" t-out="mv['category']"/>
+                            <td style="width: 14%;" t-out="mv['journal']"/>
+                            <td style="width: 12%;" t-out="mv['who']"/>
+                            <td class="num" style="width: 13%;" t-out="money(mv['amount'])"/>
+                        </tr>
+                        <tr class="tr-tot"><td colspan="5">TOTAL GASTOS</td><td class="num" t-out="money(total_expense)"/></tr>
+                    </table>
+
+                    <table class="sc-table" style="margin-top: 8px;">
+                        <tr class="tr-tot">
+                            <td>DISPONIBLE DEL PERIODO (ingresos − gastos)</td>
+                            <td t-attf-class="num #{'neg' if available &lt; 0 else ''}" style="width: 18%;" t-out="money(available)"/>
+                        </tr>
+                        <tr class="tr-tot">
+                            <td>SALDO TOTAL AL CIERRE (caja + bancos)</td>
+                            <td class="num" t-out="money(closing_total)"/>
+                        </tr>
+                    </table>
+
+                    <t t-if="transfers">
+                        <div class="tr-sec">TRASPASOS ENTRE CUENTAS</div>
+                        <table class="sc-table">
+                            <tr t-foreach="transfers" t-as="mv">
+                                <td style="width: 12%;" t-out="mv['date'].strftime('%d/%m/%Y')"/>
+                                <td><t t-out="mv['journal']"/> → <t t-out="mv.get('dest', '')"/></td>
+                                <td t-out="mv['label']"/>
+                                <td class="num" style="width: 13%;" t-out="money(mv['amount'])"/>
+                            </tr>
+                        </table>
+                    </t>
+
+                    <t t-if="receivables or payables">
+                        <div class="tr-sec">ADEUDOS PENDIENTES</div>
+                        <table class="sc-row">
+                            <tr>
+                                <td style="width: 50%; vertical-align: top;">
+                                    <b>Cuentas por cobrar</b>
+                                    <table class="sc-table">
+                                        <tr t-foreach="receivables" t-as="ob">
+                                            <td t-out="ob['who']"/>
+                                            <td t-out="ob['desc']"/>
+                                            <td class="num" t-out="money(ob['amount'])"/>
+                                        </tr>
+                                        <tr class="tr-tot"><td colspan="2">Total por cobrar</td><td class="num" t-out="money(total_receivable)"/></tr>
+                                    </table>
+                                </td>
+                                <td style="width: 50%; vertical-align: top;">
+                                    <b>Cuentas por pagar</b>
+                                    <table class="sc-table">
+                                        <tr t-foreach="payables" t-as="ob">
+                                            <td t-out="ob['who']"/>
+                                            <td t-out="ob['desc']"/>
+                                            <td class="num" t-out="money(ob['amount'])"/>
+                                        </tr>
+                                        <tr class="tr-tot"><td colspan="2">Total por pagar</td><td class="num" t-out="money(total_payable)"/></tr>
+                                    </table>
+                                </td>
+                            </tr>
+                        </table>
+                    </t>
+
+                    <t t-if="to_approve">
+                        <div class="tr-sec">GASTOS PENDIENTES DE APROBACIÓN DEL JEFE DE GRUPO</div>
+                        <table class="sc-table">
+                            <tr t-foreach="to_approve" t-as="ob">
+                                <td t-out="ob['who']"/>
+                                <td t-out="ob['desc']"/>
+                                <td class="num" style="width: 15%;" t-out="money(ob['amount'])"/>
+                            </tr>
+                        </table>
+                    </t>
+                    <div t-if="notes" style="margin-top: 8px; white-space: pre-line;"><b>Notas:</b> <t t-out="notes"/></div>
+                    <table class="sc-row" style="margin-top: 40px;">
+                        <tr>
+                            <td class="sc-sign"><div class="line">TESORERÍA<br/><span style="font-weight: 400;">Nombre y firma</span></div></td>
+                            <td style="width: 10%;"/>
+                            <td class="sc-sign"><div class="line">JEFATURA DE GRUPO<br/><span style="font-weight: 400;">Nombre y firma</span></div></td>
+                        </tr>
+                    </table>
+                </div>
+            </t>
+        </t>
+    </template>
+</odoo>
