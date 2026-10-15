@@ -16,6 +16,7 @@
                         </group>
                         <group invisible="not scout_store_ok or not scout_track_qty">
                             <field name="scout_qty_available"/>
+                            <field name="scout_initial_qty"/>
                             <field name="scout_min_qty"/>
                             <button name="action_scout_stock_in" type="object" string="Registrar entrada de mercancía"
                                     class="btn-secondary" colspan="2"/>

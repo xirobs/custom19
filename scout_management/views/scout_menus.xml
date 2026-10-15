@@ -59,6 +59,7 @@
     <menuitem id="menu_scout_store_sale_line" name="Parte de ventas" parent="menu_scout_store" action="action_scout_store_sale_line" sequence="20"/>
     <menuitem id="menu_scout_store_products" name="Productos y existencias" parent="menu_scout_store" action="action_scout_store_products" sequence="30"/>
     <menuitem id="menu_scout_store_stock" name="Entradas de mercancía" parent="menu_scout_store" action="action_scout_store_stock_move" sequence="40"/>
+    <menuitem id="menu_scout_product_import" name="Carga de productos desde Excel" parent="menu_scout_store" action="action_scout_product_import" sequence="45"/>
     <menuitem id="menu_scout_receivable" name="Cargos a miembros (por cobrar)" parent="menu_scout_treasury" action="action_scout_receivable" sequence="20"/>
     <menuitem id="menu_scout_payable" name="Facturas de proveedor (por pagar)" parent="menu_scout_treasury" action="action_scout_payable" sequence="30"/>
 

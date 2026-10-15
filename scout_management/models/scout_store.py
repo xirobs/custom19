@@ -29,6 +29,27 @@ class ProductTemplate(models.Model):
     scout_min_qty = fields.Float(string='Existencia mínima', help='Avisa cuando quedan pocas piezas.')
     scout_low_stock = fields.Boolean(compute='_compute_scout_qty', string='Por agotarse')
     scout_stock_move_ids = fields.One2many('scout.store.stock.move', 'product_tmpl_id', string='Movimientos de tienda')
+    scout_initial_qty = fields.Float(
+        string='Existencia inicial', compute='_compute_scout_initial_qty', inverse='_inverse_scout_initial_qty',
+        digits='Product Unit', help='Inventario con el que arranca la tienda. Al capturarlo (o importarlo desde Excel) '
+                                    'se registra un movimiento de "Inventario inicial".')
+
+    def _compute_scout_initial_qty(self):
+        data = dict(self.env['scout.store.stock.move'].sudo()._read_group(
+            [('product_tmpl_id', 'in', self.ids), ('move_kind', '=', 'initial')], ['product_tmpl_id'], ['quantity:sum']))
+        for product in self:
+            product.scout_initial_qty = data.get(product, 0.0)
+
+    def _inverse_scout_initial_qty(self):
+        Move = self.env['scout.store.stock.move'].sudo()
+        for product in self:
+            current = sum(Move.search([('product_tmpl_id', '=', product.id), ('move_kind', '=', 'initial')]).mapped('quantity'))
+            diff = (product.scout_initial_qty or 0.0) - current
+            if diff:
+                Move.create({'product_tmpl_id': product.id, 'move_kind': 'initial', 'quantity': diff,
+                             'unit_cost': product.standard_price,
+                             'date': self.env.context.get('scout_initial_date') or fields.Date.context_today(self),
+                             'note': _('Inventario inicial')})
 
     def _compute_scout_qty(self):
         data = dict(self.env['scout.store.stock.move'].sudo()._read_group(

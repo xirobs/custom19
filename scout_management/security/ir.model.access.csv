@@ -47,3 +47,4 @@ access_product_template_scout_treasurer,product.template scout treasurer,product
 access_product_product_scout_treasurer,product.product scout treasurer,product.model_product_product,group_scout_treasurer,1,1,1,0
 access_scout_payment_link_leader,scout.payment.link.wizard leader,model_scout_payment_link_wizard,group_scout_leader,1,1,1,0
 access_scout_leader_access_wizard,scout.leader.access.wizard officer,model_scout_leader_access_wizard,group_scout_officer,1,1,1,0
+access_scout_product_import,scout.product.import officer,model_scout_product_import,group_scout_officer,1,1,1,1

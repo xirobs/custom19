@@ -56,6 +56,7 @@ COLUMNS = [
     ('promise_date', 'Fecha de Promesa', 14, ''),
     ('last_stage', 'Último adelanto', 18, ''),
     ('last_stage_date', 'Fecha del último adelanto', 14, ''),
+    ('current_stage', 'Adelanto en curso (lo que está trabajando)', 20, ''),
     ('transition_date', 'Inicio de ruta de enlace', 14, ''),
     ('reg_cycle', 'Ciclo de registro (ej. 2026)', 10, '2026'),
     ('reg_date', 'Fecha de la ficha', 14, '12/10/2026'),
@@ -110,7 +111,7 @@ class ScoutMemberImport(models.TransientModel):
         wb = Workbook()
         ws = wb.active
         ws.title = 'Miembros'
-        head_fill = PatternFill('solid', fgColor='1D2B53')
+        head_fill = PatternFill('solid', fgColor='0F3049')
         req_fill = PatternFill('solid', fgColor='8A5A2B')
         for col, (key, label, width, example) in enumerate(COLUMNS, start=1):
             cell = ws.cell(row=1, column=col, value=label)
@@ -161,6 +162,7 @@ class ScoutMemberImport(models.TransientModel):
         add_list('reg_payment', keys.index('Pago de registro') + 1, 4)
         add_list('blood_type', keys.index('Tipo de sangre') + 1, 8)
         add_list('last_stage', keys.index('Adelantos') + 1, len(catalogs['Adelantos']))
+        add_list('current_stage', keys.index('Adelantos') + 1, len(catalogs['Adelantos']))
 
         info = wb.create_sheet('Instrucciones')
         for row, text in enumerate([
@@ -410,6 +412,13 @@ class ScoutMemberImport(models.TransientModel):
                           'scout_last_progress_date': self._date(item.get('last_stage_date'),
                                                                  _('Fecha del último adelanto'))
                           or fields.Date.context_today(self)})
+        # Adelanto que está trabajando (queda "En curso" en su historial)
+        current = self._find_stage(item.get('current_stage'))
+        if current:
+            Progress = self.env['scout.member.progress'].sudo()
+            if not Progress.search_count([('member_id', '=', member.id), ('stage_id', '=', current.id)]):
+                Progress.create({'member_id': member.id, 'stage_id': current.id, 'state': 'in_progress',
+                                 'date_start': fields.Date.context_today(self)})
         # Ficha de registro histórica
         if item.get('reg_cycle'):
             self._import_registration(member, item)

@@ -6,3 +6,4 @@ from . import scout_calendar_report_wizard
 from . import scout_treasury_report_wizard
 from . import scout_daily_sales_wizard
 from . import scout_member_import
+from . import scout_product_import
