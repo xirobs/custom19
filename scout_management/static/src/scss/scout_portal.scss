@@ -296,7 +296,7 @@ $scout-wa: #25d366;
 
     // Cuadro de logros
     .o_sl_achv {
-        .o_sl_mx_name { min-width: 92px; max-width: 112px; font-size: 0.74rem; }
+        .o_sl_mx_name { min-width: 120px; max-width: 150px; font-size: 0.74rem; line-height: 1.15; }
         .o_sl_achv_col { min-width: 2.4rem; max-width: 4.5rem; white-space: normal; font-size: 0.62rem; line-height: 1.1; vertical-align: bottom;
             span { display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; } }
         .o_sl_achv_thermo { min-width: 6.5rem; text-align: left; }
@@ -369,6 +369,26 @@ $scout-wa: #25d366;
     .o_sl_flag { border: 2px solid #c8d2dc; background: #fff; color: #5c6b7a; border-radius: 999px; padding: 0.15rem 0.6rem; font-size: 0.75rem; font-weight: 700;
         &.on { border-color: #2e9e44; background: #eaf7ef; color: #1d6b32; } }
     .o_sl_dayprog { padding-left: 1.2rem; margin: 0.4rem 0; font-size: 0.85rem; }
+
+    // INE del tutor
+    .o_sl_ine_pick { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 0.3rem; min-height: 96px;
+        border: 2px dashed #9aa5b1; border-radius: 12px; background: #fff; cursor: pointer; padding: 0.4rem; text-align: center; width: 100%;
+        img { max-width: 100%; max-height: 110px; border-radius: 6px; }
+        span { font-weight: 800; font-size: 0.85rem; }
+        &.o_sl_done_file { border-color: #2e9e44; } }
+
+    // Ficha al tocar, niveles de especialidades, edición de equipos
+    .o_sl_mlink { color: $scout-navy; text-decoration: underline dotted; font-weight: 800; }
+    .o_sl_lvl { display: inline-block; min-width: 1.7rem; padding: 0.1rem 0.4rem; border-radius: 999px; color: #fff;
+        font-weight: 900; font-size: 0.78rem; text-align: center; text-shadow: 0 0 2px rgba(0, 0, 0, 0.35); }
+    .o_sl_lvl_cell { text-align: center; vertical-align: middle; }
+    .o_sl_new_badge { font-size: 0.62rem; font-weight: 900; background: #1f6fb5; color: #fff; border-radius: 999px; padding: 0.05rem 0.4rem; }
+    .o_sl_team_head { flex-wrap: wrap; }
+    .o_sl_team_edit { width: auto;
+        summary { list-style: none; cursor: pointer; color: #5c6b7a; padding: 0 0.3rem; }
+        summary::-webkit-details-marker { display: none; }
+        &[open] { width: 100%; }
+        .form-control-color { width: 3rem; padding: 0.2rem; } }
 
     // Barra inferior
     .o_sl_nav {

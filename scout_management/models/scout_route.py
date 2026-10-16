@@ -65,6 +65,30 @@ class ScoutSectionRouteConfig(models.Model):
         help='Días después de la fecha oficial de inicio de ruta para registrar el inicio antes de la alerta roja. '
              '0 = la alerta roja se enciende al día siguiente de la fecha oficial.')
     route_rule_text = fields.Char(compute='_compute_route_rule_text', string='Regla de la sección')
+    gender = fields.Selection([('m', 'Varones'), ('f', 'Mujeres')], string='Sección para',
+                              help='Vacío = mixta. Sirve para proponer la sección según la edad y el sexo.')
+    promise_label = fields.Char(string='Nombre de la Promesa en la sección',
+                                help='Ej. en Tropa: "Promesa (Tercera clase)". Vacío = "Promesa".')
+
+    @api.model
+    def _scout_suggest(self, birthdate, gender=None, on_date=None):
+        """Sección que le corresponde por edad (y sexo) según las edades oficiales de pase y partida."""
+        if not birthdate:
+            return self.browse()
+        on_date = on_date or fields.Date.context_today(self)
+        delta = relativedelta(on_date, birthdate)
+        months = delta.years * 12 + delta.months
+        candidates = []
+        for section in self.search([('is_leadership', '=', False)]):
+            _route, pass_, stay = section._route_offsets()
+            upper = pass_ or stay
+            if not upper or months >= upper:
+                continue
+            if gender and section.gender and section.gender != gender:
+                continue
+            candidates.append((upper, section.sequence, section))
+        candidates.sort(key=lambda c: (c[0], c[1]))
+        return candidates[0][2] if candidates else self.browse()
 
     @api.constrains('route_age_months', 'pass_age_months', 'max_stay_months')
     def _check_route_months(self):
@@ -104,6 +128,16 @@ class ScoutSectionRouteConfig(models.Model):
             ('section_clan_rover', (0, 0, 0, 0, 24, 6), None, None),
             ('section_clan_precursoras', (0, 0, 0, 0, 24, 6), None, None),
         ]
+        for xid, gender in (('section_lobatos', 'm'), ('section_gacelas', 'f'), ('section_tropa_atlas', 'm'),
+                            ('section_tropa_hydra', 'f'), ('section_clan_rover', 'm'),
+                            ('section_clan_precursoras', 'f')):
+            section = ref(xid)
+            if section and not section.gender:
+                section.gender = gender
+        for xid in ('section_tropa_atlas', 'section_tropa_hydra'):
+            section = ref(xid)
+            if section and not section.promise_label:
+                section.promise_label = 'Promesa (Tercera clase)'
         for xid, ages, nxt, female in rules:
             section = ref(xid)
             if not section or any(section._route_offsets()):
@@ -439,7 +473,8 @@ class ScoutRoute(models.Model):
     def _confirm(self, day, destination=None, note=None):
         """Confirma el cambio (o la partida): cierra este registro y abre el de la nueva sección."""
         self.ensure_one()
-        self.env['scout.approval.mixin']._scout_check_manager(_('confirmar cambios de sección'))
+        if not self.env.context.get('scout_route_receiver'):
+            self.env['scout.approval.mixin']._scout_check_manager(_('confirmar cambios de sección'))
         if not self.is_open:
             raise UserError(_('Este movimiento ya está cerrado.'))
         member = self.member_id.sudo()

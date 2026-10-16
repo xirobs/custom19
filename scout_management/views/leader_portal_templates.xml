@@ -302,7 +302,7 @@
                         </thead>
                         <tbody>
                             <tr t-foreach="matrix['rows']" t-as="row" t-attf-class="#{'o_sl_mx_leader' if row['member'].scout_type == 'leader' else ''}">
-                                <td class="o_sl_mx_name"><t t-out="row['member'].scout_name or row['member'].name"/>
+                                <td class="o_sl_mx_name"><a class="o_sl_mlink" t-att-href="'/dirigentes/%s/miembro/%s' % (section.id, row['member'].id)" t-out="row['member'].scout_name or row['member'].name"/>
                                     <small class="d-block text-muted" t-out="'Dirigente' if row['member'].scout_type == 'leader' else (row['member'].scout_patrol_id.name or '')"/></td>
                                 <td class="o_sl_mx_sum"><t t-out="row['attended']"/>/<t t-out="row['counted']"/></td>
                                 <td t-attf-class="o_sl_mx_sum o_sl_mx_pct #{'o_sl_pct_ok' if row['pct'] is not None and row['pct'] &gt;= 75 else ('o_sl_pct_mid' if row['pct'] is not None and row['pct'] &gt;= 40 else ('o_sl_pct_low' if row['pct'] is not None else ''))}"
@@ -530,7 +530,7 @@
                     <label class="form-label">2. ¿Cuál?</label>
                     <select name="stage_id" class="form-select form-select-lg">
                         <option value="">Elige…</option>
-                        <option t-foreach="group[2]" t-as="s" t-att-value="s.id" t-att-selected="s == stage or None" t-out="s.name"/>
+                        <option t-foreach="group[2]" t-as="s" t-att-value="s.id" t-att-selected="s == stage or None" t-out="svc.stage_label(s, section)"/>
                     </select>
                 </t>
             </form>
@@ -669,7 +669,9 @@
             </div>
             <div class="d-flex gap-2 my-2">
                 <a class="btn o_sl_btn flex-fill" t-att-href="'/dirigentes/%s/nuevo' % section.id"><i class="fa fa-user-plus"/> Nuevo ingreso</a>
+                <a class="btn o_sl_btn_outline flex-fill" t-att-href="'/dirigentes/%s/liga' % section.id"><i class="fa fa-link"/> Liga para papás</a>
                 <a class="btn o_sl_btn_outline flex-fill" t-att-href="'/dirigentes/%s/equipos' % section.id"><i class="fa fa-th-large"/> <t t-out="'%ss' % (section.patrol_label or 'Equipo')"/></a>
+                <a class="btn o_sl_btn_outline" t-att-href="'/dirigentes/%s/reingreso' % section.id" title="Reingresos"><i class="fa fa-undo"/></a>
             </div>
             <div class="o_sl_seg o_sl_tabs o_sl_tabs_sm">
                 <a t-att-href="'/dirigentes/%s/miembros?orden=equipo' % section.id" t-attf-class="#{'active' if orden == 'equipo' else ''}" t-out="section.patrol_label or 'Equipo'"/>
@@ -739,8 +741,29 @@
             </div>
             <div class="d-flex gap-2 mb-3">
                 <a class="btn o_sl_btn_outline flex-fill" t-att-href="'/dirigentes/%s/miembro/%s/credencial' % (section.id, member.id)"><i class="fa fa-id-badge"/> Credencial</a>
-                <a t-if="member.scout_type == 'youth'" class="btn o_sl_btn_outline flex-fill" t-att-href="'/dirigentes/%s/miembro/%s/registro' % (section.id, member.id)"><i class="fa fa-pencil-square-o"/> Ficha y firma</a>
-                <a t-if="pay.get('link')" class="btn o_sl_btn_orange flex-fill" t-att-href="'/dirigentes/%s/miembro/%s/pago' % (section.id, member.id)"><i class="fa fa-credit-card"/> Liga de pago</a>
+                <a t-if="member.scout_type == 'youth'" class="btn o_sl_btn_outline flex-fill" t-att-href="'/dirigentes/%s/miembro/%s/registro' % (section.id, member.id)"><i class="fa fa-pencil-square-o"/> <t t-out="svc.registration_label(member)"/></a>
+                <a t-if="pay.get('invoice') and pay['invoice'].payment_state in ('not_paid', 'partial')" class="btn o_sl_btn_orange flex-fill" t-att-href="'/dirigentes/%s/miembro/%s/pago' % (section.id, member.id)"><i class="fa fa-credit-card"/> Pago</a>
+            </div>
+            <div t-if="member.scout_type == 'youth'" class="d-flex gap-2 mb-3">
+                <t t-set="flink" t-value="member._scout_form_url()"/>
+                <a class="btn o_sl_btn_wa flex-fill" target="_blank"
+                   t-att-href="'https://wa.me/%s?text=%s' % (''.join(c for c in (member.scout_guardian_id.phone or '') if c.isdigit()), url_quote('Hola, esta es la liga para llenar o renovar la ficha de registro de %s: firmas, adjuntas tu INE y eliges pagar en línea o en efectivo. %s' % (member.name, flink)))"><i class="fa fa-whatsapp"/> Liga de ficha a la familia</a>
+                <button type="button" class="btn o_sl_btn_outline" t-att-data-sl-copy="flink" title="Copiar liga"><i class="fa fa-copy"/></button>
+            </div>
+            <div class="o_sl_card_box">
+                <h6>Datos personales</h6>
+                <dl class="o_sl_dl small mb-0">
+                    <dt>Nombre</dt><dd t-out="member.name"/>
+                    <dt>Nacimiento</dt><dd t-out="member.scout_birthdate and ('%s · %s años' % (member.scout_birthdate.strftime('%d/%m/%Y'), member.scout_age)) or '—'"/>
+                    <dt>Sexo</dt><dd t-out="dict(member._fields['scout_gender'].selection).get(member.scout_gender) or '—'"/>
+                    <dt>Sección</dt><dd t-out="member.scout_section_id.display_name or '—'"/>
+                    <dt t-out="section.patrol_label or 'Equipo'"/><dd><t t-out="member.scout_patrol_id.name or 'Sin asignar'"/><t t-if="role"> · <t t-out="role"/></t></dd>
+                    <dt>Estado</dt><dd t-out="dict(member._fields['scout_state'].selection).get(member.scout_state)"/>
+                    <dt>Ingreso</dt><dd t-out="member.scout_join_date and member.scout_join_date.strftime('%d/%m/%Y') or '—'"/>
+                    <dt>Promesa</dt><dd t-out="member.scout_promise_date and member.scout_promise_date.strftime('%d/%m/%Y') or '—'"/>
+                    <dt>Domicilio</dt><dd t-out="member.street or '—'"/>
+                    <dt>Talla</dt><dd t-out="dict(member._fields['scout_shirt_size'].selection).get(member.scout_shirt_size) or '—'"/>
+                </dl>
             </div>
             <div class="o_sl_card_box">
                 <h6>Familia</h6>
@@ -778,7 +801,7 @@
                 <h6>Adelantos e insignias</h6>
                 <div t-if="not progress" class="text-muted small">Sin adelantos registrados.</div>
                 <div t-foreach="progress" t-as="p" class="d-flex justify-content-between">
-                    <span><t t-out="p.stage_id.name"/></span>
+                    <span><t t-out="svc.stage_label(p.stage_id, section)"/></span>
                     <small t-attf-class="#{'text-success' if p.state == 'achieved' else 'text-muted'}" t-out="p.date_achieved.strftime('%d/%m/%y') if p.state == 'achieved' and p.date_achieved else 'En curso'"/>
                 </div>
             </div>
@@ -800,12 +823,26 @@
                 <a class="btn btn-sm o_sl_btn_outline" t-att-href="'/dirigentes/%s/miembros' % section.id"><i class="fa fa-list"/> Lista</a>
             </div>
             <p class="o_sl_hint">Toca la ficha de un scout para cambiarlo de <t t-out="label.lower()"/> o nombrarlo <b t-out="section.patrol_role_label or 'Guía'"/> / <b t-out="section.patrol_subrole_label or 'Subguía'"/>. En computadora también puedes arrastrarla.</p>
+            <div t-if="arrivals.filtered(lambda m: not m.scout_patrol_id)" class="o_sl_alert_box o_sl_alert_in">
+                <i class="fa fa-sign-in"/>
+                <div><b t-out="'Recién llegados sin %s' % label.lower()"/>
+                    <small t-out="', '.join(arrivals.filtered(lambda m: not m.scout_patrol_id).mapped(lambda m: m.scout_name or m.name.split(' ')[0]))"/></div>
+            </div>
             <div class="o_sl_teams" t-att-data-section="section.id">
                 <div t-foreach="board" t-as="team" t-attf-class="o_sl_team #{'o_sl_team_none' if not team[0] else ''} #{'o_sl_team_empty' if not team[1] else ''}" t-att-data-patrol="team[0].id or 0">
                     <div class="o_sl_team_head" t-att-style="'border-color:%s' % svc.patrol_color(team[0])">
                         <span class="o_sl_dot" t-att-style="'background:%s' % svc.patrol_color(team[0])"/>
                         <b t-out="team[0].name or ('Sin %s' % label.lower())"/>
                         <span class="o_sl_team_count ms-auto" t-out="len(team[1])"/>
+                        <details t-if="team[0]" class="o_sl_team_edit">
+                            <summary title="Cambiar nombre o color"><i class="fa fa-pencil"/></summary>
+                            <form t-att-action="'/dirigentes/%s/equipos/%s/editar' % (section.id, team[0].id)" method="post" class="d-flex gap-2 align-items-center mt-2">
+                                <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
+                                <input name="name" class="form-control form-control-sm" t-att-value="team[0].name"/>
+                                <input type="color" name="color_hex" class="form-control form-control-color" t-att-value="svc.patrol_color(team[0])" title="Color"/>
+                                <button class="btn btn-sm o_sl_btn" type="submit"><i class="fa fa-check"/></button>
+                            </form>
+                        </details>
                     </div>
                     <div class="o_sl_team_cards">
                         <div t-foreach="team[1]" t-as="person" class="o_sl_tcard" draggable="true" t-att-data-member="person.id"
@@ -818,11 +855,14 @@
                                 <span t-attf-class="o_sl_role #{'d-none' if not rl else ''}" t-out="rl"/>
                             </div>
                             <i t-if="person.scout_age_alert in ('soon', 'over')" class="fa fa-birthday-cake o_sl_txt_orange" t-att-title="person.scout_age_alert_text"/>
+                            <span t-if="person in arrivals" class="o_sl_new_badge" title="Llegó de otra sección">Nuevo</span>
                         </div>
                     </div>
                 </div>
                 <div class="o_sl_sheet">
-                    <div class="d-flex align-items-center mb-2"><b class="o_sl_sheet_name"/><button type="button" class="btn-close ms-auto o_sl_sheet_close" aria-label="Cerrar"/></div>
+                    <div class="d-flex align-items-center mb-2 gap-2"><b class="o_sl_sheet_name"/>
+                        <a class="btn btn-sm o_sl_btn_outline ms-auto o_sl_sheet_ficha" href="#"><i class="fa fa-id-card-o"/> Ver ficha</a>
+                        <button type="button" class="btn-close o_sl_sheet_close" aria-label="Cerrar"/></div>
                     <small class="text-muted">Mover a</small>
                     <div class="o_sl_sheet_btns">
                         <button t-foreach="board" t-as="team" type="button" class="btn btn-sm o_sl_btn_outline" t-att-data-move="team[0].id or 0">
@@ -863,12 +903,35 @@
             <form method="get" data-sl-autosubmit="1" class="mb-2">
                 <select name="ver" class="form-select">
                     <option value="adelantos" t-att-selected="ver == 'adelantos' or None">Adelantos (Promesa → insignia terminal)</option>
+                    <option value="colores" t-att-selected="ver == 'colores' or None">Especialidades por colores y técnicas</option>
                     <optgroup label="Especialidades e insignias">
                         <option t-foreach="categories" t-as="c" t-att-value="'cat%s' % (c[0].id or 0)" t-att-selected="ver == 'cat%s' % (c[0].id or 0) or None" t-out="'%s (%s)' % (c[0].name or 'Otras', len(c[1]))"/>
                     </optgroup>
                 </select>
             </form>
-            <p class="o_sl_hint">Toca una casilla: <b>½</b> en curso → <b class="text-success">✓</b> logrado → vacío. El termómetro muestra el avance en los adelantos de la sección.</p>
+            <t t-if="ver == 'colores'">
+                <p class="o_sl_hint">Nivel por grupo de especialidades: <span class="o_sl_lvl" style="background:#f2c200">1 amarillo</span> <span class="o_sl_lvl" style="background:#2e9e44">2 verde</span> <span class="o_sl_lvl" style="background:#d7262f">3 rojo</span>. El número es cuántas especialidades lleva en ese grupo. Toca el nombre para ver su ficha.</p>
+                <div t-if="not spec_categories" class="text-muted">La sección no tiene especialidades en el catálogo.</div>
+                <div t-else="" class="o_sl_matrix_wrap">
+                    <table class="o_sl_matrix o_sl_achv">
+                        <thead><tr>
+                            <th class="o_sl_mx_name">Scout</th>
+                            <th t-foreach="spec_categories" t-as="c" class="o_sl_achv_col"><span t-out="c.name"/></th>
+                        </tr></thead>
+                        <tbody>
+                            <tr t-foreach="spec_rows" t-as="row">
+                                <td class="o_sl_mx_name"><a class="o_sl_mlink" t-att-href="'/dirigentes/%s/miembro/%s' % (section.id, row['member'].id)" t-out="row['member'].scout_name or row['member'].name"/>
+                                    <small class="d-block text-muted" t-out="'%s logradas' % row['total']"/></td>
+                                <td t-foreach="row['cells']" t-as="cell" class="o_sl_lvl_cell" t-att-title="cell['names']">
+                                    <span t-if="cell['count'] or cell['level']" class="o_sl_lvl" t-att-style="'background:%s' % level_colors[cell['level']][1]" t-out="cell['count'] or '✓'"/>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </t>
+            <t t-else="">
+            <p class="o_sl_hint">Toca una casilla: <b>½</b> en curso → <b class="text-success">✓</b> logrado → vacío. El termómetro muestra el avance en los adelantos de la sección. Toca el nombre para ver su ficha.</p>
             <div t-if="not columns" class="text-muted">No hay elementos en esta categoría.</div>
             <div t-else="" class="o_sl_matrix_wrap">
                 <table class="o_sl_matrix o_sl_achv" t-att-data-section="section.id" data-sl-achievements="1">
@@ -876,17 +939,17 @@
                         <tr>
                             <th class="o_sl_mx_name">Scout</th>
                             <th class="o_sl_achv_thermo">Avance</th>
-                            <th t-foreach="columns" t-as="c" class="o_sl_achv_col" t-att-title="c.name"><span t-out="c.name"/></th>
+                            <th t-foreach="columns" t-as="c" class="o_sl_achv_col" t-att-title="c.name"><span t-out="svc.stage_label(c, section)"/></th>
                         </tr>
                     </thead>
                     <tbody>
                         <tr t-foreach="rows" t-as="row" t-att-data-member="row['member'].id">
-                            <td class="o_sl_mx_name"><t t-out="row['member'].scout_name or row['member'].name"/>
+                            <td class="o_sl_mx_name"><a class="o_sl_mlink" t-att-href="'/dirigentes/%s/miembro/%s' % (section.id, row['member'].id)" t-out="row['member'].scout_name or row['member'].name"/>
                                 <small class="d-block text-muted"><t t-out="row['member'].scout_patrol_id.name or ''"/><t t-if="row['specialties']"> · <t t-out="row['specialties']"/> esp.</t></small></td>
                             <td class="o_sl_achv_thermo">
                                 <div class="o_sl_thermo"><div class="o_sl_thermo_fill" t-att-style="'width:' + str(row['pct']) + '%'"/></div>
                                 <small class="o_sl_thermo_txt" t-out="'%s/%s' % (row['done'], row['total'])"/>
-                                <small t-if="row['next']" class="d-block text-muted text-truncate" style="max-width: 7rem" t-out="row['next'].name"/>
+                                <small t-if="row['next']" class="d-block text-muted text-truncate" style="max-width: 7rem" t-out="svc.stage_label(row['next'], section)"/>
                             </td>
                             <td t-foreach="zip(columns, row['cells'])" t-as="pair" class="o_sl_achv_cell" t-att-data-stage="pair[0].id"
                                 t-att-data-state="pair[1].state if pair[1] else 'none'"
@@ -895,6 +958,7 @@
                     </tbody>
                 </table>
             </div>
+            </t>
         </t>
     </template>
 
@@ -940,11 +1004,13 @@
     <!-- Ficha de registro con firma del tutor y cobro -->
     <template id="leader_member_register" name="Dirigentes: ficha de registro">
         <t t-call="scout_management.leader_layout">
-            <h5 class="o_sl_h mb-0">Ficha de registro</h5>
+            <h5 class="o_sl_h mb-0" t-out="svc.registration_label(member) if svc.registration_label(member) != 'Ficha y firma' else 'Ficha de registro'"/>
+            <div t-if="member.scout_state == 'inactive'" class="alert alert-info o_sl_alert mx-0"><i class="fa fa-undo"/> Reingreso: el jefe de grupo lo reactiva al aprobar la solicitud.</div>
             <div class="text-muted mb-2"><t t-out="member.name"/> · Ciclo <t t-out="cycle.name if cycle else '—'"/>
                 <t t-if="cycle and cycle.registration_fee"> · Cuota <b t-out="money(cycle.registration_fee)"/></t></div>
             <div t-if="registration and registration.state == 'validated'" class="alert alert-success o_sl_alert">La ficha de este ciclo ya está validada.</div>
-            <form t-else="" t-att-action="'/dirigentes/%s/miembro/%s/registro' % (section.id, member.id)" method="post" class="o_sl_form o_scout_register_form">
+            <form t-else="" t-att-action="'/dirigentes/%s/miembro/%s/registro' % (section.id, member.id)" method="post" class="o_sl_form o_scout_register_form"
+                  t-att-data-sl-require-ine="'0' if registration and registration.guardian_id_front else '1'">
                 <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
                 <input type="hidden" name="photo_data"/>
                 <div t-if="not member.image_128" class="o_sl_photo_box">
@@ -956,16 +1022,41 @@
                     <b>Datos:</b> <t t-out="member.name"/>, <t t-out="member.scout_birthdate and member.scout_birthdate.strftime('%d/%m/%Y') or 'sin fecha de nacimiento'"/>.
                     Tutor: <t t-out="member.scout_guardian_id.name or '—'"/> <t t-out="member.scout_guardian_id.phone or ''"/>.
                 </div>
-                <h6 class="o_sl_sub">El padre, madre o tutor autoriza:</h6>
+                <h6 class="o_sl_sub">Identificación del tutor</h6>
+                <div class="o_sl_ine_box">
+                    <input type="hidden" name="ine_front_data"/>
+                    <input type="hidden" name="ine_back_data"/>
+                    <div class="row g-2">
+                        <div class="col-6">
+                            <label class="o_sl_ine_pick">
+                                <img class="o_sl_ine_front_prev d-none" alt=""/>
+                                <span><i class="fa fa-id-card-o"/> INE frente *</span>
+                                <input type="file" accept="image/*,application/pdf" capture="environment" class="d-none" data-sl-photo="1"
+                                       data-sl-target="ine_front_data" data-sl-preview=".o_sl_ine_front_prev" data-sl-max="1600"/>
+                            </label>
+                        </div>
+                        <div class="col-6">
+                            <label class="o_sl_ine_pick">
+                                <img class="o_sl_ine_back_prev d-none" alt=""/>
+                                <span><i class="fa fa-id-card-o"/> INE reverso</span>
+                                <input type="file" accept="image/*,application/pdf" capture="environment" class="d-none" data-sl-photo="1"
+                                       data-sl-target="ine_back_data" data-sl-preview=".o_sl_ine_back_prev" data-sl-max="1600"/>
+                            </label>
+                        </div>
+                    </div>
+                    <small t-if="registration and registration.guardian_id_front" class="text-success d-block mt-1"><i class="fa fa-check"/> Ya se tiene la INE del tutor; solo vuelve a tomarla si cambió.</small>
+                </div>
+                <h6 class="o_sl_sub mt-3">El padre, madre o tutor autoriza:</h6>
                 <label class="o_sl_check"><input type="checkbox" name="consent_participation" value="1" required="1"/> La participación en las actividades del grupo.</label>
                 <label class="o_sl_check"><input type="checkbox" name="consent_first_aid" value="1" required="1"/> Primeros auxilios y traslado médico en caso de emergencia.</label>
+                <label class="o_sl_check"><input type="checkbox" name="consent_image" value="1" required="1"/> El uso de imagen (fotografías y videos) para fines educativos e institucionales del grupo.</label>
                 <label class="o_sl_check"><input type="checkbox" name="consent_data" value="1" required="1"/> El tratamiento de sus datos personales para la operación del grupo.</label>
                 <label class="o_sl_check"><input type="checkbox" name="consent_risk" value="1" required="1"/> Conoce los riesgos de las actividades al aire libre.</label>
                 <label class="o_sl_check"><input type="checkbox" name="consent_update" value="1" required="1"/> Se compromete a mantener los datos actualizados.</label>
-                <label class="o_sl_check"><input type="checkbox" name="consent_image" value="1"/> Uso de imagen (opcional).</label>
                 <label class="form-label mt-2">Nombre de quien firma *</label>
                 <input name="guardian_signed_by" class="form-control" required="1" t-att-value="member.scout_guardian_id.name or ''"/>
                 <label class="form-label mt-2">Firma del tutor *</label>
+                <div class="alert alert-warning o_sl_alert mx-0 mt-0 mb-2 py-2 small"><i class="fa fa-exclamation-triangle"/> <b>La firma debe ser igual a la de su INE.</b> El tutor firma con el dedo dentro del recuadro.</div>
                 <div class="o_scout_signature" data-input="guardian_signature">
                     <canvas class="o_scout_signature_pad"/>
                     <button type="button" class="btn btn-sm btn-link o_scout_signature_clear">Borrar firma</button>
@@ -998,8 +1089,13 @@
                     <a class="btn o_sl_btn_wa o_sl_btn_big" t-att-href="pay['whatsapp']" target="_blank"><i class="fa fa-whatsapp"/> Enviar liga por WhatsApp</a>
                     <button type="button" class="btn o_sl_btn_outline" t-att-data-sl-copy="pay['link']"><i class="fa fa-copy"/> Copiar liga</button>
                     <a class="btn o_sl_btn_outline" t-att-href="pay['link']" target="_blank"><i class="fa fa-credit-card"/> Pagar aquí ahora</a>
+                    <form t-att-action="'/dirigentes/%s/miembro/%s/pago/efectivo' % (section.id, member.id)" method="post" class="d-grid">
+                        <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
+                        <button class="btn o_sl_btn_outline" type="submit"><i class="fa fa-money"/> Pagará en efectivo</button>
+                    </form>
                 </div>
-                <p class="small text-muted mt-2">¿Paga en efectivo? Entrégalo a tesorería; ellos registran el pago y la liga deja de cobrar.</p>
+                <p class="small text-muted mt-2">Efectivo: se entrega a tesorería, que registra el pago y emite el recibo; la liga deja de cobrar.</p>
+                <p t-if="pay['registration'].payment_method" class="small"><b>Forma elegida:</b> <t t-out="dict(pay['registration']._fields['payment_method'].selection).get(pay['registration'].payment_method)"/></p>
             </t>
             <div t-elif="inv and inv.payment_state in ('paid', 'in_payment')" class="alert alert-success o_sl_alert"><i class="fa fa-check-circle"/> El registro ya está pagado.</div>
             <div t-elif="pay.get('registration') and not inv" class="alert alert-info o_sl_alert">No hay cuota de registro configurada en el ciclo; tesorería hará el cargo.</div>
@@ -1125,7 +1221,8 @@
         <div t-attf-class="o_sl_route_card o_sl_route_#{r.alert}">
             <div class="d-flex justify-content-between align-items-start gap-2">
                 <div>
-                    <b t-out="r.member_id.name"/>
+                    <a t-if="not incoming_view" class="o_sl_mlink fw-bold" t-att-href="'/dirigentes/%s/miembro/%s' % (section.id, r.member_id.id)" t-out="r.member_id.name"/>
+                    <b t-else="" t-out="r.member_id.name"/>
                     <small class="d-block text-muted"><t t-out="r.age_label or 'Sin fecha de nacimiento'"/><t t-if="incoming_view"> · <t t-out="r.section_id.name"/></t></small>
                 </div>
                 <div class="text-end">
@@ -1149,6 +1246,12 @@
                 <input type="hidden" name="route_id" t-att-value="r.id"/>
                 <input type="date" name="date" class="form-control form-control-sm" t-att-value="today" style="max-width: 10rem"/>
                 <button class="btn btn-sm o_sl_btn flex-fill" type="submit"><i class="fa fa-road"/> Registrar inicio de ruta</button>
+            </form>
+            <form t-if="incoming_view and r.kind == 'transfer'" t-att-action="'/dirigentes/%s/rutas/recibir' % section.id" method="post" class="mt-2">
+                <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
+                <input type="hidden" name="route_id" t-att-value="r.id"/>
+                <button class="btn btn-sm o_sl_btn w-100" type="submit"><i class="fa fa-sign-in"/> Ya ingresó a mi sección</button>
+                <small class="d-block text-muted mt-1">Pasa a tu sección sin patrulla; se la asignas después en "Patrullas y cargos".</small>
             </form>
         </div>
     </template>
@@ -1226,6 +1329,47 @@
                     <button type="button" class="btn o_sl_btn o_sl_btn_big mt-2 o_sl_save_plan"><i class="fa fa-save"/> Revisé el programa: guardar</button>
                     <p class="small text-muted mt-2">Nada se guarda hasta que tocas "Guardar". Las casillas se marcan solo cuando el dictado lo respalda; tócalas para activarlas o quitarlas.</p>
                 </t>
+            </div>
+        </t>
+    </template>
+
+    <!-- Reingresos -->
+    <template id="leader_returns" name="Dirigentes: reingresos">
+        <t t-call="scout_management.leader_layout">
+            <h5 class="o_sl_h">Reingresos</h5>
+            <p class="o_sl_hint">Miembros de tu sección que están dados de baja. Al solicitar el reingreso se llena su ficha con la INE y la firma del tutor y se genera su liga de pago; el jefe de grupo lo reactiva al aprobar.</p>
+            <input class="form-control my-2" placeholder="Buscar…" data-sl-filter=".o_sl_former"/>
+            <div t-if="not former" class="text-muted">No hay bajas en tu sección.</div>
+            <details t-foreach="former" t-as="person" class="o_sl_card_box o_sl_former">
+                <summary class="d-flex align-items-center gap-2">
+                    <t t-call="scout_management.leader_avatar"/>
+                    <div class="flex-grow-1"><b t-out="person.name"/>
+                        <small class="d-block text-muted">Baja: <t t-out="person.scout_leave_date and person.scout_leave_date.strftime('%d/%m/%Y') or '—'"/> · <t t-out="person.scout_age"/> años</small></div>
+                    <span class="btn btn-sm o_sl_btn">Reingreso</span>
+                </summary>
+                <form t-att-action="'/dirigentes/%s/reingreso/%s' % (section.id, person.id)" method="post" class="mt-2">
+                    <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
+                    <label class="form-label">Motivo / comentario</label>
+                    <textarea name="reason" class="form-control" rows="2" placeholder="Ej. Regresa después de un año fuera"/>
+                    <button class="btn o_sl_btn w-100 mt-2" type="submit"><i class="fa fa-undo"/> Solicitar reingreso y llenar ficha</button>
+                </form>
+            </details>
+        </t>
+    </template>
+
+    <!-- Liga para que las familias inscriban a sus hijos -->
+    <template id="leader_family_link" name="Dirigentes: liga para papás">
+        <t t-call="scout_management.leader_layout">
+            <h5 class="o_sl_h">Liga de inscripción para papás</h5>
+            <p class="o_sl_hint">Compártela con las familias de nuevos ingresos: llenan la ficha desde su celular (sin usuario), la sección se propone por edad y sexo, firman, adjuntan su INE y eligen pagar en línea o en efectivo. Para renovar la ficha de alguien que ya es miembro, usa "Liga de ficha a la familia" en su ficha.</p>
+            <div class="o_sl_card_box text-center">
+                <img t-att-src="qr" class="o_sl_qr" alt="QR"/>
+                <div class="small text-break mt-2" t-out="link"/>
+            </div>
+            <div class="d-grid gap-2">
+                <a class="btn o_sl_btn_wa o_sl_btn_big" t-att-href="whatsapp" target="_blank"><i class="fa fa-whatsapp"/> Compartir por WhatsApp</a>
+                <button type="button" class="btn o_sl_btn_outline" t-att-data-sl-copy="link"><i class="fa fa-copy"/> Copiar liga</button>
+                <a class="btn o_sl_btn_outline" t-att-href="link" target="_blank"><i class="fa fa-eye"/> Ver cómo la ven los papás</a>
             </div>
         </t>
     </template>

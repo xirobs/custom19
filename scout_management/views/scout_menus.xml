@@ -31,6 +31,7 @@
     <menuitem id="menu_scout_member" name="Miembros" parent="menu_scout_members" action="action_scout_member" sequence="10"/>
     <menuitem id="menu_scout_registration" name="Fichas de registro" parent="menu_scout_members" action="action_scout_registration" sequence="20"/>
     <menuitem id="menu_scout_member_import" name="Carga masiva desde Excel" parent="menu_scout_members" action="action_scout_member_import" sequence="25" groups="group_scout_officer"/>
+    <menuitem id="menu_scout_signup_link" name="Liga de inscripción para papás" parent="menu_scout_members" action="action_scout_signup_link" sequence="22"/>
     <menuitem id="menu_scout_route" name="Control de rutas de enlace y permanencia" parent="menu_scout_members" action="action_scout_route" sequence="28"/>
     <menuitem id="menu_scout_progress" name="Avances de recorridos" parent="menu_scout_members" action="action_scout_member_progress" sequence="30"/>
     <menuitem id="menu_scout_member_change" name="Bajas y cambios de sección" parent="menu_scout_members" action="action_scout_member_change" sequence="40"/>

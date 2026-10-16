@@ -29,6 +29,18 @@
             .sc-table { width: 100%; border-collapse: collapse; }
             .sc-table th, .sc-table td { border: 1px solid #a9b6c2; padding: 2px 3px; }
             .sc-table th { background: #0f3049; color: #fff; }
+            .sc-grid { width: 100%; border-collapse: separate; border-spacing: 8px 0; table-layout: fixed; margin: 0 -8px; }
+            .sc-grid td { vertical-align: top; padding: 0 0 7px 0; }
+            .sc-f-l { font-size: 8.5px; font-weight: 700; text-transform: uppercase; letter-spacing: .4px; color: #4a6378; line-height: 11px; }
+            .sc-f-v { border-bottom: 1px solid #0f3049; min-height: 16px; line-height: 15px; padding: 1px 2px 0 2px; font-size: 11px; word-wrap: break-word; }
+            .sc-f-v.multi { min-height: 46px; white-space: pre-line; }
+            .sc-opts { width: 100%; border-collapse: collapse; table-layout: fixed; margin: 1px 0 6px 0; }
+            .sc-opts td { padding: 2px 0; font-size: 10px; line-height: 13px; vertical-align: middle; }
+            .sc-chk2 { display: inline-block; width: 10px; height: 10px; border: 1px solid #0f3049; text-align: center; line-height: 10px; font-size: 9px; font-weight: 800; margin-right: 4px; vertical-align: -1px; }
+            .sc-sub { font-size: 9px; font-weight: 800; color: #0f3049; text-transform: uppercase; margin: 2px 0 3px 0; }
+            .sc-consent2 { width: 100%; border-collapse: collapse; }
+            .sc-consent2 td { padding: 2px 0 4px 0; font-size: 10px; line-height: 13px; vertical-align: top; }
+            .sc-consent2 td.c { width: 16px; }
         </style>
     </template>
 
@@ -63,106 +75,122 @@
                         </table>
                         <t t-call="scout_management.scout_greca"/>
 
+                        <t t-set="fdate" t-value="lambda d: d and d.strftime('%d / %m / %Y') or ''"/>
                         <div class="sc-box">
-                            <div class="sc-title"><span class="sc-num">1</span>DATOS DE REGISTRO</div>
-                            <table class="sc-row">
+                            <div class="sc-title"><span class="sc-num">1</span>DATOS DE REGISTRO
+                                <span t-if="doc.kind" style="float: right; font-size: 10px; color: #f36f45;" t-out="dict(doc._fields['kind'].selection).get(doc.kind, '').upper()"/></div>
+                            <table class="sc-grid">
                                 <tr>
-                                    <td class="sc-label">Nombres:</td><td class="sc-val" t-out="doc.first_name"/>
-                                    <td class="sc-label">Apellido paterno:</td><td class="sc-val" t-out="doc.last_name"/>
-                                    <td class="sc-label">Apellido materno:</td><td class="sc-val" t-out="doc.last_name2"/>
+                                    <td style="width: 34%;"><div class="sc-f-l">Nombre(s)</div><div class="sc-f-v" t-out="doc.first_name or ''"/></td>
+                                    <td style="width: 33%;"><div class="sc-f-l">Apellido paterno</div><div class="sc-f-v" t-out="doc.last_name or ''"/></td>
+                                    <td style="width: 33%;"><div class="sc-f-l">Apellido materno</div><div class="sc-f-v" t-out="doc.last_name2 or ''"/></td>
                                 </tr>
                             </table>
-                            <table class="sc-row">
+                            <table class="sc-grid">
                                 <tr>
-                                    <td class="sc-label">Fecha de nacimiento:</td>
-                                    <td class="sc-val" t-out="doc.birthdate and doc.birthdate.strftime('%d / %m / %Y') or ''"/>
-                                    <td class="sc-label">Edad:</td><td class="sc-val" t-out="doc.age or ''"/>
-                                    <td class="sc-label">Sección / Jefatura (a cargo):</td><td class="sc-val" t-out="(doc.leadership_position_id.name or '') + ((' - ' + ', '.join(doc.leading_section_ids.mapped('name'))) if doc.leading_section_ids else '')"/>
+                                    <td style="width: 24%;"><div class="sc-f-l">Fecha de nacimiento</div><div class="sc-f-v" t-out="fdate(doc.birthdate)"/></td>
+                                    <td style="width: 12%;"><div class="sc-f-l">Edad</div><div class="sc-f-v" t-out="doc.age or ''"/></td>
+                                    <td style="width: 16%;"><div class="sc-f-l">Sexo</div><div class="sc-f-v" t-out="dict(doc._fields['gender'].selection).get(doc.gender, '')"/></td>
+                                    <td style="width: 48%;"><div class="sc-f-l">Sección asignada</div><div class="sc-f-v" t-out="doc.section_id.name or ''"/></td>
                                 </tr>
                             </table>
-                            <div style="margin: 4px 0;">
-                                <span class="sc-label">Sección: </span>
-                                <t t-foreach="sections" t-as="section">
-                                    <span class="sc-opt"><span class="sc-chk" t-out="chk(doc.section_id == section)"/><t t-out="section.name.upper()"/></span>
-                                </t>
-                            </div>
-                            <table class="sc-row"><tr><td class="sc-label">Domicilio:</td><td class="sc-val" style="width: 100%;" t-out="doc.street"/></tr></table>
+                            <table t-if="doc.leadership_position_id or doc.leading_section_ids" class="sc-grid">
+                                <tr><td><div class="sc-f-l">Jefatura / cargo</div><div class="sc-f-v" t-out="(doc.leadership_position_id.name or '') + ((' - ' + ', '.join(doc.leading_section_ids.mapped('name'))) if doc.leading_section_ids else '')"/></td></tr>
+                            </table>
+                            <div class="sc-sub">Sección</div>
+                            <t t-set="sec_rows" t-value="[sections[i:i + 4] for i in range(0, len(sections), 4)]"/>
+                            <table class="sc-opts">
+                                <tr t-foreach="sec_rows" t-as="sec_row">
+                                    <td t-foreach="sec_row" t-as="section" style="width: 25%;"><span class="sc-chk2" t-out="chk(doc.section_id == section)"/><t t-out="section.name.upper()"/></td>
+                                    <td t-foreach="range(4 - len(sec_row))" t-as="pad" style="width: 25%;"/>
+                                </tr>
+                            </table>
+                            <table class="sc-grid">
+                                <tr><td><div class="sc-f-l">Domicilio</div><div class="sc-f-v" t-out="doc.street or ''"/></td></tr>
+                            </table>
                         </div>
-
                         <div class="sc-box">
                             <div class="sc-title"><span class="sc-num">2</span>DATOS DEL PADRE, MADRE, TUTOR O PERSONA PARA AVISAR EN CASO DE ACCIDENTE</div>
-                            <table class="sc-row">
+                            <table class="sc-grid">
                                 <tr>
-                                    <td class="sc-label">Nombre completo:</td><td class="sc-val" style="width: 60%;" t-out="doc.guardian_name"/>
-                                    <td class="sc-label">Parentesco:</td><td class="sc-val" t-out="doc.guardian_relationship"/>
-                                </tr>
-                                <tr>
-                                    <td class="sc-label">Teléfono principal (celular):</td><td class="sc-val" t-out="doc.guardian_phone"/>
-                                    <td class="sc-label">Teléfono alterno:</td><td class="sc-val" t-out="doc.guardian_phone_alt"/>
-                                </tr>
-                                <tr>
-                                    <td class="sc-label">Correo electrónico:</td><td class="sc-val" colspan="3" t-out="doc.guardian_email"/>
-                                </tr>
-                                <tr>
-                                    <td class="sc-label">Domicilio (si es distinto):</td><td class="sc-val" colspan="3" t-out="doc.guardian_street"/>
+                                    <td style="width: 70%;"><div class="sc-f-l">Nombre completo</div><div class="sc-f-v" t-out="doc.guardian_name or ''"/></td>
+                                    <td style="width: 30%;"><div class="sc-f-l">Parentesco</div><div class="sc-f-v" t-out="doc.guardian_relationship or ''"/></td>
                                 </tr>
                             </table>
+                            <table class="sc-grid">
+                                <tr>
+                                    <td style="width: 25%;"><div class="sc-f-l">Teléfono celular</div><div class="sc-f-v" t-out="doc.guardian_phone or ''"/></td>
+                                    <td style="width: 25%;"><div class="sc-f-l">Teléfono alterno</div><div class="sc-f-v" t-out="doc.guardian_phone_alt or ''"/></td>
+                                    <td style="width: 50%;"><div class="sc-f-l">Correo electrónico</div><div class="sc-f-v" t-out="doc.guardian_email or ''"/></td>
+                                </tr>
+                            </table>
+                            <table class="sc-grid">
+                                <tr><td><div class="sc-f-l">Domicilio (si es distinto)</div><div class="sc-f-v" t-out="doc.guardian_street or ''"/></td></tr>
+                            </table>
                         </div>
-
                         <div class="sc-box">
                             <div class="sc-title"><span class="sc-num">3</span>INFORMACIÓN MÉDICA</div>
                             <t t-if="can_see_medical">
                                 <t t-set="med" t-value="doc.sudo()"/>
-                                <table class="sc-row">
+                                <table class="sc-grid">
                                     <tr>
-                                        <td style="width: 50%; vertical-align: top;">
-                                            <div class="sc-label" style="text-align: center;">SERVICIO MÉDICO</div>
-                                            <span class="sc-opt"><span class="sc-chk" t-out="chk(med.medical_service == 'imss')"/>IMSS</span>
-                                            <span class="sc-opt"><span class="sc-chk" t-out="chk(med.medical_service == 'issste')"/>ISSSTE</span>
-                                            <span class="sc-opt"><span class="sc-chk" t-out="chk(med.medical_service == 'private')"/>Seguro particular</span>
-                                            <span class="sc-opt"><span class="sc-chk" t-out="chk(med.medical_service == 'none')"/>No tengo</span>
-                                            <table class="sc-row">
-                                                <tr><td class="sc-label">No. de afiliación o póliza:</td><td class="sc-val" t-out="med.medical_policy"/></tr>
-                                                <tr><td class="sc-label">Tipo de sangre:</td><td class="sc-val"><span t-field="med.blood_type"/></td></tr>
+                                        <td style="width: 46%;">
+                                            <div class="sc-sub">Servicio médico</div>
+                                            <table class="sc-opts">
+                                                <tr>
+                                                    <td style="width: 26%;"><span class="sc-chk2" t-out="chk(med.medical_service == 'imss')"/>IMSS</td>
+                                                    <td style="width: 28%;"><span class="sc-chk2" t-out="chk(med.medical_service == 'issste')"/>ISSSTE</td>
+                                                    <td style="width: 46%;"><span class="sc-chk2" t-out="chk(med.medical_service == 'private')"/>Seguro particular</td>
+                                                </tr>
+                                                <tr><td colspan="3"><span class="sc-chk2" t-out="chk(med.medical_service == 'none')"/>No tengo</td></tr>
+                                            </table>
+                                            <table class="sc-grid">
+                                                <tr>
+                                                    <td style="width: 65%;"><div class="sc-f-l">No. de afiliación o póliza</div><div class="sc-f-v" t-out="med.medical_policy or ''"/></td>
+                                                    <td style="width: 35%;"><div class="sc-f-l">Tipo de sangre</div><div class="sc-f-v"><span t-if="med.blood_type" t-field="med.blood_type"/></div></td>
+                                                </tr>
                                             </table>
                                         </td>
-                                        <td style="width: 50%; vertical-align: top;">
-                                            <div class="sc-label" style="text-align: center;">CONDICIONES MÉDICAS RELEVANTES</div>
-                                            <div style="font-size: 9px; text-align: center;">(alergias, asma, medicamentos permanentes, hospitalización, cirugía, diabetes, hipertensión, patología, restricciones físicas u otras)</div>
-                                            <div class="sc-val" style="min-height: 40px; white-space: pre-line;" t-out="med.medical_conditions"/>
+                                        <td style="width: 54%;">
+                                            <div class="sc-sub">Condiciones médicas relevantes</div>
+                                            <div style="font-size: 8.5px; line-height: 11px; color: #4a6378;">Alergias, asma, medicamentos permanentes, hospitalización, cirugía, diabetes, hipertensión, restricciones físicas u otras.</div>
+                                            <div class="sc-f-v multi" t-out="med.medical_conditions or ''"/>
                                         </td>
                                     </tr>
                                 </table>
                             </t>
                             <div t-else="" class="text-muted">Información confidencial: visible solo para jefatura y dirigentes.</div>
                         </div>
-
                         <div class="sc-box">
-                            <div class="sc-title"><span class="sc-num">4</span>PAGOS DE REGISTRO</div>
-                            <div>¿Pagó su registro?
-                                <span class="sc-opt"><span class="sc-chk" t-out="chk(doc.declared_paid)"/>SI</span>
-                                <span class="sc-opt"><span class="sc-chk" t-out="chk(not doc.declared_paid)"/>NO</span>
-                            </div>
-                            <table class="sc-row">
+                            <div class="sc-title"><span class="sc-num">4</span>PAGO DE REGISTRO</div>
+                            <table class="sc-opts">
                                 <tr>
-                                    <td class="sc-label">Nro. de transferencia:</td><td class="sc-val" t-out="doc.payment_reference"/>
-                                    <td class="sc-label">Fecha:</td><td class="sc-val" t-out="doc.payment_date and doc.payment_date.strftime('%d / %m / %Y') or ''"/>
-                                    <td class="sc-label">Monto:</td>
-                                    <td class="sc-val"><span t-if="doc.payment_amount" t-field="doc.payment_amount"/></td>
+                                    <td style="width: 22%;"><b>Forma de pago:</b></td>
+                                    <td style="width: 26%;"><span class="sc-chk2" t-out="chk(doc.payment_method == 'online')"/>En línea (Mercado Pago)</td>
+                                    <td style="width: 16%;"><span class="sc-chk2" t-out="chk(doc.payment_method == 'cash')"/>Efectivo</td>
+                                    <td style="width: 18%;"><span class="sc-chk2" t-out="chk(doc.payment_method == 'transfer')"/>Transferencia</td>
+                                    <td style="width: 18%;"><span class="sc-chk2" t-out="chk(doc.payment_state == 'paid' or doc.declared_paid)"/><b>Pagado</b></td>
+                                </tr>
+                            </table>
+                            <table class="sc-grid">
+                                <tr>
+                                    <td style="width: 34%;"><div class="sc-f-l">Referencia / No. de operación</div><div class="sc-f-v" t-out="doc.payment_reference or ''"/></td>
+                                    <td style="width: 22%;"><div class="sc-f-l">Fecha</div><div class="sc-f-v" t-out="fdate(doc.payment_date)"/></td>
+                                    <td style="width: 22%;"><div class="sc-f-l">Monto</div><div class="sc-f-v"><span t-if="doc.payment_amount" t-field="doc.payment_amount"/></div></td>
+                                    <td style="width: 22%;"><div class="sc-f-l">Estado</div><div class="sc-f-v" t-out="dict(doc._fields['payment_state'].selection).get(doc.payment_state, '')"/></td>
                                 </tr>
                             </table>
                         </div>
-
                         <div class="sc-box">
                             <div class="sc-title"><span class="sc-num">5</span>CONSENTIMIENTO, AUTORIZACIONES Y RESPONSIVA</div>
-                            <ul class="sc-consent" style="list-style: none; padding-left: 0; margin-bottom: 4px;">
-                                <li><span class="sc-chk" t-out="chk(doc.consent_participation)"/>Autorizo la participación de mi hijo(a) en reuniones, campamentos, excursiones, actividades de servicio y demás actividades propias del programa educativo de <t t-out="doc.company_id.name"/>.</li>
-                                <li><span class="sc-chk" t-out="chk(doc.consent_first_aid)"/>Autorizo la aplicación de primeros auxilios y, en caso necesario, su traslado a un centro médico cuando la situación lo requiera y no sea posible localizarme oportunamente.</li>
-                                <li><span class="sc-chk" t-out="chk(doc.consent_image)"/>Autorizo de manera expresa el uso de fotografías, videos, grabaciones de voz y demás material audiovisual en los que aparezca mi hijo(a) para fines educativos, institucionales, históricos y de difusión del escultismo, sin fines de lucro y de acuerdo con los principios y valores del Movimiento Scout.</li>
-                                <li><span class="sc-chk" t-out="chk(doc.consent_data)"/>Autorizo el tratamiento de los datos personales proporcionados exclusivamente para fines administrativos, operativos, de seguridad y comunicación interna del Grupo, conforme al aviso de privacidad correspondiente.</li>
-                                <li><span class="sc-chk" t-out="chk(doc.consent_risk)"/>Reconozco que las actividades scouts se desarrollan principalmente al aire libre y pueden implicar riesgos inherentes propios de su naturaleza. El Grupo, sus dirigentes y voluntarios se comprometen a actuar con medidas razonables de seguridad; por lo que libero de responsabilidad al grupo y a sus colaboradores respecto de accidentes o lesiones derivados de riesgos propios de la actividad.</li>
-                                <li><span class="sc-chk" t-out="chk(doc.consent_update)"/>Me comprometo a mantener actualizada la información proporcionada y a informar cualquier cambio en datos personales, médicos o de contacto.</li>
-                            </ul>
+                            <table class="sc-consent2" style="margin-bottom: 4px;">
+                                <tr><td class="c"><span class="sc-chk2" t-out="chk(doc.consent_participation)"/></td><td>Autorizo la participación de mi hijo(a) en reuniones, campamentos, excursiones, actividades de servicio y demás actividades propias del programa educativo de <t t-out="doc.company_id.name"/>.</td></tr>
+                                <tr><td class="c"><span class="sc-chk2" t-out="chk(doc.consent_first_aid)"/></td><td>Autorizo la aplicación de primeros auxilios y, en caso necesario, su traslado a un centro médico cuando la situación lo requiera y no sea posible localizarme oportunamente.</td></tr>
+                                <tr><td class="c"><span class="sc-chk2" t-out="chk(doc.consent_image)"/></td><td>Autorizo de manera expresa el uso de fotografías, videos, grabaciones de voz y demás material audiovisual en los que aparezca mi hijo(a) para fines educativos, institucionales, históricos y de difusión del escultismo, sin fines de lucro y de acuerdo con los principios y valores del Movimiento Scout.</td></tr>
+                                <tr><td class="c"><span class="sc-chk2" t-out="chk(doc.consent_data)"/></td><td>Autorizo el tratamiento de los datos personales proporcionados exclusivamente para fines administrativos, operativos, de seguridad y comunicación interna del Grupo, conforme al aviso de privacidad correspondiente.</td></tr>
+                                <tr><td class="c"><span class="sc-chk2" t-out="chk(doc.consent_risk)"/></td><td>Reconozco que las actividades scouts se desarrollan principalmente al aire libre y pueden implicar riesgos inherentes propios de su naturaleza. El Grupo, sus dirigentes y voluntarios se comprometen a actuar con medidas razonables de seguridad; por lo que libero de responsabilidad al grupo y a sus colaboradores respecto de accidentes o lesiones derivados de riesgos propios de la actividad.</td></tr>
+                                <tr><td class="c"><span class="sc-chk2" t-out="chk(doc.consent_update)"/></td><td>Me comprometo a mantener actualizada la información proporcionada y a informar cualquier cambio en datos personales, médicos o de contacto.</td></tr>
+                            </table>
                             <div style="text-align: center; font-weight: 700; font-size: 10px;">
                                 CON MI FIRMA DECLARO HABER LEÍDO, COMPRENDIDO Y ACEPTADO ÍNTEGRAMENTE LA PRESENTE FICHA DE REGISTRO,
                                 SUS AUTORIZACIONES, CONDICIONES DE PARTICIPACIÓN Y REGLAMENTOS APLICABLES DE <t t-out="(doc.company_id.name or '').upper()"/>.
@@ -194,6 +222,17 @@
                             </div>
                         </div>
                         <t t-call="scout_management.scout_greca"><t t-set="greca_class" t-value="'sc-greca-foot'"/></t><div class="sc-motto">⚜ SIEMPRE LISTOS PARA SERVIR ⚜</div>
+                    </div>
+                    <div t-if="doc.guardian_id_front or doc.guardian_id_back" class="page sc-doc" style="page-break-before: always;">
+                        <div class="sc-title"><span class="sc-num">A</span>ANEXO: IDENTIFICACIÓN OFICIAL (INE) DEL PADRE, MADRE O TUTOR</div>
+                        <p style="font-size: 10px;">Ficha <t t-out="doc.name"/> · <t t-out="doc.guardian_signed_by or doc.guardian_name"/>. La firma de la ficha debe ser igual a la de esta identificación.</p>
+                        <t t-foreach="[('Frente', doc.guardian_id_front, doc.guardian_id_front_name), ('Reverso', doc.guardian_id_back, doc.guardian_id_back_name)]" t-as="ine">
+                            <div t-if="ine[1]" style="margin: 10px 0; text-align: center;">
+                                <div style="font-weight: 700; font-size: 10px;" t-out="ine[0]"/>
+                                <img t-if="not (ine[2] or '').lower().endswith('.pdf')" t-att-src="image_data_uri(ine[1])" style="max-width: 85%; max-height: 330px; border: 1px solid #999;"/>
+                                <div t-else="" style="font-size: 10px;">(La INE se adjuntó en PDF; está en la ficha en el sistema.)</div>
+                            </div>
+                        </t>
                     </div>
                 </t>
             </t>

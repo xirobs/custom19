@@ -454,7 +454,7 @@ class ScoutMemberImport(models.TransientModel):
             'manual_payment_state': manual,
             'signed_date': self._date(item.get('reg_date'), _('Fecha de la ficha')) or fields.Date.context_today(self),
             'consent_participation': True, 'consent_first_aid': True, 'consent_data': True,
-            'consent_risk': True, 'consent_update': True,
+            'consent_risk': True, 'consent_update': True, 'consent_image': True,
             'guardian_signed_by': member.scout_guardian_id.name or member.name,
             'validated_by_id': self.env.user.id,
         })

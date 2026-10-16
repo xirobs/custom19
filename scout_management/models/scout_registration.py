@@ -7,7 +7,7 @@ from .scout_common import BLOOD_TYPES, MEDICAL_SERVICES
 # Campos que se copian de la ficha al expediente del miembro al validar.
 MEMBER_SYNC_FIELDS = {
     'first_name': 'scout_first_name', 'last_name': 'scout_last_name', 'last_name2': 'scout_last_name2',
-    'birthdate': 'scout_birthdate', 'street': 'street', 'section_id': 'scout_section_id',
+    'birthdate': 'scout_birthdate', 'street': 'street', 'section_id': 'scout_section_id', 'gender': 'scout_gender',
     'guardian_relationship': 'scout_guardian_relationship', 'guardian_phone_alt': 'scout_guardian_phone_alt',
     'medical_service': 'scout_medical_service', 'medical_policy': 'scout_medical_policy',
     'blood_type': 'scout_blood_type', 'medical_conditions': 'scout_medical_conditions',
@@ -37,6 +37,7 @@ class ScoutRegistration(models.Model):
     last_name2 = fields.Char(string='Apellido materno')
     birthdate = fields.Date(string='Fecha de nacimiento')
     age = fields.Integer(string='Edad', compute='_compute_age')
+    gender = fields.Selection([('m', 'Masculino'), ('f', 'Femenino')], string='Sexo')
     section_id = fields.Many2one('scout.section', string='Sección')
     leadership_position_id = fields.Many2one('scout.position', string='Sección / Jefatura (a cargo)',
                                              domain="[('applies_to', 'in', ('leader', 'both'))]",
@@ -67,6 +68,9 @@ class ScoutRegistration(models.Model):
                                      groups='scout_management.group_scout_leader')
 
     # 4. Pago de registro
+    payment_method = fields.Selection([('online', 'En línea (Mercado Pago)'), ('cash', 'Efectivo'),
+                                       ('transfer', 'Transferencia')], string='Forma de pago', tracking=True,
+                                      help='Lo que eligió la familia al llenar la ficha.')
     declared_paid = fields.Boolean(string='¿Pagó su registro?')
     payment_reference = fields.Char(string='No. de transferencia')
     payment_date = fields.Date(string='Fecha de pago')
@@ -90,6 +94,14 @@ class ScoutRegistration(models.Model):
     consent_risk = fields.Boolean(string='Reconoce riesgos y libera de responsabilidad')
     consent_update = fields.Boolean(string='Se compromete a mantener datos actualizados')
     consent_complete = fields.Boolean(compute='_compute_consent_complete', string='Consentimientos completos')
+
+    # Identificación oficial del tutor (la firma debe ser igual a la de su INE)
+    guardian_id_front = fields.Binary(string='INE del tutor (frente)', attachment=True, copy=False)
+    guardian_id_front_name = fields.Char(copy=False)
+    guardian_id_back = fields.Binary(string='INE del tutor (reverso)', attachment=True, copy=False)
+    guardian_id_back_name = fields.Char(copy=False)
+    kind = fields.Selection([('new', 'Nuevo ingreso'), ('renewal', 'Renovación'), ('return', 'Reingreso')],
+                            string='Tipo de registro', default='new', tracking=True)
 
     # Firmas
     guardian_signature = fields.Binary(string='Firma del padre, madre o tutor', copy=False, attachment=True)
@@ -144,8 +156,7 @@ class ScoutRegistration(models.Model):
                  'consent_data', 'consent_risk', 'consent_update')
     def _compute_consent_complete(self):
         for reg in self:
-            # El uso de imagen es opcional: no bloquea la validación.
-            reg.consent_complete = all([reg.consent_participation, reg.consent_first_aid,
+            reg.consent_complete = all([reg.consent_participation, reg.consent_first_aid, reg.consent_image,
                                         reg.consent_data, reg.consent_risk, reg.consent_update])
 
     @api.onchange('member_id')
@@ -160,6 +171,14 @@ class ScoutRegistration(models.Model):
             self.guardian_name = member.scout_guardian_id.name
             self.guardian_phone = member.scout_guardian_id.phone
             self.guardian_email = member.scout_guardian_id.email
+
+    @api.onchange('birthdate', 'gender')
+    def _onchange_suggest_section(self):
+        """Propone la sección que le corresponde por edad y sexo (se puede cambiar)."""
+        if self.birthdate and not self.leadership_position_id:
+            section = self.env['scout.section']._scout_suggest(self.birthdate, self.gender)
+            if section:
+                self.section_id = section
 
     @api.onchange('guardian_id')
     def _onchange_guardian_id(self):
@@ -201,6 +220,72 @@ class ScoutRegistration(models.Model):
             reg._scout_request_approval(_('Validar ficha %(folio)s de %(name)s', folio=reg.name,
                                           name=reg.first_name))
 
+    # ------------------------------------------------------------------ pago (en línea o efectivo)
+    def _scout_prepare_for_payment(self):
+        """Deja listos tutor, miembro (en prueba) y cargo de la cuota para poder pagar en línea o en efectivo."""
+        for reg in self.sudo():
+            if not reg.guardian_id:
+                reg.guardian_id = reg._get_or_create_guardian()
+            if not reg.member_id:
+                vals = reg._prepare_member_vals()
+                vals.update(scout_state='trial', scout_guardian_id=reg.guardian_id.id or False)
+                reg.member_id = self.env['res.partner'].sudo().with_context(scout_change_approved=True).create(vals)
+            elif reg.guardian_id and not reg.member_id.scout_guardian_id:
+                reg.member_id.with_context(scout_change_approved=True).scout_guardian_id = reg.guardian_id
+            reg._create_registration_invoice()
+        return True
+
+    def _scout_set_payment_method(self, method):
+        """La familia elige cómo paga; si es efectivo se avisa a tesorería para cobrarlo."""
+        treasurers = self.env.ref('scout_management.group_scout_treasurer').sudo().all_user_ids.filtered(
+            lambda u: u.active and not u.share and u.id != 1)
+        todo = self.env.ref('mail.mail_activity_data_todo', raise_if_not_found=False)
+        for reg in self.sudo():
+            reg.payment_method = method
+            if method == 'cash' and reg.invoice_id and reg.payment_state not in ('paid', 'exempt'):
+                note = _('%(name)s pagará su registro en efectivo (%(amount)s). Al recibirlo usa "Registrar pago en '
+                         'efectivo" en la ficha %(folio)s.', name=reg.member_id.name or reg.first_name,
+                         amount='$%.2f' % reg.invoice_id.amount_residual, folio=reg.name)
+                for user in treasurers[:3]:
+                    reg.activity_schedule(activity_type_id=todo.id if todo else False,
+                                          summary=_('Cobrar registro en efectivo'), note=note, user_id=user.id)
+                reg.message_post(body=note)
+
+    def action_register_cash_payment(self):
+        """Tesorería recibió el efectivo: registra el pago del cargo en la caja."""
+        if not self.env.user.has_group('scout_management.group_scout_treasurer'):
+            raise UserError(_('El pago en efectivo lo registra tesorería.'))
+        for reg in self:
+            reg._scout_prepare_for_payment()
+            invoice = reg.invoice_id
+            if not invoice or invoice.payment_state in ('paid', 'in_payment'):
+                continue
+            cash = self.env['account.journal'].search([('type', '=', 'cash'),
+                                                       ('company_id', '=', reg.company_id.id)], limit=1)
+            if not cash:
+                cash = self.env['account.journal'].sudo().create({
+                    'name': _('Caja (efectivo)'), 'type': 'cash', 'code': 'CAJA',
+                    'company_id': reg.company_id.id})
+            self.env['account.payment.register'].with_context(
+                active_model='account.move', active_ids=invoice.ids).create({
+                    'journal_id': cash.id, 'payment_date': fields.Date.context_today(reg),
+                    'amount': invoice.amount_residual}).action_create_payments()
+            reg.payment_method = 'cash'
+            reg.activity_ids.filtered(lambda a: a.summary == _('Cobrar registro en efectivo')).action_feedback(
+                feedback=_('Pagado en efectivo'))
+            reg.message_post(body=_('Pago en efectivo registrado por %s.', self.env.user.name))
+        return True
+
+    def _scout_payment_path(self):
+        """Página pública para elegir pago en línea o en efectivo (liga para la familia)."""
+        self.ensure_one()
+        self.sudo()._portal_ensure_token()
+        return f'/scout/ficha/pago/{self.id}?access_token={self.sudo().access_token}'
+
+    def _scout_payment_url(self):
+        self.ensure_one()
+        return self.get_base_url().rstrip('/') + self._scout_payment_path()
+
     def action_cancel(self):
         self.write({'state': 'cancel'})
         self._scout_close_approval_activities(_('Cancelada'))
@@ -214,6 +299,8 @@ class ScoutRegistration(models.Model):
             raise UserError(_('La ficha %s no tiene marcados todos los consentimientos obligatorios.', self.name))
         if not self.guardian_signature and not self.guardian_signed_by:
             raise UserError(_('Falta la firma del padre, madre o tutor en la ficha %s.', self.name))
+        if self.source == 'portal' and not self.guardian_id_front:
+            raise UserError(_('Falta la INE del tutor en la ficha %s.', self.name))
         if not self.section_id:
             raise UserError(_('Indica la sección en la ficha %s.', self.name))
 
@@ -274,7 +361,10 @@ class ScoutRegistration(models.Model):
             Partner = self.env['res.partner'].sudo().with_context(scout_change_approved=True)
             if reg.member_id:
                 member = reg.member_id
-                if member.scout_section_id and member.scout_section_id != reg.section_id:
+                if member.scout_state == 'inactive':
+                    # Reingreso: la validación del jefe de grupo lo reactiva (puede volver a otra sección)
+                    member_vals.update({'scout_state': 'active', 'scout_leave_date': False})
+                elif member.scout_section_id and member.scout_section_id != reg.section_id:
                     member_vals.pop('scout_section_id', None)  # el cambio de sección va por solicitud aparte
                 Partner.browse(member.id).write(member_vals)
             else:

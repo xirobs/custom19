@@ -646,7 +646,32 @@ class ScoutLeaderPortal(models.AbstractModel):
 
     @api.model
     def patrol_color(self, patrol):
-        return PATROL_COLORS.get(patrol.color_name, '#0f3049') if patrol else '#9aa5b1'
+        if not patrol:
+            return '#9aa5b1'
+        return patrol.color_hex or PATROL_COLORS.get(patrol.color_name, '#0f3049')
+
+    @api.model
+    def edit_patrol(self, section, patrol_id, name, color_hex):
+        import re
+        patrol = self.env['scout.patrol'].sudo().browse(int(patrol_id or 0)).exists()
+        if not patrol or patrol.section_id != section:
+            raise AccessError(_('Ese equipo no es de tu sección.'))
+        vals = {}
+        if (name or '').strip():
+            vals['name'] = name.strip()
+        if color_hex and re.match(r'^#[0-9a-fA-F]{6}$', color_hex):
+            vals['color_hex'] = color_hex.lower()
+        if vals:
+            patrol.write(vals)
+            self._note(section, _('Equipo actualizado: %s', patrol.name))
+        return patrol
+
+    @api.model
+    def stage_label(self, stage, section):
+        """En Tropa la Promesa es la Tercera clase."""
+        if stage.stage_type == 'promise' and section.promise_label:
+            return section.promise_label
+        return stage.name
 
     @api.model
     def move_member(self, section, member_id, patrol_id):
@@ -786,6 +811,23 @@ class ScoutLeaderPortal(models.AbstractModel):
         return False
 
     @api.model
+    def _file_from_post(self, value):
+        """(base64, nombre) de una foto tomada con la cámara (data URL) o un archivo (imagen o PDF)."""
+        import base64
+        if hasattr(value, 'read'):
+            content = value.read()
+            if not content:
+                return None
+            if len(content) > 8 * 1024 * 1024:
+                raise UserError(_('El archivo no debe pasar de 8 MB.'))
+            return base64.b64encode(content), value.filename or 'ine'
+        if isinstance(value, str) and value.startswith('data:'):
+            head, data = value.split(',', 1)
+            ext = 'pdf' if 'pdf' in head else 'jpg'
+            return data.encode(), f'ine.{ext}'
+        return None
+
+    @api.model
     def set_photo(self, section, member_id, value):
         member = self._member(member_id, section)
         image = self._image_from_post(value)
@@ -849,9 +891,15 @@ class ScoutLeaderPortal(models.AbstractModel):
         signature = post.get('guardian_signature') or ''
         if not signature.startswith('data:image'):
             raise UserError(_('Falta la firma del padre, madre o tutor.'))
-        consents = ('consent_participation', 'consent_first_aid', 'consent_data', 'consent_risk', 'consent_update')
+        consents = ('consent_participation', 'consent_first_aid', 'consent_image', 'consent_data', 'consent_risk',
+                    'consent_update')
         if not all(post.get(c) for c in consents):
-            raise UserError(_('El tutor debe aceptar todas las autorizaciones obligatorias.'))
+            raise UserError(_('El tutor debe aceptar todas las autorizaciones (incluido el uso de imagen).'))
+        reg_existing = self.registration(member)
+        ine_front = self._file_from_post(post.get('ine_front_data') or post.get('ine_front'))
+        ine_back = self._file_from_post(post.get('ine_back_data') or post.get('ine_back'))
+        if not ine_front and not (reg_existing and reg_existing.guardian_id_front):
+            raise UserError(_('Adjunta la foto de la INE del tutor (frente).'))
         signed_by = (post.get('guardian_signed_by') or '').strip() or member.scout_guardian_id.name
         if not signed_by:
             raise UserError(_('Escribe el nombre de quien firma.'))
@@ -871,10 +919,16 @@ class ScoutLeaderPortal(models.AbstractModel):
             'guardian_relationship': member.scout_guardian_relationship, 'guardian_phone': guardian.phone,
             'guardian_email': guardian.email,
             'consent_participation': True, 'consent_first_aid': True, 'consent_data': True,
-            'consent_risk': True, 'consent_update': True, 'consent_image': bool(post.get('consent_image')),
+            'consent_risk': True, 'consent_update': True, 'consent_image': True,
             'guardian_signed_by': signed_by, 'guardian_signature': signature.split(',', 1)[1],
             'signed_date': self._today(), 'leader_user_id': self.env.uid,
         }
+        if ine_front:
+            vals.update(guardian_id_front=ine_front[0], guardian_id_front_name=ine_front[1])
+        if ine_back:
+            vals.update(guardian_id_back=ine_back[0], guardian_id_back_name=ine_back[1])
+        previous = Registration.search_count([('member_id', '=', member.id), ('cycle_id', '!=', cycle.id)])
+        vals['kind'] = 'return' if member.scout_state == 'inactive' else ('renewal' if previous else 'new')
         if reg:
             if reg.state == 'validated':
                 raise UserError(_('%s ya tiene su ficha validada en este ciclo.', member.name))
@@ -1016,3 +1070,89 @@ class ScoutLeaderPortal(models.AbstractModel):
             'time_from': start.strftime('%H:%M') if start else '16:00',
             'time_to': stop.strftime('%H:%M') if stop and stop.date() == start.date() else '18:00',
             'activity_type': 'regular'})
+
+    # ------------------------------------------------------------------ reingresos y renovaciones
+    @api.model
+    def former_members(self, section):
+        return self.env['res.partner'].sudo().search([
+            ('is_scout', '=', True), ('scout_type', '=', 'youth'), ('scout_state', '=', 'inactive'),
+            ('scout_section_id', '=', section.id)], order='scout_leave_date desc, name')
+
+    @api.model
+    def request_return(self, section, member_id, reason):
+        member = self._member(member_id, section)
+        if member.scout_state != 'inactive':
+            raise UserError(_('%s no está dado de baja.', member.name))
+        Change = self.env['scout.member.change'].sudo()
+        change = Change.search([('member_id', '=', member.id), ('change_type', '=', 'return'),
+                                ('state', '=', 'to_approve')], limit=1)
+        if not change:
+            change = Change.create({
+                'member_id': member.id, 'change_type': 'return', 'new_section_id': section.id,
+                'reason': (reason or '').strip() or _('Reingreso solicitado desde el portal de dirigentes'),
+            })
+        self._note(member, _('Reingreso solicitado a %s; falta el visto bueno del jefe de grupo', section.display_name))
+        return change
+
+    @api.model
+    def registration_label(self, member):
+        """Texto del botón de registro: renovar si ya tuvo fichas en ciclos anteriores."""
+        current = self.registration(member)
+        if current:
+            return _('Ficha y firma')
+        if member.scout_state == 'inactive':
+            return _('Ficha de reingreso')
+        cycle = self.env['scout.cycle'].sudo()._get_current()
+        if member.sudo().scout_registration_ids.filtered(lambda r: r.cycle_id != cycle and r.state != 'cancel'):
+            return _('Renovar registro %s', cycle.name or '')
+        return _('Ficha y firma')
+
+    # ------------------------------------------------------------------ recibir a quien viene de otra sección
+    @api.model
+    def receive_member(self, section, route_id):
+        """El jefe de la sección receptora marca que ya ingresó: pasa a su sección sin patrulla (la asigna después)."""
+        route = self.env['scout.route'].sudo().browse(int(route_id or 0)).exists()
+        if not route or route.destination_id != section or not route.is_open or route.kind != 'transfer':
+            raise AccessError(_('Ese beneficiario no viene a tu sección.'))
+        member = route.member_id
+        route.with_context(scout_route_receiver=True)._confirm(
+            self._today(), section, _('Recibido por %s en el portal de dirigentes.', self.env.user.name))
+        self._note(member, _('Ingresó a %s; falta asignarle %s.', section.display_name,
+                             (section.patrol_label or _('equipo')).lower()))
+        return member
+
+    @api.model
+    def recent_arrivals(self, section, days=90):
+        """Recién llegados de otra sección (para resaltarlos y asignarles patrulla)."""
+        since = self._today() - timedelta(days=days)
+        routes = self.env['scout.route'].sudo().search([('destination_id', '=', section.id), ('is_open', '=', False),
+                                                        ('date_pass_real', '>=', since)])
+        return routes.member_id.filtered(lambda m: m.scout_section_id == section)
+
+    # ------------------------------------------------------------------ especialidades por colores y técnicas
+    LEVEL_COLORS = [('', '#e8edf2', 'Sin nivel'), ('1', '#f2c200', 'Amarillo'), ('2', '#2e9e44', 'Verde'),
+                    ('3', '#d7262f', 'Rojo')]
+
+    @api.model
+    def specialty_summary(self, section):
+        """Por miembro: cuántas especialidades lleva en cada grupo (nivel amarillo / verde / rojo) y sus técnicas."""
+        members = self._members(section)
+        categories = [c for c, _stages in self.specialty_categories(section) if c]
+        progress = self.env['scout.member.progress'].sudo().search(
+            [('member_id', 'in', members.ids), ('state', '=', 'achieved'), ('stage_type', '=', 'specialty')])
+        rows = []
+        for member in members.sorted(lambda m: (m.scout_patrol_id.sequence or 999, m.name or '')):
+            mine = progress.filtered(lambda p: p.member_id == member)
+            cells = []
+            for category in categories:
+                done = mine.filtered(lambda p: p.stage_id.category_id == category)
+                individual = done.filtered(lambda p: not (p.stage_id.name or '').lower().startswith('insignia'))
+                level = min(len(individual), 3)
+                for p in done - individual:
+                    name = (p.stage_id.name or '').lower()
+                    level = max(level, 3 if 'rojo' in name else 2 if 'verde' in name else 1)
+                cells.append({'category': category, 'count': len(individual), 'level': level,
+                              'names': ', '.join(individual.stage_id.mapped('name'))})
+            rows.append({'member': member, 'cells': cells, 'total': len(mine)})
+        return categories, rows
+

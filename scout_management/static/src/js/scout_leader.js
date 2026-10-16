@@ -97,6 +97,10 @@ function setupTeams(root) {
         }
         card.classList.add("selected");
         sheet.querySelector(".o_sl_sheet_name").textContent = card.dataset.name;
+        const ficha = sheet.querySelector(".o_sl_sheet_ficha");
+        if (ficha) {
+            ficha.href = `/dirigentes/${sectionId}/miembro/${card.dataset.member}`;
+        }
         sheet.querySelectorAll("[data-move]").forEach((b) =>
             b.classList.toggle("active", b.dataset.move === (card.closest(".o_sl_team").dataset.patrol || "0"))
         );
@@ -245,7 +249,7 @@ function setupAchievements(table) {
     });
 }
 
-// ---------------------------------------------------------------- foto con la cámara (se reduce en el celular)
+// ---------------------------------------------------------------- foto con la cámara (se reduce en el celular) e INE
 function setupPhoto(input) {
     input.addEventListener("change", () => {
         const file = input.files && input.files[0];
@@ -253,19 +257,31 @@ function setupPhoto(input) {
             return;
         }
         const form = input.closest("form");
+        const target = form.querySelector(`input[name="${input.dataset.slTarget || "photo_data"}"]`);
+        const preview = input.dataset.slPreview ? form.querySelector(input.dataset.slPreview) : form.querySelector(".o_sl_photo_preview");
+        const max = Number(input.dataset.slMax || 900);
         const reader = new FileReader();
         reader.onload = () => {
+            if (file.type === "application/pdf") {
+                target.value = reader.result;
+                if (preview) {
+                    preview.classList.add("d-none");
+                }
+                const label = input.closest("label");
+                if (label) {
+                    label.classList.add("o_sl_done_file");
+                }
+                return;
+            }
             const img = new Image();
             img.onload = () => {
-                const max = 900;
                 const ratio = Math.min(1, max / Math.max(img.width, img.height));
                 const canvas = document.createElement("canvas");
                 canvas.width = Math.round(img.width * ratio);
                 canvas.height = Math.round(img.height * ratio);
                 canvas.getContext("2d").drawImage(img, 0, 0, canvas.width, canvas.height);
                 const data = canvas.toDataURL("image/jpeg", 0.85);
-                form.querySelector('input[name="photo_data"]').value = data;
-                const preview = form.querySelector(".o_sl_photo_preview");
+                target.value = data;
                 if (preview) {
                     preview.src = data;
                     preview.classList.remove("d-none");
@@ -278,6 +294,18 @@ function setupPhoto(input) {
         };
         reader.readAsDataURL(file);
     });
+}
+
+function setupRequireIne(form) {
+    form.addEventListener("submit", (ev) => {
+        const front = form.querySelector('input[name="ine_front_data"]');
+        if (front && !front.value && form.dataset.slRequireIne === "1") {
+            ev.preventDefault();
+            ev.stopImmediatePropagation();
+            toast("Falta la foto de la INE del tutor (frente).");
+            front.closest(".o_sl_ine_box").scrollIntoView({ behavior: "smooth", block: "center" });
+        }
+    }, true);
 }
 
 // ---------------------------------------------------------------- copiar liga
@@ -322,6 +350,7 @@ function start() {
     document.querySelectorAll(".o_sl_teams").forEach(setupTeams);
     document.querySelectorAll("table[data-sl-achievements]").forEach(setupAchievements);
     document.querySelectorAll("input[data-sl-photo]").forEach(setupPhoto);
+    document.querySelectorAll("form[data-sl-require-ine]").forEach(setupRequireIne);
     document.querySelectorAll("[data-sl-copy]").forEach(setupCopy);
     setupHelpers();
 }

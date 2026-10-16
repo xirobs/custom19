@@ -89,6 +89,24 @@ class ScoutProgressionStage(models.Model):
         self.env.flush_all()
         self._scout_assign_categories()
 
+    @api.model
+    def _scout_v44_migrate(self):
+        """En Tropa la Promesa y la Tercera clase son lo mismo: se archiva "Tercera clase" y sus registros pasan a Promesa."""
+        tercera = self.env.ref('scout_management.stage_tropa_tercera', raise_if_not_found=False)
+        promise = self.env.ref('scout_management.stage_promise', raise_if_not_found=False)
+        if not tercera or not promise:
+            return
+        Progress = self.env['scout.member.progress'].sudo()
+        for progress in Progress.search([('stage_id', '=', tercera.id)]):
+            existing = Progress.search([('member_id', '=', progress.member_id.id), ('stage_id', '=', promise.id)], limit=1)
+            if existing:
+                if existing.state != 'achieved' and progress.state == 'achieved':
+                    existing.write({'state': 'achieved', 'date_achieved': progress.date_achieved})
+                progress.unlink()
+            else:
+                progress.stage_id = promise
+        tercera.active = False
+
     @api.depends('stage_type')
     def _compute_type_order(self):
         order = {key: i for i, (key, _label) in enumerate(STAGE_TYPES)}

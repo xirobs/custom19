@@ -174,4 +174,31 @@
             </form>
         </field>
     </record>
+
+    <record id="view_scout_form_link_wizard" model="ir.ui.view">
+        <field name="name">scout.form.link.wizard.form</field>
+        <field name="model">scout.form.link.wizard</field>
+        <field name="arch" type="xml">
+            <form>
+                <group>
+                    <field name="member_id" invisible="not member_id"/>
+                    <field name="section_id" invisible="member_id"/>
+                    <field name="link" widget="CopyClipboardChar"/>
+                    <field name="qr_code" widget="image" options="{'size': [180, 180]}"/>
+                    <field name="phone"/>
+                </group>
+                <div class="text-muted small">La familia llena la ficha desde su celular sin usuario: la sección se propone por edad y sexo, firma, adjunta su INE y elige pagar en línea (Mercado Pago) o en efectivo.</div>
+                <footer>
+                    <button name="action_whatsapp" type="object" string="Enviar por WhatsApp" class="btn-primary" icon="fa-whatsapp"/>
+                    <button special="cancel" string="Cerrar"/>
+                </footer>
+            </form>
+        </field>
+    </record>
+    <record id="action_scout_signup_link" model="ir.actions.act_window">
+        <field name="name">Liga de inscripción para nuevos</field>
+        <field name="res_model">scout.form.link.wizard</field>
+        <field name="view_mode">form</field>
+        <field name="target">new</field>
+    </record>
 </odoo>

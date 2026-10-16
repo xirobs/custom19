@@ -14,6 +14,7 @@
                 <field name="guardian_name"/>
                 <field name="guardian_phone" optional="show"/>
                 <field name="source" optional="show"/>
+                <field name="kind" optional="show"/>
                 <field name="payment_state" widget="badge" decoration-success="payment_state in ('paid', 'exempt')"
                        decoration-warning="payment_state == 'partial'" decoration-danger="payment_state == 'not_paid'"/>
                 <field name="state" widget="badge" decoration-success="state == 'validated'"
@@ -34,6 +35,8 @@
                     <button name="action_validate" type="object" string="Validar ficha" class="btn-primary"
                             invisible="state not in ('draft', 'submitted', 'reviewed')" groups="scout_management.group_scout_manager"/>
                     <button name="%(scout_management.action_report_registration)d" type="action" string="Imprimir ficha"/>
+                    <button name="action_register_cash_payment" type="object" string="Registrar pago en efectivo" icon="fa-money"
+                            invisible="state == 'cancel' or payment_state in ('paid', 'exempt')" groups="scout_management.group_scout_treasurer"/>
                     <button name="action_draft" type="object" string="Regresar a borrador" invisible="state != 'cancel'"/>
                     <button name="action_cancel" type="object" string="Cancelar" invisible="state in ('cancel', 'validated')"/>
                     <field name="state" widget="statusbar" statusbar_visible="submitted,reviewed,validated"/>
@@ -51,6 +54,7 @@
                         </group>
                         <group>
                             <field name="source"/>
+                            <field name="kind"/>
                             <field name="reviewed_by_id" invisible="not reviewed_by_id"/>
                             <field name="validated_by_id" invisible="not validated_by_id"/>
                             <field name="company_id" groups="base.group_multi_company"/>
@@ -64,6 +68,7 @@
                                     <field name="last_name"/>
                                     <field name="last_name2"/>
                                     <field name="birthdate"/>
+                                    <field name="gender"/>
                                     <field name="age"/>
                                 </group>
                                 <group>
@@ -105,6 +110,7 @@
                         <page string="4. Pago de registro" name="payment">
                             <group>
                                 <group>
+                                    <field name="payment_method"/>
                                     <field name="declared_paid"/>
                                     <field name="payment_reference" invisible="not declared_paid"/>
                                     <field name="payment_date" invisible="not declared_paid"/>
@@ -130,6 +136,12 @@
                                 <field name="consent_risk"/>
                                 <field name="consent_update"/>
                                 <field name="consent_complete" invisible="1"/>
+                            </group>
+                            <group string="INE del tutor (la firma debe ser igual)">
+                                <field name="guardian_id_front" widget="image" filename="guardian_id_front_name" options="{'size': [0, 180]}"/>
+                                <field name="guardian_id_back" widget="image" filename="guardian_id_back_name" options="{'size': [0, 180]}"/>
+                                <field name="guardian_id_front_name" invisible="1"/>
+                                <field name="guardian_id_back_name" invisible="1"/>
                             </group>
                             <group string="Firmas">
                                 <group>

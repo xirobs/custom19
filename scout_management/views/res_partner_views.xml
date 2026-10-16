@@ -53,7 +53,12 @@
                     <div class="d-flex flex-wrap gap-2 mb-2">
                         <button name="action_scout_activate" type="object" string="Activar" class="btn-primary"
                                 invisible="scout_state != 'trial'" groups="scout_management.group_scout_manager"/>
-                        <button name="action_scout_new_registration" type="object" string="Nueva ficha de registro" class="btn-secondary"/>
+                        <button name="action_scout_new_registration" type="object" string="Renovar registro / nueva ficha" class="btn-secondary"
+                                invisible="scout_state == 'inactive'"/>
+                        <button name="action_scout_form_link" type="object" string="Liga de ficha para la familia" icon="fa-link" class="btn-secondary"
+                                invisible="scout_type != 'youth'"/>
+                        <button name="action_scout_request_return" type="object" string="Solicitar reingreso" class="btn-primary"
+                                invisible="scout_state != 'inactive'"/>
                         <button name="action_scout_request_section_change" type="object" string="Solicitar cambio de sección" class="btn-secondary"
                                 invisible="scout_state == 'inactive'"/>
                         <button name="action_scout_request_leave" type="object" string="Solicitar baja" class="btn-secondary"

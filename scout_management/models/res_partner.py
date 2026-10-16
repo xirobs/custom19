@@ -326,18 +326,23 @@ class ResPartner(models.Model):
     def action_scout_request_section_change(self):
         return self._scout_open_change('section')
 
+    def action_scout_request_return(self):
+        return self._scout_open_change('return')
+
     def _scout_open_change(self, change_type):
         self.ensure_one()
         return {
             'type': 'ir.actions.act_window',
-            'name': _('Solicitar baja') if change_type == 'leave' else _('Solicitar cambio de sección'),
+            'name': {'leave': _('Solicitar baja'), 'return': _('Solicitar reingreso')}.get(
+                change_type, _('Solicitar cambio de sección')),
             'res_model': 'scout.member.change',
             'view_mode': 'form',
             'target': 'new',
             'context': {
                 'default_member_id': self.id,
                 'default_change_type': change_type,
-                'default_new_section_id': self.scout_section_id.next_section_id.id if change_type == 'section' else False,
+                'default_new_section_id': (self.scout_section_id.next_section_id.id if change_type == 'section'
+                                           else self.scout_section_id.id if change_type == 'return' else False),
             },
         }
 

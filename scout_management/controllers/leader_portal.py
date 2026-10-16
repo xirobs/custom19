@@ -558,6 +558,34 @@ class ScoutLeaderPortal(http.Controller):
                    ('Content-Disposition', f'inline; filename="{name}.{ext}"')]
         return request.make_response(content, headers=headers)
 
+    # ------------------------------------------------------------------ reingresos
+    @http.route(['/dirigentes/<int:section_id>/reingreso'], type='http', auth='user', website=True, methods=['GET'])
+    def leader_returns(self, section_id, **kw):
+        section, redirect = self._section_or_redirect(section_id)
+        if redirect:
+            return redirect
+        return self._render('scout_management.leader_returns', section, 'members',
+                            former=self._svc().former_members(section))
+
+    @http.route(['/dirigentes/<int:section_id>/reingreso/<int:member_id>'], type='http', auth='user', website=True,
+                methods=['POST'])
+    def leader_return_request(self, section_id, member_id, **post):
+        section, redirect = self._section_or_redirect(section_id)
+        if redirect:
+            return redirect
+        svc = self._svc()
+        try:
+            svc.request_return(section, member_id, post.get('reason'))
+        except (UserError, AccessError, ValidationError) as e:
+            return self._back(f'/dirigentes/{section.id}/reingreso', error=str(e.args[0]))
+        reg = svc.registration(request.env['res.partner'].sudo().browse(member_id))
+        if reg and reg.state == 'validated':
+            return self._back(f'/dirigentes/{section.id}/reingreso',
+                              ok=_('Reingreso solicitado al jefe de grupo. Su ficha de este ciclo ya estaba validada, '
+                                   'así que no hace falta llenarla otra vez.'))
+        return self._back(f'/dirigentes/{section.id}/miembro/{member_id}/registro',
+                          ok=_('Reingreso solicitado al jefe de grupo. Llena la ficha con la INE y la firma del tutor.'))
+
     # ------------------------------------------------------------------ rutas de enlace y permanencia
     @http.route(['/dirigentes/<int:section_id>/rutas'], type='http', auth='user', website=True, methods=['GET'])
     def leader_routes(self, section_id, ver='mia', **kw):
@@ -583,6 +611,65 @@ class ScoutLeaderPortal(http.Controller):
         return self._back(url, ok=_('Ruta de enlace iniciada para %s. Se avisó a los jefes de ambas secciones.',
                                     route.member_id.name))
 
+    @http.route(['/dirigentes/<int:section_id>/rutas/recibir'], type='http', auth='user', website=True,
+                methods=['POST'])
+    def leader_route_receive(self, section_id, **post):
+        section, redirect = self._section_or_redirect(section_id)
+        if redirect:
+            return redirect
+        try:
+            member = self._svc().receive_member(section, post.get('route_id'))
+        except (UserError, AccessError, ValidationError) as e:
+            return self._back(f'/dirigentes/{section.id}/rutas?ver=recibo', error=str(e.args[0]))
+        return self._back(f'/dirigentes/{section.id}/equipos',
+                          ok=_('%(name)s ya es parte de %(section)s. Asígnale su %(team)s cuando corresponda.',
+                               name=member.name, section=section.display_name,
+                               team=(section.patrol_label or _('equipo')).lower()))
+
+    # ------------------------------------------------------------------ ligas para las familias
+    @http.route(['/dirigentes/<int:section_id>/liga'], type='http', auth='user', website=True)
+    def leader_family_link(self, section_id, **kw):
+        section, redirect = self._section_or_redirect(section_id)
+        if redirect:
+            return redirect
+        from ..models.scout_online_payment import scout_qr_data_uri
+        link = request.env['res.partner'].sudo()._scout_signup_url(section)
+        text = _('Hola, esta es la liga para inscribir a tu hijo(a) en %(group)s: llenas la ficha, firmas, adjuntas tu '
+                 'INE y eliges pagar en línea o en efectivo. %(link)s', group=request.env.company.name, link=link)
+        return self._render('scout_management.leader_family_link', section, 'members', link=link,
+                            qr=scout_qr_data_uri(link), whatsapp=f'https://wa.me/?text={quote(text)}')
+
+    @http.route(['/dirigentes/<int:section_id>/miembro/<int:member_id>/pago/efectivo'], type='http', auth='user',
+                website=True, methods=['POST'])
+    def leader_member_cash(self, section_id, member_id, **post):
+        section, redirect = self._section_or_redirect(section_id)
+        if redirect:
+            return redirect
+        svc = self._svc()
+        try:
+            member = svc._member(member_id, section)
+            reg = svc.registration(member)
+            if not reg:
+                raise UserError(_('Primero llena la ficha con la firma del tutor.'))
+            reg._scout_set_payment_method('cash')
+            svc._note(reg, _('La familia pagará en efectivo'))
+        except (UserError, AccessError) as e:
+            return self._back(f'/dirigentes/{section.id}/miembro/{member_id}/pago', error=str(e.args[0]))
+        return self._back(f'/dirigentes/{section.id}/miembro/{member_id}/pago',
+                          ok=_('Anotado: pagará en efectivo. Tesorería registra el pago al recibirlo.'))
+
+    @http.route(['/dirigentes/<int:section_id>/equipos/<int:patrol_id>/editar'], type='http', auth='user',
+                website=True, methods=['POST'])
+    def leader_team_edit(self, section_id, patrol_id, **post):
+        section, redirect = self._section_or_redirect(section_id)
+        if redirect:
+            return redirect
+        try:
+            self._svc().edit_patrol(section, patrol_id, post.get('name'), post.get('color_hex'))
+        except (UserError, AccessError, ValidationError) as e:
+            return self._back(f'/dirigentes/{section.id}/equipos', error=str(e.args[0]))
+        return self._back(f'/dirigentes/{section.id}/equipos', ok=_('Equipo actualizado.'))
+
     # ------------------------------------------------------------------ equipos
     @http.route(['/dirigentes/<int:section_id>/equipos'], type='http', auth='user', website=True, methods=['GET'])
     def leader_teams(self, section_id, **kw):
@@ -590,7 +677,8 @@ class ScoutLeaderPortal(http.Controller):
         if redirect:
             return redirect
         svc = self._svc()
-        return self._render('scout_management.leader_teams', section, 'members', board=svc.team_board(section))
+        return self._render('scout_management.leader_teams', section, 'members', board=svc.team_board(section),
+                            arrivals=svc.recent_arrivals(section))
 
     @http.route(['/dirigentes/<int:section_id>/equipos/nuevo'], type='http', auth='user', website=True,
                 methods=['POST'])
@@ -631,6 +719,12 @@ class ScoutLeaderPortal(http.Controller):
         svc = self._svc()
         categories = svc.specialty_categories(section)
         columns, title, current = svc.path_stages(section), _('Adelantos'), 'adelantos'
+        if ver == 'colores':
+            spec_categories, spec_rows = svc.specialty_summary(section)
+            return self._render('scout_management.leader_achievements', section, 'progress', columns=columns,
+                                title=_('Especialidades por colores y técnicas'), ver='colores',
+                                categories=categories, rows=[], spec_categories=spec_categories,
+                                spec_rows=spec_rows, level_colors=svc.LEVEL_COLORS)
         if ver and ver.startswith('cat'):
             key = ver[3:]
             for category, stages in categories:
@@ -639,7 +733,8 @@ class ScoutLeaderPortal(http.Controller):
                     break
         return self._render('scout_management.leader_achievements', section, 'progress', columns=columns,
                             title=title, ver=current, categories=categories,
-                            rows=svc.achievements(section, columns))
+                            rows=svc.achievements(section, columns), spec_categories=[], spec_rows=[],
+                            level_colors=svc.LEVEL_COLORS)
 
     @http.route(['/dirigentes/api/logro'], type='jsonrpc', auth='user')
     def leader_api_achievement(self, section_id, member_id, stage_id, **kw):
@@ -672,6 +767,12 @@ class ScoutLeaderPortal(http.Controller):
             values = {k: v for k, v in post.items() if isinstance(v, str) and k not in ('photo_data', 'csrf_token')}
             return self._render('scout_management.leader_new_member', section, 'members',
                                 patrols=section.sudo().patrol_ids, values=values, error=str(e.args[0]))
+        suggested = request.env['scout.section'].sudo()._scout_suggest(member.scout_birthdate, member.scout_gender)
+        if suggested and suggested != section:
+            svc._note(member, _('Por su edad y sexo le corresponde %s.', suggested.display_name))
+            return self._back(f'/dirigentes/{section.id}/miembro/{member.id}',
+                              error=_('Ojo: por su edad y sexo a %(name)s le corresponde %(sec)s. Pide a secretaría '
+                                      'el cambio de sección si aplica.', name=member.name, sec=suggested.display_name))
         if post.get('then') == 'registro':
             return request.redirect(f'/dirigentes/{section.id}/miembro/{member.id}/registro')
         return self._back(f'/dirigentes/{section.id}/miembro/{member.id}',

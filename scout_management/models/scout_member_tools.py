@@ -37,6 +37,7 @@ class ResPartnerScoutTools(models.Model):
     scout_reg_alert_date = fields.Date(string='Aviso de registro enviado', copy=False,
                                        help='Fecha en que se avisó a los jefes y a tesorería que debe registrarse.')
     scout_card_token = fields.Char(string='Clave de la credencial', copy=False, groups='base.group_system')
+    scout_form_token = fields.Char(string='Clave de la liga de ficha', copy=False, groups='base.group_system')
 
     # ------------------------------------------------------------------ edad
     def _compute_scout_age_alert(self):
@@ -157,5 +158,81 @@ class ResPartnerScoutTools(models.Model):
             return False
         return self.scout_type == 'leader' or self.scout_registration_status in ('paid', 'exempt')
 
+    # ------------------------------------------------------------------ ligas para que la familia llene la ficha
+    def _scout_form_url(self):
+        """Liga personal (sin contraseña) para que la familia renueve o complete la ficha de este miembro."""
+        self.ensure_one()
+        partner = self.sudo()
+        if not partner.scout_form_token:
+            partner.scout_form_token = secrets.token_urlsafe(16)
+        return f'{self.get_base_url().rstrip("/")}/scout/ficha/{self.id}/{partner.scout_form_token}'
+
+    @api.model
+    def _scout_signup_token(self):
+        params = self.env['ir.config_parameter'].sudo()
+        token = params.get_param('scout_management.signup_token')
+        if not token:
+            token = secrets.token_urlsafe(12)
+            params.set_param('scout_management.signup_token', token)
+        return token
+
+    @api.model
+    def _scout_signup_url(self, section=None):
+        """Liga general de inscripción para nuevos (la sección se propone por edad y sexo)."""
+        url = f'{self.get_base_url().rstrip("/")}/scout/inscripcion/{self._scout_signup_token()}'
+        return url + (f'?seccion={section.id}' if section else '')
+
+    def action_scout_form_link(self):
+        self.ensure_one()
+        return self.env['scout.form.link.wizard'].create({'member_id': self.id})._open()
+
     def action_scout_print_card(self):
         return self.env.ref('scout_management.action_report_member_card').report_action(self)
+
+
+class ScoutFormLinkWizard(models.TransientModel):
+    _name = 'scout.form.link.wizard'
+    _description = 'Liga para que la familia llene la ficha'
+
+    member_id = fields.Many2one('res.partner', string='Miembro', readonly=True)
+    section_id = fields.Many2one('scout.section', string='Sección (opcional)',
+                                 help='Solo para la liga general de nuevos: deja vacío para que se proponga por edad.')
+    link = fields.Char(string='Liga', compute='_compute_link')
+    qr_code = fields.Binary(string='QR', compute='_compute_link')
+    phone = fields.Char(string='WhatsApp')
+
+    @api.depends('member_id', 'section_id')
+    def _compute_link(self):
+        import base64
+        from .scout_online_payment import scout_qr_png
+        for wiz in self:
+            link = wiz.member_id._scout_form_url() if wiz.member_id else \
+                self.env['res.partner']._scout_signup_url(wiz.section_id or None)
+            wiz.link = link
+            wiz.qr_code = base64.b64encode(scout_qr_png(link))
+
+    @api.model_create_multi
+    def create(self, vals_list):
+        wizards = super().create(vals_list)
+        for wiz in wizards.filtered('member_id'):
+            wiz.phone = wiz.member_id.scout_guardian_id.phone
+        return wizards
+
+    def _open(self):
+        return {'type': 'ir.actions.act_window', 'name': _('Liga de ficha de registro'), 'res_model': self._name,
+                'res_id': self.id, 'view_mode': 'form', 'target': 'new'}
+
+    def action_whatsapp(self):
+        self.ensure_one()
+        from urllib.parse import quote
+        from .scout_online_payment import scout_whatsapp_phone
+        phone = scout_whatsapp_phone(self.phone)
+        if self.member_id:
+            text = _('Hola, esta es la liga para llenar (o renovar) la ficha de registro de %(name)s en %(group)s. '
+                     'Ahí mismo firmas, adjuntas tu INE y eliges pagar en línea o en efectivo: %(link)s',
+                     name=self.member_id.name, group=self.env.company.name, link=self.link)
+        else:
+            text = _('Hola, esta es la liga para inscribir a tu hijo(a) en %(group)s. Llena la ficha, firma, adjunta tu '
+                     'INE y elige pagar en línea o en efectivo: %(link)s', group=self.env.company.name, link=self.link)
+        return {'type': 'ir.actions.act_url', 'target': 'new',
+                'url': f'https://wa.me/{phone}?text={quote(text)}' if phone else f'https://wa.me/?text={quote(text)}'}

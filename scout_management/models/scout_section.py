@@ -83,6 +83,7 @@ class ScoutPatrol(models.Model):
         ('yellow', 'Amarillo'), ('blue', 'Azul'), ('red', 'Rojo'), ('green', 'Verde'),
         ('orange', 'Naranja'), ('purple', 'Morado'), ('brown', 'Café'), ('white', 'Blanco'),
     ], string='Color del equipo')
+    color_hex = fields.Char(string='Color (personalizado)', help='Color exacto del equipo, ej. #1f6fb5.')
     member_ids = fields.One2many('res.partner', 'scout_patrol_id', string='Integrantes')
     follow_leader_id = fields.Many2one('res.partner', string='Dirigente que da seguimiento',
                                        domain="[('is_scout', '=', True), ('scout_type', '=', 'leader')]")

@@ -55,3 +55,4 @@ access_scout_route_officer,scout.route officer,model_scout_route,group_scout_off
 access_scout_route_ext_wizard,scout.route.extension.wizard,model_scout_route_extension_wizard,group_scout_leader,1,1,1,1
 access_scout_route_confirm_wizard,scout.route.confirm.wizard,model_scout_route_confirm_wizard,group_scout_leader,1,1,1,1
 access_scout_plan_line_leader,scout.event.plan.line leader,model_scout_event_plan_line,group_scout_leader,1,1,1,1
+access_scout_form_link_wizard,scout.form.link.wizard,model_scout_form_link_wizard,group_scout_leader,1,1,1,1

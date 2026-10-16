@@ -36,4 +36,5 @@ def post_init_hook(env):
     scout_load_branding(env)
     env['scout.progression.stage']._scout_assign_categories()
     env['scout.section']._scout_route_defaults()
+    env['scout.progression.stage']._scout_v44_migrate()
     env['scout.route']._cron_refresh()

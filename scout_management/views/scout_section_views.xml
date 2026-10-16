@@ -107,6 +107,8 @@
                                     <div class="o_row"><field name="pass_age_years"/> años <field name="pass_age_months"/> meses</div>
                                     <field name="next_section_female_id"/>
                                     <field name="route_tolerance_days"/>
+                                    <field name="gender"/>
+                                    <field name="promise_label" placeholder="Ej. Promesa (Tercera clase)"/>
                                 </group>
                                 <group string="Clan: partida">
                                     <label for="max_stay_years" string="Edad máxima de permanencia"/>
@@ -122,6 +124,7 @@
                                     <field name="sequence" widget="handle"/>
                                     <field name="name"/>
                                     <field name="color_name"/>
+                                    <field name="color_hex" widget="color"/>
                                     <field name="member_ids" widget="many2many_tags" readonly="1"/>
                                 </list>
                             </field>
