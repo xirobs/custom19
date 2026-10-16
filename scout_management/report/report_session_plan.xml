@@ -1,0 +1,107 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="action_report_session_plan" model="ir.actions.report">
+        <field name="name">Programa semanal de la sesión</field>
+        <field name="model">calendar.event</field>
+        <field name="report_type">qweb-pdf</field>
+        <field name="report_name">scout_management.report_session_plan</field>
+        <field name="report_file">scout_management.report_session_plan</field>
+        <field name="print_report_name">'Programa %s' % (object.name)</field>
+        <field name="paperformat_id" ref="paperformat_scout_landscape"/>
+        <field name="binding_model_id" ref="calendar.model_calendar_event"/>
+        <field name="binding_type">report</field>
+    </record>
+
+    <template id="report_session_plan">
+        <t t-call="web.html_container">
+            <t t-foreach="docs" t-as="doc">
+                <t t-call="web.basic_layout">
+                    <t t-set="portal" t-value="doc.env['scout.leader.portal']"/>
+                    <t t-set="st" t-value="portal._local(doc.start) if doc.start else None"/>
+                    <t t-set="stages" t-value="{'opening': 'APERTURA', 'first': 'PRIMERA ETAPA', 'second': 'SEGUNDA ETAPA', 'closing': 'CIERRE'}"/>
+                    <t t-set="hhmm" t-value="lambda v: '%02d:%02d' % divmod(int(round(v * 60)), 60) if v else ''"/>
+                    <style>
+                        .sp { font-family: Arial, sans-serif; color: #1d2733; font-size: 8.5pt; }
+                        .sp-head { width: 100%; border-collapse: collapse; }
+                        .sp-head td { vertical-align: middle; }
+                        .sp-title { font-size: 16pt; font-weight: bold; color: #0f3049; letter-spacing: 0.5px; }
+                        .sp-kicker { color: #f36f45; font-weight: bold; font-size: 9pt; letter-spacing: 1px; }
+                        .sp-info { width: 100%; border-collapse: collapse; margin: 4px 0 6px; }
+                        .sp-info td { border: 1px solid #c7cfd8; padding: 3px 6px; font-size: 8.5pt; }
+                        .sp-info .lbl { background: #0f3049; color: #fff; font-weight: bold; width: 80px; }
+                        .sp-tab { width: 100%; border-collapse: collapse; table-layout: fixed; }
+                        .sp-tab th { background: #0f3049; color: #fff; font-size: 7pt; padding: 3px 2px; border: 1px solid #fff; text-align: center; }
+                        .sp-tab th.o { background: #f36f45; color: #0f3049; }
+                        .sp-tab td { border: 1px solid #c7cfd8; padding: 3px 4px; vertical-align: top; font-size: 8pt; }
+                        .sp-tab td.c { text-align: center; vertical-align: middle; }
+                        .sp-tab td.x { text-align: center; vertical-align: middle; color: #2e9e44; font-size: 11pt; font-weight: bold; }
+                        .sp-tab tr:nth-child(even) td { background: #f6f8fa; }
+                        .sp-name { font-weight: bold; color: #0f3049; }
+                        .sp-pend { color: #c62f2f; font-size: 7pt; }
+                        .sp-legend { font-size: 7pt; color: #5c6b7a; margin-top: 4px; }
+                    </style>
+                    <div class="page sp">
+                        <table class="sp-head"><tr>
+                            <td style="width: 70px"><img t-if="doc.env.company.logo" t-att-src="image_data_uri(doc.env.company.logo)" style="height: 58px"/></td>
+                            <td style="text-align: center">
+                                <div class="sp-kicker" t-out="(doc.env.company.name or '').upper()"/>
+                                <div class="sp-title">PROGRAMA SEMANAL DE ACTIVIDADES</div>
+                                <div class="sp-kicker" t-out="', '.join(doc.scout_section_ids.mapped('display_name')).upper() or 'TODO EL GRUPO'"/>
+                            </td>
+                            <td style="width: 70px"/>
+                        </tr></table>
+                        <t t-call="scout_management.scout_greca"/>
+                        <table class="sp-info">
+                            <tr><td class="lbl">FECHA</td><td t-out="st and ('%s · %s hrs' % (st.strftime('%d/%m/%Y'), st.strftime('%H:%M')))"/>
+                                <td class="lbl">LUGAR</td><td t-out="doc.location or ''"/></tr>
+                            <tr><td class="lbl">ACTIVIDAD</td><td t-out="doc.name"/>
+                                <td class="lbl">ENCARGADOS</td><td t-out="', '.join(doc.scout_responsible_ids.mapped(lambda p: p.scout_name or p.name))"/></tr>
+                            <tr><td class="lbl">OBJETIVO</td><td colspan="3" t-out="doc.scout_objective or ''"/></tr>
+                        </table>
+                        <table class="sp-tab">
+                            <colgroup>
+                                <col style="width: 6%"/><col style="width: 6%"/><col style="width: 6%"/><col style="width: 4%"/>
+                                <col style="width: 11%"/><col style="width: 10%"/><col style="width: 8%"/><col style="width: 8%"/>
+                                <col style="width: 17%"/>
+                                <col style="width: 3%"/><col style="width: 3%"/><col style="width: 3%"/>
+                                <col style="width: 3%"/><col style="width: 3%"/><col style="width: 3%"/><col style="width: 3%"/><col style="width: 3%"/>
+                            </colgroup>
+                            <thead>
+                                <tr>
+                                    <th colspan="9"/>
+                                    <th colspan="3" class="o">PROGRAMA</th>
+                                    <th colspan="5" class="o">MÉTODO</th>
+                                </tr>
+                                <tr>
+                                    <th>HORA</th><th>ETAPA</th><th>TIPO</th><th>TIEMPO</th><th>ACTIVIDAD</th><th>OBJETIVO</th>
+                                    <th>MATERIAL</th><th>RESPONSABLE</th><th>OBSERVACIONES</th>
+                                    <th class="o">Estruc­tura</th><th class="o">Marco simbó­lico</th><th class="o">Adelanto progre­sivo</th>
+                                    <th class="o">Compro­miso (Promesa)</th><th class="o">Grupos natu­rales</th><th class="o">Apren­der hacien­do</th>
+                                    <th class="o">Aire libre</th><th class="o">Adulto estimu­lante</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr t-foreach="doc.scout_plan_line_ids" t-as="l">
+                                    <td class="c"><b t-out="hhmm(l.time_start) or '—'"/><t t-if="l.time_end"><br/>a <t t-out="hhmm(l.time_end)"/></t></td>
+                                    <td class="c" t-out="stages.get(l.stage, '')"/>
+                                    <td class="c" t-out="(l.kind or '').upper()"/>
+                                    <td class="c" t-out="('%s min' % l.duration) if l.duration else ''"/>
+                                    <td><span class="sp-name" t-out="l.name"/><div t-if="l.pending" class="sp-pend" t-out="'Por confirmar: ' + l.pending"/></td>
+                                    <td t-out="l.objective or ''"/>
+                                    <td t-out="l.material or ''"/>
+                                    <td t-out="l.responsible or ''"/>
+                                    <td t-out="l.description or ''"/>
+                                    <td t-foreach="['p_structure', 'p_symbolic', 'p_progress', 'm_promise', 'm_groups', 'm_doing', 'm_outdoor', 'm_adult']" t-as="f"
+                                        class="x" t-out="'✔' if l[f] else ''"/>
+                                </tr>
+                                <tr t-if="not doc.scout_plan_line_ids"><td colspan="17" class="c">Sin actividades capturadas.</td></tr>
+                            </tbody>
+                        </table>
+                        <div class="sp-legend">Programa Scout: estructura, marco simbólico y adelanto progresivo. Método Scout: compromiso (Promesa), pequeños grupos naturales, aprender haciendo, actividades al aire libre y participación estimulante y no interferente del adulto.</div>
+                        <t t-call="scout_management.scout_greca"><t t-set="greca_class" t-value="'sc-greca-foot'"/></t>
+                    </div>
+                </t>
+            </t>
+        </t>
+    </template>
+</odoo>

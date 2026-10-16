@@ -34,3 +34,6 @@ def scout_load_branding(env):
 def post_init_hook(env):
     env['account.journal'].search([('type', 'in', ('cash', 'bank'))])._scout_setup_simple_treasury()
     scout_load_branding(env)
+    env['scout.progression.stage']._scout_assign_categories()
+    env['scout.section']._scout_route_defaults()
+    env['scout.route']._cron_refresh()

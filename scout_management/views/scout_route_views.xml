@@ -1,0 +1,177 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_scout_route_list" model="ir.ui.view">
+        <field name="name">scout.route.list</field>
+        <field name="model">scout.route</field>
+        <field name="arch" type="xml">
+            <list decoration-danger="alert == 'red'" decoration-warning="alert == 'yellow'" decoration-muted="not is_open"
+                  create="false" default_order="alert_order, date_pass_official">
+                <field name="member_id"/>
+                <field name="section_id"/>
+                <field name="age_label"/>
+                <field name="time_left"/>
+                <field name="state" widget="badge" decoration-danger="state == 'overdue'"
+                       decoration-warning="state in ('must_start', 'in_route', 'extension', 'departure_soon')"
+                       decoration-success="state == 'done'"/>
+                <field name="destination_id" string="Próximo destino"/>
+                <field name="date_route_official" optional="show"/>
+                <field name="date_route_real" optional="show"/>
+                <field name="date_pass_official" optional="show"/>
+                <field name="date_pass_real" optional="hide"/>
+                <field name="route_ext_until" optional="hide"/>
+                <field name="pass_ext_until" optional="hide"/>
+                <field name="alert_text" optional="show"/>
+                <field name="section_leader_ids" widget="many2many_tags" optional="hide"/>
+                <field name="alert" column_invisible="True"/>
+                <field name="is_open" column_invisible="True"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_scout_route_form" model="ir.ui.view">
+        <field name="name">scout.route.form</field>
+        <field name="model">scout.route</field>
+        <field name="arch" type="xml">
+            <form create="false">
+                <header>
+                    <button name="action_start_route" type="object" string="Registrar inicio de ruta (hoy)" class="btn-primary"
+                            invisible="not is_open or kind != 'transfer' or date_route_real"/>
+                    <button name="action_open_extension" type="object" string="Autorizar periodo extraordinario"
+                            invisible="not is_open or kind != 'transfer'" groups="scout_management.group_scout_manager"/>
+                    <button name="action_open_confirm" type="object" string="Confirmar cambio de sección" class="btn-primary"
+                            invisible="not is_open or kind != 'transfer'" groups="scout_management.group_scout_manager"/>
+                    <button name="action_open_confirm" type="object" string="Registrar partida" class="btn-primary"
+                            invisible="not is_open or kind != 'departure'" groups="scout_management.group_scout_manager"/>
+                    <field name="state" widget="statusbar" statusbar_visible="regular,must_start,in_route,done"/>
+                </header>
+                <sheet>
+                    <div class="alert alert-danger fw-bold" role="alert" invisible="alert != 'red'"><field name="alert_text" class="oe_inline"/></div>
+                    <div class="alert alert-warning fw-bold" role="alert" invisible="alert != 'yellow'"><field name="alert_text" class="oe_inline"/></div>
+                    <div class="oe_title"><h1><field name="member_id" readonly="1"/></h1></div>
+                    <group>
+                        <group string="Permanencia">
+                            <field name="section_id" readonly="1"/>
+                            <field name="birthdate"/>
+                            <field name="age_label"/>
+                            <field name="time_left"/>
+                            <field name="counter_text"/>
+                            <field name="kind" readonly="1"/>
+                            <field name="destination_id" invisible="kind != 'transfer'" readonly="not is_open"/>
+                        </group>
+                        <group string="Fechas">
+                            <field name="date_route_official" invisible="kind != 'transfer'"/>
+                            <field name="date_route_max" invisible="kind != 'transfer'"/>
+                            <field name="date_route_real" invisible="kind != 'transfer'" readonly="not is_open"/>
+                            <field name="date_pass_official"/>
+                            <field name="date_pass_max" invisible="kind != 'transfer'"/>
+                            <field name="date_pass_real"/>
+                        </group>
+                    </group>
+                    <group invisible="not route_ext_until and not pass_ext_until">
+                        <group string="Excepción: inicio de ruta" invisible="not route_ext_until">
+                            <field name="route_ext_until"/><field name="route_ext_reason"/>
+                            <field name="route_ext_user_id"/><field name="route_ext_date"/>
+                        </group>
+                        <group string="Excepción: pase" invisible="not pass_ext_until">
+                            <field name="pass_ext_until"/><field name="pass_ext_reason"/>
+                            <field name="pass_ext_user_id"/><field name="pass_ext_date"/>
+                        </group>
+                    </group>
+                    <group invisible="is_open">
+                        <field name="origin_leaders"/>
+                        <field name="destination_leaders"/>
+                    </group>
+                    <field name="note" placeholder="Observaciones del movimiento…"/>
+                    <field name="is_open" invisible="1"/>
+                    <field name="alert" invisible="1"/>
+                </sheet>
+                <chatter/>
+            </form>
+        </field>
+    </record>
+
+    <record id="view_scout_route_search" model="ir.ui.view">
+        <field name="name">scout.route.search</field>
+        <field name="model">scout.route</field>
+        <field name="arch" type="xml">
+            <search>
+                <field name="member_id" string="Nombre"/>
+                <field name="section_id"/>
+                <field name="destination_id"/>
+                <field name="section_leader_ids" string="Jefe responsable"/>
+                <filter name="open" string="Pendientes" domain="[('is_open', '=', True), ('member_state', 'in', ('trial', 'active'))]"/>
+                <separator/>
+                <filter name="red" string="Alertas rojas" domain="[('alert', '=', 'red'), ('is_open', '=', True)]"/>
+                <filter name="yellow" string="Alertas amarillas" domain="[('alert', '=', 'yellow'), ('is_open', '=', True)]"/>
+                <separator/>
+                <filter name="soon" string="Próximos a comenzar ruta" domain="[('route_soon', '=', True), ('is_open', '=', True)]"/>
+                <filter name="must_start" string="Deben iniciar ruta" domain="[('state', '=', 'must_start')]"/>
+                <filter name="in_route" string="En ruta" domain="[('state', '=', 'in_route')]"/>
+                <filter name="extension" string="Con plazo extraordinario" domain="['|', ('route_ext_until', '!=', False), ('pass_ext_until', '!=', False)]"/>
+                <filter name="overdue_route" string="Rutas vencidas" domain="[('state', '=', 'overdue'), ('alert_text', 'ilike', 'INICIO DE RUTA')]"/>
+                <filter name="overdue_pass" string="Cambios pendientes (vencidos)" domain="[('state', '=', 'overdue'), ('alert_text', 'ilike', 'CAMBIO DE SECCI')]"/>
+                <filter name="departure" string="Próximos a su partida" domain="[('kind', '=', 'departure'), ('state', 'in', ('departure_soon', 'overdue'))]"/>
+                <filter name="done" string="Cambios realizados" domain="[('state', '=', 'done')]"/>
+                <separator/>
+                <filter name="filter_pass" string="Fecha de pase" date="date_pass_official"/>
+                <group>
+                    <filter name="group_state" string="Estado" context="{'group_by': 'state'}"/>
+                    <filter name="group_section" string="Sección" context="{'group_by': 'section_id'}"/>
+                    <filter name="group_destination" string="Destino" context="{'group_by': 'destination_id'}"/>
+                    <filter name="group_alert" string="Tipo de alerta" context="{'group_by': 'alert'}"/>
+                </group>
+            </search>
+        </field>
+    </record>
+
+    <record id="action_scout_route" model="ir.actions.act_window">
+        <field name="name">Control de rutas de enlace y permanencia</field>
+        <field name="res_model">scout.route</field>
+        <field name="view_mode">list,form</field>
+        <field name="context">{'search_default_open': 1, 'search_default_group_state': 1}</field>
+        <field name="help" type="html"><p>Cada beneficiario con su tiempo restante en la sección, el estado de su ruta de enlace y sus alertas.</p></field>
+    </record>
+
+    <record id="view_scout_route_extension_wizard" model="ir.ui.view">
+        <field name="name">scout.route.extension.wizard.form</field>
+        <field name="model">scout.route.extension.wizard</field>
+        <field name="arch" type="xml">
+            <form>
+                <group>
+                    <field name="member_id"/>
+                    <field name="ext_type" widget="radio"/>
+                    <field name="official_date"/>
+                    <field name="max_date"/>
+                    <field name="until"/>
+                    <field name="reason" placeholder="Motivo de la excepción"/>
+                </group>
+                <div class="text-muted small">Máximo 3 meses sobre la fecha oficial. Autorizar un inicio tardío no amplía la fecha límite del pase.</div>
+                <footer>
+                    <button name="action_confirm" type="object" string="Autorizar" class="btn-primary"/>
+                    <button special="cancel" string="Cancelar"/>
+                </footer>
+            </form>
+        </field>
+    </record>
+
+    <record id="view_scout_route_confirm_wizard" model="ir.ui.view">
+        <field name="name">scout.route.confirm.wizard.form</field>
+        <field name="model">scout.route.confirm.wizard</field>
+        <field name="arch" type="xml">
+            <form>
+                <group>
+                    <field name="member_id"/>
+                    <field name="kind" invisible="1"/>
+                    <field name="date"/>
+                    <field name="destination_id" invisible="kind != 'transfer'" required="kind == 'transfer'"/>
+                    <field name="note"/>
+                </group>
+                <div class="text-muted small" invisible="kind != 'transfer'">El miembro pasa a la nueva sección, queda sin equipo y empieza a contar su permanencia en ella. Se avisa a los jefes de ambas secciones.</div>
+                <footer>
+                    <button name="action_confirm" type="object" string="Confirmar" class="btn-primary"/>
+                    <button special="cancel" string="Cancelar"/>
+                </footer>
+            </form>
+        </field>
+    </record>
+</odoo>

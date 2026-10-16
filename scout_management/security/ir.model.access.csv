@@ -48,3 +48,10 @@ access_product_product_scout_treasurer,product.product scout treasurer,product.m
 access_scout_payment_link_leader,scout.payment.link.wizard leader,model_scout_payment_link_wizard,group_scout_leader,1,1,1,0
 access_scout_leader_access_wizard,scout.leader.access.wizard officer,model_scout_leader_access_wizard,group_scout_officer,1,1,1,0
 access_scout_product_import,scout.product.import officer,model_scout_product_import,group_scout_officer,1,1,1,1
+access_scout_stage_category_user,scout.progression.category user,model_scout_progression_category,base.group_user,1,0,0,0
+access_scout_stage_category_officer,scout.progression.category officer,model_scout_progression_category,group_scout_officer,1,1,1,1
+access_scout_route_leader,scout.route leader,model_scout_route,group_scout_leader,1,1,0,0
+access_scout_route_officer,scout.route officer,model_scout_route,group_scout_officer,1,1,1,0
+access_scout_route_ext_wizard,scout.route.extension.wizard,model_scout_route_extension_wizard,group_scout_leader,1,1,1,1
+access_scout_route_confirm_wizard,scout.route.confirm.wizard,model_scout_route_confirm_wizard,group_scout_leader,1,1,1,1
+access_scout_plan_line_leader,scout.event.plan.line leader,model_scout_event_plan_line,group_scout_leader,1,1,1,1

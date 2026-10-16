@@ -35,6 +35,17 @@
                            decoration-muted="scout_state == 'inactive'"/>
                     <span invisible="not scout_next_section_due" class="badge text-bg-warning">Próximo a pasar</span>
                     <field name="scout_next_section_due" invisible="1"/>
+                    <span invisible="not scout_needs_registration" class="badge text-bg-danger">Debe registrarse</span>
+                    <field name="scout_needs_registration" invisible="1"/>
+                </div>
+                <div groups="scout_management.group_scout_leader" invisible="not is_scout">
+                    <div class="alert alert-warning py-1 mb-1" role="alert" invisible="not scout_age_alert">
+                        <i class="fa fa-birthday-cake"/> <field name="scout_age_alert_text" class="oe_inline"/>
+                        <field name="scout_age_alert" invisible="1"/>
+                    </div>
+                    <div class="alert alert-danger py-1 mb-1" role="alert" invisible="not scout_needs_registration">
+                        <i class="fa fa-id-card-o"/> Nuevo ingreso con <field name="scout_trial_attendance" class="oe_inline"/> asistencias sin registro pagado: ya debe registrarse.
+                    </div>
                 </div>
             </xpath>
             <xpath expr="//notebook" position="inside">
@@ -48,6 +59,13 @@
                         <button name="action_scout_request_leave" type="object" string="Solicitar baja" class="btn-secondary"
                                 invisible="scout_state == 'inactive'"/>
                         <button name="%(scout_management.action_report_member)d" type="action" string="Imprimir expediente" class="btn-secondary"/>
+                        <button name="action_scout_print_card" type="object" string="Credencial" icon="fa-id-badge" class="btn-secondary"/>
+                    </div>
+                    <div class="alert alert-light border py-2 mb-2" role="status" invisible="not scout_route_id">
+                        <b>Tiempo restante en la sección:</b> <field name="scout_time_left" class="oe_inline"/> ·
+                        <b>Estado:</b> <field name="scout_route_state" class="oe_inline"/> ·
+                        <b>Próximo destino:</b> <field name="scout_route_destination_id" class="oe_inline"/>
+                        <field name="scout_route_id" invisible="1"/><field name="scout_route_alert" invisible="1"/>
                     </div>
                     <group>
                         <group string="Datos personales">
@@ -150,6 +168,22 @@
                         </list>
                     </field>
                 </page>
+                <page string="Rutas de enlace" name="scout_routes" invisible="not is_scout or scout_type != 'youth'" groups="scout_management.group_scout_leader">
+                    <field name="scout_route_ids" readonly="1">
+                        <list decoration-danger="alert == 'red'" decoration-warning="alert == 'yellow'" decoration-muted="not is_open">
+                            <field name="section_id"/>
+                            <field name="destination_id"/>
+                            <field name="date_route_official"/>
+                            <field name="date_route_real"/>
+                            <field name="date_pass_official"/>
+                            <field name="date_pass_real"/>
+                            <field name="time_left"/>
+                            <field name="state" widget="badge"/>
+                            <field name="alert" column_invisible="True"/>
+                            <field name="is_open" column_invisible="True"/>
+                        </list>
+                    </field>
+                </page>
                 <page string="Fichas de registro" name="scout_registration" invisible="not is_scout" groups="scout_management.group_scout_leader">
                     <field name="scout_current_registration_id" invisible="1"/>
                     <field name="scout_currency_id" invisible="1"/>
@@ -240,6 +274,13 @@
                        decoration-danger="scout_registration_status in ('not_paid', 'none')"/>
                 <field name="scout_amount_due" optional="hide"/>
                 <field name="scout_attendance_pct" widget="progressbar" optional="show"/>
+                <field name="scout_time_left" optional="show"/>
+                <field name="scout_route_state" optional="show" widget="badge" decoration-danger="scout_route_state == 'overdue'"
+                       decoration-warning="scout_route_state in ('must_start', 'in_route', 'extension', 'departure_soon')"/>
+                <field name="scout_route_destination_id" optional="show"/>
+                <field name="scout_age_alert" optional="hide" widget="badge" decoration-danger="scout_age_alert == 'over'"
+                       decoration-warning="scout_age_alert == 'soon'" decoration-info="scout_age_alert == 'under'"/>
+                <field name="scout_needs_registration" optional="show" string="Debe registrarse" widget="boolean"/>
                 <field name="scout_next_section_due" column_invisible="True"/>
                 <field name="scout_currency_id" column_invisible="True"/>
                 <field name="scout_state" widget="badge" decoration-success="scout_state == 'active'"

@@ -9,6 +9,7 @@
                 <field name="sequence" widget="handle"/>
                 <field name="name"/>
                 <field name="stage_type"/>
+                <field name="category_id" optional="show" invisible="stage_type != 'specialty'"/>
                 <field name="section_ids" widget="many2many_tags"/>
                 <field name="description" optional="hide"/>
             </list>
@@ -21,8 +22,12 @@
             <search>
                 <field name="name"/>
                 <field name="section_ids"/>
+                <field name="category_id"/>
+                <filter name="specialties" string="Especialidades" domain="[('stage_type', '=', 'specialty')]"/>
+                <filter name="path" string="Promesa, adelantos, ruta de enlace y terminal" domain="[('stage_type', '!=', 'specialty')]"/>
                 <group>
                     <filter name="group_type" string="Tipo" context="{'group_by': 'stage_type'}"/>
+                    <filter name="group_category" string="Categoría" context="{'group_by': 'category_id'}"/>
                 </group>
             </search>
         </field>
@@ -32,6 +37,23 @@
         <field name="res_model">scout.progression.stage</field>
         <field name="view_mode">list</field>
         <field name="context">{'search_default_group_type': 1}</field>
+    </record>
+
+    <record id="view_scout_progression_category_list" model="ir.ui.view">
+        <field name="name">scout.progression.category.list</field>
+        <field name="model">scout.progression.category</field>
+        <field name="arch" type="xml">
+            <list editable="bottom">
+                <field name="sequence" widget="handle"/>
+                <field name="name"/>
+                <field name="color"/>
+            </list>
+        </field>
+    </record>
+    <record id="action_scout_progression_category" model="ir.actions.act_window">
+        <field name="name">Categorías de especialidades</field>
+        <field name="res_model">scout.progression.category</field>
+        <field name="view_mode">list</field>
     </record>
 
     <record id="view_scout_member_progress_list" model="ir.ui.view">

@@ -98,6 +98,24 @@
                         </group>
                     </group>
                     <notebook>
+                        <page string="Ruta de enlace y edades oficiales" name="route" invisible="is_leadership">
+                            <group>
+                                <group string="Cambio de sección">
+                                    <label for="route_age_years" string="Inicio de ruta"/>
+                                    <div class="o_row"><field name="route_age_years"/> años <field name="route_age_months"/> meses</div>
+                                    <label for="pass_age_years" string="Pase oficial"/>
+                                    <div class="o_row"><field name="pass_age_years"/> años <field name="pass_age_months"/> meses</div>
+                                    <field name="next_section_female_id"/>
+                                    <field name="route_tolerance_days"/>
+                                </group>
+                                <group string="Clan: partida">
+                                    <label for="max_stay_years" string="Edad máxima de permanencia"/>
+                                    <div class="o_row"><field name="max_stay_years"/> años <field name="max_stay_months"/> meses</div>
+                                    <field name="route_rule_text" readonly="1"/>
+                                </group>
+                            </group>
+                            <div class="text-muted small">El periodo extraordinario (con autorización de la jefatura de grupo) es de máximo 3 meses sobre cada fecha oficial. En el Clan no hay periodo extraordinario.</div>
+                        </page>
                         <page string="Equipos (seisenas / patrullas)" name="patrols">
                             <field name="patrol_ids">
                                 <list editable="bottom">

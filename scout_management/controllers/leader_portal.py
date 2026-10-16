@@ -1,16 +1,23 @@
 # -*- coding: utf-8 -*-
 """Portal de dirigentes (/dirigentes): pantallas sencillas para usar en el celular durante la junta."""
+import json
 import logging
+from datetime import date
 from urllib.parse import quote, urlencode
 
+
+from dateutil.relativedelta import relativedelta
+
 from odoo import _, http
+from odoo.tools import html2plaintext
 from odoo.exceptions import AccessError, MissingError, UserError, ValidationError
 from odoo.http import request
 
 from odoo.addons.portal.controllers.portal import CustomerPortal
 from odoo.addons.portal.controllers.web import Home
 
-from ..models.scout_common import ACTIVITY_TYPES, quarter_label
+from ..models.calendar_event import PLAN_STATES, SCOUT_CATEGORIES
+from ..models.scout_common import ACTIVITY_TYPES, MONTHS, quarter_label
 from ..models.scout_leader_portal import LEADER_ITEM_TYPES
 from ..models.scout_section_report import ITEM_TYPES
 
@@ -51,6 +58,11 @@ class ScoutLeaderPortal(http.Controller):
             'status_labels': STATUS_LABELS,
             'money': lambda v: '$ {:,.2f}'.format(v or 0.0),
             'local_dt': svc._local,
+            'plan_states': dict(PLAN_STATES),
+            'relativedelta': relativedelta,
+            'url_quote': quote,
+            'plain_text': lambda v: html2plaintext(v).strip() if v else '',
+            'categories_sel': dict(SCOUT_CATEGORIES),
         })
         base.update(values)
         return request.render(template, base)
@@ -158,11 +170,14 @@ class ScoutLeaderPortal(http.Controller):
         start = svc._local(event.start) if event else None
         stop = svc._local(event.stop) if event else None
         return self._render('scout_management.leader_activity_form', section, 'activities', event=event,
-                            editable=not event or svc._event_editable(event),
+                            sl_can_edit=not event or svc._event_editable(event),
                             date=(start.date().isoformat() if start else kw.get('date') or svc._today().isoformat()),
-                            time_from=start.strftime('%H:%M') if start else '10:00',
-                            time_to=stop.strftime('%H:%M') if stop else '13:00',
-                            leaders=svc.leader_partners(section), activity_types=ACTIVITY_TYPES)
+                            time_from=start.strftime('%H:%M') if start else (kw.get('time_from') or '10:00'),
+                            time_to=stop.strftime('%H:%M') if stop else (kw.get('time_to') or '13:00'),
+                            date_end=(stop.date().isoformat() if stop else kw.get('date_end') or ''),
+                            preset_type=kw.get('tipo') if kw.get('tipo') in dict(ACTIVITY_TYPES) else None,
+                            leaders=svc.leader_partners(section),
+                            activity_types=[t for t in ACTIVITY_TYPES if t[0] not in ('council', 'group')])
 
     @http.route(['/dirigentes/<int:section_id>/actividad/guardar'], type='http', auth='user', website=True,
                 methods=['POST'])
@@ -183,26 +198,52 @@ class ScoutLeaderPortal(http.Controller):
             return self._back(back, error=str(e.args[0]))
         if post.get('then') == 'lista':
             return request.redirect(f'/dirigentes/{section.id}/lista/{event.id}')
-        return self._back(f'/dirigentes/{section.id}/plan', ok=_('Actividad guardada.'))
+        if post.get('then') == 'plan':
+            return self._back(f'/dirigentes/{section.id}/plan', ok=_('Actividad guardada.'))
+        return self._back(f'/dirigentes/{section.id}/actividad/{event.id}/programa',
+                          ok=_('Datos de la sesión guardados. Ahora dicta o captura su programa.'))
+
+    @http.route(['/dirigentes/<int:section_id>/plan/dia/<string:day>'], type='http', auth='user', website=True)
+    def leader_plan_day(self, section_id, day, **kw):
+        """Botón "Planear" del sábado: abre (o crea) la sesión y va directo a editarla y dictar su programa."""
+        section, redirect = self._section_or_redirect(section_id)
+        if redirect:
+            return redirect
+        try:
+            from odoo.fields import Date
+            event = self._svc().plan_day(section, Date.to_date(day))
+        except (ValueError, UserError, AccessError) as e:
+            return self._back(f'/dirigentes/{section.id}/plan', error=str(e.args[0] if e.args else e))
+        return request.redirect(f'/dirigentes/{section.id}/actividad/{event.id}/programa')
 
     # ------------------------------------------------------------------ adelantos
     @http.route(['/dirigentes/<int:section_id>/adelantos'], type='http', auth='user', website=True,
                 methods=['GET'])
-    def leader_progress(self, section_id, stage_id=None, **kw):
+    def leader_progress(self, section_id, stage_id=None, grupo=None, **kw):
         section, redirect = self._section_or_redirect(section_id)
         if redirect:
             return redirect
         svc = self._svc()
         stages = svc.stages(section)
-        stage = stages.filtered(lambda s: s.id == int(stage_id or 0))
+        stage = stages.filtered(lambda s: s.id == int(stage_id or 0) if str(stage_id or '').isdigit() else False)
+        path = svc.path_stages(section)
+        categories = svc.specialty_categories(section)
+        groups = [('adelantos', _('Adelantos, terminal y ruta de enlace'), path)]
+        groups += [(f'cat{c.id or 0}', _('Especialidades · %s', c.name or _('Otras')), st) for c, st in categories]
+        if stage and not grupo:
+            grupo = next((key for key, _label, st in groups if stage in st), None)
+        current = next((g for g in groups if g[0] == grupo), None)
+        if stage and current and stage not in current[2]:
+            stage = stages.browse()
         members = svc._members(section)
         progress = {}
         if stage:
             for p in request.env['scout.member.progress'].sudo().search(
                     [('stage_id', '=', stage.id), ('member_id', 'in', members.ids)]):
                 progress[p.member_id.id] = p
-        return self._render('scout_management.leader_progress', section, 'progress', stages=stages, stage=stage,
-                            members=members, progress=progress, today=svc._today().isoformat())
+        return self._render('scout_management.leader_progress', section, 'progress', groups=groups,
+                            group=current, stage=stage, members=members, progress=progress,
+                            today=svc._today().isoformat())
 
     @http.route(['/dirigentes/<int:section_id>/adelantos'], type='http', auth='user', website=True,
                 methods=['POST'])
@@ -239,7 +280,8 @@ class ScoutLeaderPortal(http.Controller):
             return redirect
         svc = self._svc()
         tipo, start, end, label, offset = self._plan_period(section, tipo, q)
-        values = {'tipo': tipo, 'start': start, 'end': end, 'label': label, 'offset': offset}
+        values = {'tipo': tipo, 'start': start, 'end': end, 'label': label, 'offset': offset,
+                  'summary': svc.plan_summary(svc.period_events(section, start, end))}
         if tipo == 'anual':
             values['months'] = svc.plan_months(section, start, end)
         else:
@@ -262,6 +304,21 @@ class ScoutLeaderPortal(http.Controller):
             if created else _('Todos los sábados ya tienen actividad.')
         return request.redirect(url + '&' + urlencode({'ok': msg}))
 
+    @http.route(['/dirigentes/<int:section_id>/plan/enviar'], type='http', auth='user', website=True,
+                methods=['POST'])
+    def leader_plan_submit(self, section_id, tipo='trimestral', q='0', **post):
+        section, redirect = self._section_or_redirect(section_id)
+        if redirect:
+            return redirect
+        tipo, start, end, _label, offset = self._plan_period(section, tipo, q)
+        url = f'/dirigentes/{section.id}/plan?tipo={tipo}&q={offset}'
+        try:
+            events = self._svc().submit_plan(section, start, end)
+        except (UserError, AccessError) as e:
+            return request.redirect(url + '&' + urlencode({'error': str(e.args[0])}))
+        return request.redirect(url + '&' + urlencode(
+            {'ok': _('Se enviaron %s actividades al consejo. El jefe de grupo dará el visto bueno.', len(events))}))
+
     @http.route(['/dirigentes/<int:section_id>/plan/pdf'], type='http', auth='user', website=True)
     def leader_plan_pdf(self, section_id, tipo='trimestral', q='0', **kw):
         section, redirect = self._section_or_redirect(section_id)
@@ -283,7 +340,7 @@ class ScoutLeaderPortal(http.Controller):
         tipo, start, end, label, offset = self._plan_period(section, tipo, q)
         matrix = self._svc().attendance_matrix(section, start, end)
         return self._render('scout_management.leader_attendance_control', section, 'attendance', matrix=matrix,
-                            tipo=tipo, label=label, offset=offset)
+                            tipo=tipo, label=label, offset=offset, today_event=self._svc().today_event(section))
 
     @http.route(['/dirigentes/<int:section_id>/asistencia/pdf'], type='http', auth='user', website=True)
     def leader_attendance_pdf(self, section_id, tipo='trimestral', q='0', **kw):
@@ -392,8 +449,18 @@ class ScoutLeaderPortal(http.Controller):
         section, redirect = self._section_or_redirect(section_id)
         if redirect:
             return redirect
-        return self._render('scout_management.leader_members', section, 'members',
-                            members=self._svc()._members(section, include_leaders=True))
+        members = self._svc()._members(section, include_leaders=True)
+        orden = kw.get('orden') if kw.get('orden') in ('equipo', 'nombre', 'edad', 'alertas') else 'equipo'
+        youth = members.filtered(lambda m: m.scout_type == 'youth')
+        leaders = members - youth
+        if orden == 'nombre':
+            youth = youth.sorted(lambda m: m.name or '')
+        elif orden == 'edad':
+            youth = youth.sorted(lambda m: (m.scout_birthdate or date.max))
+        elif orden == 'alertas':
+            youth = youth.sorted(lambda m: (not m.scout_needs_registration, not m.scout_age_alert, m.name or ''))
+        return self._render('scout_management.leader_members', section, 'members', members=leaders + youth,
+                            orden=orden, alerts=self._svc().alerts(section))
 
     @http.route(['/dirigentes/<int:section_id>/miembro/<int:member_id>'], type='http', auth='user', website=True)
     def leader_member(self, section_id, member_id, **kw):
@@ -408,7 +475,346 @@ class ScoutLeaderPortal(http.Controller):
         lines = request.env['scout.attendance.line'].sudo().search(
             [('member_id', '=', member.id), ('closed', '=', True)], limit=8)
         return self._render('scout_management.leader_member', section, 'members', member=member, progress=progress,
-                            attendance=lines)
+                            attendance=lines, pay=self._svc().payment_info(member) if member.scout_type == 'youth' else {},
+                            role=self._svc().role_label(section, member))
+
+    # ------------------------------------------------------------------ programa de la sesión (dictado)
+    def _plan_event(self, section, event_id):
+        svc = self._svc()
+        event = svc._event(event_id)
+        return event, svc._event_editable(event)
+
+    @http.route(['/dirigentes/<int:section_id>/actividad/<int:event_id>/programa'], type='http', auth='user',
+                website=True)
+    def leader_session_plan(self, section_id, event_id, **kw):
+        section, redirect = self._section_or_redirect(section_id)
+        if redirect:
+            return redirect
+        try:
+            event, editable = self._plan_event(section, event_id)
+        except AccessError:
+            return request.redirect(f'/dirigentes/{section.id}/plan')
+        from ..models import scout_plan_parser as parser
+        data = {
+            'section_id': section.id, 'event_id': event.id, 'editable': editable,
+            'approved': event.scout_plan_state == 'approved' and bool(event.scout_plan_line_ids),
+            'lines': event._scout_plan_lines_dicts(), 'stages': parser.STAGES, 'kinds': parser.KINDS,
+            'flags': [[f, parser.FLAG_LABELS[f]] for f in parser.FLAGS],
+            'leaders': event._scout_plan_context()[2],
+        }
+        svc = self._svc()
+        start, stop = svc._local(event.start), svc._local(event.stop)
+        return self._render('scout_management.leader_session_plan', section, 'plan', event=event, sl_can_edit=editable,
+                            plan_json=json.dumps(data, ensure_ascii=False),
+                            date=start.date().isoformat(), date_end=stop.date().isoformat(),
+                            time_from=start.strftime('%H:%M'), time_to=stop.strftime('%H:%M'),
+                            preset_type=None, leaders=svc.leader_partners(section),
+                            activity_types=[t for t in ACTIVITY_TYPES if t[0] not in ('council', 'group')])
+
+    @http.route(['/dirigentes/api/plan/interpretar'], type='jsonrpc', auth='user')
+    def leader_api_plan_interpret(self, section_id, event_id, text, lines=None, **kw):
+        try:
+            section = self._svc()._section(section_id)
+            event, editable = self._plan_event(section, event_id)
+            if not editable:
+                raise AccessError(_('Esta actividad la edita la jefatura.'))
+            return {'ok': True, **event.scout_plan_interpret(text, lines)}
+        except (UserError, AccessError, ValidationError) as e:
+            return {'ok': False, 'error': str(e.args[0] if e.args else e)}
+
+    @http.route(['/dirigentes/api/plan/guardar'], type='jsonrpc', auth='user')
+    def leader_api_plan_save(self, section_id, event_id, lines, dictation=None, confirm_approved=False, **kw):
+        try:
+            section = self._svc()._section(section_id)
+            event, editable = self._plan_event(section, event_id)
+            if not editable:
+                raise AccessError(_('Esta actividad la edita la jefatura.'))
+            saved = event.scout_plan_save(lines, dictation, bool(confirm_approved))
+            self._svc()._note(event, _('Programa de la sesión guardado (%s actividades)', len(saved)))
+            return {'ok': True, 'count': len(saved), 'lines': event._scout_plan_lines_dicts()}
+        except (UserError, AccessError, ValidationError) as e:
+            return {'ok': False, 'error': str(e.args[0] if e.args else e)}
+
+    @http.route(['/dirigentes/<int:section_id>/actividad/<int:event_id>/programa.pdf',
+                 '/dirigentes/<int:section_id>/actividad/<int:event_id>/programa.xlsx'], type='http', auth='user',
+                website=True)
+    def leader_session_plan_file(self, section_id, event_id, **kw):
+        section, redirect = self._section_or_redirect(section_id)
+        if redirect:
+            return redirect
+        try:
+            event, _editable = self._plan_event(section, event_id)
+        except AccessError:
+            return request.redirect(f'/dirigentes/{section.id}/plan')
+        name = f'Programa {section.display_name} {event.scout_date or ""}'
+        if request.httprequest.path.endswith('.xlsx'):
+            content = event.scout_plan_xlsx()
+            ctype, ext = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', 'xlsx'
+        else:
+            content, _type = request.env['ir.actions.report'].sudo()._render_qweb_pdf(
+                'scout_management.action_report_session_plan', event.ids)
+            ctype, ext = 'application/pdf', 'pdf'
+        headers = [('Content-Type', ctype), ('Content-Length', len(content)),
+                   ('Content-Disposition', f'inline; filename="{name}.{ext}"')]
+        return request.make_response(content, headers=headers)
+
+    # ------------------------------------------------------------------ rutas de enlace y permanencia
+    @http.route(['/dirigentes/<int:section_id>/rutas'], type='http', auth='user', website=True, methods=['GET'])
+    def leader_routes(self, section_id, ver='mia', **kw):
+        section, redirect = self._section_or_redirect(section_id)
+        if redirect:
+            return redirect
+        svc = self._svc()
+        return self._render('scout_management.leader_routes', section, 'members', ver='recibo' if ver == 'recibo' else 'mia',
+                            routes=svc.routes(section), incoming=svc.incoming_routes(section),
+                            today=svc._today().isoformat())
+
+    @http.route(['/dirigentes/<int:section_id>/rutas/iniciar'], type='http', auth='user', website=True,
+                methods=['POST'])
+    def leader_route_start(self, section_id, **post):
+        section, redirect = self._section_or_redirect(section_id)
+        if redirect:
+            return redirect
+        url = f'/dirigentes/{section.id}/rutas'
+        try:
+            route = self._svc().start_route(section, post.get('route_id'), post.get('date') or None)
+        except (UserError, AccessError, ValidationError) as e:
+            return self._back(url, error=str(e.args[0]))
+        return self._back(url, ok=_('Ruta de enlace iniciada para %s. Se avisó a los jefes de ambas secciones.',
+                                    route.member_id.name))
+
+    # ------------------------------------------------------------------ equipos
+    @http.route(['/dirigentes/<int:section_id>/equipos'], type='http', auth='user', website=True, methods=['GET'])
+    def leader_teams(self, section_id, **kw):
+        section, redirect = self._section_or_redirect(section_id)
+        if redirect:
+            return redirect
+        svc = self._svc()
+        return self._render('scout_management.leader_teams', section, 'members', board=svc.team_board(section))
+
+    @http.route(['/dirigentes/<int:section_id>/equipos/nuevo'], type='http', auth='user', website=True,
+                methods=['POST'])
+    def leader_team_create(self, section_id, **post):
+        section, redirect = self._section_or_redirect(section_id)
+        if redirect:
+            return redirect
+        url = f'/dirigentes/{section.id}/equipos'
+        try:
+            self._svc().create_patrol(section, post.get('name'), post.get('color'))
+        except (UserError, AccessError, ValidationError) as e:
+            return self._back(url, error=str(e.args[0]))
+        return self._back(url, ok=_('Equipo creado.'))
+
+    @http.route(['/dirigentes/api/equipo'], type='jsonrpc', auth='user')
+    def leader_api_team(self, section_id, member_id, patrol_id=None, role=None, **kw):
+        svc = self._svc()
+        try:
+            section = svc._section(section_id)
+            member = svc._member(member_id, section)
+            if patrol_id is not None:
+                member = svc.move_member(section, member_id, patrol_id or False)
+            if role:
+                member = svc.set_role(section, member_id, role)
+            changed = request.env['res.partner'].sudo().search(
+                [('scout_patrol_id', '=', member.scout_patrol_id.id)]) if member.scout_patrol_id else member
+            return {'ok': True, 'patrol_id': member.scout_patrol_id.id or 0,
+                    'roles': {str(m.id): svc.role_label(section, m) for m in changed | member}}
+        except (UserError, AccessError, ValidationError) as e:
+            return {'ok': False, 'error': str(e.args[0] if e.args else e)}
+
+    # ------------------------------------------------------------------ cuadro de logros
+    @http.route(['/dirigentes/<int:section_id>/logros'], type='http', auth='user', website=True)
+    def leader_achievements(self, section_id, ver='adelantos', **kw):
+        section, redirect = self._section_or_redirect(section_id)
+        if redirect:
+            return redirect
+        svc = self._svc()
+        categories = svc.specialty_categories(section)
+        columns, title, current = svc.path_stages(section), _('Adelantos'), 'adelantos'
+        if ver and ver.startswith('cat'):
+            key = ver[3:]
+            for category, stages in categories:
+                if str(category.id or 0) == key:
+                    columns, title, current = stages, category.name or _('Otras especialidades'), ver
+                    break
+        return self._render('scout_management.leader_achievements', section, 'progress', columns=columns,
+                            title=title, ver=current, categories=categories,
+                            rows=svc.achievements(section, columns))
+
+    @http.route(['/dirigentes/api/logro'], type='jsonrpc', auth='user')
+    def leader_api_achievement(self, section_id, member_id, stage_id, **kw):
+        svc = self._svc()
+        try:
+            section = svc._section(section_id)
+            return {'ok': True, **svc.toggle_progress(section, member_id, stage_id)}
+        except (UserError, AccessError, ValidationError) as e:
+            return {'ok': False, 'error': str(e.args[0] if e.args else e)}
+
+    # ------------------------------------------------------------------ nuevos ingresos
+    @http.route(['/dirigentes/<int:section_id>/nuevo'], type='http', auth='user', website=True, methods=['GET'])
+    def leader_new_member(self, section_id, **kw):
+        section, redirect = self._section_or_redirect(section_id)
+        if redirect:
+            return redirect
+        return self._render('scout_management.leader_new_member', section, 'members',
+                            patrols=section.sudo().patrol_ids, values=kw)
+
+    @http.route(['/dirigentes/<int:section_id>/nuevo'], type='http', auth='user', website=True, methods=['POST'])
+    def leader_new_member_save(self, section_id, **post):
+        section, redirect = self._section_or_redirect(section_id)
+        if redirect:
+            return redirect
+        svc = self._svc()
+        photo = post.get('photo_data') or post.get('photo')
+        try:
+            member = svc.create_member(section, post, photo)
+        except (UserError, AccessError, ValidationError) as e:
+            values = {k: v for k, v in post.items() if isinstance(v, str) and k not in ('photo_data', 'csrf_token')}
+            return self._render('scout_management.leader_new_member', section, 'members',
+                                patrols=section.sudo().patrol_ids, values=values, error=str(e.args[0]))
+        if post.get('then') == 'registro':
+            return request.redirect(f'/dirigentes/{section.id}/miembro/{member.id}/registro')
+        return self._back(f'/dirigentes/{section.id}/miembro/{member.id}',
+                          ok=_('%s ya aparece en el pase de lista (en prueba).', member.name))
+
+    @http.route(['/dirigentes/<int:section_id>/miembro/<int:member_id>/registro'], type='http', auth='user',
+                website=True, methods=['GET', 'POST'])
+    def leader_member_register(self, section_id, member_id, **post):
+        section, redirect = self._section_or_redirect(section_id)
+        if redirect:
+            return redirect
+        svc = self._svc()
+        try:
+            member = svc._member(member_id, section)
+        except AccessError:
+            return request.redirect(f'/dirigentes/{section.id}/miembros')
+        error = None
+        if request.httprequest.method == 'POST':
+            try:
+                if post.get('photo_data'):
+                    svc.set_photo(section, member.id, post['photo_data'])
+                svc.register_member(section, member, post)
+            except (UserError, AccessError, ValidationError) as e:
+                error = str(e.args[0])
+            else:
+                return request.redirect(f'/dirigentes/{section.id}/miembro/{member.id}/pago')
+        cycle = request.env['scout.cycle'].sudo()._get_current(section.company_id)
+        return self._render('scout_management.leader_member_register', section, 'members', member=member,
+                            cycle=cycle, registration=svc.registration(member), error=error)
+
+    @http.route(['/dirigentes/<int:section_id>/miembro/<int:member_id>/pago'], type='http', auth='user', website=True)
+    def leader_member_payment(self, section_id, member_id, **kw):
+        section, redirect = self._section_or_redirect(section_id)
+        if redirect:
+            return redirect
+        svc = self._svc()
+        try:
+            member = svc._member(member_id, section)
+        except AccessError:
+            return request.redirect(f'/dirigentes/{section.id}/miembros')
+        try:
+            pay = svc.payment_info(member)
+        except UserError as e:
+            pay, kw['error'] = {}, str(e.args[0])
+        return self._render('scout_management.leader_member_payment', section, 'members', member=member, pay=pay)
+
+    @http.route(['/dirigentes/<int:section_id>/miembro/<int:member_id>/foto'], type='http', auth='user', website=True,
+                methods=['POST'])
+    def leader_member_photo(self, section_id, member_id, **post):
+        section, redirect = self._section_or_redirect(section_id)
+        if redirect:
+            return redirect
+        url = f'/dirigentes/{section.id}/miembro/{member_id}'
+        try:
+            self._svc().set_photo(section, member_id, post.get('photo_data') or post.get('photo'))
+        except (UserError, AccessError, ValidationError) as e:
+            return self._back(url, error=str(e.args[0]))
+        return self._back(url, ok=_('Foto guardada.'))
+
+    @http.route(['/dirigentes/<int:section_id>/miembro/<int:member_id>/credencial'], type='http', auth='user',
+                website=True)
+    def leader_member_card(self, section_id, member_id, **kw):
+        section, redirect = self._section_or_redirect(section_id)
+        if redirect:
+            return redirect
+        try:
+            member = self._svc()._member(member_id, section)
+        except AccessError:
+            return request.redirect(f'/dirigentes/{section.id}/miembros')
+        return self._render('scout_management.leader_member_card', section, 'members', member=member,
+                            card=_card_values(member))
+
+    @http.route(['/dirigentes/<int:section_id>/miembro/<int:member_id>/credencial.pdf'], type='http', auth='user',
+                website=True)
+    def leader_member_card_pdf(self, section_id, member_id, **kw):
+        section, redirect = self._section_or_redirect(section_id)
+        if redirect:
+            return redirect
+        try:
+            member = self._svc()._member(member_id, section)
+        except AccessError:
+            return request.redirect(f'/dirigentes/{section.id}/miembros')
+        pdf, _type = request.env['ir.actions.report'].sudo()._render_qweb_pdf(
+            'scout_management.action_report_member_card', member.ids)
+        headers = [('Content-Type', 'application/pdf'), ('Content-Length', len(pdf)),
+                   ('Content-Disposition', f'inline; filename="Credencial {member.name}.pdf"')]
+        return request.make_response(pdf, headers=headers)
+
+    # ------------------------------------------------------------------ calendario general del grupo
+    @http.route(['/dirigentes/calendario', '/dirigentes/<int:section_id>/calendario'], type='http', auth='user',
+                website=True)
+    def leader_group_calendar(self, section_id=None, mes=None, **kw):
+        svc = self._svc()
+        section = None
+        if section_id:
+            section, redirect = self._section_or_redirect(section_id)
+            if redirect:
+                return redirect
+        elif not svc._sections():
+            return request.redirect('/dirigentes')
+        try:
+            year, month = (int(x) for x in (mes or '').split('-')[:2])
+            month_start = date(year, month, 1)
+        except (ValueError, TypeError):
+            month_start = svc._today().replace(day=1)
+        cal = svc.general_calendar(month_start)
+        prev_start = date(month_start.year - (month_start.month == 1), (month_start.month - 2) % 12 + 1, 1)
+        next_start = date(month_start.year + (month_start.month == 12), month_start.month % 12 + 1, 1)
+        all_sections = request.env['scout.section'].sudo().search([('is_leadership', '=', False)])
+        return self._render('scout_management.leader_group_calendar', section, 'plan', cal=cal,
+                            month_label=f'{MONTHS[month_start.month - 1].capitalize()} {month_start.year}',
+                            prev_mes=prev_start.strftime('%Y-%m'), next_mes=next_start.strftime('%Y-%m'),
+                            all_sections=all_sections, today=svc._today(),
+                            base_url=f'/dirigentes/{section.id}/calendario' if section else '/dirigentes/calendario')
+
+
+def _card_values(member):
+    """Datos de la credencial electrónica (pantalla y PDF)."""
+    member = member.sudo()
+    reg = request.env['scout.leader.portal'].sudo().registration(member) if member.scout_type == 'youth' else None
+    cycle = request.env['scout.cycle'].sudo()._get_current(member.company_id or None)
+    return {
+        'valid': member._scout_card_valid(),
+        'folio': reg.name if reg else '',
+        'cycle': cycle,
+        'qr': member._scout_card_qr(),
+        'company': member.company_id or request.env.company,
+    }
+
+
+class ScoutCardPublic(http.Controller):
+
+    @http.route(['/scout/credencial/<int:member_id>/<string:token>'], type='http', auth='public', website=True)
+    def scout_card_verify(self, member_id, token, **kw):
+        """Verificación pública de la credencial (al escanear su QR): solo nombre, sección y vigencia."""
+        from odoo.tools import consteq
+        member = request.env['res.partner'].sudo().browse(member_id).exists()
+        if not member or not member.is_scout or not member.scout_card_token or not consteq(token, member.scout_card_token):
+            return request.not_found()
+        cycle = request.env['scout.cycle'].sudo()._get_current(member.company_id or None)
+        return request.render('scout_management.scout_card_verify', {
+            'member': member, 'valid': member._scout_card_valid(), 'cycle': cycle,
+            'company': member.company_id or request.env.company, 'today': date.today()})
 
 
 class ScoutLeaderHome(Home):

@@ -174,7 +174,7 @@ class ResPartner(models.Model):
             achieved = partner.scout_progress_ids.filtered(lambda p: p.state == 'achieved')
             promise = achieved.filtered(lambda p: p.stage_type == 'promise')[:1]
             partner.scout_promise_date = promise.date_achieved
-            last = achieved.filtered(lambda p: p.stage_type != 'promise').sorted(
+            last = achieved.filtered(lambda p: p.stage_type in ('stage', 'link', 'terminal')).sorted(
                 lambda p: (p.date_achieved or fields.Date.today(), p.id))[-1:]
             partner.scout_last_progress_stage_id = last.stage_id
             partner.scout_last_progress_date = last.date_achieved

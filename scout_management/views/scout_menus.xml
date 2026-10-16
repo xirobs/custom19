@@ -31,6 +31,7 @@
     <menuitem id="menu_scout_member" name="Miembros" parent="menu_scout_members" action="action_scout_member" sequence="10"/>
     <menuitem id="menu_scout_registration" name="Fichas de registro" parent="menu_scout_members" action="action_scout_registration" sequence="20"/>
     <menuitem id="menu_scout_member_import" name="Carga masiva desde Excel" parent="menu_scout_members" action="action_scout_member_import" sequence="25" groups="group_scout_officer"/>
+    <menuitem id="menu_scout_route" name="Control de rutas de enlace y permanencia" parent="menu_scout_members" action="action_scout_route" sequence="28"/>
     <menuitem id="menu_scout_progress" name="Avances de recorridos" parent="menu_scout_members" action="action_scout_member_progress" sequence="30"/>
     <menuitem id="menu_scout_member_change" name="Bajas y cambios de sección" parent="menu_scout_members" action="action_scout_member_change" sequence="40"/>
     <menuitem id="menu_scout_family_chat" name="Chat con familias" parent="menu_scout_members" action="action_scout_family_conversation" sequence="50"/>
@@ -39,6 +40,8 @@
     <!-- Programa -->
     <menuitem id="menu_scout_program_root" name="Programa" parent="menu_scout_root" sequence="20"/>
     <menuitem id="menu_scout_calendar" name="Calendario" parent="menu_scout_program_root" action="action_scout_calendar" sequence="5"/>
+    <menuitem id="menu_scout_group_calendar" name="Calendario general por colores" parent="menu_scout_program_root" action="action_scout_group_calendar_url" sequence="6"/>
+    <menuitem id="menu_scout_plan_approval" name="Programa por aprobar" parent="menu_scout_program_root" action="action_scout_plan_approval" sequence="7" groups="group_scout_officer"/>
     <menuitem id="menu_scout_event_generate" name="Crear sesiones del trimestre" parent="menu_scout_program_root" action="action_scout_event_generate" sequence="10"/>
     <menuitem id="menu_scout_section_report" name="Informes trimestrales" parent="menu_scout_program_root" action="action_scout_section_report" sequence="20"/>
     <menuitem id="menu_scout_attendance_analysis" name="Análisis de asistencia" parent="menu_scout_program_root" action="action_scout_attendance_analysis" sequence="30"/>
@@ -88,6 +91,7 @@
     <menuitem id="menu_scout_cycle" name="Ciclos scout" parent="menu_scout_config" action="action_scout_cycle" sequence="10"/>
     <menuitem id="menu_scout_config_section" name="Secciones" parent="menu_scout_config" action="action_scout_section" sequence="20"/>
     <menuitem id="menu_scout_stage" name="Adelantos e insignias" parent="menu_scout_config" action="action_scout_progression_stage" sequence="30"/>
+    <menuitem id="menu_scout_stage_category" name="Categorías de especialidades" parent="menu_scout_config" action="action_scout_progression_category" sequence="31"/>
     <menuitem id="menu_scout_setup_treasury" name="Preparar cajas y bancos" parent="menu_scout_config"
               action="action_scout_setup_treasury" sequence="50" groups="group_scout_treasurer"/>
     <menuitem id="menu_scout_mercado_pago" name="Pago en línea (Mercado Pago)" parent="menu_scout_config"

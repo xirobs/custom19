@@ -1,5 +1,5 @@
 /** @odoo-module **/
-// Portal de dirigentes: pase de lista con un toque, caja rápida y pequeños atajos para el celular.
+// Portal de dirigentes: pase de lista, equipos, cuadro de logros, foto y pequeños atajos para el celular.
 
 const LABELS = {
     present: ["Asistió", "ok"],
@@ -22,9 +22,6 @@ async function rpc(url, params) {
     }
     return data.result;
 }
-
-const money = (value) =>
-    "$ " + Number(value || 0).toLocaleString("es-MX", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
 function toast(message) {
     let el = document.querySelector(".o_sl_toast");
@@ -86,127 +83,213 @@ function setupAttendance(grid) {
     });
 }
 
-// ---------------------------------------------------------------- caja rápida
-function setupStore(root) {
-    const cart = new Map(); // id -> {name, price, qty, stock}
-    const linesEl = root.querySelector(".o_sl_cart_lines");
-    const totalEl = root.querySelector(".o_sl_total");
-    const errorEl = root.querySelector(".o_sl_cart_error");
-    const memberEl = root.querySelector(".o_sl_member");
-    const buyerEl = root.querySelector(".o_sl_buyer");
-    const typeInputs = root.querySelectorAll("input[name=sale_type]");
-    const currentType = () => {
-        const checked = root.querySelector("input[name=sale_type]:checked") || root.querySelector("input[name=sale_type]");
-        return checked ? checked.value : "store";
+// ---------------------------------------------------------------- equipos: mover como ficha y cambiar cargo
+function setupTeams(root) {
+    const sectionId = Number(root.dataset.section);
+    const sheet = root.querySelector(".o_sl_sheet");
+    let current = null;
+    const select = (card) => {
+        root.querySelectorAll(".o_sl_tcard.selected").forEach((c) => c.classList.remove("selected"));
+        current = card;
+        if (!card) {
+            sheet.classList.remove("show");
+            return;
+        }
+        card.classList.add("selected");
+        sheet.querySelector(".o_sl_sheet_name").textContent = card.dataset.name;
+        sheet.querySelectorAll("[data-move]").forEach((b) =>
+            b.classList.toggle("active", b.dataset.move === (card.closest(".o_sl_team").dataset.patrol || "0"))
+        );
+        sheet.querySelectorAll("[data-role]").forEach((b) => b.classList.toggle("active", b.dataset.role === card.dataset.role));
+        sheet.classList.add("show");
     };
-    const filterProducts = () => {
-        const type = currentType();
-        root.querySelectorAll(".o_sl_product").forEach((btn) => {
-            btn.classList.toggle("d-none", typeInputs.length > 1 && btn.dataset.type !== type);
+    const refresh = (result) => {
+        Object.entries(result.roles || {}).forEach(([id, label]) => {
+            const card = root.querySelector(`.o_sl_tcard[data-member="${id}"]`);
+            if (card) {
+                const badge = card.querySelector(".o_sl_role");
+                badge.textContent = label;
+                badge.classList.toggle("d-none", !label);
+                card.dataset.role = label ? card.dataset.role : "member";
+            }
+        });
+        root.querySelectorAll(".o_sl_team").forEach((team) => {
+            const count = team.querySelectorAll(".o_sl_tcard").length;
+            const el = team.querySelector(".o_sl_team_count");
+            if (el) {
+                el.textContent = count;
+            }
+            team.classList.toggle("o_sl_team_empty", !count);
         });
     };
-    const render = () => {
-        let total = 0;
-        linesEl.innerHTML = "";
-        for (const [id, item] of cart) {
-            total += item.qty * item.price;
-            const row = document.createElement("div");
-            row.className = "o_sl_cart_line";
-            row.innerHTML = `<button type="button" class="o_sl_minus" data-id="${id}" aria-label="Quitar uno">−</button>
-                <span class="flex-grow-1"><b>${item.qty}</b> × ${item.name}</span><span>${money(item.qty * item.price)}</span>`;
-            linesEl.appendChild(row);
-        }
-        totalEl.textContent = money(total);
-        root.querySelectorAll(".o_sl_product").forEach((btn) => {
-            const item = cart.get(btn.dataset.id);
-            const badge = btn.querySelector(".o_sl_product_qty");
-            badge.textContent = item ? item.qty : 0;
-            badge.classList.toggle("d-none", !item);
-        });
-        root.querySelector(".o_sl_cart").classList.toggle("o_sl_cart_empty", cart.size === 0);
-    };
-    const showError = (message) => {
-        errorEl.textContent = message;
-        errorEl.classList.toggle("d-none", !message);
-    };
-    root.addEventListener("click", async (ev) => {
-        const product = ev.target.closest(".o_sl_product");
-        if (product) {
-            const id = product.dataset.id;
-            const item = cart.get(id) || {
-                name: product.dataset.name,
-                price: Number(product.dataset.price),
-                qty: 0,
-                stock: !product.dataset.stock || product.dataset.stock === "none" ? null : Number(product.dataset.stock),
-            };
-            if (item.stock !== null && item.qty + 1 > item.stock) {
-                toast(`Ya no hay más ${item.name}`);
-                return;
+    const send = async (card, params) => {
+        card.classList.add("o_sl_saving");
+        try {
+            const result = await rpc("/dirigentes/api/equipo", {
+                section_id: sectionId,
+                member_id: Number(card.dataset.member),
+                ...params,
+            });
+            if (!result.ok) {
+                toast(result.error);
+                return false;
             }
-            item.qty += 1;
-            cart.set(id, item);
-            showError("");
-            render();
-            return;
-        }
-        const minus = ev.target.closest(".o_sl_minus");
-        if (minus) {
-            const item = cart.get(minus.dataset.id);
-            item.qty -= 1;
-            if (item.qty <= 0) {
-                cart.delete(minus.dataset.id);
-            }
-            render();
-            return;
-        }
-        if (ev.target.closest(".o_sl_clear")) {
-            cart.clear();
-            render();
-            return;
-        }
-        const pay = ev.target.closest(".o_sl_pay");
-        if (pay) {
-            if (!cart.size) {
-                showError("Toca los productos que se venden.");
-                return;
-            }
-            const memberId = memberEl.value ? Number(memberEl.value) : null;
-            const buyer = buyerEl.value.trim();
-            if (!memberId && !buyer) {
-                showError("Elige al miembro o escribe quién compra.");
-                return;
-            }
-            root.querySelectorAll(".o_sl_pay").forEach((b) => (b.disabled = true));
-            try {
-                const result = await rpc("/dirigentes/api/venta", {
-                    section_id: Number(root.dataset.section),
-                    sale_type: currentType(),
-                    member_id: memberId,
-                    buyer_name: buyer,
-                    payment: pay.dataset.pay,
-                    lines: [...cart].map(([id, item]) => ({ product_id: Number(id), qty: item.qty })),
-                });
-                if (result.ok) {
-                    window.location = result.url;
-                    return;
+            if ("patrol_id" in params) {
+                const target = root.querySelector(`.o_sl_team[data-patrol="${result.patrol_id || 0}"] .o_sl_team_cards`);
+                if (target) {
+                    target.appendChild(card);
                 }
-                showError(result.error);
-            } catch (error) {
-                showError("Sin conexión: la venta no se registró. Intenta de nuevo.");
+                card.dataset.role = "member";
             }
-            root.querySelectorAll(".o_sl_pay").forEach((b) => (b.disabled = false));
+            if (params.role) {
+                card.dataset.role = params.role;
+                if (params.role !== "member") {
+                    const team = card.closest(".o_sl_team_cards");
+                    team.prepend(card);
+                }
+            }
+            refresh(result);
+            toast("Guardado");
+            return true;
+        } catch (error) {
+            toast("Sin conexión: no se guardó.");
+            return false;
+        } finally {
+            card.classList.remove("o_sl_saving");
+        }
+    };
+    root.addEventListener("click", (ev) => {
+        const card = ev.target.closest(".o_sl_tcard");
+        if (card) {
+            select(card === current ? null : card);
+            return;
+        }
+        const move = ev.target.closest("[data-move]");
+        if (move && current) {
+            send(current, { patrol_id: Number(move.dataset.move) || false }).then(() => select(current));
+            return;
+        }
+        const role = ev.target.closest("[data-role]");
+        if (role && current) {
+            send(current, { role: role.dataset.role }).then(() => select(current));
+            return;
+        }
+        if (ev.target.closest(".o_sl_sheet_close")) {
+            select(null);
         }
     });
-    memberEl.addEventListener("change", () => buyerEl.classList.toggle("d-none", Boolean(memberEl.value)));
-    typeInputs.forEach((input) =>
-        input.addEventListener("change", () => {
-            cart.clear();
-            filterProducts();
-            render();
-        })
-    );
-    filterProducts();
-    render();
+    // Arrastrar y soltar (computadora o tableta)
+    root.addEventListener("dragstart", (ev) => {
+        const card = ev.target.closest(".o_sl_tcard");
+        if (card) {
+            ev.dataTransfer.setData("text/plain", card.dataset.member);
+            card.classList.add("dragging");
+        }
+    });
+    root.addEventListener("dragend", (ev) => {
+        const card = ev.target.closest(".o_sl_tcard");
+        if (card) {
+            card.classList.remove("dragging");
+        }
+    });
+    root.querySelectorAll(".o_sl_team").forEach((team) => {
+        team.addEventListener("dragover", (ev) => {
+            ev.preventDefault();
+            team.classList.add("over");
+        });
+        team.addEventListener("dragleave", () => team.classList.remove("over"));
+        team.addEventListener("drop", (ev) => {
+            ev.preventDefault();
+            team.classList.remove("over");
+            const card = root.querySelector(`.o_sl_tcard[data-member="${ev.dataTransfer.getData("text/plain")}"]`);
+            if (card && card.closest(".o_sl_team") !== team) {
+                send(card, { patrol_id: Number(team.dataset.patrol) || false });
+            }
+        });
+    });
+}
+
+// ---------------------------------------------------------------- cuadro de logros
+const PROGRESS_MARK = { none: "", in_progress: "½", achieved: "✓" };
+function setupAchievements(table) {
+    const sectionId = Number(table.dataset.section);
+    table.addEventListener("click", async (ev) => {
+        const cell = ev.target.closest("td[data-stage]");
+        if (!cell || cell.classList.contains("o_sl_saving")) {
+            return;
+        }
+        const row = cell.closest("tr");
+        cell.classList.add("o_sl_saving");
+        try {
+            const result = await rpc("/dirigentes/api/logro", {
+                section_id: sectionId,
+                member_id: Number(row.dataset.member),
+                stage_id: Number(cell.dataset.stage),
+            });
+            if (!result.ok) {
+                toast(result.error);
+                return;
+            }
+            cell.dataset.state = result.state;
+            cell.textContent = PROGRESS_MARK[result.state];
+            const bar = row.querySelector(".o_sl_thermo_fill");
+            if (bar) {
+                bar.style.width = `${result.pct}%`;
+                row.querySelector(".o_sl_thermo_txt").textContent = `${result.done}/${result.total}`;
+            }
+        } catch (error) {
+            toast("Sin conexión: no se guardó.");
+        } finally {
+            cell.classList.remove("o_sl_saving");
+        }
+    });
+}
+
+// ---------------------------------------------------------------- foto con la cámara (se reduce en el celular)
+function setupPhoto(input) {
+    input.addEventListener("change", () => {
+        const file = input.files && input.files[0];
+        if (!file) {
+            return;
+        }
+        const form = input.closest("form");
+        const reader = new FileReader();
+        reader.onload = () => {
+            const img = new Image();
+            img.onload = () => {
+                const max = 900;
+                const ratio = Math.min(1, max / Math.max(img.width, img.height));
+                const canvas = document.createElement("canvas");
+                canvas.width = Math.round(img.width * ratio);
+                canvas.height = Math.round(img.height * ratio);
+                canvas.getContext("2d").drawImage(img, 0, 0, canvas.width, canvas.height);
+                const data = canvas.toDataURL("image/jpeg", 0.85);
+                form.querySelector('input[name="photo_data"]').value = data;
+                const preview = form.querySelector(".o_sl_photo_preview");
+                if (preview) {
+                    preview.src = data;
+                    preview.classList.remove("d-none");
+                }
+                if (form.dataset.slPhotoAutosubmit) {
+                    form.submit();
+                }
+            };
+            img.src = reader.result;
+        };
+        reader.readAsDataURL(file);
+    });
+}
+
+// ---------------------------------------------------------------- copiar liga
+function setupCopy(button) {
+    button.addEventListener("click", async () => {
+        try {
+            await navigator.clipboard.writeText(button.dataset.slCopy);
+            toast("Liga copiada");
+        } catch (error) {
+            window.prompt("Copia la liga:", button.dataset.slCopy);
+        }
+    });
 }
 
 // ---------------------------------------------------------------- atajos
@@ -236,7 +319,10 @@ function start() {
         return;
     }
     document.querySelectorAll("[data-sl-attendance]").forEach(setupAttendance);
-    document.querySelectorAll(".o_sl_store").forEach(setupStore);
+    document.querySelectorAll(".o_sl_teams").forEach(setupTeams);
+    document.querySelectorAll("table[data-sl-achievements]").forEach(setupAchievements);
+    document.querySelectorAll("input[data-sl-photo]").forEach(setupPhoto);
+    document.querySelectorAll("[data-sl-copy]").forEach(setupCopy);
     setupHelpers();
 }
 

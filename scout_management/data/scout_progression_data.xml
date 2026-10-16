@@ -97,8 +97,8 @@
     </record>
 
     <!-- Tropas -->
-    <record id="stage_tropa_primera" model="scout.progression.stage">
-        <field name="name">Primera clase</field>
+    <record id="stage_tropa_tercera" model="scout.progression.stage">
+        <field name="name">Tercera clase</field>
         <field name="sequence">10</field>
         <field name="section_ids" eval="[Command.link(ref('section_tropa_hydra')), Command.link(ref('section_tropa_atlas'))]"/>
     </record>
@@ -107,9 +107,8 @@
         <field name="sequence">20</field>
         <field name="section_ids" eval="[Command.link(ref('section_tropa_hydra')), Command.link(ref('section_tropa_atlas'))]"/>
     </record>
-    <record id="stage_tropa_tercera" model="scout.progression.stage">
-        <field name="name">Tercera clase</field>
-        <field name="stage_type">terminal</field>
+    <record id="stage_tropa_primera" model="scout.progression.stage">
+        <field name="name">Primera clase</field>
         <field name="sequence">30</field>
         <field name="section_ids" eval="[Command.link(ref('section_tropa_hydra')), Command.link(ref('section_tropa_atlas'))]"/>
     </record>

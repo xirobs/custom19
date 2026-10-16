@@ -14,8 +14,13 @@ import pytz
 from odoo import _, api, fields, models
 from odoo.exceptions import AccessError, UserError
 
-from .calendar_event import DEFAULT_TZ
+from .calendar_event import CATEGORY_HEX, DEFAULT_TZ
 from .scout_common import ACTIVITY_TYPES, quarter_bounds
+from .scout_progression import PATH_TYPES
+
+ROLE_ORDER = {'guide': 0, 'subguide': 1}
+PATROL_COLORS = {'yellow': '#f2c200', 'blue': '#1f6fb5', 'red': '#d7262f', 'green': '#2e9e44',
+                 'orange': '#f36f45', 'purple': '#7b3f98', 'brown': '#8a5a2b', 'white': '#d9dde3'}
 
 QUICK_STATUSES = ('present', 'absent', 'camp', 'outing', 'na')
 LEADER_ITEM_TYPES = ('status', 'transition', 'previous', 'objective', 'activity', 'need', 'key', 'progress',
@@ -262,9 +267,11 @@ class ScoutLeaderPortal(models.AbstractModel):
         existing = self.today_event(section)
         if existing:
             return existing
-        return self.save_event(section, None, {
+        event = self.save_event(section, None, {
             'name': _('Sesión %s', section.display_name), 'date': today.isoformat(),
             'time_from': '10:00', 'time_to': '13:00', 'activity_type': 'regular'})
+        event.write({'scout_plan_state': 'approved', 'scout_plan_note': _('Sesión del día (sin planear)')})
+        return event
 
     @api.model
     def _parse_time(self, value, default):
@@ -289,19 +296,29 @@ class ScoutLeaderPortal(models.AbstractModel):
             raise UserError(_('La fecha no es válida.'))
         start_h = self._parse_time(post.get('time_from'), '10:00')
         stop_h = self._parse_time(post.get('time_to'), '13:00')
-        if stop_h <= start_h:
+        try:
+            day_end = fields.Date.to_date(post.get('date_end')) or day
+        except ValueError:
+            day_end = day
+        if day_end < day:
+            day_end = day
+        if day_end == day and stop_h <= start_h:
             stop_h = start_h + 1
         activity_type = post.get('activity_type') or 'regular'
-        if activity_type not in dict(ACTIVITY_TYPES):
+        if activity_type not in dict(ACTIVITY_TYPES) or activity_type in ('council', 'group'):
             activity_type = 'regular'
+        category = post.get('category')
+        if category not in ('outing', 'ordinary'):
+            category = 'outing' if activity_type in ('camp', 'outing') else 'ordinary'
         leaders = self._members(section, include_leaders=True).filtered(lambda p: p.scout_type == 'leader')
         responsible_ids = [int(x) for x in (post.get('responsible_ids') or []) if str(x).isdigit()]
         vals = {
             'name': name,
             'start': self._to_utc(day, start_h),
-            'stop': self._to_utc(day, stop_h),
+            'stop': self._to_utc(day_end, stop_h),
             'allday': False,
             'scout_activity_type': activity_type,
+            'scout_category': category,
             'scout_theme': post.get('theme') or False,
             'scout_objective': post.get('objective') or False,
             'location': post.get('location') or False,
@@ -309,16 +326,23 @@ class ScoutLeaderPortal(models.AbstractModel):
             'description': post.get('description') or False,
             'scout_responsible_ids': [fields.Command.set(leaders.filtered(lambda p: p.id in responsible_ids).ids)],
         }
-        if 'done' in post or event:
+        if 'has_done' in post:
             vals['scout_done'] = bool(post.get('done'))
         if 'result' in post:
             vals['scout_result'] = post.get('result') or False
         Event = self.env['calendar.event'].sudo().with_context(
             no_mail_to_attendees=True, dont_notify=True, mail_create_nosubscribe=True)
         if event:
+            key_changed = event.scout_plan_state in ('approved', 'reviewed') and (
+                event.start != vals['start'] or event.stop != vals['stop'] or category != event.scout_category
+                or activity_type != event.scout_activity_type or (vals['location'] or False) != (event.location or False))
+            if key_changed:
+                vals['scout_plan_state'] = 'proposed'
             event.with_context(no_mail_to_attendees=True, dont_notify=True).write(vals)
-            self._note(event, _('Actividad actualizada'))
+            self._note(event, _('Actividad actualizada; regresa a revisión del consejo') if key_changed
+                       else _('Actividad actualizada'))
             return event
+        vals['scout_plan_state'] = 'draft'
         vals.update({'is_scout_event': True, 'scout_scope': 'section',
                      'scout_section_ids': [fields.Command.set(section.ids)],
                      'user_id': self.env.uid, 'partner_ids': [fields.Command.clear()],
@@ -352,8 +376,15 @@ class ScoutLeaderPortal(models.AbstractModel):
         if event.scout_attendance_closed:
             raise UserError(_('La lista ya está cerrada.'))
         line.status = status
+        member = line.member_id
+        member.invalidate_recordset(['scout_trial_attendance', 'scout_needs_registration'])
+        alert = ''
+        if member.scout_type == 'youth' and member.scout_registration_status not in ('paid', 'exempt') \
+                and member.scout_trial_attendance:
+            alert = _('%s.ª asistencia sin registro', member.scout_trial_attendance)
         return {'status': status, 'present': event.scout_present_count, 'counted': event.scout_counted_count,
-                'pct': round(event.scout_attendance_pct)}
+                'pct': round(event.scout_attendance_pct), 'alert': alert,
+                'needs_registration': member.scout_needs_registration}
 
     @api.model
     def all_present(self, event, section):
@@ -370,6 +401,7 @@ class ScoutLeaderPortal(models.AbstractModel):
         event.write(vals)
         self._note(event, _('Lista cerrada: %(present)s de %(counted)s (%(pct)s %%)', present=event.scout_present_count,
                             counted=event.scout_counted_count, pct=round(event.scout_attendance_pct)))
+        return event.scout_attendance_line_ids.member_id._scout_notify_registration_due()
 
     @api.model
     def reopen_attendance(self, event):
@@ -472,8 +504,8 @@ class ScoutLeaderPortal(models.AbstractModel):
             'activity_type': 'regular', 'skip_existing': True,
         }).action_generate()
         created = self.period_events(section, start, end) - before
-        for event in created:
-            event.user_id = self.env.uid
+        created.write({'user_id': self.env.uid, 'scout_plan_state': 'draft',
+                       'scout_approved_by_id': False, 'scout_approved_date': False})
         return created
 
     @api.model
@@ -599,3 +631,388 @@ class ScoutLeaderPortal(models.AbstractModel):
     def leader_partners(self, section):
         return self._members(section, include_leaders=True).filtered(lambda p: p.scout_type == 'leader')
 
+    # ------------------------------------------------------------------ equipos (patrulla / seisena / madriguera)
+    @api.model
+    def team_board(self, section):
+        """[(equipo o vacío, miembros)] con guía y subguía primero."""
+        members = self._members(section)
+        board = []
+        for patrol in section.sudo().patrol_ids.sorted(lambda p: (p.sequence, p.id)):
+            team = members.filtered(lambda m: m.scout_patrol_id == patrol)
+            board.append((patrol, team.sorted(lambda m: (ROLE_ORDER.get(m.scout_position_id.kind, 2), m.name or ''))))
+        loose = members.filtered(lambda m: not m.scout_patrol_id or m.scout_patrol_id.section_id != section)
+        board.append((self.env['scout.patrol'].sudo(), loose.sorted(lambda m: m.name or '')))
+        return board
+
+    @api.model
+    def patrol_color(self, patrol):
+        return PATROL_COLORS.get(patrol.color_name, '#0f3049') if patrol else '#9aa5b1'
+
+    @api.model
+    def move_member(self, section, member_id, patrol_id):
+        member = self._member(member_id, section)
+        patrol = self.env['scout.patrol'].sudo()
+        if patrol_id:
+            patrol = patrol.browse(int(patrol_id)).exists()
+            if not patrol or patrol.section_id != section:
+                raise AccessError(_('Ese equipo no es de tu sección.'))
+        old = member.scout_patrol_id
+        member._scout_set_patrol(patrol)
+        self._note(member, _('Cambio de %(label)s: %(old)s → %(new)s', label=(section.patrol_label or _('equipo')).lower(),
+                             old=old.name or _('sin equipo'), new=patrol.name or _('sin equipo')))
+        return member
+
+    @api.model
+    def set_role(self, section, member_id, kind):
+        member = self._member(member_id, section)
+        member._scout_set_patrol_role(kind)
+        labels = {'guide': section.patrol_role_label or _('Guía'), 'subguide': section.patrol_subrole_label or _('Subguía'),
+                  'member': _('Integrante')}
+        self._note(member, _('Cargo en %(team)s: %(role)s', team=member.scout_patrol_id.name or '-', role=labels[kind]))
+        return member
+
+    @api.model
+    def role_label(self, section, member):
+        kind = member.scout_position_id.kind
+        if kind == 'guide':
+            return section.patrol_role_label or _('Guía')
+        if kind == 'subguide':
+            return section.patrol_subrole_label or _('Subguía')
+        return ''
+
+    @api.model
+    def create_patrol(self, section, name, color=None):
+        name = (name or '').strip()
+        if not name:
+            raise UserError(_('Escribe el nombre del equipo.'))
+        if color not in PATROL_COLORS:
+            color = False
+        patrol = self.env['scout.patrol'].sudo().create({
+            'name': name, 'section_id': section.id, 'color_name': color,
+            'sequence': max(section.sudo().patrol_ids.mapped('sequence') or [0]) + 10})
+        self._note(section, _('Nuevo equipo: %s', name))
+        return patrol
+
+    # ------------------------------------------------------------------ catálogo de adelantos
+    @api.model
+    def path_stages(self, section):
+        """Promesa, adelantos, ruta de enlace e insignia terminal de la sección, en orden."""
+        return self.stages(section).filtered(lambda s: s.stage_type in PATH_TYPES).sorted(
+            lambda s: (s.type_order, s.sequence, s.id))
+
+    @api.model
+    def specialty_categories(self, section):
+        specialties = self.stages(section).filtered(lambda s: s.stage_type == 'specialty')
+        categories = specialties.category_id.sorted(lambda c: (c.sequence, c.id))
+        result = [(c, specialties.filtered(lambda s: s.category_id == c).sorted(lambda s: (s.sequence, s.id)))
+                  for c in categories]
+        loose = specialties.filtered(lambda s: not s.category_id)
+        if loose:
+            result.append((self.env['scout.progression.category'].sudo(), loose))
+        return result
+
+    # ------------------------------------------------------------------ cuadro de logros
+    @api.model
+    def achievements(self, section, columns):
+        """Filas por miembro: avance del camino de adelantos (termómetro) y celdas de las columnas pedidas."""
+        members = self._members(section)
+        path = self.path_stages(section)
+        progress = self.env['scout.member.progress'].sudo().search([('member_id', 'in', members.ids)])
+        by_member = {}
+        for p in progress:
+            by_member.setdefault(p.member_id.id, {})[p.stage_id.id] = p
+        rows = []
+        for member in members:
+            mine = by_member.get(member.id, {})
+            done = [s for s in path if mine.get(s.id) and mine[s.id].state == 'achieved']
+            current = next((s for s in path if mine.get(s.id) and mine[s.id].state == 'in_progress'), None)
+            if not current:
+                current = next((s for s in path if s.id not in mine), None)
+            specs = [p for p in mine.values() if p.stage_id.stage_type == 'specialty' and p.state == 'achieved']
+            rows.append({
+                'member': member, 'cells': [mine.get(c.id) for c in columns],
+                'done': len(done), 'total': len(path),
+                'pct': round(len(done) * 100.0 / len(path)) if path else 0,
+                'next': current, 'specialties': len(specs),
+            })
+        rows.sort(key=lambda r: (r['member'].scout_patrol_id.sequence or 999, r['member'].scout_patrol_id.name or '',
+                                 r['member'].name or ''))
+        return rows
+
+    @api.model
+    def toggle_progress(self, section, member_id, stage_id):
+        """Un toque: vacío → en curso → logrado → vacío."""
+        member = self._member(member_id, section)
+        stage = self.stages(section).filtered(lambda s: s.id == int(stage_id or 0))
+        if not stage:
+            raise UserError(_('Ese adelanto no es de tu sección.'))
+        Progress = self.env['scout.member.progress'].sudo()
+        progress = Progress.search([('member_id', '=', member.id), ('stage_id', '=', stage.id)], limit=1)
+        today = self._today()
+        if not progress:
+            leader = self.env.user.partner_id
+            Progress.create({'member_id': member.id, 'stage_id': stage.id, 'state': 'in_progress', 'date_start': today,
+                             'leader_id': leader.id if leader.is_scout else False})
+            state = 'in_progress'
+            self._note(member, _('%s: en curso', stage.name))
+        elif progress.state == 'in_progress':
+            progress.write({'state': 'achieved', 'date_achieved': today})
+            state = 'achieved'
+            self._note(member, _('%s: logrado', stage.name))
+        else:
+            progress.unlink()
+            state = 'none'
+            self._note(member, _('%s: se quitó el registro', stage.name))
+        path = self.path_stages(section)
+        achieved = Progress.search_count([('member_id', '=', member.id), ('stage_id', 'in', path.ids),
+                                          ('state', '=', 'achieved')])
+        return {'state': state, 'done': achieved, 'total': len(path),
+                'pct': round(achieved * 100.0 / len(path)) if path else 0}
+
+    # ------------------------------------------------------------------ nuevos ingresos
+    @api.model
+    def _image_from_post(self, value):
+        """Foto tomada con la cámara: llega como data URL (reducida en el celular) o como archivo."""
+        import base64
+        if hasattr(value, 'read'):
+            content = value.read()
+            if not content:
+                return False
+            if len(content) > 8 * 1024 * 1024:
+                raise UserError(_('La foto no debe pasar de 8 MB.'))
+            return base64.b64encode(content)
+        if isinstance(value, str) and value.startswith('data:image'):
+            return value.split(',', 1)[1].encode()
+        return False
+
+    @api.model
+    def set_photo(self, section, member_id, value):
+        member = self._member(member_id, section)
+        image = self._image_from_post(value)
+        if not image:
+            raise UserError(_('Toma o elige una foto.'))
+        member.write({'image_1920': image})
+        self._note(member, _('Foto actualizada'))
+        return member
+
+    @api.model
+    def create_member(self, section, post, photo=None):
+        """Alta rápida de un nuevo ingreso (en prueba) para que aparezca en el pase de lista."""
+        first = (post.get('first_name') or '').strip()
+        last = (post.get('last_name') or '').strip()
+        if not first or not last:
+            raise UserError(_('Escribe el nombre y el apellido paterno.'))
+        try:
+            birthdate = fields.Date.to_date(post.get('birthdate')) if post.get('birthdate') else False
+        except ValueError:
+            raise UserError(_('La fecha de nacimiento no es válida.'))
+        Partner = self.env['res.partner'].sudo()
+        guardian = Partner
+        g_name = (post.get('guardian_name') or '').strip()
+        g_phone = (post.get('guardian_phone') or '').strip()
+        g_email = (post.get('guardian_email') or '').strip()
+        if g_name or g_phone:
+            if g_email:
+                guardian = Partner.search([('email', '=ilike', g_email)], limit=1)
+            if not guardian and g_phone:
+                guardian = Partner.search([('phone', '=', g_phone)], limit=1)
+            if not guardian:
+                guardian = Partner.create({'name': g_name or _('Tutor de %s', first), 'phone': g_phone or False,
+                                           'email': g_email or False})
+        vals = {
+            'is_scout': True, 'scout_type': 'youth', 'scout_state': 'trial',
+            'scout_first_name': first, 'scout_last_name': last,
+            'scout_last_name2': (post.get('last_name2') or '').strip() or False,
+            'name': ' '.join(p for p in (first, last, post.get('last_name2') or '') if p.strip()),
+            'scout_name': (post.get('scout_name') or '').strip() or False,
+            'scout_birthdate': birthdate, 'scout_gender': post.get('gender') if post.get('gender') in ('m', 'f') else False,
+            'scout_section_id': section.id, 'scout_join_date': self._today(),
+            'scout_guardian_id': guardian.id or False,
+            'scout_guardian_relationship': (post.get('guardian_relationship') or '').strip() or False,
+            'street': (post.get('street') or '').strip() or False,
+        }
+        if post.get('patrol_id') and str(post['patrol_id']).isdigit():
+            patrol = self.env['scout.patrol'].sudo().browse(int(post['patrol_id'])).exists()
+            if patrol and patrol.section_id == section:
+                vals['scout_patrol_id'] = patrol.id
+        image = self._image_from_post(photo) if photo else False
+        if image:
+            vals['image_1920'] = image
+        member = Partner.with_context(scout_change_approved=True).create(vals)
+        self._note(member, _('Nuevo ingreso registrado en %s', section.display_name))
+        return member
+
+    @api.model
+    def register_member(self, section, member, post):
+        """Ficha de registro firmada por el tutor (consentimientos) y cargo de la cuota con su liga de pago."""
+        member = self._member(member.id, section)
+        signature = post.get('guardian_signature') or ''
+        if not signature.startswith('data:image'):
+            raise UserError(_('Falta la firma del padre, madre o tutor.'))
+        consents = ('consent_participation', 'consent_first_aid', 'consent_data', 'consent_risk', 'consent_update')
+        if not all(post.get(c) for c in consents):
+            raise UserError(_('El tutor debe aceptar todas las autorizaciones obligatorias.'))
+        signed_by = (post.get('guardian_signed_by') or '').strip() or member.scout_guardian_id.name
+        if not signed_by:
+            raise UserError(_('Escribe el nombre de quien firma.'))
+        cycle = self.env['scout.cycle'].sudo()._get_current(section.company_id)
+        if not cycle:
+            raise UserError(_('No hay un ciclo scout abierto; pide a secretaría que lo cree.'))
+        Registration = self.env['scout.registration'].sudo()
+        reg = Registration.search([('member_id', '=', member.id), ('cycle_id', '=', cycle.id),
+                                   ('state', '!=', 'cancel')], limit=1)
+        guardian = member.scout_guardian_id
+        vals = {
+            'cycle_id': cycle.id, 'member_id': member.id, 'source': 'portal', 'state': 'submitted',
+            'company_id': section.company_id.id, 'section_id': section.id,
+            'first_name': member.scout_first_name or member.name, 'last_name': member.scout_last_name,
+            'last_name2': member.scout_last_name2, 'birthdate': member.scout_birthdate, 'street': member.street,
+            'guardian_id': guardian.id or False, 'guardian_name': guardian.name or signed_by,
+            'guardian_relationship': member.scout_guardian_relationship, 'guardian_phone': guardian.phone,
+            'guardian_email': guardian.email,
+            'consent_participation': True, 'consent_first_aid': True, 'consent_data': True,
+            'consent_risk': True, 'consent_update': True, 'consent_image': bool(post.get('consent_image')),
+            'guardian_signed_by': signed_by, 'guardian_signature': signature.split(',', 1)[1],
+            'signed_date': self._today(), 'leader_user_id': self.env.uid,
+        }
+        if reg:
+            if reg.state == 'validated':
+                raise UserError(_('%s ya tiene su ficha validada en este ciclo.', member.name))
+            reg.write(vals)
+        else:
+            reg = Registration.create(vals)
+        if not reg.guardian_id:
+            reg.guardian_id = reg._get_or_create_guardian()
+            if reg.guardian_id and not member.scout_guardian_id:
+                member.with_context(scout_change_approved=True).scout_guardian_id = reg.guardian_id
+        reg._create_registration_invoice()
+        self._note(reg, _('Ficha capturada en el portal de dirigentes con la firma del tutor'))
+        officers = self.env.ref('scout_management.group_scout_officer').sudo().all_user_ids.filtered(
+            lambda u: u.active and not u.share and u.id != 1)
+        todo = self.env.ref('mail.mail_activity_data_todo', raise_if_not_found=False)
+        for user in officers[:2]:
+            reg.activity_schedule(activity_type_id=todo.id if todo else False,
+                                  summary=_('Revisar ficha de nuevo ingreso'), user_id=user.id)
+        return reg
+
+    @api.model
+    def registration(self, member):
+        cycle = self.env['scout.cycle'].sudo()._get_current()
+        return self.env['scout.registration'].sudo().search(
+            [('member_id', '=', member.id), ('cycle_id', '=', cycle.id), ('state', '!=', 'cancel')], limit=1) \
+            if cycle else self.env['scout.registration'].sudo()
+
+    @api.model
+    def payment_info(self, member):
+        """Cargo pendiente del registro con su liga, QR y mensaje para WhatsApp."""
+        from urllib.parse import quote
+        from .scout_online_payment import scout_qr_data_uri, scout_whatsapp_phone
+        reg = self.registration(member)
+        invoice = reg.invoice_id if reg else self.env['account.move']
+        if not invoice or not invoice.scout_can_pay_online:
+            return {'registration': reg, 'invoice': invoice}
+        link = invoice._scout_payment_link()
+        phone = scout_whatsapp_phone(invoice.partner_id.phone or member.scout_guardian_id.phone)
+        text = invoice._scout_payment_message(link)
+        return {'registration': reg, 'invoice': invoice, 'link': link, 'qr': scout_qr_data_uri(link),
+                'whatsapp': f'https://wa.me/{phone}?text={quote(text)}' if phone else
+                f'https://wa.me/?text={quote(text)}'}
+
+    @api.model
+    def alerts(self, section):
+        """Avisos de la sección: nuevos que ya deben registrarse y miembros por edad."""
+        members = self._members(section)
+        return {
+            'registration': members.filtered('scout_needs_registration'),
+            'age': members.filtered(lambda m: m.scout_age_alert in ('over', 'soon')),
+        }
+
+    # ------------------------------------------------------------------ planificación: aprobación y calendario general
+    @api.model
+    def submit_plan(self, section, start, end):
+        events = self.period_events(section, start, end).filtered(
+            lambda e: e.scout_scope == 'section' and e.scout_plan_state in ('draft', 'changes')
+            and self._event_editable(e))
+        if not events:
+            raise UserError(_('No hay actividades en borrador para enviar.'))
+        events.action_scout_plan_submit()
+        self._note(section, _('Programa %(start)s – %(end)s enviado al consejo (%(n)s actividades)',
+                              start=start.strftime('%d/%m/%Y'), end=end.strftime('%d/%m/%Y'), n=len(events)))
+        return events
+
+    @api.model
+    def plan_summary(self, events):
+        events = events.filtered(lambda e: e.scout_scope == 'section')
+        return {state: len(events.filtered(lambda e: e.scout_plan_state == state))
+                for state in ('draft', 'proposed', 'reviewed', 'approved', 'changes')}
+
+    @api.model
+    def general_calendar(self, month_start):
+        """Semanas del mes con las actividades de todas las secciones y del grupo."""
+        start = month_start.replace(day=1)
+        end = start + relativedelta(months=1, days=-1)
+        grid_start = start - timedelta(days=start.weekday())
+        grid_end = end + timedelta(days=6 - end.weekday())
+        events = self.env['calendar.event'].sudo().search(
+            [('is_scout_event', '=', True), ('scout_date', '<=', grid_end),
+             '|', ('scout_date_end', '>=', grid_start), ('scout_date', '>=', grid_start)], order='start')
+        weeks, day = [], grid_start
+        while day <= grid_end:
+            week = []
+            for _i in range(7):
+                todays = events.filtered(lambda e, d=day: e.scout_date <= d <= (e.scout_date_end or e.scout_date))
+                week.append((day, todays))
+                day += timedelta(days=1)
+            weeks.append(week)
+        return {'start': start, 'end': end, 'weeks': weeks, 'events': events}
+
+    @api.model
+    def category_hex(self, event):
+        return CATEGORY_HEX.get(event.scout_category or 'ordinary')
+
+
+    # ------------------------------------------------------------------ rutas de enlace y permanencia
+    @api.model
+    def routes(self, section):
+        members = self._members(section)
+        members._scout_ensure_route()
+        routes = self.env['scout.route'].sudo().search([('member_id', 'in', members.ids), ('is_open', '=', True),
+                                                       ('section_id', '=', section.id)])
+        return routes.sorted(lambda r: (r.alert_order, r.date_pass_official or date.max, r.member_id.name or ''))
+
+    @api.model
+    def incoming_routes(self, section):
+        """Beneficiarios que recibirá la sección: en ruta, deben iniciar, vencidos o próximos a comenzar."""
+        routes = self.env['scout.route'].sudo().search([
+            ('destination_id', '=', section.id), ('is_open', '=', True), ('member_state', 'in', ('trial', 'active')),
+            '|', ('state', 'in', ('must_start', 'in_route', 'extension', 'overdue')), ('route_soon', '=', True)])
+        return routes.sorted(lambda r: (r.alert_order, r.date_pass_official or date.max))
+
+    @api.model
+    def start_route(self, section, route_id, day=None):
+        route = self.env['scout.route'].sudo().browse(int(route_id or 0)).exists()
+        if not route or route.section_id != section:
+            raise AccessError(_('Esa ruta no es de tu sección.'))
+        self._member(route.member_id.id, section)
+        route.action_start_route(day)
+        self._note(route.member_id, _('Inicio de ruta de enlace registrado'))
+        return route
+
+    @api.model
+    def plan_day(self, section, day):
+        """La sesión de la sección en ese día (la crea en borrador si no existe) para planearla y dictar su programa."""
+        existing = self.env['calendar.event'].sudo().search([
+            ('is_scout_event', '=', True), ('scout_section_ids', 'in', section.ids), ('scout_scope', '=', 'section'),
+            ('scout_date', '=', day)], order='start', limit=1)
+        if existing:
+            return existing
+        last = self.env['calendar.event'].sudo().search([
+            ('is_scout_event', '=', True), ('scout_section_ids', 'in', section.ids), ('scout_scope', '=', 'section'),
+            ('scout_activity_type', '=', 'regular')], order='start desc', limit=1)
+        start = self._local(last.start) if last else None
+        stop = self._local(last.stop) if last else None
+        return self.save_event(section, None, {
+            'name': _('Sesión %s', section.display_name), 'date': day.isoformat(),
+            'time_from': start.strftime('%H:%M') if start else '16:00',
+            'time_to': stop.strftime('%H:%M') if stop and stop.date() == start.date() else '18:00',
+            'activity_type': 'regular'})

@@ -6,7 +6,7 @@ from odoo.exceptions import ValidationError
 class ScoutSection(models.Model):
     _name = 'scout.section'
     _description = 'Sección scout'
-    _inherit = ['mail.thread']
+    _inherit = ['mail.thread', 'mail.activity.mixin']
     _order = 'sequence, id'
 
     name = fields.Char(string='Sección', required=True, translate=True)
