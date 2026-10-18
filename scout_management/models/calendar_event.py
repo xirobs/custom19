@@ -19,6 +19,9 @@ PLAN_STATES = [('draft', 'Borrador'), ('proposed', 'Enviada al consejo'), ('revi
 PLAN_KEY_FIELDS = ('start', 'stop', 'scout_activity_type', 'scout_category', 'location', 'scout_section_ids')
 
 
+ATTENDANCE_FIELDS = {'scout_attendance_line_ids', 'scout_attendance_closed', 'scout_done', 'scout_result'}
+
+
 class CalendarEvent(models.Model):
     _inherit = 'calendar.event'
 
@@ -51,6 +54,9 @@ class CalendarEvent(models.Model):
                                       store=True, readonly=False, tracking=True,
                                       help='Rojo: todo el grupo (la genera el jefe de grupo). Amarillo: salida de la '
                                            'sección (la autoriza el jefe de grupo). Verde: actividad ordinaria.')
+    scout_main_section_id = fields.Many2one('scout.section', string='Sección (color)', compute='_compute_scout_main_section',
+                                            store=True, index=True,
+                                            help='Primera sección de la actividad; da el color en el calendario.')
     scout_color = fields.Integer(string='Color', compute='_compute_scout_color', store=True)
     scout_color_hex = fields.Char(compute='_compute_scout_color')
     scout_plan_state = fields.Selection(PLAN_STATES, string='Aprobación', default='draft', tracking=True, copy=False,
@@ -84,6 +90,34 @@ class CalendarEvent(models.Model):
                 event.scout_category = 'outing'
             else:
                 event.scout_category = 'ordinary'
+
+    @api.depends('is_scout_event', 'scout_scope', 'scout_section_ids')
+    def _compute_scout_main_section(self):
+        for event in self:
+            event.scout_main_section_id = event.scout_section_ids[:1] \
+                if event.is_scout_event and event.scout_scope == 'section' else False
+
+    @api.depends('name', 'is_scout_event', 'scout_scope', 'scout_section_ids.short_name',
+                 'scout_section_ids.name', 'scout_section_ids.unit_name')
+    def _compute_display_name(self):
+        """En el calendario se lee primero la sección: "Lobatos · Sesión" en vez de "Sesión Manada de Lobatos…"."""
+        super()._compute_display_name()
+        for event in self.filtered('is_scout_event'):
+            if event.display_name == _('Busy'):
+                continue
+            name = event.name or ''
+            if event.scout_scope == 'group' or not event.scout_section_ids:
+                event.display_name = _('Grupo · %s', name)
+                continue
+            sections = event.scout_section_ids.sudo()
+            for section in sections:
+                for long_name in filter(None, (section.display_name, section.unit_name, section.name)):
+                    name = name.replace(' ' + long_name, '').replace(long_name, '')
+            name = name.strip(' -·') or event.name
+            label = ' / '.join(sections[:2].mapped(lambda s: s._scout_short()))
+            if len(sections) > 2:
+                label += ' +%s' % (len(sections) - 2)
+            event.display_name = '%s · %s' % (label, name)
 
     @api.depends('scout_category', 'is_scout_event')
     def _compute_scout_color(self):
@@ -134,6 +168,23 @@ class CalendarEvent(models.Model):
                 return False
         return True
 
+    def _scout_user_can_take_attendance(self):
+        """Pasar lista: mesa directiva, jefatura, tesorería y secretaría en todas; cada jefe en las actividades
+        de sus secciones y en las de todo el grupo."""
+        if self.env.su or self.env.user.has_group('scout_management.group_scout_officer'):
+            return True
+        my_sections = self.env.user._scout_leader_sections()
+        if not my_sections:
+            return False
+        for event in self.filtered('is_scout_event'):
+            if event.scout_scope == 'section' and event.scout_section_ids and not (event.scout_section_ids & my_sections):
+                return False
+        return True
+
+    def _scout_check_attendance(self):
+        if not self._scout_user_can_take_attendance():
+            raise AccessError(_('No puedes pasar lista en esta actividad.'))
+
     def _scout_check_manage(self):
         if not self._scout_user_can_manage():
             raise AccessError(_('Solo puedes modificar actividades de tus secciones. '
@@ -174,6 +225,9 @@ class CalendarEvent(models.Model):
 
     def write(self, vals):
         scout_events = self.filtered('is_scout_event')
+        if vals and set(vals) <= ATTENDANCE_FIELDS:
+            scout_events._scout_check_attendance()
+            return super(CalendarEvent, self.sudo() if scout_events and not self.env.su else self).write(vals)
         scout_events._scout_check_manage()
         chief = self._scout_is_group_chief()
         if not chief and 'scout_plan_state' in vals and vals['scout_plan_state'] == 'approved' \
@@ -266,7 +320,8 @@ class CalendarEvent(models.Model):
         return Partner.search(domain)
 
     def action_scout_load_members(self):
-        for event in self:
+        self._scout_check_attendance()
+        for event in self.sudo():
             if event.scout_attendance_closed:
                 raise UserError(_('La lista ya está cerrada; reábrela para modificarla.'))
             existing = event.scout_attendance_line_ids.member_id
@@ -277,6 +332,7 @@ class CalendarEvent(models.Model):
         return True
 
     def action_scout_mark_all_present(self):
+        self._scout_check_attendance()
         for event in self:
             event.scout_attendance_line_ids.filtered(lambda l: l.status == 'absent').write({'status': 'present'})
 

@@ -48,4 +48,7 @@ class ScoutCycle(models.Model):
                 ('date_start', '<=', today), ('date_end', '>=', today),
                 ('company_id', '=', company.id),
             ], limit=1)
+        if not cycle:
+            # Formularios públicos: la compañía del sitio web puede no ser la del ciclo
+            cycle = self.search([('is_current', '=', True)], limit=1)
         return cycle

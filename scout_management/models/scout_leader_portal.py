@@ -36,8 +36,12 @@ class ResUsers(models.Model):
         Section = self.env['scout.section'].sudo()
         if not self.share and self.has_group('scout_management.group_scout_officer'):
             return Section.search([])
+        partner = self.partner_id.sudo()
+        if partner.is_scout and partner.scout_state in ('trial', 'active') \
+                and partner.scout_position_id.all_sections_attendance:
+            return Section.search([])
         sections = Section.search([('leader_ids', 'in', self.id)])
-        sections |= self.partner_id.sudo().scout_leading_section_ids
+        sections |= partner.scout_leading_section_ids
         return sections.filtered('active')
 
     def _scout_is_leader(self):

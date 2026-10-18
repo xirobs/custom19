@@ -12,6 +12,9 @@ class ScoutSection(models.Model):
     name = fields.Char(string='Sección', required=True, translate=True)
     unit_name = fields.Char(string='Nombre de la unidad', help='Ej. Colonia Ágape, Manada Seeonee')
     code = fields.Char(string='Código')
+    short_name = fields.Char(string='Nombre corto (calendario)',
+                             help='Se muestra al inicio de cada actividad en el calendario, ej. "Lobatos" o "Tropa Atlas". '
+                                  'Si lo dejas vacío se usa el nombre de la sección.')
     sequence = fields.Integer(default=10)
     is_leadership = fields.Boolean(string='Es Jefatura', help='Sección que agrupa a la jefatura del grupo.')
     age_min = fields.Integer(string='Edad mínima')
@@ -41,6 +44,10 @@ class ScoutSection(models.Model):
     company_id = fields.Many2one('res.company', string='Grupo', required=True,
                                  default=lambda self: self.env.company)
     active = fields.Boolean(default=True)
+
+    def _scout_short(self):
+        self.ensure_one()
+        return self.short_name or self.name or ''
 
     @api.depends('name', 'unit_name')
     def _compute_display_name(self):

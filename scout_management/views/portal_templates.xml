@@ -188,13 +188,18 @@
             <div class="o_scout_greca mt-3"/>
             <div class="o_scout_register my-3">
                 <div t-if="public_form" class="d-flex align-items-center gap-3 mb-2">
-                    <img t-if="cycle.company_id.logo" t-att-src="image_data_uri(cycle.company_id.logo)" style="height: 56px"/>
-                    <div><b t-out="cycle.company_id.name"/><div class="text-muted small">Inscripción y renovación de registro</div></div>
+                    <t t-set="group_company" t-value="cycle.company_id or request.env.company"/>
+                    <img t-if="group_company.logo" t-att-src="image_data_uri(group_company.logo)" style="height: 56px"/>
+                    <div><b t-out="group_company.name"/><div class="text-muted small">Inscripción y renovación de registro</div></div>
                 </div>
                 <h3 class="o_scout_title">Ficha única de registro, consentimiento y responsiva</h3>
-                <p class="text-muted">Ciclo scout <b t-out="cycle.name"/> · Los campos con * son obligatorios.</p>
-                <div t-if="error" class="alert alert-danger" t-out="error"/>
-                <form t-att-action="form_action or '/my/scouts/register/submit'" method="post" enctype="multipart/form-data" class="o_scout_register_form">
+                <p t-if="cycle" class="text-muted">Ciclo scout <b t-out="cycle.name"/> · Los campos con * son obligatorios.</p>
+                <div t-if="not cycle" class="alert alert-warning">
+                    <b>Las inscripciones todavía no están abiertas.</b> La jefatura del grupo debe abrir el ciclo scout;
+                    vuelve a abrir esta liga más tarde o pregunta a la jefatura.
+                </div>
+                <div t-if="error and cycle" class="alert alert-danger" t-out="error"/>
+                <form t-if="cycle" t-att-action="form_action or '/my/scouts/register/submit'" method="post" enctype="multipart/form-data" class="o_scout_register_form">
                     <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
                     <input type="hidden" name="member_id" t-att-value="member.id or ''"/>
 

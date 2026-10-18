@@ -82,6 +82,7 @@
                     <group>
                         <group>
                             <field name="code"/>
+                            <field name="short_name" placeholder="Ej. Lobatos"/>
                             <field name="is_leadership"/>
                             <label for="age_min" string="Rango de edad" invisible="is_leadership"/>
                             <div class="o_row" invisible="is_leadership">
@@ -151,6 +152,7 @@
                 <field name="name"/>
                 <field name="kind"/>
                 <field name="applies_to"/>
+                <field name="all_sections_attendance"/>
             </list>
         </field>
     </record>

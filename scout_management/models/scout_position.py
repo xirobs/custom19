@@ -1,5 +1,7 @@
 # -*- coding: utf-8 -*-
-from odoo import fields, models
+from odoo import api, fields, models
+
+ALL_SECTIONS_KINDS = ('group_chief', 'secretary', 'treasurer')
 
 POSITION_KINDS = [
     ('member', 'Integrante'),
@@ -29,4 +31,19 @@ class ScoutPosition(models.Model):
                             help='Sirve para los reportes: guía y subguía de los equipos, jefes que pasan lista, etc.')
     applies_to = fields.Selection([('youth', 'Miembro de sección'), ('leader', 'Dirigente'), ('both', 'Ambos')],
                                   string='Aplica a', required=True, default='both')
+    all_sections_attendance = fields.Boolean(
+        string='Pasa lista en todas las secciones',
+        help='Quien tenga este cargo ve todas las secciones en el portal de dirigentes y puede pasar lista '
+             'en cualquiera (jefatura de grupo, secretaría, tesorería).')
     active = fields.Boolean(default=True)
+
+    @api.onchange('kind')
+    def _onchange_kind_all_sections(self):
+        if self.kind in ALL_SECTIONS_KINDS:
+            self.all_sections_attendance = True
+
+    @api.model
+    def _scout_v45_migrate(self):
+        positions = self.sudo().with_context(active_test=False).search([('kind', 'in', ALL_SECTIONS_KINDS)])
+        positions |= self.env.ref('scout_management.position_group_assistant', raise_if_not_found=False) or self.browse()
+        positions.write({'all_sections_attendance': True})

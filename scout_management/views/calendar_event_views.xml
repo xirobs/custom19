@@ -134,8 +134,9 @@
         <field name="priority">90</field>
         <field name="arch" type="xml">
             <calendar string="Actividades scout" date_start="start" date_stop="stop" date_delay="duration" all_day="allday"
-                      mode="month" color="scout_color" event_open_popup="false" quick_create="false" event_limit="6">
-                <field name="scout_section_ids" filters="1" invisible="1"/>
+                      mode="month" color="scout_main_section_id" event_open_popup="false" quick_create="false" event_limit="8">
+                <field name="scout_main_section_id" filters="1" invisible="1"/>
+                <field name="scout_section_ids" invisible="1"/>
                 <field name="scout_section_names" options="{'icon': 'fa fa-users'}"/>
                 <field name="scout_activity_type"/>
                 <field name="scout_category"/>

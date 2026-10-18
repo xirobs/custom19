@@ -195,7 +195,7 @@ def scout_save_registration(post, member, guardian=None):
     method = post.get('payment_method') if post.get('payment_method') in ('online', 'cash', 'transfer') else 'online'
     vals = {
         'cycle_id': cycle.id, 'member_id': member.id or False, 'source': 'portal', 'state': 'submitted',
-        'company_id': section.company_id.id,
+        'company_id': section.company_id.id or cycle.company_id.id,
         'first_name': post.get('first_name', '').strip(), 'last_name': post.get('last_name', '').strip(),
         'last_name2': post.get('last_name2', '').strip(), 'birthdate': birthdate, 'gender': gender,
         'section_id': section.id, 'street': post.get('street'),

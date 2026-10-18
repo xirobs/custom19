@@ -156,24 +156,28 @@
         <field name="kind">secretary</field>
         <field name="applies_to">leader</field>
         <field name="sequence">20</field>
+        <field name="all_sections_attendance" eval="True"/>
     </record>
     <record id="position_treasurer" model="scout.position">
         <field name="name">Tesorería</field>
         <field name="kind">treasurer</field>
         <field name="applies_to">leader</field>
         <field name="sequence">21</field>
+        <field name="all_sections_attendance" eval="True"/>
     </record>
     <record id="position_group_assistant" model="scout.position">
         <field name="name">Subjefe de grupo</field>
         <field name="kind">assistant</field>
         <field name="applies_to">leader</field>
         <field name="sequence">30</field>
+        <field name="all_sections_attendance" eval="True"/>
     </record>
     <record id="position_group_chief" model="scout.position">
         <field name="name">Jefe de grupo</field>
         <field name="kind">group_chief</field>
         <field name="applies_to">leader</field>
         <field name="sequence">31</field>
+        <field name="all_sections_attendance" eval="True"/>
     </record>
 
     <!-- Conceptos que se cobran con cargos (facturas) a los padres -->

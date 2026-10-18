@@ -279,6 +279,7 @@ class ScoutStoreSale(models.Model):
     def _create_charge(self):
         """Venta a crédito: cargo (factura de cliente) que aparece en el estado de cuenta del miembro."""
         self.ensure_one()
+        self.env['scout.registration']._scout_check_sale_journal(self.company_id)
         invoice = self.env['account.move'].sudo().with_company(self.company_id).create({
             'move_type': 'out_invoice',
             'partner_id': self.partner_id.id,

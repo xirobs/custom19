@@ -384,6 +384,19 @@ class ScoutRegistration(models.Model):
                                               folio=reg.name, cycle=reg.cycle_id.name))
         return True
 
+    @api.model
+    def _scout_sale_journal_message(self, company):
+        return _('La empresa "%s" no tiene la contabilidad configurada (no hay diario de ventas), así que no se '
+                 'puede generar el cargo. Cambia a esa empresa (arriba a la derecha) y en Facturación o Contabilidad → '
+                 'Configuración → Ajustes elige la localización fiscal (México) y guarda; eso crea los diarios de '
+                 'ventas, compras, banco y efectivo.', company.name)
+
+    @api.model
+    def _scout_check_sale_journal(self, company):
+        if not self.env['account.journal'].sudo().search_count(
+                [('type', '=', 'sale'), ('company_id', '=', company.id)], limit=1):
+            raise UserError(self._scout_sale_journal_message(company))
+
     def _create_registration_invoice(self):
         """Cargo (factura de cliente) por la cuota de registro, a nombre del tutor y ligada al miembro."""
         product = self.env.ref('scout_management.product_registration', raise_if_not_found=False)
@@ -391,6 +404,17 @@ class ScoutRegistration(models.Model):
             lambda u: not u.share and u.id != 1)
         for reg in self:
             if reg.invoice_id or not reg.registration_fee or reg.manual_payment_state:
+                continue
+            try:
+                reg._scout_check_sale_journal(reg.company_id)
+            except UserError as e:
+                # La ficha se guarda igual; tesorería recibe el aviso para configurar la contabilidad.
+                reg.sudo().message_post(body=str(e.args[0]))
+                todo = self.env.ref('mail.mail_activity_data_todo', raise_if_not_found=False)
+                for user in treasurers[:3]:
+                    reg.sudo().activity_schedule(activity_type_id=todo.id if todo else False, user_id=user.id,
+                                                 summary=_('Configurar contabilidad para cobrar registros'),
+                                                 note=str(e.args[0]))
                 continue
             payer = reg.guardian_id or reg.member_id
             invoice = self.env['account.move'].sudo().with_company(reg.company_id).create({

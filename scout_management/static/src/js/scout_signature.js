@@ -120,12 +120,67 @@ function init() {
     }
     form.querySelectorAll(".o_scout_signature").forEach(setupSignature);
     setupSectionSuggestion(form);
+    restoreDraft(form);
     form.addEventListener("submit", (ev) => {
         if (!form.querySelector('input[name="guardian_signature"]').value) {
             ev.preventDefault();
             window.alert("Falta la firma del padre, madre o tutor.");
+            return;
         }
+        saveDraft(form);
     });
+}
+
+// Si el servidor regresa la ficha con un error, se recupera lo que la familia ya había escrito.
+const SKIP_FIELDS = ["csrf_token", "guardian_signature", "member_signature"];
+
+function draftKey() {
+    return "scout_ficha_" + window.location.pathname;
+}
+
+function saveDraft(form) {
+    const data = {};
+    for (const el of form.elements) {
+        if (!el.name || SKIP_FIELDS.includes(el.name) || el.type === "file" || el.type === "hidden") {
+            continue;
+        }
+        if (el.type === "checkbox" || el.type === "radio") {
+            if (el.checked) {
+                data[el.name] = el.value;
+            }
+        } else {
+            data[el.name] = el.value;
+        }
+    }
+    try {
+        window.sessionStorage.setItem(draftKey(), JSON.stringify(data));
+    } catch {
+        // almacenamiento no disponible: no pasa nada
+    }
+}
+
+function restoreDraft(form) {
+    let data = null;
+    try {
+        data = JSON.parse(window.sessionStorage.getItem(draftKey()) || "null");
+        window.sessionStorage.removeItem(draftKey());
+    } catch {
+        data = null;
+    }
+    if (!data || !document.querySelector(".o_scout_register .alert-danger")) {
+        return;
+    }
+    for (const el of form.elements) {
+        if (!el.name || !(el.name in data) || SKIP_FIELDS.includes(el.name) || el.type === "file") {
+            continue;
+        }
+        if (el.type === "checkbox" || el.type === "radio") {
+            el.checked = data[el.name] === el.value;
+        } else if (el.type !== "hidden") {
+            el.value = data[el.name];
+        }
+        el.dispatchEvent(new Event("change", { bubbles: true }));
+    }
 }
 
 if (document.readyState === "loading") {
