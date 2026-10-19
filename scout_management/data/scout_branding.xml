@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- En cada instalación/actualización: si existen static/img/logo_grupo.png y flor_de_lis.png
+         y la compañía aún no tiene imágenes, se cargan. -->
+    <function model="res.company" name="_scout_load_branding"/>
+</odoo>

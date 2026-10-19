@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_scout_member_import_form" model="ir.ui.view">
+        <field name="name">scout.member.import.form</field>
+        <field name="model">scout.member.import</field>
+        <field name="arch" type="xml">
+            <form>
+                <field name="state" invisible="1"/>
+                <div class="alert alert-info" role="alert" invisible="state == 'done'">
+                    <b>1.</b> Descarga la plantilla: <field name="template_file" filename="template_name" readonly="1" nolabel="1" class="oe_inline"/>
+                    <field name="template_name" invisible="1"/>
+                    <br/><b>2.</b> Llena una fila por miembro (usa las listas de la hoja "Catálogos").
+                    <br/><b>3.</b> Sube el archivo, presiona <b>Revisar</b> para ver errores sin guardar nada y luego <b>Importar</b>.
+                </div>
+                <group invisible="state == 'done'">
+                    <field name="file" filename="file_name"/>
+                    <field name="file_name" invisible="1"/>
+                    <field name="update_existing"/>
+                </group>
+                <group invisible="state == 'draft'">
+                    <field name="created_count" string="Nuevos"/>
+                    <field name="updated_count" string="Actualizados"/>
+                    <field name="error_count" string="Con error"/>
+                </group>
+                <field name="result" invisible="not result" nolabel="1" class="font-monospace"/>
+                <footer>
+                    <button name="action_check" type="object" string="Revisar" class="btn-secondary" invisible="state == 'done'"/>
+                    <button name="action_import" type="object" string="Importar" class="btn-primary" invisible="state == 'done'"
+                            confirm="Se crearán o actualizarán los miembros del archivo. ¿Continuar?"/>
+                    <button name="action_view_members" type="object" string="Ver miembros" class="btn-primary" invisible="state != 'done'"/>
+                    <button special="cancel" string="Cerrar"/>
+                </footer>
+            </form>
+        </field>
+    </record>
+    <record id="action_scout_member_import" model="ir.actions.act_window">
+        <field name="name">Carga masiva de miembros</field>
+        <field name="res_model">scout.member.import</field>
+        <field name="view_mode">form</field>
+        <field name="target">new</field>
+    </record>
+</odoo>

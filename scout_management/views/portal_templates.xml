@@ -1,0 +1,385 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <template id="portal_my_home_scouts" name="Portal: Mis scouts" inherit_id="portal.portal_my_home" priority="40">
+        <xpath expr="//div[hasclass('o_portal_docs')]" position="before">
+            <t t-set="portal_client_category_enable" t-value="True"/>
+        </xpath>
+        <div id="portal_client_category" position="inside">
+            <t t-call="portal.portal_docs_entry">
+                <t t-set="icon" t-value="'/scout_management/static/description/icon.png'"/>
+                <t t-set="title">Mis scouts</t>
+                <t t-set="url" t-value="'/my/scouts'"/>
+                <t t-set="text">Asistencia, adelantos, adeudos y ficha de registro</t>
+                <t t-set="placeholder_count" t-value="'scout_count'"/>
+            </t>
+        </div>
+    </template>
+
+    <template id="portal_breadcrumbs_scouts" inherit_id="portal.portal_breadcrumbs" priority="40">
+        <xpath expr="//ol[hasclass('o_portal_submenu')]" position="inside">
+            <li t-if="page_name in ('scouts', 'scout_detail', 'scout_register')" class="breadcrumb-item">
+                <a href="/my/scouts">Mis scouts</a>
+            </li>
+            <li t-if="page_name == 'scout_detail'" class="breadcrumb-item active" t-out="member.name"/>
+            <li t-if="page_name == 'scout_register'" class="breadcrumb-item active">Ficha de registro</li>
+        </xpath>
+    </template>
+
+    <template id="portal_my_scouts" name="Mis scouts">
+        <t t-call="portal.portal_layout">
+            <t t-set="breadcrumbs_searchbar" t-value="True"/>
+            <div class="o_scout_greca mt-3"/>
+            <div class="d-flex justify-content-between align-items-center my-3">
+                <h3 class="mb-0 o_scout_title">Mis scouts</h3>
+                <a href="/my/scouts/register" class="btn btn-primary"><i class="fa fa-plus"/> Registrar a un aspirante</a>
+            </div>
+            <div t-if="pending_registrations" class="alert alert-info">
+                Fichas enviadas en revisión:
+                <t t-foreach="pending_registrations" t-as="reg">
+                    <b t-out="reg.first_name"/> (<t t-out="reg.name"/>)<t t-if="not reg_last">, </t>
+                </t>
+            </div>
+            <div t-if="not members" class="alert alert-light border">
+                Aún no tienes scouts vinculados. Si tu hijo(a) ya está en el grupo, pide a su dirigente que te vincule como tutor.
+            </div>
+            <div class="row g-3">
+                <div t-foreach="members" t-as="member" class="col-md-6 col-lg-4">
+                    <a t-attf-href="/my/scouts/#{member.id}" class="card h-100 text-decoration-none o_scout_card">
+                        <div class="card-body">
+                            <div class="d-flex align-items-center gap-3">
+                                <img t-if="member.image_1920" t-att-src="image_data_uri(member.image_1920)" class="rounded-circle" style="width: 56px; height: 56px; object-fit: cover;"/>
+                                <div>
+                                    <h5 class="mb-0 text-body" t-out="member.name"/>
+                                    <div class="text-muted small">
+                                        <t t-out="member.scout_section_id.display_name"/>
+                                        <t t-if="member.scout_name"> · <t t-out="member.scout_name"/></t>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="mt-3">
+                                <div class="d-flex justify-content-between small">
+                                    <span>Asistencia del ciclo</span>
+                                    <b><t t-out="round(member.scout_attendance_pct)"/> %</b>
+                                </div>
+                                <div class="progress" style="height: 6px;">
+                                    <div class="progress-bar bg-success" t-attf-style="width: #{member.scout_attendance_pct}%;"/>
+                                </div>
+                            </div>
+                            <div class="mt-2 small">
+                                <span t-if="member.scout_registration_paid" class="badge text-bg-success">Registro pagado</span>
+                                <span t-elif="member.scout_current_registration_id" class="badge text-bg-warning">Registro pendiente de pago</span>
+                                <span t-else="" class="badge text-bg-danger">Sin ficha del ciclo</span>
+                                <span t-if="member.scout_amount_due" class="badge text-bg-light border">
+                                    Adeudo: <t t-out="member.scout_amount_due" t-options="{'widget': 'monetary', 'display_currency': member.scout_currency_id}"/>
+                                </span>
+                            </div>
+                        </div>
+                    </a>
+                </div>
+            </div>
+        </t>
+    </template>
+
+    <template id="portal_scout_detail" name="Detalle del scout">
+        <t t-call="portal.portal_layout">
+            <t t-set="breadcrumbs_searchbar" t-value="True"/>
+            <div t-if="already" class="alert alert-info mt-3">La ficha de este ciclo ya fue enviada.</div>
+            <div class="o_scout_greca mt-3"/>
+            <div class="my-3 d-flex justify-content-between align-items-start flex-wrap gap-2">
+                <div class="d-flex gap-3 align-items-center">
+                    <img t-if="member.image_128" t-att-src="image_data_uri(member.image_128)" class="rounded-circle" style="width: 64px; height: 64px; object-fit: cover;"/>
+                    <div>
+                        <h3 class="mb-0 o_scout_title" t-out="member.name"/>
+                        <div class="text-muted">
+                            <t t-out="member.scout_section_id.display_name"/>
+                            <t t-if="member.scout_patrol_id"> · <t t-out="member.scout_section_id.patrol_label or 'Equipo'"/> <t t-out="member.scout_patrol_id.name"/></t>
+                            <t t-if="member.scout_name"> · <t t-out="member.scout_name"/></t>
+                        </div>
+                    </div>
+                </div>
+                <a t-if="not member.scout_current_registration_id" t-attf-href="/my/scouts/#{member.id}/register" class="btn btn-primary">
+                    Llenar ficha de registro del ciclo
+                </a>
+                <span t-else="" class="badge text-bg-success fs-6">Ficha del ciclo: <t t-out="member.scout_current_registration_id.name"/></span>
+            </div>
+            <div class="row g-3">
+                <div class="col-lg-4">
+                    <div class="card h-100"><div class="card-body text-center">
+                        <div class="text-muted">Asistencia del ciclo</div>
+                        <div class="display-5 fw-bold"><t t-out="round(member.scout_attendance_pct)"/>%</div>
+                        <div class="text-muted"><t t-out="member.scout_attendance_count"/> de <t t-out="member.scout_attendance_total"/> sesiones</div>
+                    </div></div>
+                </div>
+                <div class="col-lg-4">
+                    <div class="card h-100"><div class="card-body">
+                        <h6>Adelantos e insignias</h6>
+                        <div t-if="member.scout_promise_date" class="mb-1">⚜ Promesa: <t t-out="member.scout_promise_date" t-options="{'widget': 'date'}"/></div>
+                        <ul class="mb-0 ps-3">
+                            <li t-foreach="progress.filtered(lambda p: p.stage_type != 'promise')" t-as="p">
+                                <t t-out="p.stage_id.name"/> <span class="text-muted small">(<t t-out="p.date_achieved" t-options="{'widget': 'date'}"/>)</span>
+                            </li>
+                        </ul>
+                        <div t-if="not progress" class="text-muted">Aún sin adelantos registrados.</div>
+                    </div></div>
+                </div>
+                <div class="col-lg-4">
+                    <div class="card h-100"><div class="card-body">
+                        <h6>Adeudos</h6>
+                        <div t-if="not invoices" class="text-muted">Sin adeudos pendientes.</div>
+                        <p t-if="pay_links" class="small text-muted mb-1">Paga en línea con tarjeta, OXXO o Mercado Pago, o en efectivo con los dirigentes.</p>
+                        <table t-if="invoices" class="table table-sm mb-0">
+                            <tr t-foreach="invoices" t-as="inv">
+                                <td><a t-att-href="inv.get_portal_url()" t-out="inv.invoice_line_ids[:1].name or inv.name"/></td>
+                                <td class="text-end"><t t-out="inv.amount_residual" t-options="{'widget': 'monetary', 'display_currency': inv.currency_id}"/></td>
+                                <td class="text-end" t-if="pay_links.get(inv.id)">
+                                    <a t-att-href="pay_links[inv.id]" class="btn btn-sm o_scout_pay_btn"><i class="fa fa-credit-card"/> Pagar</a>
+                                </td>
+                            </tr>
+                        </table>
+                    </div></div>
+                </div>
+                <div class="col-lg-6">
+                    <div class="card"><div class="card-body">
+                        <h6>Últimas sesiones</h6>
+                        <table class="table table-sm mb-0">
+                            <tr t-foreach="attendance_lines" t-as="line">
+                                <td t-out="line.date" t-options="{'widget': 'date'}"/>
+                                <td t-out="line.event_id.name"/>
+                                <td class="text-end">
+                                    <span t-attf-class="badge #{'text-bg-success' if line.attended else ('text-bg-danger' if line.status == 'absent' else 'text-bg-secondary')}"
+                                          t-out="line.status_code"/>
+                                </td>
+                            </tr>
+                        </table>
+                        <div t-if="not attendance_lines" class="text-muted">Aún no hay listas registradas.</div>
+                    </div></div>
+                </div>
+                <div class="col-lg-6">
+                    <div class="card"><div class="card-body">
+                        <h6>Próximas actividades</h6>
+                        <table class="table table-sm mb-0">
+                            <tr t-foreach="activities" t-as="act">
+                                <td t-out="act.scout_date" t-options="{'widget': 'date'}"/>
+                                <td>
+                                    <t t-out="act.name"/>
+                                    <div class="text-muted small"><t t-out="act.location or ''"/><t t-if="act.scout_theme"> · <t t-out="act.scout_theme"/></t></div>
+                                </td>
+                                <td class="text-end small text-muted" t-out="act.scout_section_names"/>
+                            </tr>
+                        </table>
+                        <div t-if="not activities" class="text-muted">Sin actividades programadas.</div>
+                    </div></div>
+                </div>
+                <div class="col-12">
+                    <div class="card"><div class="card-body">
+                        <h5>Chat con los dirigentes de <t t-out="member.scout_section_id.display_name"/></h5>
+                        <p class="text-muted small">Escribe tus dudas; los dirigentes de la sección te responderán aquí y por correo.</p>
+                        <t t-call="portal.message_thread"/>
+                    </div></div>
+                </div>
+            </div>
+        </t>
+    </template>
+
+    <template id="portal_scout_register" name="Ficha de registro (portal)">
+        <t t-call="{{ layout or 'portal.portal_layout' }}">
+            <t t-set="breadcrumbs_searchbar" t-value="True"/>
+            <div t-attf-class="#{'container' if public_form else ''}">
+            <div class="o_scout_greca mt-3"/>
+            <div class="o_scout_register my-3">
+                <div t-if="public_form" class="d-flex align-items-center gap-3 mb-2">
+                    <t t-set="group_company" t-value="cycle.company_id or request.env.company"/>
+                    <img t-if="group_company.logo" t-att-src="image_data_uri(group_company.logo)" style="height: 56px"/>
+                    <div><b t-out="group_company.name"/><div class="text-muted small">Inscripción y renovación de registro</div></div>
+                </div>
+                <h3 class="o_scout_title">Ficha única de registro, consentimiento y responsiva</h3>
+                <p t-if="cycle" class="text-muted">Ciclo scout <b t-out="cycle.name"/> · Los campos con * son obligatorios.</p>
+                <div t-if="not cycle" class="alert alert-warning">
+                    <b>Las inscripciones todavía no están abiertas.</b> La jefatura del grupo debe abrir el ciclo scout;
+                    vuelve a abrir esta liga más tarde o pregunta a la jefatura.
+                </div>
+                <div t-if="error and cycle" class="alert alert-danger" t-out="error"/>
+                <form t-if="cycle" t-att-action="form_action or '/my/scouts/register/submit'" method="post" enctype="multipart/form-data" class="o_scout_register_form">
+                    <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
+                    <input type="hidden" name="member_id" t-att-value="member.id or ''"/>
+
+                    <fieldset class="card mb-3"><div class="card-body">
+                        <legend class="h5">1. Datos de registro</legend>
+                        <div class="row g-2">
+                            <div class="col-md-4"><label class="form-label">Nombres *</label>
+                                <input name="first_name" class="form-control" required="1" t-att-value="member.scout_first_name"/></div>
+                            <div class="col-md-4"><label class="form-label">Apellido paterno *</label>
+                                <input name="last_name" class="form-control" required="1" t-att-value="member.scout_last_name"/></div>
+                            <div class="col-md-4"><label class="form-label">Apellido materno</label>
+                                <input name="last_name2" class="form-control" t-att-value="member.scout_last_name2"/></div>
+                            <div class="col-md-4"><label class="form-label">Fecha de nacimiento *</label>
+                                <input type="date" name="birthdate" class="form-control" required="1" t-att-value="member.scout_birthdate"/></div>
+                            <div class="col-md-3"><label class="form-label">Sexo *</label>
+                                <select name="gender" class="form-select" required="1">
+                                    <option value="">Selecciona…</option>
+                                    <option value="f" t-att-selected="member.scout_gender == 'f' or None">Femenino</option>
+                                    <option value="m" t-att-selected="member.scout_gender == 'm' or None">Masculino</option>
+                                </select></div>
+                            <div class="col-md-5"><label class="form-label">Sección <small class="text-muted">(se propone por edad y sexo)</small></label>
+                                <select name="section_id" class="form-select o_scout_section_auto" t-att-data-rules="section_rules_json">
+                                    <option value="">Según su edad…</option>
+                                    <t t-foreach="sections" t-as="section">
+                                        <option t-att-value="section.id" t-att-selected="section == preset_section or None" t-out="section.display_name"/>
+                                    </t>
+                                </select></div>
+                            <div class="col-12"><label class="form-label">Domicilio</label>
+                                <input name="street" class="form-control" t-att-value="member.street"/></div>
+                            <div class="col-12 small text-muted o_scout_section_hint"/>
+                        </div>
+                    </div></fieldset>
+
+                    <fieldset class="card mb-3"><div class="card-body">
+                        <legend class="h5">2. Padre, madre, tutor o persona para avisar en caso de accidente</legend>
+                        <div class="row g-2">
+                            <div class="col-md-8"><label class="form-label">Nombre completo *</label>
+                                <input name="guardian_name" class="form-control" required="1" t-att-value="partner.name"/></div>
+                            <div class="col-md-4"><label class="form-label">Parentesco</label>
+                                <input name="guardian_relationship" class="form-control" placeholder="Madre, padre, tutor…" t-att-value="member.scout_guardian_relationship"/></div>
+                            <div class="col-md-4"><label class="form-label">Teléfono principal (celular) *</label>
+                                <input type="tel" name="guardian_phone" class="form-control" required="1" t-att-value="partner.phone"/></div>
+                            <div class="col-md-4"><label class="form-label">Teléfono alterno</label>
+                                <input type="tel" name="guardian_phone_alt" class="form-control" t-att-value="member.scout_guardian_phone_alt"/></div>
+                            <div class="col-md-4"><label class="form-label">Correo electrónico</label>
+                                <input type="email" name="guardian_email" class="form-control" t-att-value="partner.email"/></div>
+                            <div class="col-12"><label class="form-label">Domicilio (si es distinto)</label>
+                                <input name="guardian_street" class="form-control"/></div>
+                        </div>
+                    </div></fieldset>
+
+                    <fieldset class="card mb-3"><div class="card-body">
+                        <legend class="h5">3. Información médica</legend>
+                        <p class="small text-muted">Solo la consultan la jefatura y los dirigentes del grupo.</p>
+                        <div class="row g-2">
+                            <div class="col-md-6"><label class="form-label">Servicio médico</label>
+                                <select name="medical_service" class="form-select">
+                                    <option value="">Selecciona…</option>
+                                    <t t-foreach="medical_services" t-as="opt"><option t-att-value="opt[0]" t-out="opt[1]"/></t>
+                                </select></div>
+                            <div class="col-md-3"><label class="form-label">No. de afiliación o póliza</label>
+                                <input name="medical_policy" class="form-control"/></div>
+                            <div class="col-md-3"><label class="form-label">Tipo de sangre</label>
+                                <select name="blood_type" class="form-select">
+                                    <option value="">Selecciona…</option>
+                                    <t t-foreach="blood_types" t-as="opt"><option t-att-value="opt[0]" t-out="opt[1]"/></t>
+                                </select></div>
+                            <div class="col-12"><label class="form-label">Condiciones médicas relevantes</label>
+                                <textarea name="medical_conditions" class="form-control" rows="2"
+                                          placeholder="Alergias, asma, medicamentos permanentes, cirugías, restricciones físicas u otras"/></div>
+                        </div>
+                    </div></fieldset>
+
+                    <fieldset class="card mb-3"><div class="card-body">
+                        <legend class="h5">4. Pago de registro<t t-if="cycle.registration_fee"> · <t t-out="'$ {:,.2f}'.format(cycle.registration_fee)"/></t></legend>
+                        <p class="small text-muted mb-2">Al enviar la ficha podrás pagar en línea o entregar el efectivo en la junta.</p>
+                        <div class="form-check"><input class="form-check-input" type="radio" name="payment_method" id="pm1" value="online" checked="1"/>
+                            <label class="form-check-label" for="pm1"><b>En línea</b>: tarjeta, OXXO o Mercado Pago (al enviar la ficha)</label></div>
+                        <div class="form-check"><input class="form-check-input" type="radio" name="payment_method" id="pm2" value="cash"/>
+                            <label class="form-check-label" for="pm2"><b>Efectivo</b>: lo entrego a tesorería o a la jefatura en la junta</label></div>
+                        <div class="form-check"><input class="form-check-input" type="radio" name="payment_method" id="pm3" value="transfer"/>
+                            <label class="form-check-label" for="pm3"><b>Ya pagué por transferencia</b></label></div>
+                        <div class="row g-2 mt-1 o_scout_transfer">
+                            <div class="col-md-4"><label class="form-label">Nro. de transferencia</label><input name="payment_reference" class="form-control"/></div>
+                            <div class="col-md-3"><label class="form-label">Fecha</label><input type="date" name="payment_date" class="form-control"/></div>
+                            <div class="col-md-2"><label class="form-label">Monto</label><input type="number" step="0.01" min="0" name="payment_amount" class="form-control"/></div>
+                            <div class="col-md-3"><label class="form-label">Comprobante</label><input type="file" name="payment_proof" class="form-control" accept="image/*,application/pdf"/></div>
+                        </div>
+                    </div></fieldset>
+
+                    <fieldset class="card mb-3"><div class="card-body">
+                        <legend class="h5">5. Consentimiento, autorizaciones y responsiva</legend>
+                        <div class="form-check"><input class="form-check-input" type="checkbox" name="consent_participation" id="c1" value="1" required="1"/>
+                            <label class="form-check-label" for="c1">Autorizo la participación de mi hijo(a) en reuniones, campamentos, excursiones, actividades de servicio y demás actividades del programa educativo del grupo. *</label></div>
+                        <div class="form-check"><input class="form-check-input" type="checkbox" name="consent_first_aid" id="c2" value="1" required="1"/>
+                            <label class="form-check-label" for="c2">Autorizo la aplicación de primeros auxilios y, en caso necesario, su traslado a un centro médico cuando no sea posible localizarme oportunamente. *</label></div>
+                        <div class="form-check"><input class="form-check-input" type="checkbox" name="consent_image" id="c3" value="1" required="1"/>
+                            <label class="form-check-label" for="c3">Autorizo el uso de fotografías, videos y material audiovisual para fines educativos, institucionales y de difusión del escultismo, sin fines de lucro. *</label></div>
+                        <div class="form-check"><input class="form-check-input" type="checkbox" name="consent_data" id="c4" value="1" required="1"/>
+                            <label class="form-check-label" for="c4">Autorizo el tratamiento de los datos personales exclusivamente para fines administrativos, operativos, de seguridad y comunicación interna del grupo. *</label></div>
+                        <div class="form-check"><input class="form-check-input" type="checkbox" name="consent_risk" id="c5" value="1" required="1"/>
+                            <label class="form-check-label" for="c5">Reconozco que las actividades scouts pueden implicar riesgos inherentes y libero de responsabilidad al grupo y a sus colaboradores respecto de accidentes derivados de riesgos propios de la actividad. *</label></div>
+                        <div class="form-check mb-3"><input class="form-check-input" type="checkbox" name="consent_update" id="c6" value="1" required="1"/>
+                            <label class="form-check-label" for="c6">Me comprometo a mantener actualizada la información y a informar cualquier cambio. *</label></div>
+
+                        <div class="row g-3 mb-3">
+                            <div class="col-md-6"><label class="form-label">INE del tutor (frente) *</label>
+                                <input type="file" name="ine_front" class="form-control" accept="image/*,application/pdf" t-att-required="(not (previous and previous.guardian_id_front)) or None"/>
+                                <small t-if="previous and previous.guardian_id_front" class="text-muted">Si no adjuntas otra, se usa la INE de la ficha anterior.</small></div>
+                            <div class="col-md-6"><label class="form-label">INE del tutor (reverso)</label>
+                                <input type="file" name="ine_back" class="form-control" accept="image/*,application/pdf"/></div>
+                        </div>
+                        <div class="alert alert-warning py-2"><b>La firma debe ser igual a la de la INE del tutor.</b></div>
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <label class="form-label">Firma del padre, madre o tutor *</label>
+                                <div class="o_scout_signature" data-input="guardian_signature">
+                                    <canvas class="border rounded w-100" height="150"/>
+                                    <button type="button" class="btn btn-sm btn-link o_scout_signature_clear">Borrar firma</button>
+                                </div>
+                                <input type="hidden" name="guardian_signature"/>
+                                <input name="guardian_signed_by" class="form-control mt-1" required="1" placeholder="Nombre de quien firma" t-att-value="partner.name"/>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Firma del aspirante (cuando aplique)</label>
+                                <div class="o_scout_signature" data-input="member_signature">
+                                    <canvas class="border rounded w-100" height="150"/>
+                                    <button type="button" class="btn btn-sm btn-link o_scout_signature_clear">Borrar firma</button>
+                                </div>
+                                <input type="hidden" name="member_signature"/>
+                                <input name="member_signed_by" class="form-control mt-1" placeholder="Nombre del aspirante"/>
+                            </div>
+                        </div>
+                    </div></fieldset>
+                    <button type="submit" class="btn btn-primary btn-lg">Enviar ficha</button>
+                </form>
+            </div>
+            </div>
+        </t>
+    </template>
+
+    <template id="portal_scout_register_done" name="Ficha enviada">
+        <t t-call="portal.portal_layout">
+            <div class="alert alert-success my-4">
+                <h4 class="alert-heading">¡Ficha recibida!</h4>
+                <p class="mb-0">Tu ficha <b t-out="registration.name"/> de <b t-out="registration.first_name"/> quedó en revisión.
+                    La jefatura la validará y te avisará si falta algo. ¡Siempre listos para servir!</p>
+            </div>
+            <a href="/my/scouts" class="btn btn-secondary">Volver a Mis scouts</a>
+        </t>
+    </template>
+
+    <!-- Pago del registro desde la liga de la familia -->
+    <template id="scout_registration_payment" name="Ficha: pago del registro">
+        <t t-call="web.frontend_layout">
+            <div class="container py-4" style="max-width: 560px">
+                <div class="o_scout_greca mb-3"/>
+                <h3 class="o_scout_title">Ficha <t t-out="registration.name"/></h3>
+                <p class="text-muted"><t t-out="registration.member_id.name or registration.first_name"/> · <t t-out="registration.section_id.display_name"/> · Ciclo <t t-out="registration.cycle_id.name"/></p>
+                <div class="alert alert-success"><b>¡Ficha recibida!</b> La jefatura la revisará y te avisará si falta algo.</div>
+                <div t-if="message" class="alert alert-info" t-out="message"/>
+                <t t-if="paid">
+                    <div class="alert alert-success"><i class="fa fa-check-circle"/> El registro está pagado. ¡Gracias!</div>
+                </t>
+                <t t-elif="invoice">
+                    <div class="card mb-3"><div class="card-body text-center">
+                        <div>Cuota de registro pendiente</div>
+                        <div class="display-6 fw-bold" t-out="'$ {:,.2f}'.format(invoice.amount_residual)"/>
+                        <div t-if="registration.payment_method" class="small text-muted">Forma elegida: <t t-out="dict(registration._fields['payment_method'].selection).get(registration.payment_method)"/></div>
+                    </div></div>
+                    <form method="post" class="d-grid gap-2">
+                        <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
+                        <input type="hidden" name="access_token" t-att-value="access_token"/>
+                        <button t-if="can_online" class="btn btn-primary btn-lg" type="submit" name="method" value="online"><i class="fa fa-credit-card"/> Pagar en línea (tarjeta, OXXO, Mercado Pago)</button>
+                        <div t-else="" class="alert alert-warning small mb-0">El pago en línea no está disponible por ahora; puedes pagar en efectivo.</div>
+                        <button class="btn btn-outline-secondary btn-lg" type="submit" name="method" value="cash"><i class="fa fa-money"/> Pagaré en efectivo en la junta</button>
+                    </form>
+                </t>
+                <div t-else="" class="alert alert-info">No hay cuota de registro por pagar en este momento.</div>
+            </div>
+        </t>
+    </template>
+</odoo>

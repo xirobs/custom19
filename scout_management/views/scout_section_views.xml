@@ -1,0 +1,195 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Ciclos -->
+    <record id="view_scout_cycle_list" model="ir.ui.view">
+        <field name="name">scout.cycle.list</field>
+        <field name="model">scout.cycle</field>
+        <field name="arch" type="xml">
+            <list editable="bottom">
+                <field name="name"/>
+                <field name="date_start"/>
+                <field name="date_end"/>
+                <field name="registration_fee"/>
+                <field name="is_current" widget="boolean_toggle"/>
+                <field name="company_id" groups="base.group_multi_company"/>
+                <field name="currency_id" column_invisible="True"/>
+            </list>
+        </field>
+    </record>
+    <record id="action_scout_cycle" model="ir.actions.act_window">
+        <field name="name">Ciclos scout</field>
+        <field name="res_model">scout.cycle</field>
+        <field name="view_mode">list</field>
+    </record>
+
+    <!-- Secciones -->
+    <record id="view_scout_section_kanban" model="ir.ui.view">
+        <field name="name">scout.section.kanban</field>
+        <field name="model">scout.section</field>
+        <field name="arch" type="xml">
+            <kanban class="o_kanban_small_column" action="action_view_members" type="object">
+                <field name="color"/>
+                <templates>
+                    <t t-name="card" t-attf-class="#{kanban_color(record.color.raw_value)}">
+                        <field name="name" class="fw-bold fs-5"/>
+                        <field name="unit_name" class="text-muted"/>
+                        <div class="mt-2">
+                            <field name="member_count"/> miembros activos
+                        </div>
+                        <div t-if="record.age_max.raw_value" class="text-muted small">
+                            <field name="age_min"/> a <field name="age_max"/> años
+                        </div>
+                        <footer>
+                            <field name="leader_ids" widget="many2many_avatar_user"/>
+                        </footer>
+                    </t>
+                </templates>
+            </kanban>
+        </field>
+    </record>
+    <record id="view_scout_section_list" model="ir.ui.view">
+        <field name="name">scout.section.list</field>
+        <field name="model">scout.section</field>
+        <field name="arch" type="xml">
+            <list>
+                <field name="sequence" widget="handle"/>
+                <field name="name"/>
+                <field name="unit_name"/>
+                <field name="age_min"/>
+                <field name="age_max"/>
+                <field name="next_section_id"/>
+                <field name="leader_ids" widget="many2many_avatar_user"/>
+                <field name="member_count"/>
+            </list>
+        </field>
+    </record>
+    <record id="view_scout_section_form" model="ir.ui.view">
+        <field name="name">scout.section.form</field>
+        <field name="model">scout.section</field>
+        <field name="arch" type="xml">
+            <form>
+                <sheet>
+                    <div class="oe_button_box" name="button_box">
+                        <button name="action_view_members" type="object" class="oe_stat_button" icon="fa-users">
+                            <field name="member_count" widget="statinfo" string="Miembros"/>
+                        </button>
+                    </div>
+                    <widget name="web_ribbon" title="Archivada" bg_color="text-bg-danger" invisible="active"/>
+                    <div class="oe_title">
+                        <h1><field name="name" placeholder="Ej. Castores"/></h1>
+                        <field name="unit_name" placeholder="Nombre de la unidad, ej. Colonia Ágape"/>
+                    </div>
+                    <group>
+                        <group>
+                            <field name="code"/>
+                            <field name="short_name" placeholder="Ej. Lobatos"/>
+                            <field name="is_leadership"/>
+                            <label for="age_min" string="Rango de edad" invisible="is_leadership"/>
+                            <div class="o_row" invisible="is_leadership">
+                                <field name="age_min"/> a <field name="age_max"/> años
+                            </div>
+                            <field name="transition_age" invisible="is_leadership"/>
+                            <field name="transition_notice_months" invisible="is_leadership"/>
+                            <field name="next_section_id" invisible="is_leadership"/>
+                        </group>
+                        <group>
+                            <field name="leader_ids" widget="many2many_tags_avatar"/>
+                            <field name="company_id" groups="base.group_multi_company"/>
+                            <field name="active" invisible="1"/>
+                        </group>
+                    </group>
+                    <notebook>
+                        <page string="Ruta de enlace y edades oficiales" name="route" invisible="is_leadership">
+                            <group>
+                                <group string="Cambio de sección">
+                                    <label for="route_age_years" string="Inicio de ruta"/>
+                                    <div class="o_row"><field name="route_age_years"/> años <field name="route_age_months"/> meses</div>
+                                    <label for="pass_age_years" string="Pase oficial"/>
+                                    <div class="o_row"><field name="pass_age_years"/> años <field name="pass_age_months"/> meses</div>
+                                    <field name="next_section_female_id"/>
+                                    <field name="route_tolerance_days"/>
+                                    <field name="gender"/>
+                                    <field name="promise_label" placeholder="Ej. Promesa (Tercera clase)"/>
+                                </group>
+                                <group string="Clan: partida">
+                                    <label for="max_stay_years" string="Edad máxima de permanencia"/>
+                                    <div class="o_row"><field name="max_stay_years"/> años <field name="max_stay_months"/> meses</div>
+                                    <field name="route_rule_text" readonly="1"/>
+                                </group>
+                            </group>
+                            <div class="text-muted small">El periodo extraordinario (con autorización de la jefatura de grupo) es de máximo 3 meses sobre cada fecha oficial. En el Clan no hay periodo extraordinario.</div>
+                        </page>
+                        <page string="Equipos (seisenas / patrullas)" name="patrols">
+                            <field name="patrol_ids">
+                                <list editable="bottom">
+                                    <field name="sequence" widget="handle"/>
+                                    <field name="name"/>
+                                    <field name="color_name"/>
+                                    <field name="color_hex" widget="color"/>
+                                    <field name="member_ids" widget="many2many_tags" readonly="1"/>
+                                </list>
+                            </field>
+                        </page>
+                    </notebook>
+                </sheet>
+                <chatter/>
+            </form>
+        </field>
+    </record>
+    <record id="action_scout_section" model="ir.actions.act_window">
+        <field name="name">Secciones</field>
+        <field name="res_model">scout.section</field>
+        <field name="view_mode">kanban,list,form</field>
+    </record>
+
+    <!-- Roles y cargos: lectura para todos, edición solo jefe de grupo (por ACL) -->
+    <record id="view_scout_position_list" model="ir.ui.view">
+        <field name="name">scout.position.list</field>
+        <field name="model">scout.position</field>
+        <field name="arch" type="xml">
+            <list editable="bottom">
+                <field name="sequence" widget="handle"/>
+                <field name="name"/>
+                <field name="kind"/>
+                <field name="applies_to"/>
+                <field name="all_sections_attendance"/>
+            </list>
+        </field>
+    </record>
+    <record id="action_scout_position" model="ir.actions.act_window">
+        <field name="name">Roles y cargos</field>
+        <field name="res_model">scout.position</field>
+        <field name="view_mode">list</field>
+        <field name="help" type="html">
+            <p>Catálogo de roles (guía, subguía, scouter, subjefe, jefe, secretaría, tesorería…). Solo el jefe de grupo puede agregar o cambiar roles.</p>
+        </field>
+    </record>
+
+    <!-- Datos del grupo: logo, flor de lis y aprobaciones -->
+    <record id="view_company_form_scout" model="ir.ui.view">
+        <field name="name">res.company.form.scout</field>
+        <field name="model">res.company</field>
+        <field name="inherit_id" ref="base.view_company_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//notebook" position="inside">
+                <page string="Grupo Scout" name="scout">
+                    <group>
+                        <group string="Imágenes de los reportes">
+                            <field name="logo" widget="image" string="Logo del grupo (izquierda)" options="{'size': [0, 90]}"/>
+                            <field name="scout_emblem" widget="image" options="{'size': [0, 90]}"/>
+                        </group>
+                        <group string="Aprobaciones">
+                            <field name="scout_expense_approval"/>
+                        </group>
+                    </group>
+                </page>
+            </xpath>
+        </field>
+    </record>
+    <record id="action_scout_company" model="ir.actions.server">
+        <field name="name">Datos del grupo</field>
+        <field name="model_id" ref="base.model_res_company"/>
+        <field name="state">code</field>
+        <field name="code">action = {'type': 'ir.actions.act_window', 'res_model': 'res.company', 'res_id': env.company.id, 'view_mode': 'form', 'views': [(False, 'form')]}</field>
+    </record>
+</odoo>

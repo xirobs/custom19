@@ -1,0 +1,316 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Pestaña "Actividad scout" en el formulario estándar del Calendario -->
+    <record id="view_calendar_event_form_scout" model="ir.ui.view">
+        <field name="name">calendar.event.form.scout</field>
+        <field name="model">calendar.event</field>
+        <field name="inherit_id" ref="calendar.view_calendar_event_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//div[hasclass('oe_title')]" position="after">
+                <div class="d-flex flex-wrap gap-3 align-items-center mb-2" groups="scout_management.group_scout_leader">
+                    <div class="d-flex gap-1 align-items-center">
+                        <field name="is_scout_event" widget="boolean_toggle" nolabel="1"/>
+                        <label for="is_scout_event" string="Actividad scout"/>
+                    </div>
+                    <div class="d-flex gap-1 align-items-center" invisible="not is_scout_event">
+                        <field name="scout_done" widget="boolean_toggle" nolabel="1"/>
+                        <label for="scout_done" string="Realizada"/>
+                    </div>
+                    <span class="badge text-bg-success" invisible="not scout_attendance_closed">Lista cerrada</span>
+                    <field name="scout_category" widget="badge" nolabel="1" invisible="not is_scout_event"
+                           decoration-danger="scout_category == 'group'" decoration-warning="scout_category == 'outing'"
+                           decoration-success="scout_category == 'ordinary'"/>
+                    <field name="scout_plan_state" widget="badge" nolabel="1" invisible="not is_scout_event"
+                           decoration-success="scout_plan_state == 'approved'" decoration-info="scout_plan_state in ('proposed', 'reviewed')"
+                           decoration-warning="scout_plan_state == 'changes'"/>
+                </div>
+                <div class="d-flex flex-wrap gap-2 mb-2" invisible="not is_scout_event or not id" groups="scout_management.group_scout_leader">
+                    <button name="action_scout_plan_submit" type="object" string="Enviar al consejo" class="btn-secondary"
+                            invisible="scout_plan_state not in ('draft', 'changes')"/>
+                    <button name="action_scout_plan_review" type="object" string="Revisada en consejo" class="btn-secondary"
+                            invisible="scout_plan_state not in ('draft', 'proposed', 'changes')" groups="scout_management.group_scout_officer"/>
+                    <button name="action_scout_plan_approve" type="object" string="Dar visto bueno" class="btn-primary"
+                            invisible="scout_plan_state == 'approved'" groups="scout_management.group_scout_officer"/>
+                    <button name="action_scout_plan_changes" type="object" string="Pedir cambios" class="btn-secondary"
+                            invisible="scout_plan_state in ('changes', 'draft')" groups="scout_management.group_scout_officer"/>
+                    <span class="text-muted small align-self-center" invisible="scout_plan_state != 'approved'">
+                        Visto bueno: <field name="scout_approved_by_id" class="oe_inline" readonly="1"/> <field name="scout_approved_date" class="oe_inline" readonly="1"/></span>
+                </div>
+            </xpath>
+            <xpath expr="//notebook" position="inside">
+                <page name="scout" string="Actividad scout" invisible="not is_scout_event" groups="scout_management.group_scout_leader">
+                    <group>
+                        <group>
+                            <field name="scout_scope" widget="radio" options="{'horizontal': true}"/>
+                            <field name="scout_section_ids" widget="many2many_tags" invisible="scout_scope == 'group'"
+                                   required="is_scout_event and scout_scope == 'section'"/>
+                            <field name="scout_activity_type"/>
+                            <field name="scout_category"/>
+                            <field name="scout_theme"/>
+                        </group>
+                        <group>
+                            <field name="scout_responsible_ids" widget="many2many_tags_avatar"/>
+                            <field name="scout_recognitions"/>
+                            <field name="scout_date" invisible="1"/>
+                            <field name="scout_attendance_closed" invisible="1"/>
+                            <field name="scout_needs_manager" invisible="1"/>
+                            <field name="scout_plan_note" placeholder="Comentario del consejo (si pide cambios)"/>
+                        </group>
+                    </group>
+                    <group string="Objetivos">
+                        <field name="scout_objective" nolabel="1" colspan="2"
+                               placeholder="¿Qué queremos lograr con esta actividad? (método scout, avance progresivo, integración…)"/>
+                    </group>
+                    <group string="Resultado">
+                        <field name="scout_result" nolabel="1" colspan="2"
+                               placeholder="Qué se logró, incidencias, pendientes…"/>
+                    </group>
+                </page>
+                <page name="scout_plan" string="Programa de la sesión" invisible="not is_scout_event" groups="scout_management.group_scout_leader">
+                    <div class="d-flex gap-2 mb-2">
+                        <button name="action_scout_plan_pdf" type="object" string="Imprimir programa (PDF)" icon="fa-file-pdf-o" class="btn-secondary"/>
+                        <span class="text-muted small align-self-center">Los jefes lo llenan desde el portal de dirigentes con dictado por voz; aquí también se edita.</span>
+                    </div>
+                    <field name="scout_plan_line_ids">
+                        <list editable="bottom">
+                            <field name="sequence" widget="handle"/>
+                            <field name="time_start" widget="float_time"/>
+                            <field name="time_end" widget="float_time"/>
+                            <field name="stage" optional="show"/>
+                            <field name="kind" optional="show"/>
+                            <field name="name"/>
+                            <field name="objective" optional="show"/>
+                            <field name="material" optional="hide"/>
+                            <field name="responsible" optional="show"/>
+                            <field name="description" optional="hide"/>
+                            <field name="p_structure" string="Estr." widget="boolean_toggle"/>
+                            <field name="p_symbolic" string="Simb." widget="boolean_toggle"/>
+                            <field name="p_progress" string="Adel." widget="boolean_toggle"/>
+                            <field name="m_promise" string="Prom." widget="boolean_toggle"/>
+                            <field name="m_groups" string="Grupos" widget="boolean_toggle"/>
+                            <field name="m_doing" string="Hacer" widget="boolean_toggle"/>
+                            <field name="m_outdoor" string="Aire" widget="boolean_toggle"/>
+                            <field name="m_adult" string="Adulto" widget="boolean_toggle"/>
+                            <field name="pending" optional="show"/>
+                        </list>
+                    </field>
+                </page>
+                <page name="scout_attendance" string="Asistencia" invisible="not is_scout_event"
+                      groups="scout_management.group_scout_leader">
+                    <div class="d-flex flex-wrap gap-2 mb-2">
+                        <button name="action_scout_load_members" type="object" string="Cargar miembros" class="btn-secondary"
+                                invisible="scout_attendance_closed"/>
+                        <button name="action_scout_mark_all_present" type="object" string="Todos asistieron" class="btn-secondary"
+                                invisible="scout_attendance_closed"/>
+                        <button name="action_scout_close_attendance" type="object" string="Cerrar lista" class="btn-primary"
+                                invisible="scout_attendance_closed"/>
+                        <button name="action_scout_reopen_attendance" type="object" string="Reabrir lista" class="btn-secondary"
+                                invisible="not scout_attendance_closed"/>
+                        <span class="ms-auto align-self-center">
+                            Asistieron <b><field name="scout_present_count" class="oe_inline"/></b> de
+                            <b><field name="scout_counted_count" class="oe_inline"/></b>
+                            (<field name="scout_attendance_pct" class="oe_inline" digits="[3,0]"/> %)
+                        </span>
+                    </div>
+                    <field name="scout_attendance_line_ids" readonly="scout_attendance_closed">
+                        <list editable="bottom" decoration-success="status in ('present', 'camp', 'outing')"
+                              decoration-danger="status == 'absent'" decoration-muted="status in ('na', 'no_roll', 'dropped')">
+                            <field name="member_id"/>
+                            <field name="section_id" optional="show"/>
+                            <field name="patrol_id" optional="show"/>
+                            <field name="status"/>
+                            <field name="note" optional="show"/>
+                        </list>
+                    </field>
+                </page>
+            </xpath>
+        </field>
+    </record>
+
+    <!-- Vistas propias para el calendario scout -->
+    <record id="view_scout_event_calendar" model="ir.ui.view">
+        <field name="name">calendar.event.scout.calendar</field>
+        <field name="model">calendar.event</field>
+        <field name="priority">90</field>
+        <field name="arch" type="xml">
+            <calendar string="Actividades scout" date_start="start" date_stop="stop" date_delay="duration" all_day="allday"
+                      mode="month" color="scout_main_section_id" event_open_popup="false" quick_create="false" event_limit="8">
+                <field name="scout_main_section_id" filters="1" invisible="1"/>
+                <field name="scout_section_ids" invisible="1"/>
+                <field name="scout_section_names" options="{'icon': 'fa fa-users'}"/>
+                <field name="scout_activity_type"/>
+                <field name="scout_category"/>
+                <field name="scout_plan_state"/>
+                <field name="scout_theme" invisible="not scout_theme" options="{'icon': 'fa fa-book'}"/>
+                <field name="location" invisible="not location" options="{'icon': 'fa fa-map-marker'}"/>
+                <field name="scout_responsible_ids" invisible="not scout_responsible_ids" options="{'icon': 'fa fa-user'}"/>
+                <field name="scout_done" invisible="not scout_done" options="{'icon': 'fa fa-check'}"/>
+            </calendar>
+        </field>
+    </record>
+
+    <record id="view_scout_event_list" model="ir.ui.view">
+        <field name="name">calendar.event.scout.list</field>
+        <field name="model">calendar.event</field>
+        <field name="priority">90</field>
+        <field name="arch" type="xml">
+            <list decoration-success="scout_done" decoration-muted="scout_activity_type == 'none'">
+                <field name="start" string="Inicio"/>
+                <field name="stop" string="Fin" optional="hide"/>
+                <field name="scout_section_names" string="Sección / grupo"/>
+                <field name="scout_activity_type"/>
+                <field name="scout_category" widget="badge" optional="show" decoration-danger="scout_category == 'group'"
+                       decoration-warning="scout_category == 'outing'" decoration-success="scout_category == 'ordinary'"/>
+                <field name="name"/>
+                <field name="scout_theme" optional="show"/>
+                <field name="location" optional="show"/>
+                <field name="scout_responsible_ids" widget="many2many_tags" optional="show"/>
+                <field name="scout_objective" optional="hide"/>
+                <field name="scout_attendance_pct" widget="progressbar" optional="show"/>
+                <field name="scout_plan_state" widget="badge" optional="show" decoration-success="scout_plan_state == 'approved'"
+                       decoration-info="scout_plan_state in ('proposed', 'reviewed')" decoration-warning="scout_plan_state == 'changes'"/>
+                <field name="scout_done" widget="boolean_toggle"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_scout_event_search" model="ir.ui.view">
+        <field name="name">calendar.event.scout.search</field>
+        <field name="model">calendar.event</field>
+        <field name="priority">90</field>
+        <field name="arch" type="xml">
+            <search>
+                <field name="name"/>
+                <field name="scout_section_ids"/>
+                <field name="scout_responsible_ids"/>
+                <filter name="mine" string="Mis secciones" domain="['|', ('scout_section_ids.leader_ids', 'in', uid), ('scout_scope', '=', 'group')]"/>
+                <filter name="group_events" string="Eventos de todo el grupo" domain="[('scout_scope', '=', 'group')]"/>
+                <separator/>
+                <filter name="pending" string="Por realizar" domain="[('scout_done', '=', False)]"/>
+                <filter name="done" string="Realizadas" domain="[('scout_done', '=', True)]"/>
+                <filter name="roll_open" string="Lista sin cerrar" domain="[('scout_done', '=', True), ('scout_attendance_closed', '=', False), ('scout_activity_type', 'not in', ('none', 'council', 'training'))]"/>
+                <separator/>
+                <filter name="to_approve" string="Por aprobar" domain="[('scout_plan_state', 'in', ('proposed', 'reviewed'))]"/>
+                <filter name="outings_to_approve" string="Salidas por autorizar" domain="[('scout_category', '=', 'outing'), ('scout_plan_state', '!=', 'approved')]"/>
+                <separator/>
+                <filter name="councils" string="Consejos" domain="[('scout_activity_type', '=', 'council')]"/>
+                <filter name="camps" string="Campamentos" domain="[('scout_activity_type', '=', 'camp')]"/>
+                <filter name="filter_date" string="Fecha" date="scout_date"/>
+                <group>
+                    <filter name="group_type" string="Tipo" context="{'group_by': 'scout_activity_type'}"/>
+                    <filter name="group_category" string="Clasificación" context="{'group_by': 'scout_category'}"/>
+                    <filter name="group_plan" string="Aprobación" context="{'group_by': 'scout_plan_state'}"/>
+                    <filter name="group_month" string="Mes" context="{'group_by': 'scout_date:month'}"/>
+                </group>
+            </search>
+        </field>
+    </record>
+
+    <record id="action_scout_calendar" model="ir.actions.act_window">
+        <field name="name">Calendario scout</field>
+        <field name="res_model">calendar.event</field>
+        <field name="view_mode">calendar,list,form</field>
+        <field name="domain">[('is_scout_event', '=', True)]</field>
+        <field name="context">{'default_is_scout_event': True, 'default_privacy': 'public', 'default_partner_ids': []}</field>
+        <field name="search_view_id" ref="view_scout_event_search"/>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">Registra la primera actividad del grupo o de una sección</p>
+            <p>Cada actividad lleva responsables, temática, objetivos, horario y descripción; ahí mismo se pasa lista y se marca como realizada.</p>
+        </field>
+    </record>
+    <record id="action_scout_calendar_view_calendar" model="ir.actions.act_window.view">
+        <field name="sequence">1</field>
+        <field name="view_mode">calendar</field>
+        <field name="view_id" ref="view_scout_event_calendar"/>
+        <field name="act_window_id" ref="action_scout_calendar"/>
+    </record>
+    <record id="action_scout_calendar_view_list" model="ir.actions.act_window.view">
+        <field name="sequence">2</field>
+        <field name="view_mode">list</field>
+        <field name="view_id" ref="view_scout_event_list"/>
+        <field name="act_window_id" ref="action_scout_calendar"/>
+    </record>
+
+    <!-- Análisis de asistencia -->
+    <record id="view_scout_attendance_line_list" model="ir.ui.view">
+        <field name="name">scout.attendance.line.list</field>
+        <field name="model">scout.attendance.line</field>
+        <field name="arch" type="xml">
+            <list create="0">
+                <field name="date"/>
+                <field name="event_id"/>
+                <field name="section_id"/>
+                <field name="member_id"/>
+                <field name="status"/>
+                <field name="attended" sum="Asistencias"/>
+                <field name="counts" sum="Sesiones"/>
+                <field name="note" optional="hide"/>
+            </list>
+        </field>
+    </record>
+    <record id="view_scout_attendance_line_pivot" model="ir.ui.view">
+        <field name="name">scout.attendance.line.pivot</field>
+        <field name="model">scout.attendance.line</field>
+        <field name="arch" type="xml">
+            <pivot string="Asistencia" sample="1">
+                <field name="section_id" type="row"/>
+                <field name="member_id" type="row"/>
+                <field name="date" interval="month" type="col"/>
+                <field name="attended" type="measure"/>
+                <field name="counts" type="measure"/>
+            </pivot>
+        </field>
+    </record>
+    <record id="view_scout_attendance_line_search" model="ir.ui.view">
+        <field name="name">scout.attendance.line.search</field>
+        <field name="model">scout.attendance.line</field>
+        <field name="arch" type="xml">
+            <search>
+                <field name="member_id"/>
+                <field name="section_id"/>
+                <filter name="closed" string="Listas cerradas" domain="[('closed', '=', True)]"/>
+                <filter name="absent" string="Faltas" domain="[('status', '=', 'absent')]"/>
+                <separator/>
+                <filter name="filter_date" string="Fecha" date="date"/>
+                <group>
+                    <filter name="group_member" string="Miembro" context="{'group_by': 'member_id'}"/>
+                    <filter name="group_section" string="Sección" context="{'group_by': 'section_id'}"/>
+                    <filter name="group_status" string="Asistencia" context="{'group_by': 'status'}"/>
+                </group>
+            </search>
+        </field>
+    </record>
+    <record id="action_scout_attendance_analysis" model="ir.actions.act_window">
+        <field name="name">Análisis de asistencia</field>
+        <field name="res_model">scout.attendance.line</field>
+        <field name="view_mode">pivot,list</field>
+        <field name="context">{'search_default_closed': 1}</field>
+    </record>
+
+    <record id="action_scout_plan_approval" model="ir.actions.act_window">
+        <field name="name">Programa por aprobar</field>
+        <field name="res_model">calendar.event</field>
+        <field name="view_mode">list,calendar,form</field>
+        <field name="domain">[('is_scout_event', '=', True)]</field>
+        <field name="context">{'search_default_to_approve': 1, 'default_is_scout_event': True}</field>
+        <field name="view_ids" eval="[Command.clear(), Command.create({'view_mode': 'list', 'view_id': ref('view_scout_event_list')}),
+                                      Command.create({'view_mode': 'calendar', 'view_id': ref('view_scout_event_calendar')})]"/>
+        <field name="search_view_id" ref="view_scout_event_search"/>
+        <field name="help" type="html"><p class="o_view_nocontent_smiling_face">No hay actividades por aprobar</p>
+            <p>Los jefes de sección envían su programa desde el portal de dirigentes. Aquí el consejo lo revisa y el jefe de grupo da el visto bueno (las salidas amarillas solo el jefe de grupo).</p></field>
+    </record>
+    <record id="action_scout_group_calendar_url" model="ir.actions.act_url">
+        <field name="name">Calendario general por colores</field>
+        <field name="url">/dirigentes/calendario</field>
+        <field name="target">self</field>
+    </record>
+    <record id="action_scout_plan_approve_server" model="ir.actions.server">
+        <field name="name">Dar visto bueno</field>
+        <field name="model_id" ref="calendar.model_calendar_event"/>
+        <field name="binding_model_id" ref="calendar.model_calendar_event"/>
+        <field name="binding_view_types">list</field>
+        <field name="group_ids" eval="[Command.link(ref('scout_management.group_scout_officer'))]"/>
+        <field name="state">code</field>
+        <field name="code">records.filtered('is_scout_event').action_scout_plan_approve()</field>
+    </record>
+</odoo>

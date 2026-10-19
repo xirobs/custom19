@@ -1,0 +1,101 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <template id="report_attendance_matrix">
+        <t t-call="web.html_container">
+            <t t-call="web.basic_layout">
+                <t t-call="scout_management.scout_report_styles"/>
+                <style>
+                    .att { width: 100%; border-collapse: collapse; font-size: 9px; }
+                    .att th, .att td { border: 1px solid #555; padding: 1px 2px; text-align: center; }
+                    .att .nm { text-align: left; white-space: nowrap; }
+                    .att .mo { background: #f5e6a8; font-weight: 700; }
+                    .att .hd { background: #cfe8c6; font-weight: 700; }
+                    .st-present, .st-camp, .st-outing { color: #1b7f1b; font-weight: 700; }
+                    .st-absent { color: #d40000; font-weight: 700; }
+                    .st-na, .st-dropped, .st-no_roll { background: #333; color: #fff; }
+                    .p-yellow { background: #fff200; } .p-blue { background: #00a3e8; } .p-red { background: #ff2a2a; }
+                    .p-green { background: #7cc843; } .p-orange { background: #ff9d2e; } .p-purple { background: #b48ad6; }
+                    .p-brown { background: #b07a4f; } .p-white { background: #fff; }
+                </style>
+                <t t-foreach="sections" t-as="block">
+                    <div class="page sc-doc" style="page-break-after: always;">
+                        <table class="sc-row" style="margin-bottom: 4px;">
+                            <tr>
+                                <td style="width: 60%;">
+                                    <div style="font-size: 15px; font-weight: 800;" t-out="company.name"/>
+                                    <div><b>Formato:</b> Control de asistencia y registros</div>
+                                    <div><b>Periodo:</b> <t t-out="date_from"/> al <t t-out="date_to"/></div>
+                                </td>
+                                <td style="text-align: right;">
+                                    <div style="font-size: 17px; font-weight: 800;" t-out="block['section'].display_name"/>
+                                    <div t-if="block['pct_all'] is not None">Asistencia general: <b t-out="block['pct_all']"/> %</div>
+                                </td>
+                            </tr>
+                        </table>
+                        <t t-call="scout_management.scout_greca"/>
+                        <t t-if="not block['sessions']">
+                            <p class="text-muted">No hay listas cerradas en el periodo.</p>
+                        </t>
+                        <table t-else="" class="att">
+                            <thead>
+                                <tr>
+                                    <th rowspan="2" class="hd">N</th>
+                                    <th rowspan="2" class="hd nm">Nombre</th>
+                                    <th rowspan="2" class="hd">Nombre scout</th>
+                                    <th rowspan="2" class="hd">Edad</th>
+                                    <th rowspan="2" class="hd nm">Representante</th>
+                                    <th rowspan="2" class="hd">Teléfono</th>
+                                    <th rowspan="2" class="hd">Reg.</th>
+                                    <t t-foreach="block['months']" t-as="month">
+                                        <th class="mo" t-att-colspan="len(month['sessions'])" t-out="month['label']"/>
+                                    </t>
+                                    <th rowspan="2" class="hd">Asist.</th>
+                                    <th rowspan="2" class="hd">% Asist.</th>
+                                </tr>
+                                <tr>
+                                    <t t-foreach="block['sessions']" t-as="session">
+                                        <th class="mo" t-out="session.scout_date.day"/>
+                                    </t>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <t t-foreach="block['rows']" t-as="row">
+                                    <t t-set="m" t-value="row['member']"/>
+                                    <tr>
+                                        <td t-out="row_index + 1"/>
+                                        <td t-attf-class="nm p-#{m.scout_patrol_id.color_name or 'white'}">
+                                            <t t-out="m.name"/>
+                                            <t t-if="m.scout_patrol_role == 'leader'"> (<t t-out="m.scout_section_id.patrol_role_label or 'Guía'"/>)</t>
+                                            <t t-if="m.scout_patrol_role == 'sub'"> (<t t-out="m.scout_section_id.patrol_subrole_label or 'Subguía'"/>)</t>
+                                        </td>
+                                        <td t-out="m.scout_name or ''"/>
+                                        <td t-out="m.scout_age or ''"/>
+                                        <td class="nm" t-out="m.scout_guardian_id.name if m.scout_type == 'youth' else (m.scout_position_id.name or '')"/>
+                                        <td t-out="m.scout_guardian_phone or m.phone or ''"/>
+                                        <td t-out="'Pago' if m.scout_registration_paid else ('Prueba' if m.scout_state == 'trial' else '')"/>
+                                        <t t-foreach="row['cells']" t-as="cell">
+                                            <td t-attf-class="st-#{cell['status']}" t-out="cell['code']"/>
+                                        </t>
+                                        <td t-out="row['attended']"/>
+                                        <td><t t-if="row['pct'] is not None"><t t-out="row['pct']"/> %</t></td>
+                                    </tr>
+                                </t>
+                                <tr>
+                                    <td colspan="7" class="nm"><b>Asistentes por sesión</b></td>
+                                    <t t-foreach="block['totals']" t-as="total"><td><b t-out="total"/></td></t>
+                                    <td colspan="2"/>
+                                </tr>
+                            </tbody>
+                        </table>
+                        <div style="margin-top: 5px; font-size: 9px;">
+                            <t t-foreach="legend" t-as="item">
+                                <span style="margin-right: 12px;"><t t-out="item[1]"/> <b t-out="item[0]"/></span>
+                            </t>
+                            <span>· El porcentaje considera SI, NO, CA y M; no cuentan N/A, B ni "/".</span>
+                        </div>
+                    </div>
+                </t>
+            </t>
+        </t>
+    </template>
+</odoo>

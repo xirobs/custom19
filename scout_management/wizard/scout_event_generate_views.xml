@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_scout_event_generate_form" model="ir.ui.view">
+        <field name="name">scout.event.generate.form</field>
+        <field name="model">scout.event.generate</field>
+        <field name="arch" type="xml">
+            <form>
+                <p class="text-muted">Crea en el calendario una actividad por semana para cada sección. Después edita cada una para poner su temática, responsables y objetivos.</p>
+                <group>
+                    <group>
+                        <field name="section_ids" widget="many2many_tags"/>
+                        <field name="weekday"/>
+                        <label for="date_from" string="Periodo"/>
+                        <div class="o_row"><field name="date_from"/> al <field name="date_to"/></div>
+                        <label for="hour_start" string="Horario"/>
+                        <div class="o_row"><field name="hour_start" widget="float_time"/> a <field name="hour_end" widget="float_time"/></div>
+                    </group>
+                    <group>
+                        <field name="name"/>
+                        <field name="activity_type"/>
+                        <field name="theme"/>
+                        <field name="location"/>
+                        <field name="skip_existing"/>
+                    </group>
+                </group>
+                <footer>
+                    <button name="action_generate" type="object" string="Crear actividades" class="btn-primary"/>
+                    <button special="cancel" string="Cancelar"/>
+                </footer>
+            </form>
+        </field>
+    </record>
+    <record id="action_scout_event_generate" model="ir.actions.act_window">
+        <field name="name">Crear sesiones del trimestre</field>
+        <field name="res_model">scout.event.generate</field>
+        <field name="view_mode">form</field>
+        <field name="target">new</field>
+    </record>
+</odoo>

@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_scout_calendar_report_wizard_form" model="ir.ui.view">
+        <field name="name">scout.calendar.report.wizard.form</field>
+        <field name="model">scout.calendar.report.wizard</field>
+        <field name="arch" type="xml">
+            <form>
+                <p class="text-muted">Calendario del trimestre con viernes, sábado y domingo, eventos del grupo y espacio para que cada sección anote propuestas.</p>
+                <group>
+                    <label for="date_from" string="Periodo"/>
+                    <div class="o_row">
+                        <field name="date_from"/> al <field name="date_to"/>
+                    </div>
+                    <field name="include_sections"/>
+                    <field name="show_proposal_space"/>
+                    <field name="notes"/>
+                </group>
+                <footer>
+                    <button name="action_print" type="object" string="Imprimir PDF" class="btn-primary"/>
+                    <button special="cancel" string="Cancelar"/>
+                </footer>
+            </form>
+        </field>
+    </record>
+    <record id="action_scout_calendar_report_wizard" model="ir.actions.act_window">
+        <field name="name">Imprimir calendario trimestral</field>
+        <field name="res_model">scout.calendar.report.wizard</field>
+        <field name="view_mode">form</field>
+        <field name="target">new</field>
+    </record>
+</odoo>

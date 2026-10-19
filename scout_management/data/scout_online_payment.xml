@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Diario "Mercado Pago" ligado a la pasarela: los pagos en línea se ven como una caja más en tesorería. -->
+    <function model="res.company" name="_scout_setup_online_payments"/>
+
+    <record id="action_scout_mercado_pago" model="ir.actions.act_window">
+        <field name="name">Pago en línea (Mercado Pago)</field>
+        <field name="res_model">payment.provider</field>
+        <field name="view_mode">form</field>
+        <field name="res_id" ref="payment.payment_provider_mercado_pago"/>
+    </record>
+</odoo>

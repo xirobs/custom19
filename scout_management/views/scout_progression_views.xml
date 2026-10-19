@@ -1,0 +1,259 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- ================= Adelantos ================= -->
+    <record id="view_scout_progression_stage_list" model="ir.ui.view">
+        <field name="name">scout.progression.stage.list</field>
+        <field name="model">scout.progression.stage</field>
+        <field name="arch" type="xml">
+            <list editable="bottom">
+                <field name="sequence" widget="handle"/>
+                <field name="name"/>
+                <field name="stage_type"/>
+                <field name="category_id" optional="show" invisible="stage_type != 'specialty'"/>
+                <field name="section_ids" widget="many2many_tags"/>
+                <field name="description" optional="hide"/>
+            </list>
+        </field>
+    </record>
+    <record id="view_scout_progression_stage_search" model="ir.ui.view">
+        <field name="name">scout.progression.stage.search</field>
+        <field name="model">scout.progression.stage</field>
+        <field name="arch" type="xml">
+            <search>
+                <field name="name"/>
+                <field name="section_ids"/>
+                <field name="category_id"/>
+                <filter name="specialties" string="Especialidades" domain="[('stage_type', '=', 'specialty')]"/>
+                <filter name="path" string="Promesa, adelantos, ruta de enlace y terminal" domain="[('stage_type', '!=', 'specialty')]"/>
+                <group>
+                    <filter name="group_type" string="Tipo" context="{'group_by': 'stage_type'}"/>
+                    <filter name="group_category" string="Categoría" context="{'group_by': 'category_id'}"/>
+                </group>
+            </search>
+        </field>
+    </record>
+    <record id="action_scout_progression_stage" model="ir.actions.act_window">
+        <field name="name">Adelantos y especialidades</field>
+        <field name="res_model">scout.progression.stage</field>
+        <field name="view_mode">list</field>
+        <field name="context">{'search_default_group_type': 1}</field>
+    </record>
+
+    <record id="view_scout_progression_category_list" model="ir.ui.view">
+        <field name="name">scout.progression.category.list</field>
+        <field name="model">scout.progression.category</field>
+        <field name="arch" type="xml">
+            <list editable="bottom">
+                <field name="sequence" widget="handle"/>
+                <field name="name"/>
+                <field name="color"/>
+            </list>
+        </field>
+    </record>
+    <record id="action_scout_progression_category" model="ir.actions.act_window">
+        <field name="name">Categorías de especialidades</field>
+        <field name="res_model">scout.progression.category</field>
+        <field name="view_mode">list</field>
+    </record>
+
+    <record id="view_scout_member_progress_list" model="ir.ui.view">
+        <field name="name">scout.member.progress.list</field>
+        <field name="model">scout.member.progress</field>
+        <field name="arch" type="xml">
+            <list editable="bottom" decoration-success="state == 'achieved'">
+                <field name="member_id"/>
+                <field name="section_id" optional="show"/>
+                <field name="stage_id"/>
+                <field name="state"/>
+                <field name="date_start" optional="hide"/>
+                <field name="date_achieved"/>
+                <field name="leader_id" optional="show"/>
+                <field name="note" optional="show"/>
+            </list>
+        </field>
+    </record>
+    <record id="view_scout_member_progress_search" model="ir.ui.view">
+        <field name="name">scout.member.progress.search</field>
+        <field name="model">scout.member.progress</field>
+        <field name="arch" type="xml">
+            <search>
+                <field name="member_id"/>
+                <field name="stage_id"/>
+                <field name="section_id"/>
+                <filter name="achieved" string="Logrados" domain="[('state', '=', 'achieved')]"/>
+                <filter name="ongoing" string="En curso" domain="[('state', '=', 'in_progress')]"/>
+                <filter name="filter_date" string="Fecha de logro" date="date_achieved"/>
+                <group>
+                    <filter name="group_section" string="Sección" context="{'group_by': 'section_id'}"/>
+                    <filter name="group_stage" string="Adelanto" context="{'group_by': 'stage_id'}"/>
+                    <filter name="group_member" string="Miembro" context="{'group_by': 'member_id'}"/>
+                </group>
+            </search>
+        </field>
+    </record>
+    <record id="action_scout_member_progress" model="ir.actions.act_window">
+        <field name="name">Avances de recorridos</field>
+        <field name="res_model">scout.member.progress</field>
+        <field name="view_mode">list</field>
+        <field name="context">{'search_default_group_section': 1}</field>
+    </record>
+
+    <!-- Página de adelantos en la ficha del miembro -->
+    <!-- ================= Informe trimestral ================= -->
+    <record id="view_scout_section_report_list" model="ir.ui.view">
+        <field name="name">scout.section.report.list</field>
+        <field name="model">scout.section.report</field>
+        <field name="arch" type="xml">
+            <list>
+                <field name="name"/>
+                <field name="section_id"/>
+                <field name="period_label"/>
+                <field name="registered_count"/>
+                <field name="constant_count"/>
+                <field name="risk_count"/>
+                <field name="state" widget="badge" decoration-success="state == 'presented'"/>
+            </list>
+        </field>
+    </record>
+    <record id="view_scout_section_report_form" model="ir.ui.view">
+        <field name="name">scout.section.report.form</field>
+        <field name="model">scout.section.report</field>
+        <field name="arch" type="xml">
+            <form>
+                <header>
+                    <button name="action_refresh" type="object" string="Actualizar datos" class="btn-primary"
+                            invisible="state != 'draft'"/>
+                    <button name="%(scout_management.action_report_section_report)d" type="action" string="Imprimir informe"/>
+                    <button name="action_present" type="object" string="Marcar como presentado" invisible="state != 'draft'"/>
+                    <button name="action_draft" type="object" string="Regresar a borrador" invisible="state == 'draft'"/>
+                    <field name="state" widget="statusbar"/>
+                </header>
+                <sheet>
+                    <div class="oe_title">
+                        <h1><field name="name"/></h1>
+                    </div>
+                    <group>
+                        <group>
+                            <field name="section_id" readonly="state != 'draft'"/>
+                            <field name="period_type" widget="radio" options="{'horizontal': true}" readonly="state != 'draft'"/>
+                            <label for="date_from" string="Periodo"/>
+                            <div class="o_row">
+                                <field name="date_from" readonly="state != 'draft'"/> al
+                                <field name="date_to" readonly="state != 'draft'"/>
+                            </div>
+                            <field name="presented_to"/>
+                        </group>
+                        <group>
+                            <field name="closing_phrase"/>
+                            <field name="threshold_constant"/>
+                            <field name="threshold_risk"/>
+                            <label for="stats_date_from" string="Asistencia evaluada"/>
+                            <div class="o_row">
+                                <field name="stats_date_from"/> al <field name="stats_date_to"/>
+                            </div>
+                        </group>
+                    </group>
+                    <group string="Indicadores" col="4">
+                        <field name="registered_count"/>
+                        <field name="paid_count"/>
+                        <field name="constant_count"/>
+                        <field name="intermittent_count"/>
+                        <field name="risk_count"/>
+                        <field name="promise_count"/>
+                        <field name="transition_count"/>
+                        <field name="leader_count"/>
+                        <field name="avg_attendance" widget="progressbar"/>
+                    </group>
+                    <field name="situation" placeholder="Situación actual de la sección en un párrafo (opcional)"/>
+                    <notebook>
+                        <page string="Contenido del informe" name="items">
+                            <field name="item_ids">
+                                <list editable="bottom" decoration-muted="is_auto">
+                                    <field name="item_type"/>
+                                    <field name="sequence" widget="handle"/>
+                                    <field name="name"/>
+                                    <field name="is_auto" optional="show"/>
+                                </list>
+                            </field>
+                        </page>
+                        <page string="Actividades del trimestre" name="events">
+                            <field name="event_ids">
+                                <list>
+                                    <field name="start"/>
+                                    <field name="scout_section_names"/>
+                                    <field name="name"/>
+                                    <field name="scout_theme"/>
+                                    <field name="scout_attendance_pct" widget="progressbar"/>
+                                    <field name="scout_done"/>
+                                </list>
+                            </field>
+                        </page>
+                        <page string="Miembros y avances" name="members">
+                            <field name="member_line_ids">
+                                <list editable="bottom" create="0"
+                                      decoration-success="attendance_class == 'constant'"
+                                      decoration-warning="attendance_class == 'intermittent'"
+                                      decoration-danger="attendance_class == 'risk'">
+                                    <field name="member_id" readonly="1"/>
+                                    <field name="scout_name" optional="show"/>
+                                    <field name="patrol_id" readonly="1"/>
+                                    <field name="patrol_role" readonly="1"/>
+                                    <field name="attendance_pct" widget="progressbar" readonly="1"/>
+                                    <field name="attendance_class"/>
+                                    <field name="has_promise" readonly="1"/>
+                                    <field name="in_transition" readonly="1"/>
+                                    <field name="progress_summary"/>
+                                    <field name="note"/>
+                                </list>
+                            </field>
+                        </page>
+                    </notebook>
+                </sheet>
+                <chatter/>
+            </form>
+        </field>
+    </record>
+    <record id="view_scout_section_report_search" model="ir.ui.view">
+        <field name="name">scout.section.report.search</field>
+        <field name="model">scout.section.report</field>
+        <field name="arch" type="xml">
+            <search>
+                <field name="section_id"/>
+                <filter name="draft" string="Borradores" domain="[('state', '=', 'draft')]"/>
+                <filter name="quarterly" string="Trimestrales" domain="[('period_type', '=', 'quarter')]"/>
+                <filter name="annual" string="Anuales" domain="[('period_type', '=', 'annual')]"/>
+                <group>
+                    <filter name="group_period" string="Periodo" context="{'group_by': 'period_label'}"/>
+                    <filter name="group_section" string="Sección" context="{'group_by': 'section_id'}"/>
+                </group>
+            </search>
+        </field>
+    </record>
+    <record id="action_scout_section_report" model="ir.actions.act_window">
+        <field name="name">Informes trimestrales</field>
+        <field name="res_model">scout.section.report</field>
+        <field name="view_mode">list,form</field>
+        <field name="context">{'search_default_group_period': 1}</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">Crea el informe de tu sección para el Consejo de Grupo</p>
+            <p>"Actualizar datos" calcula registrados, pagos, constantes, intermitentes, ruta de enlace, adelantos y rescate; tú agregas objetivos, necesidades y próximos pasos.</p>
+        </field>
+    </record>
+
+    <!-- Sección: nombres de equipos y roles -->
+    <record id="view_scout_section_form_labels" model="ir.ui.view">
+        <field name="name">scout.section.form.labels</field>
+        <field name="model">scout.section</field>
+        <field name="inherit_id" ref="view_scout_section_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//field[@name='leader_ids']" position="after">
+                <field name="patrol_label"/>
+                <field name="patrol_role_label"/>
+                <field name="patrol_subrole_label"/>
+            </xpath>
+            <xpath expr="//field[@name='patrol_ids']/list/field[@name='color_name']" position="after">
+                <field name="follow_leader_id"/>
+            </xpath>
+        </field>
+    </record>
+</odoo>

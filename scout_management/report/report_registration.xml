@@ -1,0 +1,241 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <template id="scout_report_styles">
+        <style>
+            .sc-doc { font-family: Helvetica, Arial, sans-serif; color: #0f3049; font-size: 11px; }
+            .sc-head { text-align: center; padding-bottom: 4px; margin-bottom: 0; }
+            .sc-greca { margin: 2px 0 10px 0; line-height: 0; }
+            .sc-greca img { width: 100%; display: block; }
+            .sc-greca-foot { margin: 12px 0 0 0; }
+            .sc-greca-tight { margin: 4px 0 4px 0; }
+            .sc-head h1 { font-size: 24px; font-weight: 900; margin: 0; letter-spacing: 1px; }
+            .sc-head h2 { font-size: 14px; font-weight: 800; margin: 4px 0 0 0; color: #f36f45; }
+            .sc-head .sub { font-size: 10px; letter-spacing: 3px; }
+            .sc-logo { max-height: 70px; }
+            .sc-box { border: 1.5px solid #0f3049; border-radius: 8px; padding: 6px 10px 8px 10px; margin-bottom: 8px; page-break-inside: avoid; }
+            .sc-title { font-weight: 800; font-size: 12px; margin-bottom: 4px; color: #0f3049; border-bottom: 1.5px solid #f36f45; padding-bottom: 2px; }
+            .sc-num { display: inline-block; width: 18px; height: 18px; line-height: 18px; border-radius: 9px; background: #f36f45; color: #fff; text-align: center; margin-right: 6px; font-size: 11px; }
+            .sc-row { width: 100%; border-collapse: collapse; }
+            .sc-row td { padding: 3px 4px; vertical-align: bottom; }
+            .sc-label { font-weight: 700; white-space: nowrap; }
+            .sc-val { border-bottom: 1px solid #0f3049; min-width: 60px; }
+            .sc-chk { display: inline-block; width: 11px; height: 11px; border: 1px solid #0f3049; text-align: center; line-height: 10px; font-size: 10px; font-weight: 800; margin-right: 3px; }
+            .sc-opt { margin-right: 14px; white-space: nowrap; }
+            .sc-consent li { margin-bottom: 3px; }
+            .sc-sign { text-align: center; padding-top: 4px; }
+            .sc-sign img { max-height: 55px; }
+            .sc-sign .line { border-top: 1px solid #0f3049; margin-top: 2px; padding-top: 2px; font-weight: 700; }
+            .sc-motto { text-align: center; font-weight: 800; margin-top: 6px; color: #f36f45; }
+            .sc-table { width: 100%; border-collapse: collapse; }
+            .sc-table th, .sc-table td { border: 1px solid #a9b6c2; padding: 2px 3px; }
+            .sc-table th { background: #0f3049; color: #fff; }
+            .sc-grid { width: 100%; border-collapse: separate; border-spacing: 8px 0; table-layout: fixed; margin: 0 -8px; }
+            .sc-grid td { vertical-align: top; padding: 0 0 7px 0; }
+            .sc-f-l { font-size: 8.5px; font-weight: 700; text-transform: uppercase; letter-spacing: .4px; color: #4a6378; line-height: 11px; }
+            .sc-f-v { border-bottom: 1px solid #0f3049; min-height: 16px; line-height: 15px; padding: 1px 2px 0 2px; font-size: 11px; word-wrap: break-word; }
+            .sc-f-v.multi { min-height: 46px; white-space: pre-line; }
+            .sc-opts { width: 100%; border-collapse: collapse; table-layout: fixed; margin: 1px 0 6px 0; }
+            .sc-opts td { padding: 2px 0; font-size: 10px; line-height: 13px; vertical-align: middle; }
+            .sc-chk2 { display: inline-block; width: 10px; height: 10px; border: 1px solid #0f3049; text-align: center; line-height: 10px; font-size: 9px; font-weight: 800; margin-right: 4px; vertical-align: -1px; }
+            .sc-sub { font-size: 9px; font-weight: 800; color: #0f3049; text-transform: uppercase; margin: 2px 0 3px 0; }
+            .sc-consent2 { width: 100%; border-collapse: collapse; }
+            .sc-consent2 td { padding: 2px 0 4px 0; font-size: 10px; line-height: 13px; vertical-align: top; }
+            .sc-consent2 td.c { width: 16px; }
+        </style>
+    </template>
+
+    <template id="scout_greca">
+        <!-- Greca de la pañoleta del grupo: naranja | blanca con greca negra | azul marino -->
+        <div t-attf-class="sc-greca #{greca_class or ''}"><img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI3NjgiIGhlaWdodD0iMjIiIHZpZXdCb3g9IjAgMCA3NjggMjIiPjxyZWN0IHdpZHRoPSI3NjgiIGhlaWdodD0iMjIiIGZpbGw9IiNmZmYiLz48cmVjdCB3aWR0aD0iNzY4IiBoZWlnaHQ9IjMiIGZpbGw9IiNmMzZmNDUiLz48cmVjdCB5PSIxOSIgd2lkdGg9Ijc2OCIgaGVpZ2h0PSIzIiBmaWxsPSIjMGYzMDQ5Ii8+PGcgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjMWExYTFhIiBzdHJva2Utd2lkdGg9IjEuNiI+PGxpbmUgeDE9IjAiIHkxPSIxNi4yIiB4Mj0iNzY4IiB5Mj0iMTYuMiIvPjxwb2x5bGluZSBwb2ludHM9IjIsMTYgMiw2IDE0LDYgMTQsMTMgNiwxMyA2LDkgMTAsOSIvPjxwb2x5bGluZSBwb2ludHM9IjE4LDE2IDE4LDYgMzAsNiAzMCwxMyAyMiwxMyAyMiw5IDI2LDkiLz48cG9seWxpbmUgcG9pbnRzPSIzNCwxNiAzNCw2IDQ2LDYgNDYsMTMgMzgsMTMgMzgsOSA0Miw5Ii8+PHBvbHlsaW5lIHBvaW50cz0iNTAsMTYgNTAsNiA2Miw2IDYyLDEzIDU0LDEzIDU0LDkgNTgsOSIvPjxwb2x5bGluZSBwb2ludHM9IjY2LDE2IDY2LDYgNzgsNiA3OCwxMyA3MCwxMyA3MCw5IDc0LDkiLz48cG9seWxpbmUgcG9pbnRzPSI4MiwxNiA4Miw2IDk0LDYgOTQsMTMgODYsMTMgODYsOSA5MCw5Ii8+PHBvbHlsaW5lIHBvaW50cz0iOTgsMTYgOTgsNiAxMTAsNiAxMTAsMTMgMTAyLDEzIDEwMiw5IDEwNiw5Ii8+PHBvbHlsaW5lIHBvaW50cz0iMTE0LDE2IDExNCw2IDEyNiw2IDEyNiwxMyAxMTgsMTMgMTE4LDkgMTIyLDkiLz48cG9seWxpbmUgcG9pbnRzPSIxMzAsMTYgMTMwLDYgMTQyLDYgMTQyLDEzIDEzNCwxMyAxMzQsOSAxMzgsOSIvPjxwb2x5bGluZSBwb2ludHM9IjE0NiwxNiAxNDYsNiAxNTgsNiAxNTgsMTMgMTUwLDEzIDE1MCw5IDE1NCw5Ii8+PHBvbHlsaW5lIHBvaW50cz0iMTYyLDE2IDE2Miw2IDE3NCw2IDE3NCwxMyAxNjYsMTMgMTY2LDkgMTcwLDkiLz48cG9seWxpbmUgcG9pbnRzPSIxNzgsMTYgMTc4LDYgMTkwLDYgMTkwLDEzIDE4MiwxMyAxODIsOSAxODYsOSIvPjxwb2x5bGluZSBwb2ludHM9IjE5NCwxNiAxOTQsNiAyMDYsNiAyMDYsMTMgMTk4LDEzIDE5OCw5IDIwMiw5Ii8+PHBvbHlsaW5lIHBvaW50cz0iMjEwLDE2IDIxMCw2IDIyMiw2IDIyMiwxMyAyMTQsMTMgMjE0LDkgMjE4LDkiLz48cG9seWxpbmUgcG9pbnRzPSIyMjYsMTYgMjI2LDYgMjM4LDYgMjM4LDEzIDIzMCwxMyAyMzAsOSAyMzQsOSIvPjxwb2x5bGluZSBwb2ludHM9IjI0MiwxNiAyNDIsNiAyNTQsNiAyNTQsMTMgMjQ2LDEzIDI0Niw5IDI1MCw5Ii8+PHBvbHlsaW5lIHBvaW50cz0iMjU4LDE2IDI1OCw2IDI3MCw2IDI3MCwxMyAyNjIsMTMgMjYyLDkgMjY2LDkiLz48cG9seWxpbmUgcG9pbnRzPSIyNzQsMTYgMjc0LDYgMjg2LDYgMjg2LDEzIDI3OCwxMyAyNzgsOSAyODIsOSIvPjxwb2x5bGluZSBwb2ludHM9IjI5MCwxNiAyOTAsNiAzMDIsNiAzMDIsMTMgMjk0LDEzIDI5NCw5IDI5OCw5Ii8+PHBvbHlsaW5lIHBvaW50cz0iMzA2LDE2IDMwNiw2IDMxOCw2IDMxOCwxMyAzMTAsMTMgMzEwLDkgMzE0LDkiLz48cG9seWxpbmUgcG9pbnRzPSIzMjIsMTYgMzIyLDYgMzM0LDYgMzM0LDEzIDMyNiwxMyAzMjYsOSAzMzAsOSIvPjxwb2x5bGluZSBwb2ludHM9IjMzOCwxNiAzMzgsNiAzNTAsNiAzNTAsMTMgMzQyLDEzIDM0Miw5IDM0Niw5Ii8+PHBvbHlsaW5lIHBvaW50cz0iMzU0LDE2IDM1NCw2IDM2Niw2IDM2NiwxMyAzNTgsMTMgMzU4LDkgMzYyLDkiLz48cG9seWxpbmUgcG9pbnRzPSIzNzAsMTYgMzcwLDYgMzgyLDYgMzgyLDEzIDM3NCwxMyAzNzQsOSAzNzgsOSIvPjxwb2x5bGluZSBwb2ludHM9IjM4NiwxNiAzODYsNiAzOTgsNiAzOTgsMTMgMzkwLDEzIDM5MCw5IDM5NCw5Ii8+PHBvbHlsaW5lIHBvaW50cz0iNDAyLDE2IDQwMiw2IDQxNCw2IDQxNCwxMyA0MDYsMTMgNDA2LDkgNDEwLDkiLz48cG9seWxpbmUgcG9pbnRzPSI0MTgsMTYgNDE4LDYgNDMwLDYgNDMwLDEzIDQyMiwxMyA0MjIsOSA0MjYsOSIvPjxwb2x5bGluZSBwb2ludHM9IjQzNCwxNiA0MzQsNiA0NDYsNiA0NDYsMTMgNDM4LDEzIDQzOCw5IDQ0Miw5Ii8+PHBvbHlsaW5lIHBvaW50cz0iNDUwLDE2IDQ1MCw2IDQ2Miw2IDQ2MiwxMyA0NTQsMTMgNDU0LDkgNDU4LDkiLz48cG9seWxpbmUgcG9pbnRzPSI0NjYsMTYgNDY2LDYgNDc4LDYgNDc4LDEzIDQ3MCwxMyA0NzAsOSA0NzQsOSIvPjxwb2x5bGluZSBwb2ludHM9IjQ4MiwxNiA0ODIsNiA0OTQsNiA0OTQsMTMgNDg2LDEzIDQ4Niw5IDQ5MCw5Ii8+PHBvbHlsaW5lIHBvaW50cz0iNDk4LDE2IDQ5OCw2IDUxMCw2IDUxMCwxMyA1MDIsMTMgNTAyLDkgNTA2LDkiLz48cG9seWxpbmUgcG9pbnRzPSI1MTQsMTYgNTE0LDYgNTI2LDYgNTI2LDEzIDUxOCwxMyA1MTgsOSA1MjIsOSIvPjxwb2x5bGluZSBwb2ludHM9IjUzMCwxNiA1MzAsNiA1NDIsNiA1NDIsMTMgNTM0LDEzIDUzNCw5IDUzOCw5Ii8+PHBvbHlsaW5lIHBvaW50cz0iNTQ2LDE2IDU0Niw2IDU1OCw2IDU1OCwxMyA1NTAsMTMgNTUwLDkgNTU0LDkiLz48cG9seWxpbmUgcG9pbnRzPSI1NjIsMTYgNTYyLDYgNTc0LDYgNTc0LDEzIDU2NiwxMyA1NjYsOSA1NzAsOSIvPjxwb2x5bGluZSBwb2ludHM9IjU3OCwxNiA1NzgsNiA1OTAsNiA1OTAsMTMgNTgyLDEzIDU4Miw5IDU4Niw5Ii8+PHBvbHlsaW5lIHBvaW50cz0iNTk0LDE2IDU5NCw2IDYwNiw2IDYwNiwxMyA1OTgsMTMgNTk4LDkgNjAyLDkiLz48cG9seWxpbmUgcG9pbnRzPSI2MTAsMTYgNjEwLDYgNjIyLDYgNjIyLDEzIDYxNCwxMyA2MTQsOSA2MTgsOSIvPjxwb2x5bGluZSBwb2ludHM9IjYyNiwxNiA2MjYsNiA2MzgsNiA2MzgsMTMgNjMwLDEzIDYzMCw5IDYzNCw5Ii8+PHBvbHlsaW5lIHBvaW50cz0iNjQyLDE2IDY0Miw2IDY1NCw2IDY1NCwxMyA2NDYsMTMgNjQ2LDkgNjUwLDkiLz48cG9seWxpbmUgcG9pbnRzPSI2NTgsMTYgNjU4LDYgNjcwLDYgNjcwLDEzIDY2MiwxMyA2NjIsOSA2NjYsOSIvPjxwb2x5bGluZSBwb2ludHM9IjY3NCwxNiA2NzQsNiA2ODYsNiA2ODYsMTMgNjc4LDEzIDY3OCw5IDY4Miw5Ii8+PHBvbHlsaW5lIHBvaW50cz0iNjkwLDE2IDY5MCw2IDcwMiw2IDcwMiwxMyA2OTQsMTMgNjk0LDkgNjk4LDkiLz48cG9seWxpbmUgcG9pbnRzPSI3MDYsMTYgNzA2LDYgNzE4LDYgNzE4LDEzIDcxMCwxMyA3MTAsOSA3MTQsOSIvPjxwb2x5bGluZSBwb2ludHM9IjcyMiwxNiA3MjIsNiA3MzQsNiA3MzQsMTMgNzI2LDEzIDcyNiw5IDczMCw5Ii8+PHBvbHlsaW5lIHBvaW50cz0iNzM4LDE2IDczOCw2IDc1MCw2IDc1MCwxMyA3NDIsMTMgNzQyLDkgNzQ2LDkiLz48cG9seWxpbmUgcG9pbnRzPSI3NTQsMTYgNzU0LDYgNzY2LDYgNzY2LDEzIDc1OCwxMyA3NTgsOSA3NjIsOSIvPjwvZz48L3N2Zz4="/></div>
+    </template>
+
+    <template id="report_registration_document">
+        <t t-call="web.html_container">
+            <t t-foreach="docs" t-as="doc">
+                <t t-call="web.basic_layout">
+                    <t t-call="scout_management.scout_report_styles"/>
+                    <t t-set="chk" t-value="lambda flag: 'X' if flag else ' '"/>
+                    <div class="page sc-doc">
+                        <table class="sc-row sc-head">
+                            <tr>
+                                <td style="width: 18%; text-align: left;">
+                                    <img t-if="doc.company_id.logo" class="sc-logo" t-att-src="image_data_uri(doc.company_id.logo)"/>
+                                </td>
+                                <td>
+                                    <h1 t-out="doc.company_id.name"/>
+                                    <div class="sub" t-if="doc.company_id.report_header" t-out="doc.company_id.report_header"/>
+                                    <h2>FICHA ÚNICA DE REGISTRO, CONSENTIMIENTO Y RESPONSIVA</h2>
+                                    <div>CICLO SCOUT: <b t-out="doc.cycle_id.name"/> &#160;&#160;&#160; FOLIO: <b t-out="doc.name"/></div>
+                                </td>
+                                <td style="width: 18%; text-align: right;">
+                                    <img t-if="doc.company_id.scout_emblem" class="sc-logo" t-att-src="image_data_uri(doc.company_id.scout_emblem)"/>
+                                    <span t-else="" style="font-size: 52px;">⚜</span>
+                                </td>
+                            </tr>
+                        </table>
+                        <t t-call="scout_management.scout_greca"/>
+
+                        <t t-set="fdate" t-value="lambda d: d and d.strftime('%d / %m / %Y') or ''"/>
+                        <div class="sc-box">
+                            <div class="sc-title"><span class="sc-num">1</span>DATOS DE REGISTRO
+                                <span t-if="doc.kind" style="float: right; font-size: 10px; color: #f36f45;" t-out="dict(doc._fields['kind'].selection).get(doc.kind, '').upper()"/></div>
+                            <table class="sc-grid">
+                                <tr>
+                                    <td style="width: 34%;"><div class="sc-f-l">Nombre(s)</div><div class="sc-f-v" t-out="doc.first_name or ''"/></td>
+                                    <td style="width: 33%;"><div class="sc-f-l">Apellido paterno</div><div class="sc-f-v" t-out="doc.last_name or ''"/></td>
+                                    <td style="width: 33%;"><div class="sc-f-l">Apellido materno</div><div class="sc-f-v" t-out="doc.last_name2 or ''"/></td>
+                                </tr>
+                            </table>
+                            <table class="sc-grid">
+                                <tr>
+                                    <td style="width: 24%;"><div class="sc-f-l">Fecha de nacimiento</div><div class="sc-f-v" t-out="fdate(doc.birthdate)"/></td>
+                                    <td style="width: 12%;"><div class="sc-f-l">Edad</div><div class="sc-f-v" t-out="doc.age or ''"/></td>
+                                    <td style="width: 16%;"><div class="sc-f-l">Sexo</div><div class="sc-f-v" t-out="dict(doc._fields['gender'].selection).get(doc.gender, '')"/></td>
+                                    <td style="width: 48%;"><div class="sc-f-l">Sección asignada</div><div class="sc-f-v" t-out="doc.section_id.name or ''"/></td>
+                                </tr>
+                            </table>
+                            <table t-if="doc.leadership_position_id or doc.leading_section_ids" class="sc-grid">
+                                <tr><td><div class="sc-f-l">Jefatura / cargo</div><div class="sc-f-v" t-out="(doc.leadership_position_id.name or '') + ((' - ' + ', '.join(doc.leading_section_ids.mapped('name'))) if doc.leading_section_ids else '')"/></td></tr>
+                            </table>
+                            <div class="sc-sub">Sección</div>
+                            <t t-set="sec_rows" t-value="[sections[i:i + 4] for i in range(0, len(sections), 4)]"/>
+                            <table class="sc-opts">
+                                <tr t-foreach="sec_rows" t-as="sec_row">
+                                    <td t-foreach="sec_row" t-as="section" style="width: 25%;"><span class="sc-chk2" t-out="chk(doc.section_id == section)"/><t t-out="section.name.upper()"/></td>
+                                    <td t-foreach="range(4 - len(sec_row))" t-as="pad" style="width: 25%;"/>
+                                </tr>
+                            </table>
+                            <table class="sc-grid">
+                                <tr><td><div class="sc-f-l">Domicilio</div><div class="sc-f-v" t-out="doc.street or ''"/></td></tr>
+                            </table>
+                        </div>
+                        <div class="sc-box">
+                            <div class="sc-title"><span class="sc-num">2</span>DATOS DEL PADRE, MADRE, TUTOR O PERSONA PARA AVISAR EN CASO DE ACCIDENTE</div>
+                            <table class="sc-grid">
+                                <tr>
+                                    <td style="width: 70%;"><div class="sc-f-l">Nombre completo</div><div class="sc-f-v" t-out="doc.guardian_name or ''"/></td>
+                                    <td style="width: 30%;"><div class="sc-f-l">Parentesco</div><div class="sc-f-v" t-out="doc.guardian_relationship or ''"/></td>
+                                </tr>
+                            </table>
+                            <table class="sc-grid">
+                                <tr>
+                                    <td style="width: 25%;"><div class="sc-f-l">Teléfono celular</div><div class="sc-f-v" t-out="doc.guardian_phone or ''"/></td>
+                                    <td style="width: 25%;"><div class="sc-f-l">Teléfono alterno</div><div class="sc-f-v" t-out="doc.guardian_phone_alt or ''"/></td>
+                                    <td style="width: 50%;"><div class="sc-f-l">Correo electrónico</div><div class="sc-f-v" t-out="doc.guardian_email or ''"/></td>
+                                </tr>
+                            </table>
+                            <table class="sc-grid">
+                                <tr><td><div class="sc-f-l">Domicilio (si es distinto)</div><div class="sc-f-v" t-out="doc.guardian_street or ''"/></td></tr>
+                            </table>
+                        </div>
+                        <div class="sc-box">
+                            <div class="sc-title"><span class="sc-num">3</span>INFORMACIÓN MÉDICA</div>
+                            <t t-if="can_see_medical">
+                                <t t-set="med" t-value="doc.sudo()"/>
+                                <table class="sc-grid">
+                                    <tr>
+                                        <td style="width: 46%;">
+                                            <div class="sc-sub">Servicio médico</div>
+                                            <table class="sc-opts">
+                                                <tr>
+                                                    <td style="width: 26%;"><span class="sc-chk2" t-out="chk(med.medical_service == 'imss')"/>IMSS</td>
+                                                    <td style="width: 28%;"><span class="sc-chk2" t-out="chk(med.medical_service == 'issste')"/>ISSSTE</td>
+                                                    <td style="width: 46%;"><span class="sc-chk2" t-out="chk(med.medical_service == 'private')"/>Seguro particular</td>
+                                                </tr>
+                                                <tr><td colspan="3"><span class="sc-chk2" t-out="chk(med.medical_service == 'none')"/>No tengo</td></tr>
+                                            </table>
+                                            <table class="sc-grid">
+                                                <tr>
+                                                    <td style="width: 65%;"><div class="sc-f-l">No. de afiliación o póliza</div><div class="sc-f-v" t-out="med.medical_policy or ''"/></td>
+                                                    <td style="width: 35%;"><div class="sc-f-l">Tipo de sangre</div><div class="sc-f-v"><span t-if="med.blood_type" t-field="med.blood_type"/></div></td>
+                                                </tr>
+                                            </table>
+                                        </td>
+                                        <td style="width: 54%;">
+                                            <div class="sc-sub">Condiciones médicas relevantes</div>
+                                            <div style="font-size: 8.5px; line-height: 11px; color: #4a6378;">Alergias, asma, medicamentos permanentes, hospitalización, cirugía, diabetes, hipertensión, restricciones físicas u otras.</div>
+                                            <div class="sc-f-v multi" t-out="med.medical_conditions or ''"/>
+                                        </td>
+                                    </tr>
+                                </table>
+                            </t>
+                            <div t-else="" class="text-muted">Información confidencial: visible solo para jefatura y dirigentes.</div>
+                        </div>
+                        <div class="sc-box">
+                            <div class="sc-title"><span class="sc-num">4</span>PAGO DE REGISTRO</div>
+                            <table class="sc-opts">
+                                <tr>
+                                    <td style="width: 22%;"><b>Forma de pago:</b></td>
+                                    <td style="width: 26%;"><span class="sc-chk2" t-out="chk(doc.payment_method == 'online')"/>En línea (Mercado Pago)</td>
+                                    <td style="width: 16%;"><span class="sc-chk2" t-out="chk(doc.payment_method == 'cash')"/>Efectivo</td>
+                                    <td style="width: 18%;"><span class="sc-chk2" t-out="chk(doc.payment_method == 'transfer')"/>Transferencia</td>
+                                    <td style="width: 18%;"><span class="sc-chk2" t-out="chk(doc.payment_state == 'paid' or doc.declared_paid)"/><b>Pagado</b></td>
+                                </tr>
+                            </table>
+                            <table class="sc-grid">
+                                <tr>
+                                    <td style="width: 34%;"><div class="sc-f-l">Referencia / No. de operación</div><div class="sc-f-v" t-out="doc.payment_reference or ''"/></td>
+                                    <td style="width: 22%;"><div class="sc-f-l">Fecha</div><div class="sc-f-v" t-out="fdate(doc.payment_date)"/></td>
+                                    <td style="width: 22%;"><div class="sc-f-l">Monto</div><div class="sc-f-v"><span t-if="doc.payment_amount" t-field="doc.payment_amount"/></div></td>
+                                    <td style="width: 22%;"><div class="sc-f-l">Estado</div><div class="sc-f-v" t-out="dict(doc._fields['payment_state'].selection).get(doc.payment_state, '')"/></td>
+                                </tr>
+                            </table>
+                        </div>
+                        <div class="sc-box">
+                            <div class="sc-title"><span class="sc-num">5</span>CONSENTIMIENTO, AUTORIZACIONES Y RESPONSIVA</div>
+                            <table class="sc-consent2" style="margin-bottom: 4px;">
+                                <tr><td class="c"><span class="sc-chk2" t-out="chk(doc.consent_participation)"/></td><td>Autorizo la participación de mi hijo(a) en reuniones, campamentos, excursiones, actividades de servicio y demás actividades propias del programa educativo de <t t-out="doc.company_id.name"/>.</td></tr>
+                                <tr><td class="c"><span class="sc-chk2" t-out="chk(doc.consent_first_aid)"/></td><td>Autorizo la aplicación de primeros auxilios y, en caso necesario, su traslado a un centro médico cuando la situación lo requiera y no sea posible localizarme oportunamente.</td></tr>
+                                <tr><td class="c"><span class="sc-chk2" t-out="chk(doc.consent_image)"/></td><td>Autorizo de manera expresa el uso de fotografías, videos, grabaciones de voz y demás material audiovisual en los que aparezca mi hijo(a) para fines educativos, institucionales, históricos y de difusión del escultismo, sin fines de lucro y de acuerdo con los principios y valores del Movimiento Scout.</td></tr>
+                                <tr><td class="c"><span class="sc-chk2" t-out="chk(doc.consent_data)"/></td><td>Autorizo el tratamiento de los datos personales proporcionados exclusivamente para fines administrativos, operativos, de seguridad y comunicación interna del Grupo, conforme al aviso de privacidad correspondiente.</td></tr>
+                                <tr><td class="c"><span class="sc-chk2" t-out="chk(doc.consent_risk)"/></td><td>Reconozco que las actividades scouts se desarrollan principalmente al aire libre y pueden implicar riesgos inherentes propios de su naturaleza. El Grupo, sus dirigentes y voluntarios se comprometen a actuar con medidas razonables de seguridad; por lo que libero de responsabilidad al grupo y a sus colaboradores respecto de accidentes o lesiones derivados de riesgos propios de la actividad.</td></tr>
+                                <tr><td class="c"><span class="sc-chk2" t-out="chk(doc.consent_update)"/></td><td>Me comprometo a mantener actualizada la información proporcionada y a informar cualquier cambio en datos personales, médicos o de contacto.</td></tr>
+                            </table>
+                            <div style="text-align: center; font-weight: 700; font-size: 10px;">
+                                CON MI FIRMA DECLARO HABER LEÍDO, COMPRENDIDO Y ACEPTADO ÍNTEGRAMENTE LA PRESENTE FICHA DE REGISTRO,
+                                SUS AUTORIZACIONES, CONDICIONES DE PARTICIPACIÓN Y REGLAMENTOS APLICABLES DE <t t-out="(doc.company_id.name or '').upper()"/>.
+                            </div>
+                            <table class="sc-row" style="margin-top: 6px;">
+                                <tr>
+                                    <td class="sc-sign" style="width: 33%;">
+                                        <img t-if="doc.guardian_signature" t-att-src="image_data_uri(doc.guardian_signature)"/>
+                                        <div t-else="" style="height: 55px;"/>
+                                        <div t-out="doc.guardian_signed_by"/>
+                                        <div class="line">PADRE, MADRE O TUTOR<br/><span style="font-weight: 400;">Nombre y firma</span></div>
+                                    </td>
+                                    <td class="sc-sign" style="width: 33%;">
+                                        <img t-if="doc.member_signature" t-att-src="image_data_uri(doc.member_signature)"/>
+                                        <div t-else="" style="height: 55px;"/>
+                                        <div t-out="doc.member_signed_by"/>
+                                        <div class="line">ASPIRANTE<br/><span style="font-weight: 400;">Nombre y firma (cuando aplique)</span></div>
+                                    </td>
+                                    <td class="sc-sign" style="width: 33%;">
+                                        <img t-if="doc.leader_signature" t-att-src="image_data_uri(doc.leader_signature)"/>
+                                        <div t-else="" style="height: 55px;"/>
+                                        <div t-out="doc.leader_user_id.name"/>
+                                        <div class="line">DIRIGENTE QUE RECIBE<br/><span style="font-weight: 400;">Nombre y firma</span></div>
+                                    </td>
+                                </tr>
+                            </table>
+                            <div style="text-align: center; margin-top: 4px;">Fecha:
+                                <b t-out="doc.signed_date and doc.signed_date.strftime('%d / %m / %Y') or '_____ / _____ / _______'"/>
+                            </div>
+                        </div>
+                        <t t-call="scout_management.scout_greca"><t t-set="greca_class" t-value="'sc-greca-foot'"/></t><div class="sc-motto">⚜ SIEMPRE LISTOS PARA SERVIR ⚜</div>
+                    </div>
+                    <div t-if="doc.guardian_id_front or doc.guardian_id_back" class="page sc-doc" style="page-break-before: always;">
+                        <div class="sc-title"><span class="sc-num">A</span>ANEXO: IDENTIFICACIÓN OFICIAL (INE) DEL PADRE, MADRE O TUTOR</div>
+                        <p style="font-size: 10px;">Ficha <t t-out="doc.name"/> · <t t-out="doc.guardian_signed_by or doc.guardian_name"/>. La firma de la ficha debe ser igual a la de esta identificación.</p>
+                        <t t-foreach="[('Frente', doc.guardian_id_front, doc.guardian_id_front_name), ('Reverso', doc.guardian_id_back, doc.guardian_id_back_name)]" t-as="ine">
+                            <div t-if="ine[1]" style="margin: 10px 0; text-align: center;">
+                                <div style="font-weight: 700; font-size: 10px;" t-out="ine[0]"/>
+                                <img t-if="not (ine[2] or '').lower().endswith('.pdf')" t-att-src="image_data_uri(ine[1])" style="max-width: 85%; max-height: 330px; border: 1px solid #999;"/>
+                                <div t-else="" style="font-size: 10px;">(La INE se adjuntó en PDF; está en la ficha en el sistema.)</div>
+                            </div>
+                        </t>
+                    </div>
+                </t>
+            </t>
+        </t>
+    </template>
+</odoo>
