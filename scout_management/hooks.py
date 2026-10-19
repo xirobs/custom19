@@ -38,3 +38,4 @@ def post_init_hook(env):
     env['scout.section']._scout_route_defaults()
     env['scout.progression.stage']._scout_v44_migrate()
     env['scout.route']._cron_refresh()
+    env['res.company']._scout_setup_online_payments()

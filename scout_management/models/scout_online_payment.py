@@ -6,6 +6,7 @@ su QR y los mensajes para WhatsApp o correo. Al pagar, Odoo registra el pago en 
 y el cargo queda pagado sin captura manual.
 """
 import base64
+import logging
 from urllib.parse import quote
 
 from odoo import _, api, fields, models
@@ -33,6 +34,9 @@ def scout_whatsapp_phone(raw):
     if len(phone) == 10:
         phone = '52' + phone  # México
     return phone
+
+_logger = logging.getLogger(__name__)
+
 
 
 class AccountMove(models.Model):
@@ -175,9 +179,11 @@ class ResCompanyOnlinePayment(models.Model):
             journal = Journal.search([('code', '=', 'MPAGO'), ('company_id', '=', company.id)], limit=1)
             if not journal:
                 try:
-                    journal = Journal.create({'name': 'Mercado Pago', 'type': 'bank', 'code': 'MPAGO',
-                                              'company_id': company.id})
-                except Exception:  # noqa: BLE001 - sin cuentas configuradas, se hace a mano
+                    with self.env.cr.savepoint():
+                        journal = Journal.create({'name': 'Mercado Pago', 'type': 'bank', 'code': 'MPAGO',
+                                                  'company_id': company.id})
+                except Exception as error:  # noqa: BLE001 - no detener la instalación; se crea a mano
+                    _logger.warning('Scout: no se pudo crear el diario Mercado Pago en %s: %s', company.name, error)
                     continue
             if provider and provider.company_id == company and not provider.journal_id:
                 provider.journal_id = journal

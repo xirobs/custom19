@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <odoo>
-    <!-- Diario "Mercado Pago" ligado a la pasarela: los pagos en línea se ven como una caja más en tesorería. -->
-    <function model="res.company" name="_scout_setup_online_payments"/>
+    <!-- El diario "Mercado Pago" se crea en post_init_hook y en migrations/*/end-setup_online_payments.py,
+         cuando ya están cargados todos los módulos (p. ej. account_asset agrega campos obligatorios a las cuentas). -->
 
     <record id="action_scout_mercado_pago" model="ir.actions.act_window">
         <field name="name">Pago en línea (Mercado Pago)</field>
