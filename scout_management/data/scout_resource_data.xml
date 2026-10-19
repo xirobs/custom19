@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo noupdate="1">
+    <record id="resource_category_manuals" model="scout.resource.category">
+        <field name="name">Manuales y guías</field>
+        <field name="icon">fa-book</field>
+        <field name="sequence">10</field>
+    </record>
+    <record id="resource_category_program" model="scout.resource.category">
+        <field name="name">Programa y planeación</field>
+        <field name="icon">fa-calendar-check-o</field>
+        <field name="sequence">20</field>
+    </record>
+    <record id="resource_category_videos" model="scout.resource.category">
+        <field name="name">Videos de apoyo</field>
+        <field name="icon">fa-video-camera</field>
+        <field name="sequence">30</field>
+    </record>
+    <record id="resource_category_games" model="scout.resource.category">
+        <field name="name">Juegos, canciones y actividades</field>
+        <field name="icon">fa-music</field>
+        <field name="sequence">40</field>
+    </record>
+    <record id="resource_category_forms" model="scout.resource.category">
+        <field name="name">Formatos y reglamentos</field>
+        <field name="icon">fa-file-text-o</field>
+        <field name="sequence">50</field>
+    </record>
+</odoo>

@@ -1,0 +1,137 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Categorías -->
+    <record id="view_scout_resource_category_list" model="ir.ui.view">
+        <field name="name">scout.resource.category.list</field>
+        <field name="model">scout.resource.category</field>
+        <field name="arch" type="xml">
+            <list editable="bottom">
+                <field name="sequence" widget="handle"/>
+                <field name="name"/>
+                <field name="icon" placeholder="fa-book"/>
+                <field name="description"/>
+                <field name="resource_count"/>
+                <field name="active" column_invisible="True"/>
+            </list>
+        </field>
+    </record>
+    <record id="action_scout_resource_category" model="ir.actions.act_window">
+        <field name="name">Categorías de recursos</field>
+        <field name="res_model">scout.resource.category</field>
+        <field name="view_mode">list</field>
+    </record>
+
+    <!-- Recursos -->
+    <record id="view_scout_resource_kanban" model="ir.ui.view">
+        <field name="name">scout.resource.kanban</field>
+        <field name="model">scout.resource</field>
+        <field name="arch" type="xml">
+            <kanban default_group_by="category_id" quick_create="false">
+                <field name="kind"/>
+                <field name="pinned"/>
+                <field name="thumbnail_url"/>
+                <templates>
+                    <t t-name="card">
+                        <div class="d-flex gap-2 align-items-start">
+                            <img t-if="record.thumbnail_url.raw_value" t-att-src="record.thumbnail_url.raw_value" alt="" style="width: 72px; height: 54px; object-fit: cover; border-radius: 6px;"/>
+                            <div class="flex-grow-1">
+                                <field name="name" class="fw-bold"/>
+                                <i t-if="record.pinned.raw_value" class="fa fa-thumb-tack ms-1 text-warning" title="Destacado"/>
+                                <div class="text-muted small"><field name="kind"/></div>
+                                <field name="section_ids" widget="many2many_tags"/>
+                            </div>
+                        </div>
+                    </t>
+                </templates>
+            </kanban>
+        </field>
+    </record>
+
+    <record id="view_scout_resource_list" model="ir.ui.view">
+        <field name="name">scout.resource.list</field>
+        <field name="model">scout.resource</field>
+        <field name="arch" type="xml">
+            <list>
+                <field name="sequence" widget="handle"/>
+                <field name="pinned" widget="boolean_toggle"/>
+                <field name="name"/>
+                <field name="category_id"/>
+                <field name="kind"/>
+                <field name="section_ids" widget="many2many_tags" optional="show"/>
+                <field name="create_uid" string="Subido por" optional="hide"/>
+                <field name="create_date" string="Fecha" optional="hide"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_scout_resource_form" model="ir.ui.view">
+        <field name="name">scout.resource.form</field>
+        <field name="model">scout.resource</field>
+        <field name="arch" type="xml">
+            <form>
+                <sheet>
+                    <widget name="web_ribbon" title="Archivado" bg_color="text-bg-danger" invisible="active"/>
+                    <div class="oe_title">
+                        <label for="name"/>
+                        <h1><field name="name" placeholder="Ej. Manual del jefe de manada"/></h1>
+                    </div>
+                    <group>
+                        <group>
+                            <field name="category_id"/>
+                            <field name="file" filename="file_name"/>
+                            <field name="file_name" invisible="1"/>
+                            <field name="url" widget="url" placeholder="https://www.youtube.com/watch?v=…"/>
+                            <field name="kind"/>
+                        </group>
+                        <group>
+                            <field name="section_ids" widget="many2many_tags" placeholder="Todas las secciones"/>
+                            <field name="pinned"/>
+                            <field name="company_id" groups="base.group_multi_company"/>
+                            <field name="active" invisible="1"/>
+                        </group>
+                    </group>
+                    <field name="description" placeholder="Para qué sirve, a qué edad o etapa aplica, cuándo usarlo…"/>
+                    <div class="text-muted small mt-2">
+                        Los videos pesados conviene subirlos a YouTube (puede ser "no listado") y pegar aquí la liga:
+                        se ven dentro del portal sin gastar espacio del servidor.
+                    </div>
+                </sheet>
+                <chatter/>
+            </form>
+        </field>
+    </record>
+
+    <record id="view_scout_resource_search" model="ir.ui.view">
+        <field name="name">scout.resource.search</field>
+        <field name="model">scout.resource</field>
+        <field name="arch" type="xml">
+            <search>
+                <field name="name"/>
+                <field name="description"/>
+                <field name="category_id"/>
+                <field name="section_ids"/>
+                <filter name="pinned" string="Destacados" domain="[('pinned', '=', True)]"/>
+                <separator/>
+                <filter name="videos" string="Videos" domain="[('kind', '=', 'video')]"/>
+                <filter name="pdfs" string="PDF" domain="[('kind', '=', 'pdf')]"/>
+                <separator/>
+                <filter name="archived" string="Archivados" domain="[('active', '=', False)]"/>
+                <group>
+                    <filter name="group_category" string="Categoría" context="{'group_by': 'category_id'}"/>
+                    <filter name="group_kind" string="Tipo" context="{'group_by': 'kind'}"/>
+                </group>
+            </search>
+        </field>
+    </record>
+
+    <record id="action_scout_resource" model="ir.actions.act_window">
+        <field name="name">Recursos para dirigentes</field>
+        <field name="res_model">scout.resource</field>
+        <field name="view_mode">kanban,list,form</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">Sube el primer recurso para los dirigentes</p>
+            <p>Manuales, PDF, presentaciones, formatos, canciones, juegos y videos de apoyo. Los jefes los ven en su
+                portal, en el cuadro "Recursos para dirigentes", filtrados por su sección.</p>
+        </field>
+    </record>
+</odoo>
