@@ -22,7 +22,7 @@ class ScoutRegistration(models.Model):
 
     name = fields.Char(string='Folio', readonly=True, copy=False, default=lambda self: _('Nuevo'))
     cycle_id = fields.Many2one('scout.cycle', string='Ciclo scout', required=True, tracking=True,
-                               default=lambda self: self.env['scout.cycle']._get_current())
+                               default=lambda self: self.env['scout.cycle']._get_registration())
     state = fields.Selection([
         ('draft', 'Borrador'), ('submitted', 'Recibida'), ('reviewed', 'Revisada (por validar)'),
         ('validated', 'Validada'), ('cancel', 'Cancelada'),
@@ -221,8 +221,24 @@ class ScoutRegistration(models.Model):
                                           name=reg.first_name))
 
     # ------------------------------------------------------------------ pago (en línea o efectivo)
+    def _scout_match_member(self):
+        """Liga la ficha al miembro que ya existe (mismo nombre y fecha de nacimiento) para no duplicarlo."""
+        for reg in self.sudo().filtered(lambda r: not r.member_id):
+            member = self.env['res.partner']._scout_find_existing(reg.first_name, reg.last_name, reg.last_name2,
+                                                                   reg.birthdate)
+            if not member:
+                continue
+            if self.search_count([('member_id', '=', member.id), ('cycle_id', '=', reg.cycle_id.id),
+                                  ('state', '!=', 'cancel'), ('id', '!=', reg.id)]):
+                continue  # ya tiene ficha en este ciclo: se deja para revisión manual
+            reg.write({'member_id': member.id,
+                       'kind': 'return' if member.scout_state == 'inactive' else 'renewal'})
+            reg.message_post(body=_('Se ligó al miembro existente %s (mismo nombre y fecha de nacimiento); '
+                                    'no se creó un duplicado.', member.name))
+
     def _scout_prepare_for_payment(self):
         """Deja listos tutor, miembro (en prueba) y cargo de la cuota para poder pagar en línea o en efectivo."""
+        self._scout_match_member()
         for reg in self.sudo():
             if not reg.guardian_id:
                 reg.guardian_id = reg._get_or_create_guardian()
@@ -350,6 +366,7 @@ class ScoutRegistration(models.Model):
     def action_validate(self):
         """Validación final (jefe de grupo): da de alta / actualiza al miembro y genera el cargo de registro."""
         self._scout_check_manager(_('validar fichas de registro'))
+        self._scout_match_member()
         for reg in self:
             if reg.state not in ('draft', 'submitted', 'reviewed'):
                 continue

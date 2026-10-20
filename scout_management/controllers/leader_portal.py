@@ -558,6 +558,18 @@ class ScoutLeaderPortal(http.Controller):
                    ('Content-Disposition', f'inline; filename="{name}.{ext}"')]
         return request.make_response(content, headers=headers)
 
+    # ------------------------------------------------------------------ nuevos ingresos y reinscripción
+    @http.route(['/dirigentes/<int:section_id>/reinscripcion', '/dirigentes/<int:section_id>/nuevos'], type='http',
+                auth='user', website=True, methods=['GET'])
+    def leader_enrollment(self, section_id, **kw):
+        section, redirect = self._section_or_redirect(section_id)
+        if redirect:
+            return redirect
+        mode = 'new' if request.httprequest.path.rstrip('/').endswith('/nuevos') else 'renew'
+        data = self._svc().enrollment(section)
+        return self._render('scout_management.leader_enrollment', section, 'members', mode=mode, enroll=data,
+                            groups=data[mode])
+
     # ------------------------------------------------------------------ reingresos
     @http.route(['/dirigentes/<int:section_id>/reingreso'], type='http', auth='user', website=True, methods=['GET'])
     def leader_returns(self, section_id, **kw):
@@ -861,7 +873,7 @@ class ScoutLeaderPortal(http.Controller):
                 error = str(e.args[0])
             else:
                 return request.redirect(f'/dirigentes/{section.id}/miembro/{member.id}/pago')
-        cycle = request.env['scout.cycle'].sudo()._get_current(section.company_id)
+        cycle = request.env['scout.cycle'].sudo()._get_registration(section.company_id)
         return self._render('scout_management.leader_member_register', section, 'members', member=member,
                             cycle=cycle, registration=svc.registration(member), error=error)
 
@@ -954,12 +966,12 @@ class ScoutLeaderPortal(http.Controller):
 def _card_values(member):
     """Datos de la credencial electrónica (pantalla y PDF)."""
     member = member.sudo()
-    reg = request.env['scout.leader.portal'].sudo().registration(member) if member.scout_type == 'youth' else None
-    cycle = request.env['scout.cycle'].sudo()._get_current(member.company_id or None)
+    reg, cycle = member._scout_card_info()
     return {
         'valid': member._scout_card_valid(),
-        'folio': reg.name if reg else '',
+        'folio': reg.name if reg and member.scout_type == 'youth' else '',
         'cycle': cycle,
+        'logo': member._scout_card_logo(),
         'qr': member._scout_card_qr(),
         'company': member.company_id or request.env.company,
     }
@@ -974,9 +986,9 @@ class ScoutCardPublic(http.Controller):
         member = request.env['res.partner'].sudo().browse(member_id).exists()
         if not member or not member.is_scout or not member.scout_card_token or not consteq(token, member.scout_card_token):
             return request.not_found()
-        cycle = request.env['scout.cycle'].sudo()._get_current(member.company_id or None)
+        _reg, cycle = member._scout_card_info()
         return request.render('scout_management.scout_card_verify', {
-            'member': member, 'valid': member._scout_card_valid(), 'cycle': cycle,
+            'member': member, 'valid': member._scout_card_valid(), 'cycle': cycle, 'logo': member._scout_card_logo(),
             'company': member.company_id or request.env.company, 'today': date.today()})
 
 

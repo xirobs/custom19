@@ -30,8 +30,11 @@
                     .sc-small { font-size: 6.6pt; line-height: 1.3; }
                     .sc-qr { width: 17mm; height: 17mm; }
                     .sc-foot { position: absolute; bottom: 0; left: 0; right: 0; height: 5.5mm; line-height: 5.5mm; padding: 0 2.5mm;
-                               font-size: 6.8pt; font-weight: bold; color: #fff; }
+                               font-size: 6.8pt; font-weight: bold; color: #fff; z-index: 2; }
                     .sc-ok { background: #2e9e44; } .sc-bad { background: #b8202f; }
+                    .sc-wm { position: absolute; left: 22mm; top: 9mm; width: 42mm; height: 42mm; opacity: 0.12; z-index: 0; }
+                    .sc-layer { position: relative; z-index: 1; }
+                    .sc-qr { background: #fff; }
                     .sc-back { padding: 3mm; font-size: 7pt; line-height: 1.45; }
                     .sc-back h4 { font-size: 8pt; color: #0f3049; margin: 0 0 1mm 0; }
                     .sc-sign { border-top: 0.2mm solid #555; margin-top: 7mm; padding-top: 0.8mm; font-size: 6.5pt; text-align: center; width: 45mm; }
@@ -39,20 +42,23 @@
                 <div class="page sc-cards">
                     <t t-foreach="docs" t-as="m">
                         <t t-set="m" t-value="m.sudo()"/>
-                        <t t-set="cycle" t-value="m.env['scout.cycle']._get_current(m.company_id or None)"/>
-                        <t t-set="reg" t-value="m.env['scout.leader.portal'].registration(m) if m.scout_type == 'youth' else None"/>
+                        <t t-set="info" t-value="m._scout_card_info()"/>
+                        <t t-set="reg" t-value="info[0] if m.scout_type == 'youth' else None"/>
+                        <t t-set="cycle" t-value="info[1]"/>
+                        <t t-set="logo" t-value="m._scout_card_logo()"/>
                         <t t-set="valid" t-value="m._scout_card_valid()"/>
                         <t t-set="company" t-value="m.company_id or m.env.company"/>
                         <!-- Frente -->
                         <div class="sc-card">
-                            <div class="sc-card-head">
+                            <img t-if="logo" class="sc-wm" t-att-src="logo" alt=""/>
+                            <div class="sc-card-head sc-layer">
                                 <table style="width:100%"><tr>
                                     <td style="width:9mm"><img t-if="company.logo" t-att-src="image_data_uri(company.logo)" alt=""/></td>
                                     <td><div class="g" t-out="company.name"/><div class="k">Credencial scout</div></td>
                                 </tr></table>
                             </div>
                             <t t-call="scout_management.scout_greca"/>
-                            <table class="sc-card-body" style="width:100%; margin-top:1.5mm"><tr>
+                            <table class="sc-card-body sc-layer" style="width:100%; margin-top:1.5mm"><tr>
                                 <td style="width:24mm; padding-left:2.5mm">
                                     <img t-if="m.image_512" class="sc-photo" t-att-src="image_data_uri(m.image_512)" alt=""/>
                                     <div t-else="" class="sc-nophoto"/>
@@ -71,7 +77,8 @@
                         </div>
                         <!-- Reverso -->
                         <div class="sc-card">
-                            <div class="sc-back">
+                            <img t-if="logo" class="sc-wm" t-att-src="logo" alt=""/>
+                            <div class="sc-back sc-layer">
                                 <h4>En caso de emergencia</h4>
                                 <div>Tipo de sangre: <b t-out="dict(m._fields['scout_blood_type'].selection).get(m.scout_blood_type) or '—'"/></div>
                                 <div t-if="m.scout_allergies">Alergias: <t t-out="m.scout_allergies[:60]"/></div>

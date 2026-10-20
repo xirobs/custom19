@@ -1,12 +1,16 @@
 # -*- coding: utf-8 -*-
 """Herramientas del miembro: alerta de edad, alerta de registro para nuevos, equipos, cargo y credencial."""
+import base64
+import re
 import secrets
+import unicodedata
 
 from dateutil.relativedelta import relativedelta
 from markupsafe import Markup
 
 from odoo import _, api, fields, models
 from odoo.exceptions import UserError
+from odoo.tools.misc import file_open
 
 from .scout_common import ATTENDED_STATUSES
 
@@ -17,6 +21,12 @@ PATROL_ROLE_POSITIONS = {
     'subguide': 'scout_management.position_subguide',
     'member': 'scout_management.position_member',
 }
+
+
+def scout_norm(value):
+    """Texto sin acentos, en minúsculas, sin signos y con espacios sencillos (para comparar nombres)."""
+    text = unicodedata.normalize('NFKD', str(value or '')).encode('ascii', 'ignore').decode().lower()
+    return ' '.join(re.sub(r'[^a-z0-9]+', ' ', text).split())
 
 
 class ResPartnerScoutTools(models.Model):
@@ -67,7 +77,8 @@ class ResPartnerScoutTools(models.Model):
         if not youth:
             return
         pending = youth.filtered(lambda p: p.scout_state == 'trial'
-                                 and p.scout_registration_status not in ('paid', 'exempt'))
+                                 and p.scout_registration_status not in ('paid', 'exempt')
+                                 and not p._scout_paid_next_registration())
         (youth - pending).update({'scout_trial_attendance': 0, 'scout_needs_registration': False})
         if not pending:
             return
@@ -151,12 +162,95 @@ class ResPartnerScoutTools(models.Model):
         from .scout_online_payment import scout_qr_data_uri
         return scout_qr_data_uri(self._scout_card_url())
 
+    def _scout_registration_in(self, cycle):
+        """Ficha (no cancelada) del miembro en ese ciclo."""
+        self.ensure_one()
+        if not cycle:
+            return self.env['scout.registration']
+        return self.sudo().scout_registration_ids.filtered(
+            lambda r: r.cycle_id == cycle and r.state != 'cancel')[:1]
+
+    def _scout_paid_next_registration(self):
+        """Ficha pagada del ciclo con inscripciones abiertas (p. ej. 2027) cuando aún no es el ciclo actual."""
+        self.ensure_one()
+        Cycle = self.env['scout.cycle'].sudo()
+        company = self.company_id or None
+        current, upcoming = Cycle._get_current(company), Cycle._get_registration(company)
+        if not upcoming or upcoming == current:
+            return self.env['scout.registration']
+        reg = self._scout_registration_in(upcoming)
+        return reg if reg and reg.payment_state in ('paid', 'exempt') else self.env['scout.registration']
+
+    def _scout_card_info(self):
+        """(ficha, ciclo) que respaldan la credencial: el ciclo actual o, si ya se reinscribió, el siguiente."""
+        self.ensure_one()
+        Cycle = self.env['scout.cycle'].sudo()
+        current = Cycle._get_current(self.company_id or None)
+        reg = self._scout_registration_in(current)
+        if not (reg and reg.payment_state in ('paid', 'exempt')):
+            upcoming = self._scout_paid_next_registration()
+            if upcoming:
+                return upcoming, upcoming.cycle_id
+        return reg, current
+
     def _scout_card_valid(self):
-        """Registro del ciclo pagado o exento (o dirigente activo)."""
+        """Registro del ciclo pagado o exento (o dirigente activo); también vale la reinscripción ya pagada."""
         self.ensure_one()
         if self.scout_state == 'inactive':
             return False
-        return self.scout_type == 'leader' or self.scout_registration_status in ('paid', 'exempt')
+        return self.scout_type == 'leader' or self.scout_registration_status in ('paid', 'exempt') \
+            or bool(self._scout_paid_next_registration())
+
+    def _scout_card_logo(self):
+        """Logo del grupo (marca de agua de la credencial) como data URI."""
+        self.ensure_one()
+        company = self.sudo().company_id or self.env.company
+        data, mime = company.sudo().logo, 'image/png'
+        if not data:
+            try:
+                with file_open('scout_management/static/img/logo_grupo.png', 'rb') as handle:
+                    data = base64.b64encode(handle.read())
+            except OSError:
+                return False
+        if isinstance(data, bytes):
+            data = data.decode()
+        if data.startswith('PHN2Zy') or data.startswith('PD94bW'):
+            mime = 'image/svg+xml'
+        return f'data:{mime};base64,{data}'
+
+    # ------------------------------------------------------------------ evitar duplicados al reinscribir
+    @api.model
+    def _scout_find_existing(self, first_name, last_name, last_name2=None, birthdate=None):
+        """Busca al miembro que ya existe (activo, en prueba o de baja) con el mismo nombre, apellido y
+        fecha de nacimiento, para actualizarlo en lugar de crear un duplicado."""
+        first, last, last2 = scout_norm(first_name), scout_norm(last_name), scout_norm(last_name2)
+        if not first or not last:
+            return self.browse()
+        Partner = self.sudo().with_context(active_test=False)
+        domain = [('is_scout', '=', True), ('active', '=', True)]
+        if birthdate:
+            candidates = Partner.search(domain + [('scout_birthdate', '=', birthdate)])
+        else:
+            word = (last_name or '').strip().split(' ')[0]
+            candidates = Partner.search(domain + ['|', ('scout_last_name', 'ilike', word), ('name', 'ilike', word)])
+
+        def full_name(p):
+            return scout_norm(' '.join(x for x in (p.scout_first_name or '', p.scout_last_name or '',
+                                                   p.scout_last_name2 or '') if x) or p.name)
+
+        target = ' '.join(x for x in (first, last, last2) if x)
+        matches = candidates.filtered(lambda p: full_name(p) == target)
+        if not matches and birthdate:
+            # Misma fecha: basta el primer nombre y el apellido paterno ("Ana" = "Ana Sofía").
+            def same(p):
+                p_first = scout_norm(p.scout_first_name or (p.name or '').split(' ')[0]).split(' ')
+                p_last = scout_norm(p.scout_last_name)
+                return p_first[:1] == first.split(' ')[:1] and (p_last == last or (not p_last and last in full_name(p)))
+            matches = candidates.filtered(same)
+        if not birthdate:
+            # Sin fecha solo se acepta una coincidencia exacta y única.
+            matches = matches if len(matches) == 1 else self.browse()
+        return matches.sorted(lambda p: (p.scout_state == 'inactive', -p.id))[:1]
 
     # ------------------------------------------------------------------ ligas para que la familia llene la ficha
     def _scout_form_url(self):

@@ -866,6 +866,18 @@ class ScoutLeaderPortal(models.AbstractModel):
         except ValueError:
             raise UserError(_('La fecha de nacimiento no es válida.'))
         Partner = self.env['res.partner'].sudo()
+        existing = Partner._scout_find_existing(first, last, post.get('last_name2'), birthdate)
+        if existing:
+            if existing.scout_state == 'inactive':
+                raise UserError(_('%(name)s ya está en el sistema (dado de baja de %(sec)s). Usa "Reingresos" en el '
+                                  'bloque de Reinscripción para no duplicarlo.', name=existing.name,
+                                  sec=existing.scout_section_id.display_name or '-'))
+            if existing.scout_section_id != section:
+                raise UserError(_('%(name)s ya está registrado en %(sec)s. Para que pase a tu sección pide a secretaría '
+                                  'el cambio de sección; así no se duplica.', name=existing.name,
+                                  sec=existing.scout_section_id.display_name or '-'))
+            raise UserError(_('%s ya es miembro de tu sección. Búscalo en el bloque de Reinscripción para llenar su '
+                              'ficha del nuevo ciclo.', existing.name))
         guardian = Partner
         g_name = (post.get('guardian_name') or '').strip()
         g_phone = (post.get('guardian_phone') or '').strip()
@@ -920,7 +932,7 @@ class ScoutLeaderPortal(models.AbstractModel):
         signed_by = (post.get('guardian_signed_by') or '').strip() or member.scout_guardian_id.name
         if not signed_by:
             raise UserError(_('Escribe el nombre de quien firma.'))
-        cycle = self.env['scout.cycle'].sudo()._get_current(section.company_id)
+        cycle = self.env['scout.cycle'].sudo()._get_registration(section.company_id)
         if not cycle:
             raise UserError(_('No hay un ciclo scout abierto; pide a secretaría que lo cree.'))
         Registration = self.env['scout.registration'].sudo()
@@ -967,8 +979,9 @@ class ScoutLeaderPortal(models.AbstractModel):
         return reg
 
     @api.model
-    def registration(self, member):
-        cycle = self.env['scout.cycle'].sudo()._get_current()
+    def registration(self, member, cycle=None):
+        """Ficha del miembro en el ciclo con inscripciones abiertas (o en el ciclo indicado)."""
+        cycle = cycle or self.env['scout.cycle'].sudo()._get_registration()
         return self.env['scout.registration'].sudo().search(
             [('member_id', '=', member.id), ('cycle_id', '=', cycle.id), ('state', '!=', 'cancel')], limit=1) \
             if cycle else self.env['scout.registration'].sudo()
@@ -1089,6 +1102,59 @@ class ScoutLeaderPortal(models.AbstractModel):
             'activity_type': 'regular'})
 
     # ------------------------------------------------------------------ reingresos y renovaciones
+    # ------------------------------------------------------------------ nuevos ingresos y reinscripción
+    @api.model
+    def enrollment(self, section):
+        """Estado de la inscripción del ciclo abierto: reinscripción de activos y nuevos ingresos (en prueba)."""
+        cycle = self.env['scout.cycle'].sudo()._get_registration(section.company_id)
+        members = self._members(section)
+        regs = self.env['scout.registration'].sudo().search(
+            [('member_id', 'in', members.ids), ('cycle_id', '=', cycle.id), ('state', '!=', 'cancel')]) \
+            if cycle else self.env['scout.registration']
+        by_member = {reg.member_id.id: reg for reg in regs}
+
+        def row(member):
+            reg = by_member.get(member.id)
+            if not reg:
+                status = 'none'
+            elif reg.payment_state in ('paid', 'exempt'):
+                status = 'done'
+            else:
+                status = 'unpaid'
+            return {'member': member, 'reg': reg, 'status': status}
+
+        def group(rows):
+            return {key: [r for r in rows if r['status'] == key] for key in ('none', 'unpaid', 'done')}
+
+        renew = group([row(m) for m in members.sorted('name') if m.scout_state == 'active'])
+        new = group([row(m) for m in members.sorted('name') if m.scout_state == 'trial'])
+        return {
+            'cycle': cycle, 'renew': renew, 'new': new,
+            'renew_total': sum(len(v) for v in renew.values()), 'new_total': sum(len(v) for v in new.values()),
+            'former_count': len(self.former_members(section)),
+        }
+
+    @api.model
+    def family_form_whatsapp(self, member, cycle):
+        """Liga personal de la ficha (sin contraseña) lista para mandar por WhatsApp al tutor."""
+        from urllib.parse import quote
+        from .scout_online_payment import scout_whatsapp_phone
+        member = member.sudo()
+        url = member._scout_form_url()
+        company = member.company_id or self.env.company
+        text = _('Hola, ya está abierta la reinscripción %(cycle)s de %(name)s en %(group)s. Revisa y actualiza su '
+                 'ficha aquí (sin contraseña), firma y al final puedes pagar en línea con Mercado Pago (tarjeta u OXXO) '
+                 'o en efectivo: %(url)s', cycle=cycle.name if cycle else '', name=member.name,
+                 group=company.name, url=url)
+        if member.scout_state == 'trial':
+            text = _('Hola, esta es la ficha de registro %(cycle)s de %(name)s en %(group)s. Llénala aquí (sin '
+                     'contraseña), firma y al final puedes pagar en línea con Mercado Pago (tarjeta u OXXO) o en '
+                     'efectivo: %(url)s', cycle=cycle.name if cycle else '', name=member.name, group=company.name,
+                     url=url)
+        phone = scout_whatsapp_phone(member.scout_guardian_id.phone or member.phone)
+        return {'url': url, 'whatsapp': f'https://wa.me/{phone}?text={quote(text)}' if phone
+                else f'https://wa.me/?text={quote(text)}'}
+
     @api.model
     def former_members(self, section):
         return self.env['res.partner'].sudo().search([
@@ -1119,7 +1185,7 @@ class ScoutLeaderPortal(models.AbstractModel):
             return _('Ficha y firma')
         if member.scout_state == 'inactive':
             return _('Ficha de reingreso')
-        cycle = self.env['scout.cycle'].sudo()._get_current()
+        cycle = self.env['scout.cycle'].sudo()._get_registration()
         if member.sudo().scout_registration_ids.filtered(lambda r: r.cycle_id != cycle and r.state != 'cancel'):
             return _('Renovar registro %s', cycle.name or '')
         return _('Ficha y firma')

@@ -11,6 +11,7 @@
                 <field name="date_end"/>
                 <field name="registration_fee"/>
                 <field name="is_current" widget="boolean_toggle"/>
+                <field name="registration_open" widget="boolean_toggle"/>
                 <field name="company_id" groups="base.group_multi_company"/>
                 <field name="currency_id" column_invisible="True"/>
             </list>
@@ -20,6 +21,11 @@
         <field name="name">Ciclos scout</field>
         <field name="res_model">scout.cycle</field>
         <field name="view_mode">list</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">Crea el ciclo scout</p>
+            <p>"Ciclo actual" es el que se usa en reportes y credenciales. "Inscripciones abiertas" es el ciclo al que
+                van las fichas nuevas y las reinscripciones (por ejemplo, abre 2027 mientras 2026 sigue como actual).</p>
+        </field>
     </record>
 
     <!-- Secciones -->

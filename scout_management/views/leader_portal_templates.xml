@@ -144,8 +144,15 @@
                 <div><b t-out="'Recibirás a %s beneficiario(s) de otras secciones' % len(incoming)"/>
                     <small t-out="', '.join(incoming.mapped(lambda r: '%s (%s)' % (r.member_id.name.split(' ')[0], r.section_id.name)))"/></div>
             </a>
+            <t t-set="enroll" t-value="svc.enrollment(section)"/>
             <div class="o_sl_tiles">
-                <a class="o_sl_tile o_sl_tile_accent" t-att-href="'/dirigentes/%s/nuevo' % section.id"><i class="fa fa-user-plus"/><span>Nuevo ingreso</span><small>Foto, ficha, firma y liga de pago</small></a>
+                <a class="o_sl_tile o_sl_tile_accent" t-att-href="'/dirigentes/%s/nuevos' % section.id"><i class="fa fa-user-plus"/><span>Nuevos ingresos</span>
+                    <small t-out="'%s en prueba · alta y liga para papás' % enroll['new_total'] if enroll['new_total'] else 'Alta en la junta y liga para papás'"/>
+                    <b t-if="enroll['new']['none'] or enroll['new']['unpaid']" class="o_sl_badge o_sl_badge_navy" t-out="len(enroll['new']['none']) + len(enroll['new']['unpaid'])"/></a>
+                <a class="o_sl_tile o_sl_tile_renew" t-att-href="'/dirigentes/%s/reinscripcion' % section.id"><i class="fa fa-refresh"/>
+                    <span t-out="'Reinscripción %s' % (enroll['cycle'].name or '') if enroll['cycle'] else 'Reinscripción'"/>
+                    <small t-out="'%s de %s listos · %s pendientes' % (len(enroll['renew']['done']), enroll['renew_total'], len(enroll['renew']['none']) + len(enroll['renew']['unpaid']))"/>
+                    <b t-if="enroll['renew']['none'] or enroll['renew']['unpaid']" class="o_sl_badge" t-out="len(enroll['renew']['none']) + len(enroll['renew']['unpaid'])"/></a>
                 <a class="o_sl_tile" t-att-href="'/dirigentes/%s/equipos' % section.id"><i class="fa fa-th-large"/><span t-out="'%ss y cargos' % (section.patrol_label or 'Equipo')"/><small>Mover miembros y cambiar guía</small></a>
                 <a class="o_sl_tile" t-att-href="'/dirigentes/%s/rutas' % section.id"><i class="fa fa-road"/><span>Rutas de enlace y permanencia</span><small>Tiempo restante de cada scout</small></a>
                 <a class="o_sl_tile" t-att-href="'/dirigentes/%s/logros' % section.id"><i class="fa fa-trophy"/><span>Cuadro de logros</span><small>Adelantos, especialidades y correas</small></a>
@@ -1111,6 +1118,7 @@
     <!-- Credencial electrónica -->
     <template id="scout_card_body" name="Credencial scout (cuerpo)">
         <div t-attf-class="o_scout_card #{'o_scout_card_invalid' if not card['valid'] else ''}">
+            <img t-if="card.get('logo')" class="o_scout_card_wm" t-att-src="card['logo']" alt=""/>
             <div class="o_scout_card_head">
                 <img src="/scout_management/static/description/icon.png" alt=""/>
                 <div><div class="o_scout_card_group" t-out="card['company'].name"/><div class="o_scout_card_kicker">Credencial scout</div></div>
@@ -1161,7 +1169,7 @@
         <t t-call="web.frontend_layout">
             <t t-set="no_header" t-value="True"/><t t-set="no_footer" t-value="True"/>
             <div class="o_scout_leader container py-4" style="max-width: 480px">
-                <t t-set="card" t-value="{'valid': valid, 'folio': '', 'cycle': cycle, 'qr': member._scout_card_qr(), 'company': company}"/>
+                <t t-set="card" t-value="{'valid': valid, 'folio': '', 'cycle': cycle, 'qr': member._scout_card_qr(), 'company': company, 'logo': logo}"/>
                 <t t-call="scout_management.scout_card_body"/>
                 <p class="text-center small text-muted mt-3">Verificación emitida por <t t-out="company.name"/> el <t t-out="today.strftime('%d/%m/%Y')"/>.</p>
             </div>
@@ -1336,6 +1344,61 @@
         </t>
     </template>
 
+    <!-- Nuevos ingresos / Reinscripción del ciclo abierto -->
+    <template id="leader_enrollment" name="Dirigentes: nuevos ingresos y reinscripción">
+        <t t-call="scout_management.leader_layout">
+            <t t-set="cycle" t-value="enroll['cycle']"/>
+            <div class="o_sl_seg mb-2">
+                <a t-attf-class="o_sl_seg_btn #{'active' if mode == 'new' else ''}" t-att-href="'/dirigentes/%s/nuevos' % section.id"><i class="fa fa-user-plus"/> Nuevos <small t-out="enroll['new_total']"/></a>
+                <a t-attf-class="o_sl_seg_btn #{'active' if mode == 'renew' else ''}" t-att-href="'/dirigentes/%s/reinscripcion' % section.id"><i class="fa fa-refresh"/> Reinscripción <small t-out="enroll['renew_total']"/></a>
+            </div>
+            <t t-if="mode == 'new'">
+                <h5 class="o_sl_h mb-0">Nuevos ingresos</h5>
+                <p class="o_sl_hint">Aspirantes en prueba de tu sección. Dales de alta en la junta o comparte la liga para que los papás llenen la ficha desde su celular; al final pagan con Mercado Pago o en efectivo.</p>
+                <div class="d-grid gap-2 mb-3">
+                    <a class="btn o_sl_btn o_sl_btn_big" t-att-href="'/dirigentes/%s/nuevo' % section.id"><i class="fa fa-camera"/> Alta en la junta (foto y datos)</a>
+                    <a class="btn o_sl_btn_outline" t-att-href="'/dirigentes/%s/liga' % section.id"><i class="fa fa-share-alt"/> Liga de inscripción para papás</a>
+                </div>
+            </t>
+            <t t-else="">
+                <h5 class="o_sl_h mb-0">Reinscripción <t t-out="cycle.name if cycle else ''"/></h5>
+                <p class="o_sl_hint">Miembros activos de tu sección. Manda a cada familia su liga personal: ven los datos que ya tenemos, los actualizan, firman y pagan con Mercado Pago o en efectivo. No se crea un miembro nuevo: se actualiza su expediente y queda la ficha del ciclo <t t-out="cycle.name if cycle else ''"/>.</p>
+                <a t-if="enroll['former_count']" class="o_sl_link d-block mb-2" t-att-href="'/dirigentes/%s/reingreso' % section.id"><i class="fa fa-undo"/> Reingresos: <t t-out="enroll['former_count']"/> dado(s) de baja en tu sección</a>
+            </t>
+            <div t-if="not cycle" class="alert alert-warning o_sl_alert mx-0">No hay ciclo con inscripciones abiertas. Pide a secretaría que lo abra en Configuración → Ciclos scout.</div>
+            <input t-if="groups['none'] or groups['unpaid'] or groups['done']" class="form-control my-2" placeholder="Buscar…" data-sl-filter=".o_sl_enroll_row"/>
+            <t t-foreach="[('none', 'Falta su ficha', 'fa-pencil-square-o'), ('unpaid', 'Ficha enviada · falta el pago', 'fa-credit-card'), ('done', 'Listos', 'fa-check-circle')]" t-as="blk">
+                <t t-set="rows" t-value="groups[blk[0]]"/>
+                <h6 t-if="rows" t-attf-class="o_sl_sub o_sl_enroll_h o_sl_enroll_h_#{blk[0]}"><i t-attf-class="fa #{blk[2]}"/> <t t-out="blk[1]"/> <span class="o_sl_badge o_sl_badge_soft" t-out="len(rows)"/></h6>
+                <div t-foreach="rows" t-as="r" t-attf-class="o_sl_card_box o_sl_enroll_row o_sl_enroll_#{blk[0]}">
+                    <t t-set="person" t-value="r['member']"/>
+                    <div class="d-flex align-items-center gap-2">
+                        <t t-call="scout_management.leader_avatar"/>
+                        <div class="flex-grow-1 min-w-0">
+                            <a class="fw-bold text-reset" t-att-href="'/dirigentes/%s/miembro/%s' % (section.id, person.id)" t-out="person.name"/>
+                            <small class="d-block text-muted text-truncate">
+                                <t t-out="person.scout_guardian_id.name or 'Sin tutor'"/>
+                                <t t-if="r['reg']"> · Ficha <t t-out="r['reg'].name"/></t>
+                                <t t-if="r['reg'] and r['reg'].invoice_id and blk[0] == 'unpaid'"> · Debe <t t-out="money(r['reg'].invoice_id.amount_residual)"/></t>
+                            </small>
+                        </div>
+                        <span t-if="blk[0] == 'done'" class="o_sl_reg o_sl_reg_paid"><i class="fa fa-check"/> Pagado</span>
+                    </div>
+                    <div t-if="blk[0] == 'none'" class="d-flex gap-2 mt-2">
+                        <t t-set="fl" t-value="svc.family_form_whatsapp(person, cycle)"/>
+                        <a class="btn btn-sm o_sl_btn_wa flex-fill" t-att-href="fl['whatsapp']" target="_blank"><i class="fa fa-whatsapp"/> Liga a la familia</a>
+                        <button type="button" class="btn btn-sm o_sl_btn_outline" t-att-data-sl-copy="fl['url']" title="Copiar liga"><i class="fa fa-copy"/></button>
+                        <a class="btn btn-sm o_sl_btn_outline flex-fill" t-att-href="'/dirigentes/%s/miembro/%s/registro' % (section.id, person.id)"><i class="fa fa-pencil"/> Llenar aquí</a>
+                    </div>
+                    <div t-if="blk[0] == 'unpaid'" class="d-flex gap-2 mt-2">
+                        <a class="btn btn-sm o_sl_btn flex-fill" t-att-href="'/dirigentes/%s/miembro/%s/pago' % (section.id, person.id)"><i class="fa fa-credit-card"/> Liga de pago (Mercado Pago)</a>
+                    </div>
+                </div>
+            </t>
+            <div t-if="not (groups['none'] or groups['unpaid'] or groups['done'])" class="text-muted my-3" t-out="'No hay nuevos ingresos en prueba.' if mode == 'new' else 'No hay miembros activos en tu sección.'"/>
+        </t>
+    </template>
+
     <!-- Reingresos -->
     <template id="leader_returns" name="Dirigentes: reingresos">
         <t t-call="scout_management.leader_layout">
@@ -1364,7 +1427,7 @@
     <template id="leader_family_link" name="Dirigentes: liga para papás">
         <t t-call="scout_management.leader_layout">
             <h5 class="o_sl_h">Liga de inscripción para papás</h5>
-            <p class="o_sl_hint">Compártela con las familias de nuevos ingresos: llenan la ficha desde su celular (sin usuario), la sección se propone por edad y sexo, firman, adjuntan su INE y eligen pagar en línea o en efectivo. Para renovar la ficha de alguien que ya es miembro, usa "Liga de ficha a la familia" en su ficha.</p>
+            <p class="o_sl_hint">Compártela con las familias de nuevos ingresos: llenan la ficha desde su celular (sin usuario), la sección se propone por edad y sexo, firman, adjuntan su INE y eligen pagar en línea o en efectivo. Si alguien que ya es miembro la usa, no se duplica: se actualiza su expediente. Para reinscribir es mejor la liga personal del bloque Reinscripción.</p>
             <div class="o_sl_card_box text-center">
                 <img t-att-src="qr" class="o_sl_qr" alt="QR"/>
                 <div class="small text-break mt-2" t-out="link"/>

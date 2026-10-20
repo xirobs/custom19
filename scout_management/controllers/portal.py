@@ -109,7 +109,7 @@ class ScoutPortal(CustomerPortal):
                 member = self._scout_member_check(member_id)
             except (AccessError, MissingError):
                 return request.redirect('/my/scouts')
-        cycle = request.env['scout.cycle'].sudo()._get_current()
+        cycle = request.env['scout.cycle'].sudo()._get_registration()
         current = member and cycle and member.sudo().scout_registration_ids.filtered(
             lambda r: r.cycle_id == cycle and r.state != 'cancel')[:1]
         if current and current.state in ('reviewed', 'validated'):
@@ -147,7 +147,7 @@ def scout_register_values(member, partner=None, error=None, section=None):
     previous = env['scout.registration'].sudo().search(
         [('member_id', '=', member.id), ('state', '!=', 'cancel')], order='id desc', limit=1) if member else None
     return {
-        'member': member, 'cycle': env['scout.cycle'].sudo()._get_current(),
+        'member': member, 'cycle': env['scout.cycle'].sudo()._get_registration(),
         'partner': partner or member.scout_guardian_id or env['res.partner'],
         'previous': previous, 'preset_section': section or member.scout_section_id,
         'sections': sections, 'section_rules_json': json.dumps(rules),
@@ -167,7 +167,7 @@ def scout_save_registration(post, member, guardian=None):
                 'consent_update']
     if any(not post.get(f) for f in required) or not all(post.get(c) for c in consents):
         return None, _('Completa los campos obligatorios, acepta todas las autorizaciones y firma la ficha.')
-    cycle = env['scout.cycle'].sudo()._get_current()
+    cycle = env['scout.cycle'].sudo()._get_registration()
     if not cycle:
         return None, _('No hay un ciclo scout abierto; contacta a la jefatura.')
     try:
@@ -182,11 +182,16 @@ def scout_save_registration(post, member, guardian=None):
         section = Section._scout_suggest(birthdate, gender)
     if not section:
         return None, _('No encontramos una sección para esa edad; contacta a la jefatura.')
+    if not member:
+        # Reinscripción con la liga general: si ya es (o fue) miembro, se actualiza su expediente, no se duplica.
+        member = env['res.partner'].sudo()._scout_find_existing(
+            post.get('first_name'), post.get('last_name'), post.get('last_name2'), birthdate)
     Registration = env['scout.registration'].sudo()
     existing = Registration.search([('member_id', '=', member.id), ('cycle_id', '=', cycle.id),
                                     ('state', '!=', 'cancel')], limit=1) if member else Registration
     if existing and existing.state in ('reviewed', 'validated'):
-        return None, _('La ficha de este ciclo ya está en revisión o validada.')
+        return None, _('%(name)s ya tiene su ficha del ciclo %(cycle)s en revisión o validada. Si falta el pago, '
+                       'pide la liga de pago a la jefatura.', name=member.name, cycle=cycle.name)
 
     def _signature(key):
         data = post.get(key) or ''
@@ -299,7 +304,7 @@ class ScoutPublicRegistration(http.Controller):
         if not member:
             return request.not_found()
         action = f'/scout/ficha/{member.id}/{token}'
-        cycle = request.env['scout.cycle'].sudo()._get_current()
+        cycle = request.env['scout.cycle'].sudo()._get_registration()
         current = member.scout_registration_ids.filtered(lambda r: r.cycle_id == cycle and r.state != 'cancel')[:1]
         if request.httprequest.method == 'GET' and current and current.state in ('reviewed', 'validated'):
             return request.redirect(current._scout_payment_path())

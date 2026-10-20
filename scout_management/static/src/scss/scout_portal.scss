@@ -320,7 +320,13 @@ $scout-wa: #25d366;
 
     // Credencial electrónica
     .o_scout_card { max-width: 420px; margin: 0 auto; background: #fff; border: 2px solid $scout-navy; border-radius: 18px; overflow: hidden;
-        box-shadow: 0 6px 18px rgba(15, 48, 73, 0.18);
+        box-shadow: 0 6px 18px rgba(15, 48, 73, 0.18); position: relative; isolation: isolate;
+        // Logo del grupo como fondo (marca de agua): detrás de todo y tenue para que se lea la información
+        .o_scout_card_wm { position: absolute; left: 50%; top: 58%; transform: translate(-50%, -50%); width: 62%;
+            max-width: 240px; opacity: 0.13; z-index: -1; pointer-events: none; }
+        .o_scout_card_head, .o_scout_card_foot { position: relative; z-index: 1; }
+        .o_scout_card_foot { background: rgba(244, 246, 248, 0.92) !important; }
+        .o_scout_card_qr { background: #fff; padding: 3px; border-radius: 6px; }
         .o_scout_greca { margin: 0; }
         .o_scout_card_head { display: flex; gap: 0.6rem; align-items: center; background: $scout-navy; color: #fff; padding: 0.6rem 0.9rem;
             img { width: 40px; height: 40px; } }
@@ -400,6 +406,24 @@ $scout-wa: #25d366;
 
     // Recursos para dirigentes
     .o_sl_tile_res i { color: #2e7d8f; }
+
+    // Nuevos ingresos y reinscripción
+    .o_sl_tile_renew { background: $scout-navy; border-color: $scout-navy; color: #fff;
+        i { color: $scout-orange; } small { color: #c9d6e2; } }
+    .o_sl_badge_navy { background: $scout-navy; color: #fff; }
+    .o_sl_seg_btn { flex: 1; display: block; text-align: center; padding: 0.5rem; border-radius: 10px; font-weight: 700;
+        color: $scout-navy; text-decoration: none;
+        small { font-weight: 800; opacity: 0.75; }
+        &.active { background: $scout-navy; color: #fff; } }
+    .o_sl_enroll_h { margin-top: 1rem; display: flex; align-items: center; gap: 0.4rem; }
+    .o_sl_enroll_h_none i { color: #c62f2f; }
+    .o_sl_enroll_h_unpaid i { color: #c56a00; }
+    .o_sl_enroll_h_done i { color: #2e9e5b; }
+    .o_sl_enroll_row { padding: 0.7rem; margin-bottom: 0.5rem; }
+    .o_sl_enroll_none { border-left: 4px solid #d64545; }
+    .o_sl_enroll_unpaid { border-left: 4px solid #f2a33a; }
+    .o_sl_enroll_done { border-left: 4px solid #2e9e5b; }
+    .min-w-0 { min-width: 0; }
     .o_sl_res_cats { display: flex; gap: 0.4rem; overflow-x: auto; padding-bottom: 0.4rem; margin-bottom: 0.4rem; scrollbar-width: none; }
     .o_sl_res_cat {
         flex: none; display: inline-flex; align-items: center; gap: 0.35rem; white-space: nowrap; border: 2px solid #c8d2dc;
