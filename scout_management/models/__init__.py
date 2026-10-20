@@ -22,4 +22,5 @@ from . import scout_route
 from . import scout_event_plan
 from . import scout_member_tools
 from . import scout_resource
+from . import scout_session_auto
 from . import scout_leader_portal

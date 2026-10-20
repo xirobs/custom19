@@ -100,11 +100,33 @@
                         </group>
                         <group>
                             <field name="leader_ids" widget="many2many_tags_avatar"/>
+                            <field name="color" widget="color_picker" string="Color en el calendario"/>
                             <field name="company_id" groups="base.group_multi_company"/>
                             <field name="active" invisible="1"/>
                         </group>
                     </group>
                     <notebook>
+                        <page string="Junta semanal" name="sessions" invisible="is_leadership">
+                            <group>
+                                <group>
+                                    <field name="session_auto"/>
+                                    <field name="session_weekday" invisible="not session_auto" required="session_auto"/>
+                                    <label for="session_hour_start" string="Horario" invisible="not session_auto"/>
+                                    <div class="o_row" invisible="not session_auto">
+                                        <field name="session_hour_start" widget="float_time"/> a <field name="session_hour_end" widget="float_time"/>
+                                    </div>
+                                </group>
+                                <group>
+                                    <field name="session_name" invisible="not session_auto"/>
+                                    <field name="session_location" invisible="not session_auto"/>
+                                    <button name="action_scout_generate_sessions" type="object" string="Crear juntas de las próximas semanas"
+                                            class="btn-secondary" icon="fa-calendar-plus-o" invisible="not session_auto"/>
+                                </group>
+                            </group>
+                            <div class="text-muted small">Cada día se dejan creadas las juntas de las próximas 8 semanas con los jefes de la sección como
+                                asistentes. El día de la junta la lista ya trae a sus miembros y jefes para pasar asistencia. Si un sábado no hay
+                                junta (campamento, día festivo), cambia o borra esa actividad: no se vuelve a crear porque ese día ya tiene actividad.</div>
+                        </page>
                         <page string="Ruta de enlace y edades oficiales" name="route" invisible="is_leadership">
                             <group>
                                 <group string="Cambio de sección">

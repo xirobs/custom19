@@ -1,0 +1,21 @@
+// Calendario scout: cada actividad como bloque del color de su sección (más visible que el punto).
+.o_scout_calendar_view {
+    .fc-daygrid-event.o_event_dot,
+    .fc-daygrid-event.fc-daygrid-dot-event {
+        background-color: rgba(var(--o-event-bg--subtle-rgb, 230, 236, 242), 1) !important;
+        border-left: 4px solid var(--o-event-bg, #0f3049) !important;
+        border-radius: 4px;
+        padding: 3px 6px;
+        line-height: 1.25;
+        font-size: 0.8rem;
+        margin: 0 2px 2px 2px;
+        font-weight: 600;
+        &:before { display: none; }
+        &:hover { filter: brightness(0.96); }
+    }
+    .fc-timegrid-event {
+        border-left: 4px solid var(--o-event-bg, #0f3049) !important;
+        font-weight: 600;
+    }
+    .fc-daygrid-day-frame { min-height: 7rem; }
+}

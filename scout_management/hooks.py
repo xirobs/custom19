@@ -39,3 +39,4 @@ def post_init_hook(env):
     env['scout.progression.stage']._scout_v44_migrate()
     env['scout.route']._cron_refresh()
     env['res.company']._scout_setup_online_payments()
+    env['scout.section'].search([('is_leadership', '=', False)]).write({'session_auto': True})

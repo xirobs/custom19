@@ -57,6 +57,8 @@ class CalendarEvent(models.Model):
     scout_main_section_id = fields.Many2one('scout.section', string='Sección (color)', compute='_compute_scout_main_section',
                                             store=True, index=True,
                                             help='Primera sección de la actividad; da el color en el calendario.')
+    scout_section_color = fields.Integer(string='Color en el calendario', compute='_compute_scout_section_color', store=True,
+                                 help='Color de la sección (Configuración → Secciones); las actividades de grupo van en gris.')
     scout_color = fields.Integer(string='Color', compute='_compute_scout_color', store=True)
     scout_color_hex = fields.Char(compute='_compute_scout_color')
     scout_plan_state = fields.Selection(PLAN_STATES, string='Aprobación', default='draft', tracking=True, copy=False,
@@ -90,6 +92,12 @@ class CalendarEvent(models.Model):
                 event.scout_category = 'outing'
             else:
                 event.scout_category = 'ordinary'
+
+    @api.depends('is_scout_event', 'scout_scope', 'scout_section_ids', 'scout_section_ids.color')
+    def _compute_scout_section_color(self):
+        for event in self:
+            section = event.scout_section_ids[:1] if event.is_scout_event and event.scout_scope == 'section' else False
+            event.scout_section_color = section.color if section else 0
 
     @api.depends('is_scout_event', 'scout_scope', 'scout_section_ids')
     def _compute_scout_main_section(self):

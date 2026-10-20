@@ -22,9 +22,9 @@ class ScoutEventGenerate(models.TransientModel):
     date_from = fields.Date(string='Desde', required=True, default=fields.Date.context_today)
     date_to = fields.Date(string='Hasta', required=True)
     weekday = fields.Selection(WEEKDAYS, string='Día', required=True, default='5')
-    hour_start = fields.Float(string='Hora de inicio', default=9.0)
-    hour_end = fields.Float(string='Hora de término', default=13.0)
-    name = fields.Char(string='Nombre', default=lambda self: _('Sesión'), required=True)
+    hour_start = fields.Float(string='Hora de inicio', default=15.75)
+    hour_end = fields.Float(string='Hora de término', default=18.0)
+    name = fields.Char(string='Nombre', default=lambda self: _('Junta'), required=True)
     activity_type = fields.Selection(ACTIVITY_TYPES, string='Tipo', default='regular', required=True)
     theme = fields.Char(string='Mística / temática')
     location = fields.Char(string='Lugar')
@@ -51,7 +51,7 @@ class ScoutEventGenerate(models.TransientModel):
                         ('scout_section_ids', 'in', section.ids)]):
                     continue
                 created |= Event.create({
-                    'name': f'{self.name} {section.display_name}',
+                    'name': self.name,
                     'is_scout_event': True,
                     'scout_scope': 'section',
                     'scout_section_ids': [fields.Command.set(section.ids)],

@@ -371,8 +371,11 @@ class ScoutLeaderPortal(models.AbstractModel):
     # ------------------------------------------------------------------ asistencia
     @api.model
     def attendance_lines(self, event, section):
-        if not event.scout_attendance_line_ids and not event.scout_attendance_closed:
-            event.action_scout_load_members()
+        if not event.scout_attendance_closed:
+            # Carga la lista (o agrega a quien se integró a la sección después de crearla).
+            missing = event._scout_members_to_call() - event.scout_attendance_line_ids.member_id
+            if missing or not event.scout_attendance_line_ids:
+                event.action_scout_load_members()
         lines = event.scout_attendance_line_ids
         if event.scout_scope == 'group':
             members = self._members(section, include_leaders=True)
