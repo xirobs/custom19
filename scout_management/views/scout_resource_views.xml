@@ -42,7 +42,7 @@
                                 <div class="text-muted small"><field name="kind"/>
                                     <t t-if="record.for_scouts.raw_value"> · <span class="badge text-bg-success">Aula</span> <field name="stage_id"/></t></div>
                                 <span t-if="record.all_sections.raw_value" class="badge text-bg-secondary">Todas las secciones</span>
-                                <field t-else="" name="section_ids" widget="many2many_tags"/>
+                                <t t-else=""><field name="section_ids" widget="many2many_tags"/></t>
                             </div>
                         </div>
                     </t>
