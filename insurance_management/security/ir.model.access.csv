@@ -66,3 +66,7 @@ access_insurance_broadcast_group_user,insurance.broadcast.group user,model_insur
 access_insurance_broadcast_group_manager,insurance.broadcast.group manager,model_insurance_broadcast_group,group_insurance_manager,1,1,1,1
 access_insurance_message_wizard_user,insurance.message.wizard user,model_insurance_message_wizard,group_insurance_user,1,1,1,1
 access_insurance_payment_wizard_user,insurance.payment.wizard user,model_insurance_payment_wizard,group_insurance_user,1,1,1,1
+access_insurance_procedure_type_user,insurance.procedure.type user,model_insurance_procedure_type,group_insurance_user,1,0,0,0
+access_insurance_procedure_type_manager,insurance.procedure.type manager,model_insurance_procedure_type,group_insurance_manager,1,1,1,1
+access_insurance_procedure_user,insurance.procedure user,model_insurance_procedure,group_insurance_user,1,1,1,0
+access_insurance_procedure_manager,insurance.procedure manager,model_insurance_procedure,group_insurance_manager,1,1,1,1

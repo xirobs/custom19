@@ -1,0 +1,855 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- ===================== Portal del equipo (/equipo) ===================== -->
+
+    <!-- Acceso desde "Mi cuenta" -->
+    <template id="portal_my_home_insurance_team" name="Portal: equipo de seguros" inherit_id="portal.portal_my_home" priority="42">
+        <div id="portal_client_category" position="before">
+            <div t-if="request.env.user.ins_portal_access" class="o_ins_team_entry my-3">
+                <a href="/equipo" class="o_it_entry_card">
+                    <span class="o_it_entry_icon"><i class="fa fa-shield"/></span>
+                    <div>
+                        <div class="o_it_entry_title">Portal del equipo</div>
+                        <div class="o_it_entry_text">Emisiones, trámites, siniestros, cobranza y prospectos asignados a ti</div>
+                    </div>
+                    <i class="fa fa-chevron-right ms-auto"/>
+                </a>
+            </div>
+        </div>
+    </template>
+
+    <template id="portal_breadcrumbs_insurance_team" inherit_id="portal.portal_breadcrumbs" priority="42">
+        <xpath expr="//ol[hasclass('o_portal_submenu')]" position="inside">
+            <li t-if="page_name == 'insurance_team'" class="breadcrumb-item active">Portal del equipo</li>
+        </xpath>
+    </template>
+
+    <!-- Base: encabezado, pestañas, avisos y barra inferior en el celular -->
+    <template id="team_layout" name="Equipo: base">
+        <t t-call="portal.portal_layout">
+            <t t-set="no_breadcrumbs" t-value="True"/>
+            <div class="o_ins_team">
+                <header class="o_it_head">
+                    <a href="/equipo" class="o_it_brand">
+                        <span class="o_it_logo"><i class="fa fa-shield"/></span>
+                        <div>
+                            <div class="o_it_kicker">Portal del equipo</div>
+                            <div class="o_it_hello">Hola, <t t-out="(user.name or '').split(' ')[0]"/></div>
+                        </div>
+                    </a>
+                    <a href="/my" class="o_it_head_link ms-auto"><i class="fa fa-user-circle-o"/> <span class="d-none d-sm-inline">Mi cuenta</span></a>
+                </header>
+                <nav t-if="nav" class="o_it_tabs" aria-label="Apartados">
+                    <a href="/equipo" t-attf-class="#{'active' if team_page == 'home' else ''}"><i class="fa fa-home"/><span>Inicio</span></a>
+                    <t t-foreach="nav" t-as="n">
+                        <a t-att-href="block_url[n[0]]" t-attf-class="#{'active' if team_page == n[0] else ''}">
+                            <i t-attf-class="fa #{n[2]}"/><span t-out="n[1]"/>
+                        </a>
+                    </t>
+                </nav>
+                <div t-if="error" class="alert alert-danger o_it_alert" role="alert"><i class="fa fa-exclamation-circle"/> <t t-out="error"/></div>
+                <div t-if="ok" class="alert alert-success o_it_alert" role="status"><i class="fa fa-check-circle"/> <t t-out="ok"/></div>
+                <main class="o_it_main">
+                    <t t-out="0"/>
+                </main>
+            </div>
+        </t>
+    </template>
+
+    <!-- Encabezado de cada bloque: título, ayuda, alcance y botón principal -->
+    <template id="team_block_title" name="Equipo: título del bloque">
+        <div class="o_it_title_row">
+            <div>
+                <h1 class="o_it_h1"><i t-attf-class="fa #{icon}"/> <t t-out="title"/></h1>
+                <p t-if="hint" class="o_it_hint" t-out="hint"/>
+            </div>
+            <div class="o_it_title_actions">
+                <div t-if="sees_all and scope_url" class="o_it_scope" role="group" aria-label="Qué ver">
+                    <a t-att-href="scope_url" t-attf-class="#{'active' if scope == 'mine' else ''}">Lo mío</a>
+                    <a t-att-href="scope_url + ('&amp;' if '?' in scope_url else '?') + 'ver=todos'" t-attf-class="#{'active' if scope == 'all' else ''}">Todo el equipo</a>
+                </div>
+                <a t-if="new_url" t-att-href="new_url" class="btn o_it_btn"><i class="fa fa-plus"/> <t t-out="new_label"/></a>
+            </div>
+        </div>
+    </template>
+
+    <!-- Selector "mover a" (celular) -->
+    <template id="team_move_select" name="Equipo: mover a">
+        <select class="form-select form-select-sm o_it_move" t-att-data-block="block" t-att-data-id="rec_id" aria-label="Mover a">
+            <option value="">Mover a…</option>
+            <t t-foreach="options" t-as="opt">
+                <option t-if="opt[0] != current" t-att-value="opt[0]" t-out="opt[1]"/>
+            </t>
+        </select>
+    </template>
+
+    <!-- Notas, archivos e historial de cualquier asunto -->
+    <template id="team_notes" name="Equipo: notas y archivos">
+        <section class="o_it_panel">
+            <h2 class="o_it_h2"><i class="fa fa-comments-o"/> Notas y archivos</h2>
+            <form t-att-action="'/equipo/nota/%s/%s' % (slug, rec.id)" method="post" enctype="multipart/form-data" class="o_it_note_form">
+                <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
+                <input type="hidden" name="back" t-att-value="back"/>
+                <label class="visually-hidden" t-att-for="'note_%s' % rec.id">Nota</label>
+                <textarea t-att-id="'note_%s' % rec.id" name="body" class="form-control" rows="2" placeholder="Escribe qué hiciste o qué falta…"/>
+                <div class="o_it_note_actions">
+                    <label class="btn o_it_btn_light mb-0"><i class="fa fa-paperclip"/> Adjuntar
+                        <input type="file" name="files" multiple="multiple" class="d-none o_it_file"/>
+                    </label>
+                    <span class="o_it_file_names small text-muted"/>
+                    <button type="submit" class="btn o_it_btn ms-auto"><i class="fa fa-paper-plane"/> Guardar</button>
+                </div>
+            </form>
+            <ul class="o_it_timeline">
+                <li t-if="not timeline" class="text-muted">Aún no hay notas.</li>
+                <li t-foreach="timeline" t-as="m">
+                    <div class="o_it_tl_head"><b t-out="m['author']"/> · <t t-out="m['date'].strftime('%d/%m/%Y %H:%M') if m['date'] else ''"/></div>
+                    <div t-if="m['text']" class="o_it_tl_text" t-out="m['text']"/>
+                    <div t-if="m['files']" class="o_it_tl_files">
+                        <a t-foreach="m['files']" t-as="f" t-att-href="'/equipo/archivo/%s/%s/%s' % (slug, rec.id, f.id)" target="_blank" class="o_it_chip"><i class="fa fa-file-o"/> <t t-out="f.name"/></a>
+                    </div>
+                </li>
+            </ul>
+        </section>
+    </template>
+
+    <template id="team_no_access" name="Equipo: sin acceso">
+        <t t-call="insurance_management.team_layout">
+            <div class="o_it_empty">
+                <i class="fa fa-lock fa-3x"/>
+                <h2>Aún no tienes funciones asignadas</h2>
+                <p>Pide a la agente que marque en tu usuario lo que vas a trabajar: emisiones, trámites, siniestros, cobranza o CRM.</p>
+                <a href="/my" class="btn o_it_btn">Volver a mi cuenta</a>
+            </div>
+        </t>
+    </template>
+
+    <!-- ===================== Inicio ===================== -->
+    <template id="team_home" name="Equipo: inicio">
+        <t t-call="insurance_management.team_layout">
+            <t t-set="cards" t-value="dash['cards']"/>
+            <section class="o_it_tiles">
+                <t t-foreach="nav" t-as="n">
+                    <t t-set="c" t-value="cards.get(n[0], {})"/>
+                    <a t-att-href="block_url[n[0]]" t-attf-class="o_it_tile o_it_tile_#{n[0]}">
+                        <span class="o_it_tile_icon"><i t-attf-class="fa #{n[2]}"/></span>
+                        <span class="o_it_tile_name" t-out="n[1]"/>
+                        <span class="o_it_tile_count"><b t-out="c.get('count', 0)"/> <small t-out="'pendiente' if c.get('count') == 1 else 'pendientes'"/></span>
+                        <span t-if="c.get('hot')" class="o_it_tile_hot"><t t-out="c['hot']"/> <t t-out="c['hot_label']"/></span>
+                    </a>
+                </t>
+            </section>
+
+            <section class="o_it_panel">
+                <h2 class="o_it_h2"><i class="fa fa-calendar-check-o"/> Para hoy y mañana</h2>
+                <p t-if="not dash['tasks']" class="text-muted mb-0">No tienes pendientes en la agenda. ¡Bien!</p>
+                <ul class="o_it_tasks">
+                    <li t-foreach="dash['tasks']" t-as="task" t-attf-class="o_it_task o_it_sem_#{task.status_color}">
+                        <span class="o_it_sem" t-att-title="dict(task._fields['status_color'].selection).get(task.status_color)"/>
+                        <div class="o_it_task_body">
+                            <div class="o_it_task_name" t-out="task.name"/>
+                            <div class="o_it_task_meta">
+                                <t t-out="task.date_deadline.strftime('%d/%m')"/>
+                                <t t-if="task.date_start"> · <t t-out="svc.local(task.date_start).strftime('%H:%M')"/></t>
+                                <t t-if="task.partner_id"> · <t t-out="task.partner_id.name"/></t>
+                                <t t-if="task.policy_id"> · <t t-out="task.policy_id.name"/></t>
+                            </div>
+                        </div>
+                        <form t-att-action="'/equipo/tarea/%s/hecha' % task.id" method="post">
+                            <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
+                            <button class="btn o_it_btn_light btn-sm" type="submit" title="Marcar como hecha"><i class="fa fa-check"/> Hecha</button>
+                        </form>
+                    </li>
+                </ul>
+            </section>
+        </t>
+    </template>
+
+    <!-- ===================== Emisiones ===================== -->
+    <template id="team_emissions" name="Equipo: emisiones">
+        <t t-call="insurance_management.team_layout">
+            <t t-call="insurance_management.team_block_title">
+                <t t-set="icon" t-value="'fa-file-text-o'"/>
+                <t t-set="title" t-value="'Emisiones'"/>
+                <t t-set="hint" t-value="'Pólizas nuevas desde la solicitud hasta que el cliente la recibe. Arrastra la tarjeta para cambiarla de etapa.'"/>
+                <t t-set="scope_url" t-value="'/equipo/emisiones'"/>
+                <t t-set="new_url" t-value="'/equipo/emisiones/nueva'"/>
+                <t t-set="new_label" t-value="'Nueva solicitud'"/>
+            </t>
+            <form action="/equipo/emisiones/caratula" method="post" enctype="multipart/form-data" class="o_it_drop">
+                <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
+                <i class="fa fa-file-pdf-o"/>
+                <div>
+                    <b>¿Ya llegó la póliza?</b> Sube la carátula en PDF y se llenan los datos solos.
+                    <div class="small text-muted">Seguros Monterrey: contratante, asegurado, plan, vigencia, forma de pago y beneficios.</div>
+                </div>
+                <label class="btn o_it_btn mb-0"><i class="fa fa-upload"/> Subir carátula
+                    <input type="file" name="caratula" accept="application/pdf" class="d-none o_it_autosubmit"/>
+                </label>
+            </form>
+            <div class="o_it_board" data-block="emission">
+                <section t-foreach="columns" t-as="col" class="o_it_col" t-att-data-column="col[0]">
+                    <header class="o_it_col_head"><span t-out="col[1]"/><b t-out="len(col[2])"/></header>
+                    <div class="o_it_col_body">
+                        <article t-foreach="col[2]" t-as="p" class="o_it_card" draggable="true" t-att-data-id="p.id">
+                            <a t-att-href="'/equipo/emisiones/%s' % p.id" class="o_it_card_link">
+                                <div class="o_it_card_top"><b t-out="p.partner_id.name"/></div>
+                                <div class="o_it_card_meta">
+                                    <t t-out="p.policy_type_id.name or 'Sin ramo'"/><t t-if="p.insurance_company_id"> · <t t-out="p.insurance_company_id.name"/></t>
+                                </div>
+                                <div class="o_it_card_meta"><t t-out="p.name"/> · <t t-out="money(p.policy_amount, p.currency_id)"/></div>
+                                <div t-if="p.emission_stage == 'delivered' and p.delivery_date" class="o_it_card_meta">
+                                    <i class="fa fa-check"/> Entregada el <t t-out="p.delivery_date.strftime('%d/%m')"/>
+                                </div>
+                                <div t-if="scope == 'all' and p.team_user_id" class="o_it_card_who"><i class="fa fa-user"/> <t t-out="p.team_user_id.name"/></div>
+                            </a>
+                            <t t-call="insurance_management.team_move_select">
+                                <t t-set="block" t-value="'emission'"/>
+                                <t t-set="rec_id" t-value="p.id"/>
+                                <t t-set="options" t-value="emission_stages"/>
+                                <t t-set="current" t-value="p.emission_stage"/>
+                            </t>
+                        </article>
+                        <p t-if="not col[2]" class="o_it_col_empty">Sin pólizas</p>
+                    </div>
+                </section>
+            </div>
+        </t>
+    </template>
+
+    <template id="team_emission_new" name="Equipo: nueva solicitud de emisión">
+        <t t-call="insurance_management.team_layout">
+            <a href="/equipo/emisiones" class="o_it_back"><i class="fa fa-arrow-left"/> Emisiones</a>
+            <h1 class="o_it_h1">Nueva solicitud de póliza</h1>
+            <form action="/equipo/emisiones/nueva" method="post" class="o_it_panel o_it_form">
+                <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
+                <div class="o_it_grid">
+                    <div class="o_it_field o_it_wide">
+                        <label for="em_client">Cliente (contratante)</label>
+                        <input id="em_client" name="client" class="form-control" required="required" placeholder="Nombre completo"/>
+                    </div>
+                    <div class="o_it_field"><label for="em_phone">Teléfono</label><input id="em_phone" name="phone" type="tel" class="form-control"/></div>
+                    <div class="o_it_field"><label for="em_email">Correo</label><input id="em_email" name="email" type="email" class="form-control"/></div>
+                    <div class="o_it_field">
+                        <label for="em_ramo">Ramo</label>
+                        <select id="em_ramo" name="ramo_id" class="form-select o_it_ramo">
+                            <option value="">Elige…</option>
+                            <option t-foreach="cat['ramos']" t-as="r" t-att-value="r.id" t-out="r.name"/>
+                        </select>
+                    </div>
+                    <div class="o_it_field">
+                        <label for="em_offer">Oferta / plan</label>
+                        <select id="em_offer" name="offer_id" class="form-select o_it_offer">
+                            <option value="">Elige…</option>
+                            <option t-foreach="cat['offers']" t-as="o" t-att-value="o.id" t-att-data-ramo="o.ramo_id.id" t-out="o.name"/>
+                        </select>
+                    </div>
+                    <div class="o_it_field">
+                        <label for="em_company">Aseguradora</label>
+                        <select id="em_company" name="company_id" class="form-select">
+                            <option value="">Elige…</option>
+                            <option t-foreach="cat['companies']" t-as="c" t-att-value="c.id" t-out="c.name"/>
+                        </select>
+                    </div>
+                    <div class="o_it_field">
+                        <label for="em_premium">Forma de pago</label>
+                        <select id="em_premium" name="premium_type" class="form-select">
+                            <option t-foreach="cat['premium_types']" t-as="pt" t-att-value="pt[0]" t-out="pt[1]"/>
+                        </select>
+                    </div>
+                    <div class="o_it_field">
+                        <label for="em_amount">Prima anual estimada</label>
+                        <input id="em_amount" name="amount" inputmode="decimal" class="form-control" placeholder="0.00"/>
+                    </div>
+                    <div class="o_it_field">
+                        <label for="em_currency">Moneda</label>
+                        <select id="em_currency" name="currency_id" class="form-select">
+                            <option t-foreach="cat['currencies']" t-as="cur" t-att-value="cur.id" t-att-selected="cur.name == 'MXN'" t-out="cur.name"/>
+                        </select>
+                    </div>
+                    <div class="o_it_field o_it_wide">
+                        <label for="em_note">Notas</label>
+                        <textarea id="em_note" name="note" rows="3" class="form-control" placeholder="Qué falta, cuándo se firma, quién la pidió…"/>
+                    </div>
+                </div>
+                <button type="submit" class="btn o_it_btn o_it_btn_big"><i class="fa fa-check"/> Crear solicitud</button>
+            </form>
+        </t>
+    </template>
+
+    <template id="team_emission" name="Equipo: emisión">
+        <t t-call="insurance_management.team_layout">
+            <a href="/equipo/emisiones" class="o_it_back"><i class="fa fa-arrow-left"/> Emisiones</a>
+            <div class="o_it_title_row">
+                <div>
+                    <h1 class="o_it_h1" t-out="policy.partner_id.name"/>
+                    <p class="o_it_hint mb-0"><t t-out="policy.name"/> · <t t-out="policy.policy_type_id.name or 'Sin ramo'"/><t t-if="policy.offer_id"> · <t t-out="policy.offer_id.name"/></t></p>
+                </div>
+            </div>
+            <ol class="o_it_steps">
+                <t t-set="keys" t-value="[s[0] for s in emission_stages]"/>
+                <li t-foreach="emission_stages" t-as="st"
+                    t-attf-class="#{'done' if keys.index(st[0]) &lt; keys.index(policy.emission_stage or 'request') else ''} #{'current' if st[0] == policy.emission_stage else ''}">
+                    <span t-out="st[1]"/>
+                </li>
+            </ol>
+            <section class="o_it_panel">
+                <div class="o_it_facts">
+                    <div><small>Aseguradora</small><b t-out="policy.insurance_company_id.name or '—'"/></div>
+                    <div><small>Prima</small><b t-out="money(policy.policy_amount, policy.currency_id)"/></div>
+                    <div><small>Forma de pago</small><b t-out="dict(policy._fields['premium_type'].selection).get(policy.premium_type) or '—'"/></div>
+                    <div><small>Vigencia</small><b><t t-out="policy.coverage_start_date and policy.coverage_start_date.strftime('%d/%m/%Y') or '—'"/></b></div>
+                    <div><small>Asegurado</small><b t-out="policy.insured_partner_id.name or policy.partner_id.name"/></div>
+                    <div><small>Teléfono</small><b t-out="policy.partner_id._insurance_phone() or '—'"/></div>
+                </div>
+                <div class="o_it_actions">
+                    <form t-if="policy.emission_stage not in ('issued', 'delivered')" t-att-action="'/equipo/emisiones/%s/etapa' % policy.id" method="post">
+                        <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
+                        <input type="hidden" name="stage" value="next"/>
+                        <button class="btn o_it_btn" type="submit"><i class="fa fa-arrow-right"/> Pasar a la siguiente etapa</button>
+                    </form>
+                    <a t-if="svc.wa_link(policy.partner_id, '')" t-att-href="svc.wa_link(policy.partner_id, 'Hola %s, ' % (policy.partner_id.name or '').split(' ')[0])" target="_blank" class="btn o_it_btn_wa"><i class="fa fa-whatsapp"/> WhatsApp</a>
+                </div>
+                <details t-if="policy.emission_stage != 'delivered'" class="o_it_details" t-att-open="policy.emission_stage == 'issued' or None">
+                    <summary><i class="fa fa-handshake-o"/> Registrar entrega al cliente</summary>
+                    <form t-att-action="'/equipo/emisiones/%s/etapa' % policy.id" method="post" class="o_it_inline_form">
+                        <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
+                        <input type="hidden" name="stage" value="delivered"/>
+                        <div class="o_it_field"><label for="dl_date">Fecha</label><input id="dl_date" type="date" name="delivery_date" class="form-control" t-att-value="today"/></div>
+                        <div class="o_it_field">
+                            <label for="dl_method">¿Cómo se entregó?</label>
+                            <select id="dl_method" name="delivery_method" class="form-select">
+                                <option t-foreach="cat['delivery_methods']" t-as="dm" t-att-value="dm[0]" t-out="dm[1]"/>
+                            </select>
+                        </div>
+                        <button class="btn o_it_btn" type="submit"><i class="fa fa-check"/> Entregada</button>
+                    </form>
+                </details>
+                <p t-else="" class="o_it_ok_line"><i class="fa fa-check-circle"/> Entregada el <t t-out="policy.delivery_date and policy.delivery_date.strftime('%d/%m/%Y')"/>
+                    <t t-if="policy.delivery_method"> por <t t-out="dict(policy._fields['delivery_method'].selection).get(policy.delivery_method)"/></t></p>
+            </section>
+            <t t-call="insurance_management.team_notes">
+                <t t-set="slug" t-value="'emisiones'"/>
+                <t t-set="rec" t-value="policy"/>
+                <t t-set="back" t-value="'/equipo/emisiones/%s' % policy.id"/>
+            </t>
+        </t>
+    </template>
+
+    <!-- ===================== Trámites ===================== -->
+    <template id="team_procedures" name="Equipo: trámites">
+        <t t-call="insurance_management.team_layout">
+            <t t-call="insurance_management.team_block_title">
+                <t t-set="icon" t-value="'fa-tasks'"/>
+                <t t-set="title" t-value="'Trámites'"/>
+                <t t-set="hint" t-value="'Servicio a las pólizas vigentes. En rojo, los que ya pasaron su fecha límite.'"/>
+                <t t-set="scope_url" t-value="'/equipo/tramites' + ('?tipo=%s' % current_type if current_type else '')"/>
+                <t t-set="new_url" t-value="'/equipo/tramites/nuevo'"/>
+                <t t-set="new_label" t-value="'Nuevo trámite'"/>
+            </t>
+            <div class="o_it_chips">
+                <a href="/equipo/tramites" t-attf-class="o_it_chip #{'active' if not current_type else ''}">Todos</a>
+                <a t-foreach="cat['procedure_types']" t-as="pt" t-att-href="'/equipo/tramites?tipo=%s' % pt.id"
+                   t-attf-class="o_it_chip #{'active' if current_type == pt.id else ''}"><i t-attf-class="fa #{pt.icon or 'fa-file-text-o'}"/> <t t-out="pt.name"/></a>
+            </div>
+            <div class="o_it_board" data-block="procedure">
+                <section t-foreach="columns" t-as="col" class="o_it_col" t-att-data-column="col[0]">
+                    <header class="o_it_col_head"><span t-out="col[1]"/><b t-out="len(col[2])"/></header>
+                    <div class="o_it_col_body">
+                        <article t-foreach="col[2]" t-as="t" t-attf-class="o_it_card #{'o_it_late' if t.is_late else ''}" draggable="true" t-att-data-id="t.id">
+                            <a t-att-href="'/equipo/tramites/%s' % t.id" class="o_it_card_link">
+                                <div class="o_it_card_top"><i t-attf-class="fa #{t.type_id.icon or 'fa-file-text-o'}"/> <b t-out="t.type_id.name"/></div>
+                                <div class="o_it_card_meta" t-out="t.partner_id.name or 'Sin cliente'"/>
+                                <div class="o_it_card_meta"><t t-out="t.name"/><t t-if="t.policy_id"> · <t t-out="t.policy_id.name"/></t></div>
+                                <div t-if="t.date_deadline" class="o_it_card_meta o_it_due"><i class="fa fa-clock-o"/> <t t-out="t.date_deadline.strftime('%d/%m')"/></div>
+                                <div t-if="scope == 'all'" class="o_it_card_who"><i class="fa fa-user"/> <t t-out="t.user_id.name"/></div>
+                            </a>
+                            <t t-call="insurance_management.team_move_select">
+                                <t t-set="block" t-value="'procedure'"/>
+                                <t t-set="rec_id" t-value="t.id"/>
+                                <t t-set="options" t-value="procedure_states"/>
+                                <t t-set="current" t-value="t.state"/>
+                            </t>
+                        </article>
+                        <p t-if="not col[2]" class="o_it_col_empty">Nada aquí</p>
+                    </div>
+                </section>
+            </div>
+        </t>
+    </template>
+
+    <template id="team_procedure_new" name="Equipo: nuevo trámite">
+        <t t-call="insurance_management.team_layout">
+            <a href="/equipo/tramites" class="o_it_back"><i class="fa fa-arrow-left"/> Trámites</a>
+            <h1 class="o_it_h1">Nuevo trámite</h1>
+            <form action="/equipo/tramites/nuevo" method="post" enctype="multipart/form-data" class="o_it_panel o_it_form">
+                <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
+                <fieldset class="o_it_pick">
+                    <legend>¿Qué trámite es?</legend>
+                    <label t-foreach="cat['procedure_types']" t-as="pt" class="o_it_pick_item">
+                        <input type="radio" name="type_id" t-att-value="pt.id" required="required" t-att-checked="current_type == pt.id or None" t-att-data-req="pt.requirements or ''"/>
+                        <span><i t-attf-class="fa #{pt.icon or 'fa-file-text-o'}"/> <t t-out="pt.name"/></span>
+                    </label>
+                </fieldset>
+                <div class="alert alert-info o_it_req d-none" role="status"><b>Pide al cliente:</b> <span/></div>
+                <div class="o_it_grid">
+                    <div class="o_it_field o_it_wide">
+                        <label for="tr_policy">Póliza</label>
+                        <input id="tr_policy" class="form-control o_it_policy_search" list="tr_policies" placeholder="Escribe número de póliza o nombre del cliente" autocomplete="off"/>
+                        <datalist id="tr_policies">
+                            <option t-foreach="policies" t-as="p" t-att-data-id="p.id" t-att-value="'%s · %s' % (p.name, p.partner_id.name)"/>
+                        </datalist>
+                        <input type="hidden" name="policy_id" class="o_it_policy_id"/>
+                        <small class="text-muted">Si aún no tiene póliza en el sistema, déjalo vacío y escribe el cliente abajo.</small>
+                    </div>
+                    <div class="o_it_field"><label for="tr_client">Cliente (si no hay póliza)</label><input id="tr_client" name="client" class="form-control"/></div>
+                    <div class="o_it_field"><label for="tr_phone">Teléfono</label><input id="tr_phone" name="phone" type="tel" class="form-control"/></div>
+                    <div class="o_it_field"><label for="tr_deadline">Fecha límite</label><input id="tr_deadline" name="date_deadline" type="date" class="form-control"/><small class="text-muted">Vacío = plazo del trámite</small></div>
+                    <div class="o_it_field"><label for="tr_folio">Folio de la aseguradora</label><input id="tr_folio" name="insurer_folio" class="form-control"/></div>
+                    <div class="o_it_field o_it_wide"><label for="tr_desc">¿Qué pide el cliente?</label><textarea id="tr_desc" name="description" rows="3" class="form-control"/></div>
+                    <div class="o_it_field o_it_wide">
+                        <label for="tr_files">Documentos recibidos</label>
+                        <input id="tr_files" type="file" name="files" multiple="multiple" class="form-control"/>
+                    </div>
+                </div>
+                <button type="submit" class="btn o_it_btn o_it_btn_big"><i class="fa fa-check"/> Registrar trámite</button>
+            </form>
+        </t>
+    </template>
+
+    <template id="team_procedure" name="Equipo: trámite">
+        <t t-call="insurance_management.team_layout">
+            <a href="/equipo/tramites" class="o_it_back"><i class="fa fa-arrow-left"/> Trámites</a>
+            <div class="o_it_title_row">
+                <div>
+                    <h1 class="o_it_h1"><i t-attf-class="fa #{proc.type_id.icon or 'fa-file-text-o'}"/> <t t-out="proc.type_id.name"/></h1>
+                    <p class="o_it_hint mb-0"><t t-out="proc.name"/> · <t t-out="proc.partner_id.name or 'Sin cliente'"/><t t-if="proc.policy_id"> · <t t-out="proc.policy_id.name"/></t></p>
+                </div>
+                <span t-attf-class="o_it_badge o_it_badge_#{proc.state} #{'o_it_badge_late' if proc.is_late else ''}" t-out="'Atrasado' if proc.is_late else dict(procedure_states).get(proc.state)"/>
+            </div>
+            <section class="o_it_panel">
+                <div class="o_it_facts">
+                    <div><small>Fecha límite</small><b t-out="proc.date_deadline and proc.date_deadline.strftime('%d/%m/%Y') or '—'"/></div>
+                    <div><small>Folio aseguradora</small><b t-out="proc.insurer_folio or '—'"/></div>
+                    <div><small>Asignado a</small><b t-out="proc.user_id.name"/></div>
+                    <div><small>Teléfono</small><b t-out="proc.partner_id and proc.partner_id._insurance_phone() or '—'"/></div>
+                </div>
+                <div t-if="proc.requirements" class="alert alert-info mb-3" role="status"><b>Requisitos:</b> <t t-out="proc.requirements"/></div>
+                <p t-if="proc.description" class="o_it_quote" t-out="proc.description"/>
+                <form t-att-action="'/equipo/tramites/%s/estado' % proc.id" method="post" class="o_it_state_form">
+                    <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
+                    <div class="o_it_grid">
+                        <div class="o_it_field"><label for="pf_folio">Folio de la aseguradora</label><input id="pf_folio" name="insurer_folio" class="form-control" t-att-value="proc.insurer_folio or ''"/></div>
+                        <div class="o_it_field"><label for="pf_result">Resultado</label><input id="pf_result" name="result" class="form-control" t-att-value="proc.result or ''" placeholder="Solo al terminar"/></div>
+                    </div>
+                    <div class="o_it_actions">
+                        <button t-if="proc.state == 'new'" name="state" value="in_progress" class="btn o_it_btn" type="submit"><i class="fa fa-play"/> Empezar</button>
+                        <button t-if="proc.state in ('new', 'in_progress')" name="state" value="insurer" class="btn o_it_btn_light" type="submit"><i class="fa fa-paper-plane"/> Enviado a la aseguradora</button>
+                        <button t-if="proc.state not in ('done', 'cancelled')" name="state" value="done" class="btn o_it_btn" type="submit"><i class="fa fa-check"/> Terminado</button>
+                        <button t-if="proc.state in ('done', 'cancelled')" name="state" value="in_progress" class="btn o_it_btn_light" type="submit"><i class="fa fa-undo"/> Reabrir</button>
+                        <button t-if="proc.state not in ('done', 'cancelled')" name="state" value="cancelled" class="btn o_it_btn_ghost" type="submit">Cancelar</button>
+                    </div>
+                </form>
+            </section>
+            <t t-call="insurance_management.team_notes">
+                <t t-set="slug" t-value="'tramites'"/>
+                <t t-set="rec" t-value="proc"/>
+                <t t-set="back" t-value="'/equipo/tramites/%s' % proc.id"/>
+            </t>
+        </t>
+    </template>
+
+    <!-- ===================== Siniestros ===================== -->
+    <template id="team_claims" name="Equipo: siniestros">
+        <t t-call="insurance_management.team_layout">
+            <t t-call="insurance_management.team_block_title">
+                <t t-set="icon" t-value="'fa-medkit'"/>
+                <t t-set="title" t-value="'Siniestros'"/>
+                <t t-set="hint" t-value="'Pago directo y reembolso: del aviso al pago, con los documentos de cada caso.'"/>
+                <t t-set="scope_url" t-value="'/equipo/siniestros' + ('?modo=%s' % mode if mode else '')"/>
+                <t t-set="new_url" t-value="'/equipo/siniestros/nuevo'"/>
+                <t t-set="new_label" t-value="'Nuevo siniestro'"/>
+            </t>
+            <div class="o_it_chips">
+                <a href="/equipo/siniestros" t-attf-class="o_it_chip #{'active' if not mode else ''}">Todos</a>
+                <a href="/equipo/siniestros?modo=pd" t-attf-class="o_it_chip #{'active' if mode == 'pd' else ''}"><i class="fa fa-hospital-o"/> Pago directo</a>
+                <a href="/equipo/siniestros?modo=ree" t-attf-class="o_it_chip #{'active' if mode == 'ree' else ''}"><i class="fa fa-undo"/> Reembolso</a>
+            </div>
+            <div class="o_it_board o_it_board_static">
+                <section t-foreach="columns" t-as="col" class="o_it_col">
+                    <header class="o_it_col_head"><span t-out="col[1]"/><b t-out="len(col[2])"/></header>
+                    <div class="o_it_col_body">
+                        <a t-foreach="col[2]" t-as="c" t-att-href="'/equipo/siniestros/%s' % c.id" class="o_it_card o_it_card_link">
+                            <div class="o_it_card_top"><b t-out="c.partner_id.name"/></div>
+                            <div class="o_it_card_meta"><t t-out="c.claim_type_id.name or dict(c._fields['claim_kind'].selection).get(c.claim_kind)"/></div>
+                            <div class="o_it_card_meta"><t t-out="c.name"/> · <t t-out="c.occurrence_date.strftime('%d/%m/%Y')"/></div>
+                            <div t-if="c.claimed_amount" class="o_it_card_meta"><t t-out="money(c.claimed_amount, c.currency_id)"/></div>
+                            <div t-if="c.document_pending_count" class="o_it_card_meta o_it_due"><i class="fa fa-paperclip"/> <t t-out="c.document_pending_count"/> documento(s) pendiente(s)</div>
+                            <div t-if="scope == 'all' and c.team_user_id" class="o_it_card_who"><i class="fa fa-user"/> <t t-out="c.team_user_id.name"/></div>
+                        </a>
+                        <p t-if="not col[2]" class="o_it_col_empty">Nada aquí</p>
+                    </div>
+                </section>
+            </div>
+        </t>
+    </template>
+
+    <template id="team_claim_new" name="Equipo: nuevo siniestro">
+        <t t-call="insurance_management.team_layout">
+            <a href="/equipo/siniestros" class="o_it_back"><i class="fa fa-arrow-left"/> Siniestros</a>
+            <h1 class="o_it_h1">Nuevo siniestro</h1>
+            <form action="/equipo/siniestros/nuevo" method="post" enctype="multipart/form-data" class="o_it_panel o_it_form">
+                <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
+                <div class="o_it_grid">
+                    <div class="o_it_field o_it_wide">
+                        <label for="cl_policy">Póliza del cliente</label>
+                        <input id="cl_policy" class="form-control o_it_policy_search" list="cl_policies" required="required" placeholder="Escribe número de póliza o nombre del cliente" autocomplete="off"/>
+                        <datalist id="cl_policies">
+                            <option t-foreach="policies" t-as="p" t-att-data-id="p.id" t-att-value="'%s · %s' % (p.name, p.partner_id.name)"/>
+                        </datalist>
+                        <input type="hidden" name="policy_id" class="o_it_policy_id"/>
+                    </div>
+                    <div class="o_it_field">
+                        <label for="cl_type">Tipo</label>
+                        <select id="cl_type" name="claim_type_id" class="form-select">
+                            <t t-foreach="cat['claim_types']" t-as="ct">
+                                <option t-att-value="ct.id" t-att-selected="(mode == 'pd' and ct.code == 'PD') or (mode == 'ree' and ct.code == 'REE') or None" t-out="ct.name"/>
+                            </t>
+                        </select>
+                    </div>
+                    <div class="o_it_field"><label for="cl_date">Fecha del evento</label><input id="cl_date" name="occurrence_date" type="date" class="form-control" t-att-value="today"/></div>
+                    <div class="o_it_field"><label for="cl_diag">Diagnóstico</label><input id="cl_diag" name="diagnosis" class="form-control"/></div>
+                    <div class="o_it_field"><label for="cl_prov">Hospital / médico</label><input id="cl_prov" name="provider_name" class="form-control"/></div>
+                    <div class="o_it_field"><label for="cl_amount">Monto reclamado</label><input id="cl_amount" name="claimed_amount" inputmode="decimal" class="form-control" placeholder="0.00"/></div>
+                    <div class="o_it_field"><label for="cl_phone">Teléfono de contacto</label><input id="cl_phone" name="contact_phone" type="tel" class="form-control"/></div>
+                    <div class="o_it_field o_it_wide"><label for="cl_desc">¿Qué pasó?</label><textarea id="cl_desc" name="description" rows="3" class="form-control"/></div>
+                    <div class="o_it_field o_it_wide"><label for="cl_files">Documentos (facturas, informe médico…)</label><input id="cl_files" type="file" name="files" multiple="multiple" class="form-control"/></div>
+                </div>
+                <button type="submit" class="btn o_it_btn o_it_btn_big"><i class="fa fa-check"/> Registrar siniestro</button>
+            </form>
+        </t>
+    </template>
+
+    <template id="team_claim" name="Equipo: siniestro">
+        <t t-call="insurance_management.team_layout">
+            <a href="/equipo/siniestros" class="o_it_back"><i class="fa fa-arrow-left"/> Siniestros</a>
+            <div class="o_it_title_row">
+                <div>
+                    <h1 class="o_it_h1" t-out="claim.partner_id.name"/>
+                    <p class="o_it_hint mb-0"><t t-out="claim.name"/><t t-if="claim.claim_type_id"> · <t t-out="claim.claim_type_id.name"/></t> · Póliza <t t-out="claim.policy_id.name"/></p>
+                </div>
+                <span t-attf-class="o_it_badge o_it_badge_#{claim.state}" t-out="claim_states.get(claim.state)"/>
+            </div>
+            <section class="o_it_panel">
+                <div class="o_it_facts">
+                    <div><small>Fecha del evento</small><b t-out="claim.occurrence_date.strftime('%d/%m/%Y')"/></div>
+                    <div><small>Hospital / médico</small><b t-out="claim.provider_name or '—'"/></div>
+                    <div><small>Diagnóstico</small><b t-out="claim.diagnosis or '—'"/></div>
+                    <div><small>Reclamado</small><b t-out="money(claim.claimed_amount, claim.currency_id)"/></div>
+                    <div><small>Autorizado</small><b t-out="money(claim.authorized_amount, claim.currency_id)"/></div>
+                    <div><small>Pagado</small><b t-out="money(claim.paid_amount, claim.currency_id)"/></div>
+                    <div><small>Suma asegurada</small><b t-out="money(claim.policy_insured_amount, claim.currency_id)"/></div>
+                    <div><small>Cuotas vencidas</small><b t-attf-class="#{'text-danger' if claim.policy_overdue_count else ''}" t-out="claim.policy_overdue_count"/></div>
+                </div>
+                <div t-if="claim.policy_overdue_count" class="alert alert-warning" role="alert"><i class="fa fa-exclamation-triangle"/> La póliza tiene cuotas vencidas: revisa la cobranza antes de tramitar.</div>
+                <div class="o_it_actions">
+                    <form t-if="claim.state == 'draft'" t-att-action="'/equipo/siniestros/%s/accion/documents' % claim.id" method="post">
+                        <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
+                        <button class="btn o_it_btn" type="submit"><i class="fa fa-list-ul"/> Generar lista de documentos</button>
+                    </form>
+                    <form t-if="claim.state == 'documents'" t-att-action="'/equipo/siniestros/%s/accion/review' % claim.id" method="post">
+                        <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
+                        <button class="btn o_it_btn" type="submit"><i class="fa fa-paper-plane"/> Enviar a evaluación</button>
+                    </form>
+                    <form t-if="claim.state in ('paid', 'rejected', 'authorized')" t-att-action="'/equipo/siniestros/%s/accion/close' % claim.id" method="post">
+                        <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
+                        <button class="btn o_it_btn_light" type="submit"><i class="fa fa-archive"/> Cerrar caso</button>
+                    </form>
+                </div>
+                <details t-if="claim.state in ('documents', 'review')" class="o_it_details" t-att-open="claim.state == 'review' or None">
+                    <summary><i class="fa fa-check-square-o"/> Registrar autorización de la aseguradora</summary>
+                    <form t-att-action="'/equipo/siniestros/%s/accion/authorize' % claim.id" method="post" class="o_it_inline_form">
+                        <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
+                        <div class="o_it_field">
+                            <label for="au_cov">Cobertura</label>
+                            <select id="au_cov" name="coverage_id" class="form-select" required="required">
+                                <option t-foreach="claim.policy_id.coverage_ids" t-as="cov" t-att-value="cov.id" t-att-selected="cov == claim.coverage_id or None"
+                                        t-out="'%s (disponible %s)' % (cov.name, money(cov.remaining_amount, claim.currency_id))"/>
+                            </select>
+                        </div>
+                        <div class="o_it_field"><label for="au_amt">Monto autorizado</label><input id="au_amt" name="authorized_amount" inputmode="decimal" class="form-control" t-att-value="claim.authorized_amount or ''"/></div>
+                        <label class="o_it_check"><input type="checkbox" name="full" value="1"/> Usa el 100% de la cobertura</label>
+                        <button class="btn o_it_btn" type="submit"><i class="fa fa-check"/> Autorizado</button>
+                    </form>
+                </details>
+                <details t-if="claim.state == 'authorized'" class="o_it_details" open="open">
+                    <summary><i class="fa fa-money"/> Registrar pago / reembolso</summary>
+                    <form t-att-action="'/equipo/siniestros/%s/accion/paid' % claim.id" method="post" class="o_it_inline_form">
+                        <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
+                        <div class="o_it_field"><label for="pd_amt">Monto pagado</label><input id="pd_amt" name="paid_amount" inputmode="decimal" class="form-control" t-att-value="claim.authorized_amount or ''"/></div>
+                        <button class="btn o_it_btn" type="submit"><i class="fa fa-check"/> Pagado</button>
+                    </form>
+                </details>
+                <details t-if="claim.state in ('draft', 'documents', 'review', 'authorized')" class="o_it_details">
+                    <summary><i class="fa fa-ban"/> Rechazado por la aseguradora</summary>
+                    <form t-att-action="'/equipo/siniestros/%s/accion/reject' % claim.id" method="post" class="o_it_inline_form">
+                        <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
+                        <div class="o_it_field o_it_wide"><label for="rj_reason">Motivo</label><input id="rj_reason" name="reason" class="form-control" required="required"/></div>
+                        <button class="btn o_it_btn_ghost" type="submit">Registrar rechazo</button>
+                    </form>
+                </details>
+            </section>
+
+            <section t-if="claim.document_ids" class="o_it_panel">
+                <h2 class="o_it_h2"><i class="fa fa-folder-open-o"/> Documentos del caso</h2>
+                <ul class="o_it_docs">
+                    <li t-foreach="claim.document_ids" t-as="doc" t-attf-class="o_it_doc o_it_doc_#{doc.state}">
+                        <div class="o_it_doc_name">
+                            <i t-attf-class="fa #{'fa-check-circle' if doc.state in ('uploaded', 'signed') else 'fa-circle-o'}"/>
+                            <b t-out="doc.document_type_id.name"/>
+                            <small t-out="dict(doc._fields['state'].selection).get(doc.state)"/>
+                            <small t-if="doc.requires_signature and doc.state != 'signed'" class="text-danger">· requiere firma</small>
+                        </div>
+                        <div t-if="doc.attachment_ids" class="o_it_tl_files">
+                            <a t-foreach="doc.attachment_ids" t-as="f" t-att-href="'/equipo/archivo/siniestros/%s/%s' % (claim.id, f.id)" target="_blank" class="o_it_chip"><i class="fa fa-file-o"/> <t t-out="f.name"/></a>
+                        </div>
+                        <form t-if="doc.state != 'signed'" t-att-action="'/equipo/siniestros/%s/documento/%s' % (claim.id, doc.id)" method="post" enctype="multipart/form-data" class="o_it_doc_form">
+                            <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
+                            <input type="file" name="file" class="form-control form-control-sm" required="required" t-att-aria-label="'Archivo de %s' % doc.document_type_id.name"/>
+                            <label t-if="doc.requires_signature" class="o_it_check small"><input type="checkbox" name="signed" value="1"/> Ya viene firmado</label>
+                            <button type="submit" class="btn btn-sm o_it_btn"><i class="fa fa-upload"/> Subir</button>
+                        </form>
+                    </li>
+                </ul>
+            </section>
+            <t t-call="insurance_management.team_notes">
+                <t t-set="slug" t-value="'siniestros'"/>
+                <t t-set="rec" t-value="claim"/>
+                <t t-set="back" t-value="'/equipo/siniestros/%s' % claim.id"/>
+            </t>
+        </t>
+    </template>
+
+    <!-- ===================== Cobranza ===================== -->
+    <template id="team_collection" name="Equipo: cobranza">
+        <t t-call="insurance_management.team_layout">
+            <t t-call="insurance_management.team_block_title">
+                <t t-set="icon" t-value="'fa-money'"/>
+                <t t-set="title" t-value="'Cobranza'"/>
+                <t t-set="hint" t-value="'Recibos por vencer y vencidos con su etapa de gracia, prórroga o amparo. Registra pagos y manda recordatorios.'"/>
+            </t>
+            <div class="o_it_chips">
+                <a href="/equipo/cobranza" t-attf-class="o_it_chip #{'active' if view == 'pending' else ''}">Pendientes</a>
+                <a href="/equipo/cobranza?vista=overdue" t-attf-class="o_it_chip o_it_chip_bad #{'active' if view == 'overdue' else ''}">Vencidos <b t-out="counts['overdue']"/></a>
+                <a href="/equipo/cobranza?vista=due_soon" t-attf-class="o_it_chip o_it_chip_warn #{'active' if view == 'due_soon' else ''}">Por vencer <b t-out="counts['due_soon']"/></a>
+                <a href="/equipo/cobranza?vista=paid" t-attf-class="o_it_chip o_it_chip_ok #{'active' if view == 'paid' else ''}">Pagados este mes <b t-out="counts['paid']"/></a>
+            </div>
+            <form action="/equipo/cobranza" method="get" class="o_it_search" role="search">
+                <input type="hidden" name="vista" t-att-value="view"/>
+                <label class="visually-hidden" for="co_q">Buscar</label>
+                <input id="co_q" name="q" class="form-control" t-att-value="q" placeholder="Buscar cliente o póliza"/>
+                <button class="btn o_it_btn_light" type="submit" aria-label="Buscar"><i class="fa fa-search"/></button>
+            </form>
+            <div t-if="totals" class="o_it_totals">
+                <div t-foreach="totals.items()" t-as="tot"><small t-out="'Cobrado' if view == 'paid' else 'Por cobrar'"/><b t-out="money(tot[1], tot[0])"/></div>
+            </div>
+            <p t-if="not lines" class="o_it_empty_line">No hay recibos en esta vista.</p>
+            <div class="o_it_list">
+                <article t-foreach="lines" t-as="ln" t-attf-class="o_it_row o_it_row_#{ln.collection_status}">
+                    <t t-set="stg" t-value="collection_stages.get(ln.collection_stage, ('', 'na'))"/>
+                    <div class="o_it_row_main">
+                        <div class="o_it_row_title"><b t-out="ln.partner_id.name"/>
+                            <span t-attf-class="o_it_pill o_it_pill_#{stg[1]}" t-out="stg[0]"/></div>
+                        <div class="o_it_row_meta">
+                            Póliza <t t-out="ln.policy_id.name"/> · cuota <t t-out="ln.number"/> ·
+                            <t t-if="view == 'paid'">pagó el <t t-out="ln.payment_date and ln.payment_date.strftime('%d/%m/%Y')"/></t>
+                            <t t-else="">cobro <t t-out="ln.due_date and ln.due_date.strftime('%d/%m/%Y')"/></t>
+                            <t t-if="ln.collection_channel"> · <t t-out="channel_labels.get(ln.collection_channel)"/></t>
+                        </div>
+                        <div t-if="view != 'paid' and ln.extension_end_date" class="o_it_row_meta small">
+                            Prórroga hasta <t t-out="ln.extension_end_date.strftime('%d/%m')"/>
+                            <t t-if="ln.protection_end_date"> · amparo hasta <t t-out="ln.protection_end_date.strftime('%d/%m')"/></t>
+                        </div>
+                    </div>
+                    <div class="o_it_row_amount" t-out="money(ln.paid_amount if view == 'paid' else (ln.balance or ln.amount), ln.currency_id)"/>
+                    <div t-if="view != 'paid'" class="o_it_row_actions">
+                        <a t-att-href="'/equipo/cobranza/%s/whatsapp' % ln.id" target="_blank" class="btn btn-sm o_it_btn_wa" t-att-aria-label="'WhatsApp a %s' % ln.partner_id.name"><i class="fa fa-whatsapp"/> <span>WhatsApp</span></a>
+                        <form t-att-action="'/equipo/cobranza/%s/correo' % ln.id" method="post">
+                            <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
+                            <input type="hidden" name="back_vista" t-att-value="view"/>
+                            <button class="btn btn-sm o_it_btn_light" type="submit" t-att-disabled="not ln.partner_id.email or None"><i class="fa fa-envelope-o"/> <span>Correo</span></button>
+                        </form>
+                        <details class="o_it_pay">
+                            <summary class="btn btn-sm o_it_btn"><i class="fa fa-check"/> Registrar pago</summary>
+                            <form t-att-action="'/equipo/cobranza/%s/pago' % ln.id" method="post" class="o_it_inline_form">
+                                <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
+                                <input type="hidden" name="back_vista" t-att-value="view"/>
+                                <div class="o_it_field"><label t-att-for="'pa_%s' % ln.id">Importe</label><input t-att-id="'pa_%s' % ln.id" name="amount" inputmode="decimal" class="form-control" t-att-value="'%.2f' % (ln.balance or ln.amount)"/></div>
+                                <div class="o_it_field"><label t-att-for="'pd_%s' % ln.id">Fecha</label><input t-att-id="'pd_%s' % ln.id" name="payment_date" type="date" class="form-control" t-att-value="today"/></div>
+                                <button class="btn o_it_btn" type="submit">Guardar pago</button>
+                            </form>
+                        </details>
+                    </div>
+                </article>
+            </div>
+        </t>
+    </template>
+
+    <!-- ===================== CRM ===================== -->
+    <template id="team_crm" name="Equipo: CRM">
+        <t t-call="insurance_management.team_layout">
+            <t t-call="insurance_management.team_block_title">
+                <t t-set="icon" t-value="'fa-handshake-o'"/>
+                <t t-set="title" t-value="'CRM · prospectos'"/>
+                <t t-set="hint" t-value="'De la 1ra cita al cierre. Arrastra cada prospecto a su etapa; los perdidos pasan a la lista de publicidad.'"/>
+                <t t-set="scope_url" t-value="'/equipo/crm'"/>
+                <t t-set="new_url" t-value="'/equipo/crm/nuevo'"/>
+                <t t-set="new_label" t-value="'Nuevo prospecto'"/>
+            </t>
+            <div class="o_it_board o_it_board_crm" data-block="crm">
+                <section t-foreach="columns" t-as="col" t-attf-class="o_it_col o_it_col_#{col[0]}" t-att-data-column="col[0]">
+                    <header class="o_it_col_head"><span t-out="col[1].name"/><b t-out="len(col[2])"/></header>
+                    <div class="o_it_col_body">
+                        <article t-foreach="col[2]" t-as="l" class="o_it_card" draggable="true" t-att-data-id="l.id">
+                            <a t-att-href="'/equipo/crm/%s' % l.id" class="o_it_card_link">
+                                <div class="o_it_card_top"><b t-out="l.contact_name or l.partner_id.name or l.name"/></div>
+                                <div class="o_it_card_meta"><t t-out="l.insurance_policy_type_id.name or 'Sin ramo'"/><t t-if="l.expected_revenue"> · <t t-out="money(l.expected_revenue)"/></t></div>
+                                <div t-if="l.phone" class="o_it_card_meta"><i class="fa fa-phone"/> <t t-out="l.phone"/></div>
+                                <div t-if="col[0] == 'lost' and l.insurance_lost_note" class="o_it_card_meta"><i class="fa fa-bullhorn"/> <t t-out="l.insurance_lost_note"/></div>
+                                <div t-if="scope == 'all' and (l.team_user_id or l.user_id)" class="o_it_card_who"><i class="fa fa-user"/> <t t-out="(l.team_user_id or l.user_id).name"/></div>
+                            </a>
+                            <t t-call="insurance_management.team_move_select">
+                                <t t-set="block" t-value="'crm'"/>
+                                <t t-set="rec_id" t-value="l.id"/>
+                                <t t-set="options" t-value="[(c[0], c[1].name) for c in columns]"/>
+                                <t t-set="current" t-value="col[0]"/>
+                            </t>
+                        </article>
+                        <p t-if="not col[2]" class="o_it_col_empty">Sin prospectos</p>
+                    </div>
+                </section>
+            </div>
+        </t>
+    </template>
+
+    <template id="team_crm_new" name="Equipo: nuevo prospecto">
+        <t t-call="insurance_management.team_layout">
+            <a href="/equipo/crm" class="o_it_back"><i class="fa fa-arrow-left"/> CRM</a>
+            <h1 class="o_it_h1">Nuevo prospecto</h1>
+            <form action="/equipo/crm/nuevo" method="post" class="o_it_panel o_it_form">
+                <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
+                <div class="o_it_grid">
+                    <div class="o_it_field o_it_wide"><label for="cr_name">Nombre</label><input id="cr_name" name="name" class="form-control" required="required"/></div>
+                    <div class="o_it_field"><label for="cr_phone">Teléfono</label><input id="cr_phone" name="phone" type="tel" class="form-control"/></div>
+                    <div class="o_it_field"><label for="cr_email">Correo</label><input id="cr_email" name="email" type="email" class="form-control"/></div>
+                    <div class="o_it_field">
+                        <label for="cr_ramo">¿Qué le interesa?</label>
+                        <select id="cr_ramo" name="ramo_id" class="form-select">
+                            <option value="">Elige el ramo…</option>
+                            <option t-foreach="cat['ramos']" t-as="r" t-att-value="r.id" t-out="r.name"/>
+                        </select>
+                    </div>
+                    <div class="o_it_field">
+                        <label for="cr_origin">¿De dónde viene?</label>
+                        <select id="cr_origin" name="origin" class="form-select">
+                            <option t-foreach="cat['origins']" t-as="o" t-att-value="o[0]" t-out="o[1]"/>
+                        </select>
+                    </div>
+                    <div class="o_it_field"><label for="cr_amount">Prima estimada</label><input id="cr_amount" name="amount" inputmode="decimal" class="form-control"/></div>
+                    <div class="o_it_field"><label for="cr_mdate">1ra cita (opcional)</label><input id="cr_mdate" name="meeting_date" type="date" class="form-control"/></div>
+                    <div class="o_it_field"><label for="cr_mtime">Hora</label><input id="cr_mtime" name="meeting_time" type="time" class="form-control"/></div>
+                    <div class="o_it_field o_it_wide"><label for="cr_note">Notas</label><textarea id="cr_note" name="note" rows="3" class="form-control"/></div>
+                </div>
+                <button type="submit" class="btn o_it_btn o_it_btn_big"><i class="fa fa-check"/> Guardar prospecto</button>
+            </form>
+        </t>
+    </template>
+
+    <template id="team_crm_lead" name="Equipo: prospecto">
+        <t t-call="insurance_management.team_layout">
+            <a href="/equipo/crm" class="o_it_back"><i class="fa fa-arrow-left"/> CRM</a>
+            <div class="o_it_title_row">
+                <div>
+                    <h1 class="o_it_h1" t-out="lead.contact_name or lead.partner_id.name or lead.name"/>
+                    <p class="o_it_hint mb-0"><t t-out="lead.insurance_policy_type_id.name or 'Sin ramo'"/> · <t t-out="dict(lead._fields['insurance_origin'].selection).get(lead.insurance_origin) or ''"/></p>
+                </div>
+                <div class="o_it_actions">
+                    <a t-if="lead.phone" t-att-href="'tel:%s' % lead.phone" class="btn o_it_btn_light"><i class="fa fa-phone"/> Llamar</a>
+                    <a t-if="svc.wa_link(lead.phone or lead.partner_id, 'Hola %s, ' % ((lead.contact_name or '').split(' ') or [''])[0])"
+                       t-att-href="svc.wa_link(lead.phone or lead.partner_id, 'Hola %s, ' % ((lead.contact_name or '').split(' ') or [''])[0])" target="_blank" class="btn o_it_btn_wa"><i class="fa fa-whatsapp"/> WhatsApp</a>
+                </div>
+            </div>
+            <form t-att-action="'/equipo/crm/%s/etapa' % lead.id" method="post" class="o_it_stage_bar">
+                <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
+                <button t-foreach="stages" t-as="st" type="submit" name="stage" t-att-value="st[0]"
+                        t-attf-class="o_it_stage o_it_stage_#{st[0]} #{'current' if lead.stage_id == st[1] else ''}" t-out="st[1].name"/>
+            </form>
+            <div class="o_it_two">
+                <section class="o_it_panel">
+                    <h2 class="o_it_h2"><i class="fa fa-calendar-plus-o"/> Agendar cita</h2>
+                    <form t-att-action="'/equipo/crm/%s/cita' % lead.id" method="post" class="o_it_inline_form">
+                        <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
+                        <div class="o_it_field">
+                            <label for="mt_kind">Tipo</label>
+                            <select id="mt_kind" name="kind" class="form-select">
+                                <option value="first">1ra cita</option>
+                                <option value="closing">Cita de cierre</option>
+                                <option value="followup">Seguimiento</option>
+                            </select>
+                        </div>
+                        <div class="o_it_field"><label for="mt_date">Fecha</label><input id="mt_date" type="date" name="date" class="form-control" required="required"/></div>
+                        <div class="o_it_field"><label for="mt_time">Hora</label><input id="mt_time" type="time" name="time" class="form-control"/></div>
+                        <button class="btn o_it_btn" type="submit"><i class="fa fa-check"/> Agendar</button>
+                    </form>
+                    <ul class="o_it_tasks mt-3">
+                        <li t-foreach="tasks" t-as="task" t-attf-class="o_it_task o_it_sem_#{task.status_color}">
+                            <span class="o_it_sem"/>
+                            <div class="o_it_task_body">
+                                <div class="o_it_task_name" t-out="task.name"/>
+                                <div class="o_it_task_meta"><t t-out="task.date_deadline.strftime('%d/%m/%Y')"/><t t-if="task.date_start"> · <t t-out="svc.local(task.date_start).strftime('%H:%M')"/></t></div>
+                            </div>
+                        </li>
+                    </ul>
+                    <hr/>
+                    <form t-if="not lead.insurance_policy_id" t-att-action="'/equipo/crm/%s/emision' % lead.id" method="post">
+                        <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
+                        <button class="btn o_it_btn w-100" type="submit"><i class="fa fa-trophy"/> ¡Ganado! Pasar a emisión</button>
+                    </form>
+                    <p t-else="" class="o_it_ok_line"><i class="fa fa-check-circle"/> En emisión: <t t-out="lead.insurance_policy_id.name"/></p>
+                    <details class="o_it_details">
+                        <summary><i class="fa fa-bullhorn"/> Perdido → lista de publicidad</summary>
+                        <form t-att-action="'/equipo/crm/%s/etapa' % lead.id" method="post" class="o_it_inline_form">
+                            <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
+                            <input type="hidden" name="stage" value="lost"/>
+                            <div class="o_it_field o_it_wide"><label for="lo_reason">Motivo</label><input id="lo_reason" name="reason" class="form-control" placeholder="Precio, ya tiene seguro, no contesta…"/></div>
+                            <button class="btn o_it_btn_ghost" type="submit">Mover a publicidad</button>
+                        </form>
+                    </details>
+                </section>
+                <section class="o_it_panel">
+                    <h2 class="o_it_h2"><i class="fa fa-id-card-o"/> Datos</h2>
+                    <form t-att-action="'/equipo/crm/%s/datos' % lead.id" method="post" class="o_it_form">
+                        <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
+                        <div class="o_it_field"><label for="ld_name">Nombre</label><input id="ld_name" name="name" class="form-control" t-att-value="lead.contact_name or ''"/></div>
+                        <div class="o_it_field"><label for="ld_phone">Teléfono</label><input id="ld_phone" name="phone" type="tel" class="form-control" t-att-value="lead.phone or ''"/></div>
+                        <div class="o_it_field"><label for="ld_email">Correo</label><input id="ld_email" name="email" type="email" class="form-control" t-att-value="lead.email_from or ''"/></div>
+                        <div class="o_it_field">
+                            <label for="ld_ramo">Ramo</label>
+                            <select id="ld_ramo" name="ramo_id" class="form-select">
+                                <option value="">—</option>
+                                <option t-foreach="cat['ramos']" t-as="r" t-att-value="r.id" t-att-selected="r == lead.insurance_policy_type_id or None" t-out="r.name"/>
+                            </select>
+                        </div>
+                        <div class="o_it_field"><label for="ld_amount">Prima estimada</label><input id="ld_amount" name="amount" inputmode="decimal" class="form-control" t-att-value="'%.2f' % lead.expected_revenue"/></div>
+                        <button class="btn o_it_btn_light" type="submit"><i class="fa fa-save"/> Guardar datos</button>
+                    </form>
+                </section>
+            </div>
+            <t t-call="insurance_management.team_notes">
+                <t t-set="slug" t-value="'crm'"/>
+                <t t-set="rec" t-value="lead"/>
+                <t t-set="back" t-value="'/equipo/crm/%s' % lead.id"/>
+            </t>
+        </t>
+    </template>
+</odoo>

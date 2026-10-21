@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 {
     "name": "Gestión de Aseguradoras",
-    "version": "19.0.6.0.0",
+    "version": "19.0.7.0.0",
     "author": "Jhuliana Delgado",
     "maintainer": "Jhuliana Delgado",
     "website": "",
@@ -23,6 +23,7 @@ Ver static/description/index.html para la ficha completa.
     "depends": [
         "base",
         "mail",
+        "portal",
         "contacts",
         "crm",
         "calendar",
@@ -44,6 +45,7 @@ Ver static/description/index.html para la ficha completa.
         "data/cron_data.xml",
         "data/insurance_mail_templates.xml",
         "data/insurance_automation_data.xml",
+        "data/insurance_team_data.xml",
         "report/insurance_policy_report.xml",
         "report/insurance_policy_templates.xml",
         "views/insurance_company_views.xml",
@@ -64,6 +66,8 @@ Ver static/description/index.html para la ficha completa.
         "views/res_partner_views.xml",
         "views/crm_lead_views.xml",
         "views/menus.xml",
+        "views/insurance_team_views.xml",
+        "views/team_portal_templates.xml",
     ],
     "demo": [
         "data/insurance_demo.xml",
@@ -74,6 +78,10 @@ Ver static/description/index.html para la ficha completa.
             "insurance_management/static/src/dashboard/insurance_dashboard.scss",
             "insurance_management/static/src/dashboard/insurance_dashboard.js",
             "insurance_management/static/src/dashboard/insurance_dashboard.xml",
+        ],
+        "web.assets_frontend": [
+            "insurance_management/static/src/team/team_portal.scss",
+            "insurance_management/static/src/team/team_portal.js",
         ],
     },
     "installable": True,

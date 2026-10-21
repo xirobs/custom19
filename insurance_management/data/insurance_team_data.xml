@@ -1,0 +1,102 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <data noupdate="1">
+        <record id="seq_insurance_procedure" model="ir.sequence">
+            <field name="name">Folio de trámite</field>
+            <field name="code">insurance.procedure</field>
+            <field name="prefix">TRM/</field>
+            <field name="padding">5</field>
+            <field name="company_id" eval="False"/>
+        </record>
+
+        <!-- Tipos de trámite (editables en Configuración) -->
+        <record id="procedure_type_card" model="insurance.procedure.type">
+            <field name="name">Cambio de tarjeta</field>
+            <field name="code">TAR</field>
+            <field name="sequence">10</field>
+            <field name="days">5</field>
+            <field name="icon">fa-credit-card</field>
+            <field name="requirements">Datos de la nueva tarjeta en el formato de domiciliación de la aseguradora, firmado por el titular de la tarjeta. Identificación oficial del titular.</field>
+        </record>
+        <record id="procedure_type_beneficiaries" model="insurance.procedure.type">
+            <field name="name">Cambio de beneficiarios</field>
+            <field name="code">BEN</field>
+            <field name="sequence">20</field>
+            <field name="days">10</field>
+            <field name="icon">fa-users</field>
+            <field name="requirements">Formato de designación de beneficiarios firmado por el asegurado. Nombre completo, parentesco y porcentaje de cada beneficiario. Identificación oficial del asegurado.</field>
+        </record>
+        <record id="procedure_type_documents" model="insurance.procedure.type">
+            <field name="name">Envío de documentos</field>
+            <field name="code">DOC</field>
+            <field name="sequence">30</field>
+            <field name="days">3</field>
+            <field name="icon">fa-paper-plane</field>
+            <field name="requirements">Documentos que pide la aseguradora o el cliente, legibles y completos.</field>
+        </record>
+        <record id="procedure_type_update" model="insurance.procedure.type">
+            <field name="name">Actualizar datos</field>
+            <field name="code">ACT</field>
+            <field name="sequence">40</field>
+            <field name="days">5</field>
+            <field name="icon">fa-pencil-square-o</field>
+            <field name="requirements">Dato a corregir (nombre, RFC, correo, teléfono…) y el documento que lo respalda.</field>
+        </record>
+        <record id="procedure_type_maturity" model="insurance.procedure.type">
+            <field name="name">Trámite de vencimiento</field>
+            <field name="code">VEN</field>
+            <field name="sequence">50</field>
+            <field name="days">15</field>
+            <field name="icon">fa-hourglass-end</field>
+            <field name="requirements">Formato de la aseguradora para el vencimiento o la dotación, identificación oficial y estado de cuenta para el depósito.</field>
+        </record>
+        <record id="procedure_type_rehab" model="insurance.procedure.type">
+            <field name="name">Rehabilitación</field>
+            <field name="code">REH</field>
+            <field name="sequence">60</field>
+            <field name="days">10</field>
+            <field name="icon">fa-refresh</field>
+            <field name="requirements">Solicitud de rehabilitación firmada, cuestionario de salud si la aseguradora lo pide y pago de las primas pendientes.</field>
+        </record>
+        <record id="procedure_type_address" model="insurance.procedure.type">
+            <field name="name">Cambio de domicilio</field>
+            <field name="code">DOM</field>
+            <field name="sequence">70</field>
+            <field name="days">5</field>
+            <field name="icon">fa-home</field>
+            <field name="requirements">Comprobante de domicilio reciente y formato de cambio de datos firmado.</field>
+        </record>
+        <record id="procedure_type_maternity" model="insurance.procedure.type">
+            <field name="name">Beneficio de maternidad</field>
+            <field name="code">MAT</field>
+            <field name="sequence">80</field>
+            <field name="days">10</field>
+            <field name="icon">fa-child</field>
+            <field name="requirements">Informe médico, acta de nacimiento o constancia del embarazo según el caso, identificación de la asegurada y facturas si es reembolso.</field>
+        </record>
+
+        <!-- Etapas del CRM del equipo -->
+        <record id="crm_stage_first_meeting" model="crm.stage">
+            <field name="name">1ra cita</field>
+            <field name="sequence">1</field>
+        </record>
+        <record id="crm_stage_closing_meeting" model="crm.stage">
+            <field name="name">Cita de cierre</field>
+            <field name="sequence">2</field>
+        </record>
+        <record id="crm_stage_followup" model="crm.stage">
+            <field name="name">Seguimiento</field>
+            <field name="sequence">3</field>
+        </record>
+        <record id="crm_stage_won" model="crm.stage">
+            <field name="name">Ganado</field>
+            <field name="sequence">4</field>
+            <field name="is_won" eval="True"/>
+        </record>
+        <record id="crm_stage_lost_publicity" model="crm.stage">
+            <field name="name">Perdido / Publicidad</field>
+            <field name="sequence">5</field>
+            <field name="fold" eval="True"/>
+        </record>
+    </data>
+</odoo>

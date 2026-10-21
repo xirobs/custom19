@@ -98,14 +98,44 @@ def _page_chunks(page):
         size = (font_size or 9.0) * scale
         chunks.append({"x": x, "y": y, "text": lines[0], "size": size})
 
+    if not hasattr(page, "extract_text"):
+        raise CaratulaParseError(_OLD_LIB_MSG)
     try:
         page.extract_text(visitor_text=visitor)
     except TypeError as err:
-        raise CaratulaParseError(
-            "La librería PDF instalada es muy antigua para leer posiciones de texto "
-            "(se requiere PyPDF2 2.x o pypdf)."
-        ) from err
+        raise CaratulaParseError(_OLD_LIB_MSG) from err
     return chunks
+
+
+_OLD_LIB_MSG = (
+    "El servidor tiene una versión antigua de la librería para leer PDF. "
+    "Pide a soporte instalar 'pypdf' en el servidor (pip install pypdf) y reiniciar Odoo."
+)
+
+
+def _get_reader_class():
+    """Elige la librería PDF que sabe leer posiciones de texto.
+
+    Orden: pypdf (moderna) -> PyPDF2 >= 2 -> la que trae Odoo.
+    PyPDF2 1.x no sirve porque su página no tiene extract_text().
+    """
+    try:
+        from pypdf import PdfReader
+        return PdfReader
+    except ImportError:
+        pass
+    try:
+        import PyPDF2
+        if hasattr(PyPDF2, "PdfReader") and hasattr(PyPDF2.PageObject, "extract_text"):
+            return PyPDF2.PdfReader
+    except ImportError:
+        pass
+    try:
+        from odoo.tools.pdf import PdfFileReader
+        return PdfFileReader
+    except ImportError:
+        from PyPDF2 import PdfFileReader
+        return PdfFileReader
 
 
 def _build_lines(chunks, y_tolerance=2.5):
@@ -325,12 +355,9 @@ def _parse_benefits(lines):
 
 def parse_caratula(pdf_bytes):
     """Devuelve un dict con los datos de la carátula."""
+    reader_class = _get_reader_class()
     try:
-        from odoo.tools.pdf import PdfFileReader
-    except ImportError:  # uso fuera de Odoo
-        from PyPDF2 import PdfFileReader
-    try:
-        reader = PdfFileReader(io.BytesIO(pdf_bytes), strict=False)
+        reader = reader_class(io.BytesIO(pdf_bytes), strict=False)
         pages = list(reader.pages)
     except Exception as err:
         raise CaratulaParseError("El archivo no es un PDF válido: %s" % err) from err
@@ -339,7 +366,8 @@ def parse_caratula(pdf_bytes):
         if not any("PLAN B" in normalize(c["text"]) or "CONTRATANTE" in normalize(c["text"]) for c in chunks):
             continue
         lines = _build_lines(chunks)
-        width = float(page.mediabox.width) if hasattr(page, "mediabox") else 612.0
+        box = getattr(page, "mediabox", None) or getattr(page, "mediaBox", None)
+        width = float(box.width if hasattr(box, "width") else box.getWidth()) if box else 612.0
         title = " ".join(
             t["text"] for line in lines for t in line["tokens"] if "CARATULA" in normalize(t["text"])
         )
