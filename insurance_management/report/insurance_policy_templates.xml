@@ -1,105 +1,238 @@
 <?xml version="1.0" encoding="utf-8"?>
 <odoo>
+    <!-- ===================== Diseño con la identidad de Respaldo Patrimonial =====================
+         Encabezado morado con el logo, franja turquesa-azul y pie con los datos de contacto.
+         Se usa en todos los reportes del módulo (póliza, comprobante de pago y siniestro). -->
+    <template id="report_brand_layout" name="Seguros: diseño de marca">
+        <t t-set="company" t-value="(o.company_id if 'company_id' in o and o.company_id else False) or res_company"/>
+        <t t-set="brand" t-value="o.env['insurance.brand']"/>
+        <div class="header o_ins_rpt_header">
+            <table class="o_ins_rpt_band">
+                <tr>
+                    <td class="o_ins_rpt_logo"><img t-att-src="brand.logo_data_uri(light=True)" alt="Respaldo Patrimonial"/></td>
+                    <td class="o_ins_rpt_doc">
+                        <div class="o_ins_rpt_kind" t-out="doc_kind"/>
+                        <div class="o_ins_rpt_number" t-out="doc_number"/>
+                    </td>
+                </tr>
+            </table>
+            <div class="o_ins_rpt_accent"/>
+        </div>
+        <div class="article o_ins_rpt" t-att-data-oe-model="o._name" t-att-data-oe-id="o.id" t-att-data-oe-lang="o.env.context.get('lang')">
+            <t t-out="0"/>
+        </div>
+        <div class="footer o_ins_rpt_footer">
+            <table class="o_ins_rpt_foot">
+                <tr>
+                    <td>
+                        <b>Respaldo Patrimonial</b> · Asesores de Seguros
+                        <t t-if="company.phone"> · <t t-out="company.phone"/></t>
+                        <t t-if="company.email"> · <t t-out="company.email"/></t>
+                        <t t-if="company.website"> · <t t-out="company.website"/></t>
+                    </td>
+                    <td class="text-end">Página <span class="page"/> de <span class="topage"/></td>
+                </tr>
+            </table>
+        </div>
+    </template>
+
+    <!-- Tarjeta de dato: etiqueta pequeña y valor -->
+    <template id="report_brand_fact" name="Seguros: dato">
+        <td class="o_ins_rpt_fact"><small t-out="label"/><b><t t-out="value"/></b></td>
+    </template>
+
+    <!-- ===================== Póliza ===================== -->
     <template id="report_insurance_policy_document">
         <t t-call="web.html_container">
             <t t-foreach="docs" t-as="o">
-                <t t-call="web.external_layout">
+                <t t-set="o" t-value="o.with_context(lang=o.partner_id.lang or o.env.lang)"/>
+                <t t-set="doc_kind" t-value="'Resumen de póliza'"/>
+                <t t-set="doc_number" t-value="o.name"/>
+                <t t-call="insurance_management.report_brand_layout">
                     <div class="page">
-                        <h2><span t-field="o.display_title"/></h2>
-                        <h4>Número de póliza <span t-field="o.name"/></h4>
-                        <table class="table table-sm table-bordered mt-3">
+                        <div class="o_ins_rpt_hero">
+                            <div class="o_ins_rpt_eyebrow" t-out="' · '.join(x for x in [o.insurance_company_id.name, o.policy_type_id.name] if x)"/>
+                            <h1 t-out="o.partner_id.name"/>
+                            <div class="o_ins_rpt_sub">
+                                <t t-if="o.offer_id"><t t-out="o.offer_id.name"/></t>
+                                <t t-if="o.sub_offer_id"> · <t t-out="o.sub_offer_id.name"/></t>
+                                <t t-if="o.sub_offer_text"> · <t t-out="o.sub_offer_text"/></t>
+                                <t t-if="o.plan_basic and not o.offer_id"><t t-out="o.plan_basic"/></t>
+                            </div>
+                        </div>
+
+                        <table class="o_ins_rpt_facts">
                             <tr>
-                                <th>Titular</th>
-                                <td><span t-field="o.partner_id"/></td>
-                                <th>Duración</th>
-                                <td><span t-field="o.duration_months"/> mes(es)</td>
+                                <t t-call="insurance_management.report_brand_fact"><t t-set="label" t-value="'Suma asegurada'"/><t t-set="value"><span t-field="o.insured_amount"/></t></t>
+                                <t t-call="insurance_management.report_brand_fact"><t t-set="label" t-value="'Prima anual'"/><t t-set="value"><span t-field="o.policy_amount"/></t></t>
+                                <t t-call="insurance_management.report_brand_fact"><t t-set="label" t-value="'Forma de pago'"/><t t-set="value"><span t-field="o.premium_type"/></t></t>
+                                <t t-call="insurance_management.report_brand_fact"><t t-set="label" t-value="'Moneda'"/><t t-set="value" t-value="o.currency_id.name"/></t>
                             </tr>
                             <tr>
-                                <th>Ramo / oferta</th>
-                                <td>
-                                    <span t-field="o.policy_type_id"/>
-                                    <t t-if="o.offer_id"> / <span t-field="o.offer_id"/></t>
-                                    <t t-if="o.sub_offer_id"> / <span t-field="o.sub_offer_id"/></t>
-                                    <t t-if="o.sub_offer_text"> / <span t-field="o.sub_offer_text"/></t>
-                                </td>
-                                <th>Inicio de cobertura</th>
-                                <td><span t-field="o.coverage_start_date"/></td>
-                            </tr>
-                            <tr>
-                                <th>Conducto de cobro</th>
-                                <td><span t-field="o.collection_channel"/></td>
-                                <th>Fin de cobertura</th>
-                                <td><span t-field="o.coverage_end_date"/></td>
-                            </tr>
-                            <tr>
-                                <th>Agente</th>
-                                <td><span t-field="o.agent_id"/></td>
-                                <th>Prima emitida</th>
-                                <td><span t-field="o.policy_amount"/></td>
-                            </tr>
-                            <tr>
-                                <th>Plazo de pago</th>
-                                <td><span t-field="o.payment_term_id"/></td>
-                                <th>Forma de pago</th>
-                                <td><span t-field="o.premium_type"/> (<span t-field="o.installment_amount"/>)</td>
-                            </tr>
-                            <tr>
-                                <th>Compañía de seguros</th>
-                                <td><span t-field="o.insurance_company_id"/></td>
-                                <th>Suma asegurada</th>
-                                <td><span t-field="o.insured_amount"/></td>
+                                <t t-call="insurance_management.report_brand_fact"><t t-set="label" t-value="'Inicio de vigencia'"/><t t-set="value"><span t-field="o.coverage_start_date"/></t></t>
+                                <t t-call="insurance_management.report_brand_fact"><t t-set="label" t-value="'Fin de vigencia'"/><t t-set="value"><span t-field="o.coverage_end_date"/></t></t>
+                                <t t-call="insurance_management.report_brand_fact"><t t-set="label" t-value="'Asegurado'"/><t t-set="value" t-value="o.insured_partner_id.name or o.partner_id.name"/></t>
+                                <t t-call="insurance_management.report_brand_fact"><t t-set="label" t-value="'Conducto de cobro'"/><t t-set="value"><span t-field="o.collection_channel"/></t></t>
                             </tr>
                         </table>
 
-                        <h4 class="mt-4">Detalles de la EMI</h4>
-                        <table class="table table-sm table-bordered">
-                            <thead>
-                                <tr>
-                                    <th>N.º</th>
-                                    <th>Desde</th>
-                                    <th>Hasta</th>
-                                    <th>Importe</th>
-                                    <th>Estado</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                <tr t-foreach="o.installment_ids" t-as="line">
-                                    <td><span t-field="line.number"/></td>
-                                    <td><span t-field="line.date_from"/></td>
-                                    <td><span t-field="line.date_to"/></td>
-                                    <td><span t-field="line.amount"/></td>
-                                    <td><span t-field="line.state"/></td>
-                                </tr>
-                            </tbody>
-                        </table>
-
-                        <t t-if="o.coverage_ids">
-                            <h4 class="mt-4">Coberturas</h4>
-                            <table class="table table-sm table-bordered">
-                                <thead>
-                                    <tr>
-                                        <th>Cobertura</th>
-                                        <th>Suma asegurada</th>
-                                        <th>Deducible</th>
-                                        <th>Coaseguro (%)</th>
-                                        <th>Espera (días)</th>
-                                        <th>Desde</th>
-                                        <th>Hasta</th>
-                                    </tr>
-                                </thead>
+                        <t t-if="o.benefit_ids">
+                            <h2 class="o_ins_rpt_h2">Beneficios</h2>
+                            <table class="o_ins_rpt_table">
+                                <thead><tr><th>Beneficio</th><th class="text-end">Suma asegurada</th><th>Cobertura</th><th>Pago</th><th class="text-end">Prima</th></tr></thead>
                                 <tbody>
-                                    <tr t-foreach="o.coverage_ids" t-as="cov">
-                                        <td><span t-field="cov.name"/></td>
-                                        <td><span t-field="cov.insured_amount"/></td>
-                                        <td><span t-field="cov.deductible"/></td>
-                                        <td><span t-field="cov.coinsurance"/></td>
-                                        <td><span t-field="cov.waiting_days"/></td>
-                                        <td><span t-field="cov.date_from"/></td>
-                                        <td><span t-field="cov.date_to"/></td>
+                                    <tr t-foreach="o.benefit_ids" t-as="b">
+                                        <td><b t-out="b.benefit_id.code"/><t t-if="b.benefit_id.name"> · <t t-out="b.benefit_id.name"/></t><t t-if="b.section"><br/><small t-out="b.section"/></t></td>
+                                        <td class="text-end"><span t-field="b.insured_amount"/></td>
+                                        <td><t t-out="b.coverage_years or '—'"/></td>
+                                        <td><t t-out="b.payment_years or '—'"/></td>
+                                        <td class="text-end"><t t-if="b.no_cost">Sin costo</t><span t-else="" t-field="b.premium"/></td>
                                     </tr>
                                 </tbody>
                             </table>
                         </t>
+
+                        <t t-if="o.coverage_ids">
+                            <h2 class="o_ins_rpt_h2">Coberturas</h2>
+                            <table class="o_ins_rpt_table">
+                                <thead><tr><th>Cobertura</th><th class="text-end">Suma asegurada</th><th class="text-end">Deducible</th><th class="text-end">Coaseguro</th><th>Vigencia</th></tr></thead>
+                                <tbody>
+                                    <tr t-foreach="o.coverage_ids" t-as="cov">
+                                        <td><b t-field="cov.name"/></td>
+                                        <td class="text-end"><span t-field="cov.insured_amount"/></td>
+                                        <td class="text-end"><span t-field="cov.deductible"/></td>
+                                        <td class="text-end"><span t-field="cov.coinsurance"/> %</td>
+                                        <td><span t-field="cov.date_from"/> – <span t-field="cov.date_to"/></td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </t>
+
+                        <t t-if="o.installment_ids">
+                            <h2 class="o_ins_rpt_h2">Calendario de pagos</h2>
+                            <table class="o_ins_rpt_table">
+                                <thead><tr><th>Cuota</th><th>Periodo</th><th>Fecha de cobro</th><th class="text-end">Importe</th><th>Estado</th></tr></thead>
+                                <tbody>
+                                    <tr t-foreach="o.installment_ids" t-as="line">
+                                        <td><t t-out="line.number"/></td>
+                                        <td><span t-field="line.date_from"/> – <span t-field="line.date_to"/></td>
+                                        <td><span t-field="line.due_date"/></td>
+                                        <td class="text-end"><span t-field="line.amount"/></td>
+                                        <td><span t-attf-class="o_ins_rpt_pill o_ins_rpt_pill_#{line.state}" t-field="line.state"/></td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </t>
+
+                        <table class="o_ins_rpt_note">
+                            <tr><td>
+                                <b>Tu asesor:</b> <t t-out="o.agent_id.name or (o.user_id.name if o.user_id else company.name)"/>.
+                                Este resumen es informativo; las condiciones que rigen son las de la carátula y las
+                                condiciones generales emitidas por <t t-out="o.insurance_company_id.name or 'la aseguradora'"/>.
+                            </td></tr>
+                        </table>
+                    </div>
+                </t>
+            </t>
+        </t>
+    </template>
+
+    <!-- ===================== Comprobante de pago (cuota) ===================== -->
+    <template id="report_insurance_receipt_document">
+        <t t-call="web.html_container">
+            <t t-foreach="docs" t-as="o">
+                <t t-set="doc_kind" t-value="'Comprobante de pago'"/>
+                <t t-set="doc_number" t-value="'%s · cuota %s' % (o.policy_id.name, o.number)"/>
+                <t t-call="insurance_management.report_brand_layout">
+                    <div class="page">
+                        <div class="o_ins_rpt_hero">
+                            <div class="o_ins_rpt_eyebrow">Recibimos su pago. ¡Gracias!</div>
+                            <h1 t-out="o.partner_id.name"/>
+                            <div class="o_ins_rpt_sub"><t t-out="o.policy_id.policy_type_id.name or ''"/><t t-if="o.policy_id.insurance_company_id"> · <t t-out="o.policy_id.insurance_company_id.name"/></t></div>
+                        </div>
+                        <table class="o_ins_rpt_amount">
+                            <tr>
+                                <td>
+                                    <small>Importe pagado</small>
+                                    <div class="o_ins_rpt_big"><span t-field="o.paid_amount"/></div>
+                                </td>
+                                <td class="text-end">
+                                    <span t-attf-class="o_ins_rpt_pill o_ins_rpt_pill_#{o.state}" t-field="o.state"/>
+                                </td>
+                            </tr>
+                        </table>
+                        <table class="o_ins_rpt_facts">
+                            <tr>
+                                <t t-call="insurance_management.report_brand_fact"><t t-set="label" t-value="'Póliza'"/><t t-set="value" t-value="o.policy_id.name"/></t>
+                                <t t-call="insurance_management.report_brand_fact"><t t-set="label" t-value="'Cuota'"/><t t-set="value" t-value="'%s de %s' % (o.number, len(o.policy_id.installment_ids))"/></t>
+                                <t t-call="insurance_management.report_brand_fact"><t t-set="label" t-value="'Periodo cubierto'"/><t t-set="value"><span t-field="o.date_from"/> – <span t-field="o.date_to"/></t></t>
+                                <t t-call="insurance_management.report_brand_fact"><t t-set="label" t-value="'Fecha de pago'"/><t t-set="value"><span t-field="o.payment_date"/></t></t>
+                            </tr>
+                            <tr>
+                                <t t-call="insurance_management.report_brand_fact"><t t-set="label" t-value="'Importe de la cuota'"/><t t-set="value"><span t-field="o.amount"/></t></t>
+                                <t t-call="insurance_management.report_brand_fact"><t t-set="label" t-value="'Fecha de cobro'"/><t t-set="value"><span t-field="o.due_date"/></t></t>
+                                <t t-call="insurance_management.report_brand_fact"><t t-set="label" t-value="'Conducto'"/><t t-set="value"><span t-field="o.collection_channel"/></t></t>
+                                <t t-call="insurance_management.report_brand_fact"><t t-set="label" t-value="'Moneda'"/><t t-set="value" t-value="o.currency_id.name"/></t>
+                            </tr>
+                        </table>
+                        <table class="o_ins_rpt_note">
+                            <tr><td>
+                                Este comprobante confirma el pago registrado por su asesor. El recibo fiscal (CFDI) lo
+                                emite la aseguradora o se envía por separado cuando corresponde.
+                            </td></tr>
+                        </table>
+                    </div>
+                </t>
+            </t>
+        </t>
+    </template>
+
+    <!-- ===================== Siniestro ===================== -->
+    <template id="report_insurance_claim_document">
+        <t t-call="web.html_container">
+            <t t-foreach="docs" t-as="o">
+                <t t-set="doc_kind" t-value="'Seguimiento de siniestro'"/>
+                <t t-set="doc_number" t-value="o.name"/>
+                <t t-call="insurance_management.report_brand_layout">
+                    <div class="page">
+                        <div class="o_ins_rpt_hero">
+                            <div class="o_ins_rpt_eyebrow" t-out="' · '.join(x for x in [o.claim_type_id.name, 'Póliza %s' % o.policy_id.name] if x)"/>
+                            <h1 t-out="o.partner_id.name"/>
+                            <div class="o_ins_rpt_sub">Estado: <b><span t-field="o.state"/></b></div>
+                        </div>
+                        <table class="o_ins_rpt_facts">
+                            <tr>
+                                <t t-call="insurance_management.report_brand_fact"><t t-set="label" t-value="'Fecha del evento'"/><t t-set="value"><span t-field="o.occurrence_date"/></t></t>
+                                <t t-call="insurance_management.report_brand_fact"><t t-set="label" t-value="'Hospital / médico'"/><t t-set="value" t-value="o.provider_name or '—'"/></t>
+                                <t t-call="insurance_management.report_brand_fact"><t t-set="label" t-value="'Diagnóstico'"/><t t-set="value" t-value="o.diagnosis or '—'"/></t>
+                                <t t-call="insurance_management.report_brand_fact"><t t-set="label" t-value="'Aseguradora'"/><t t-set="value" t-value="o.policy_id.insurance_company_id.name or '—'"/></t>
+                            </tr>
+                            <tr>
+                                <t t-call="insurance_management.report_brand_fact"><t t-set="label" t-value="'Reclamado'"/><t t-set="value"><span t-field="o.claimed_amount"/></t></t>
+                                <t t-call="insurance_management.report_brand_fact"><t t-set="label" t-value="'Autorizado'"/><t t-set="value"><span t-field="o.authorized_amount"/></t></t>
+                                <t t-call="insurance_management.report_brand_fact"><t t-set="label" t-value="'Pagado'"/><t t-set="value"><span t-field="o.paid_amount"/></t></t>
+                                <t t-call="insurance_management.report_brand_fact"><t t-set="label" t-value="'Deducible'"/><t t-set="value"><span t-field="o.deductible_amount"/></t></t>
+                            </tr>
+                        </table>
+                        <t t-if="o.document_ids">
+                            <h2 class="o_ins_rpt_h2">Documentos del caso</h2>
+                            <table class="o_ins_rpt_table">
+                                <thead><tr><th>Documento</th><th>Estado</th></tr></thead>
+                                <tbody>
+                                    <tr t-foreach="o.document_ids" t-as="d">
+                                        <td t-out="d.document_type_id.name"/>
+                                        <td><span t-attf-class="o_ins_rpt_pill o_ins_rpt_pill_#{d.state}" t-field="d.state"/></td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </t>
+                        <t t-if="o.description">
+                            <h2 class="o_ins_rpt_h2">Relato del caso</h2>
+                            <p class="o_ins_rpt_text" t-out="o.description"/>
+                        </t>
+                        <table t-if="o.state == 'rejected' and o.rejection_reason" class="o_ins_rpt_note">
+                            <tr><td><b>Motivo de rechazo:</b> <t t-out="o.rejection_reason"/></td></tr>
+                        </table>
                     </div>
                 </t>
             </t>

@@ -10,7 +10,7 @@ from urllib.parse import urlencode
 
 from odoo import _, http
 from odoo.exceptions import AccessError, MissingError, UserError, ValidationError
-from odoo.http import request
+from odoo.http import content_disposition, request
 
 from odoo.addons.portal.controllers.portal import CustomerPortal
 
@@ -87,9 +87,17 @@ class InsuranceTeamPortal(http.Controller):
             "emission_stages": EMISSION_STAGES,
             "procedure_states": PROCEDURE_STATES,
             "user": request.env.user,
+            "today_label": self._today_label(svc.today()),
         })
         base.update(values)
         return request.render(template, base)
+
+    @staticmethod
+    def _today_label(day):
+        days = ["lunes", "martes", "miércoles", "jueves", "viernes", "sábado", "domingo"]
+        months = ["enero", "febrero", "marzo", "abril", "mayo", "junio", "julio", "agosto", "septiembre",
+                  "octubre", "noviembre", "diciembre"]
+        return ("%s %s de %s" % (days[day.weekday()], day.day, months[day.month - 1])).capitalize()
 
     def _guard(self, block):
         if not request.env.user._ins_portal_can(block):
@@ -154,6 +162,33 @@ class InsuranceTeamPortal(http.Controller):
         if not allowed:
             raise request.not_found()
         return request.env["ir.binary"]._get_stream_from(attachment).get_response(as_attachment=False)
+
+    @http.route(["/equipo/pdf/<string:slug>/<int:record_id>"], type="http", auth="user")
+    def team_pdf(self, slug, record_id, **kw):
+        """PDF con la marca de la agencia: resumen de póliza, seguimiento de siniestro o comprobante de pago."""
+        reports = {
+            "emisiones": "insurance_management.action_report_insurance_policy",
+            "siniestros": "insurance_management.action_report_insurance_claim",
+            "cobranza": "insurance_management.action_report_insurance_receipt",
+        }
+        block = SLUGS.get(slug)
+        if slug not in reports:
+            raise request.not_found()
+        try:
+            record = self._svc()._record(block, record_id)
+        except ERRORS:
+            raise request.not_found()
+        if slug == "cobranza" and record.state != "paid":
+            raise request.not_found()
+        Report = request.env["ir.actions.report"].sudo()
+        pdf, _type = Report._render_qweb_pdf(reports[slug], record.ids)
+        name = {"emisiones": "Poliza", "siniestros": "Siniestro", "cobranza": "Comprobante"}[slug]
+        filename = "%s-%s.pdf" % (name, (record.display_name or str(record.id)).replace("/", "-"))
+        return request.make_response(pdf, headers=[
+            ("Content-Type", "application/pdf"),
+            ("Content-Length", len(pdf)),
+            ("Content-Disposition", content_disposition(filename, disposition_type="inline")),
+        ])
 
     # ------------------------------------------------------------------ emisiones
     @http.route(["/equipo/emisiones"], type="http", auth="user", website=True)

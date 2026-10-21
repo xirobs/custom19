@@ -1,0 +1,78 @@
+// Reportes PDF con la identidad de Respaldo Patrimonial (morado → índigo, acento turquesa → azul).
+// wkhtmltopdf usa un WebKit antiguo: sin flex ni variables CSS; degradados con -webkit-.
+$rp-purple: #8963ca;
+$rp-indigo: #4b3fcf;
+$rp-primary: #5b47cc;
+$rp-deep: #3b2f96;
+$rp-teal: #1ad3b1;
+$rp-blue: #208cef;
+$rp-ink: #1e1b3a;
+$rp-muted: #5e5a78;
+$rp-line: #e1dcf2;
+$rp-soft: #f5f3fc;
+
+.o_ins_rpt_header {
+    .o_ins_rpt_band {
+        width: 100%; border-collapse: collapse;
+        background: $rp-primary;
+        background: -webkit-linear-gradient(left, $rp-purple, $rp-indigo);
+        background: linear-gradient(90deg, $rp-purple, $rp-indigo);
+        td { padding: 12px 18px; vertical-align: middle; }
+    }
+    .o_ins_rpt_logo img { height: 54px; }
+    .o_ins_rpt_doc { text-align: right; color: #fff; }
+    .o_ins_rpt_kind { font-size: 10px; letter-spacing: 1.5px; text-transform: uppercase; color: #d5e5fa; }
+    .o_ins_rpt_number { font-size: 17px; font-weight: bold; }
+    .o_ins_rpt_accent {
+        height: 4px; background: $rp-teal;
+        background: -webkit-linear-gradient(left, $rp-teal, $rp-blue);
+        background: linear-gradient(90deg, $rp-teal, $rp-blue);
+    }
+}
+
+.o_ins_rpt {
+    color: $rp-ink; font-size: 12px;
+    .o_ins_rpt_hero { margin: 4px 0 14px; }
+    .o_ins_rpt_eyebrow { color: $rp-primary; font-size: 10px; font-weight: bold; letter-spacing: 1.2px; text-transform: uppercase; }
+    h1 { color: $rp-deep; font-size: 24px; font-weight: bold; margin: 2px 0; }
+    .o_ins_rpt_sub { color: $rp-muted; font-size: 13px; }
+    .o_ins_rpt_h2 {
+        color: $rp-deep; font-size: 14px; font-weight: bold; margin: 18px 0 6px; padding-left: 8px;
+        border-left: 4px solid $rp-teal;
+    }
+    .o_ins_rpt_facts {
+        width: 100%; border-collapse: separate; border-spacing: 6px; margin: 0 -6px 4px; table-layout: fixed;
+    }
+    .o_ins_rpt_fact {
+        background: $rp-soft; border: 1px solid $rp-line; border-radius: 8px; padding: 8px 10px; vertical-align: top;
+        small { display: block; color: $rp-muted; font-size: 9px; text-transform: uppercase; letter-spacing: 0.8px; }
+        b { color: $rp-ink; font-size: 12.5px; }
+    }
+    .o_ins_rpt_table {
+        width: 100%; border-collapse: collapse; margin-bottom: 6px;
+        th { background: $rp-deep; color: #fff; font-size: 10px; text-transform: uppercase; letter-spacing: 0.6px; padding: 6px 8px; text-align: left; }
+        th.text-end { text-align: right; }
+        td { padding: 6px 8px; border-bottom: 1px solid $rp-line; vertical-align: top; }
+        tr:nth-child(even) td { background: $rp-soft; }
+        small { color: $rp-muted; }
+    }
+    .o_ins_rpt_pill { display: inline-block; padding: 1px 8px; border-radius: 10px; font-size: 10px; font-weight: bold; background: #ece8fb; color: $rp-deep; }
+    .o_ins_rpt_pill_paid, .o_ins_rpt_pill_signed, .o_ins_rpt_pill_uploaded { background: #dff7f1; color: #0b7a63; }
+    .o_ins_rpt_pill_overdue, .o_ins_rpt_pill_rejected, .o_ins_rpt_pill_cancelled { background: #fde6e6; color: #a22a2a; }
+    .o_ins_rpt_amount {
+        width: 100%; border-collapse: collapse; margin: 6px 0 10px; border: 1px solid $rp-line; border-radius: 10px;
+        td { padding: 14px 16px; vertical-align: middle; }
+        small { color: $rp-muted; text-transform: uppercase; font-size: 10px; letter-spacing: 1px; }
+    }
+    .o_ins_rpt_big { font-size: 28px; font-weight: bold; color: $rp-deep; }
+    .o_ins_rpt_note {
+        width: 100%; margin-top: 18px; border-collapse: collapse;
+        td { background: $rp-soft; border-left: 4px solid $rp-primary; padding: 10px 12px; color: $rp-muted; font-size: 11px; }
+    }
+    .o_ins_rpt_text { white-space: pre-line; }
+}
+
+.o_ins_rpt_footer {
+    .o_ins_rpt_foot { width: 100%; border-top: 2px solid $rp-primary; font-size: 9px; color: $rp-muted;
+        td { padding-top: 6px; } b { color: $rp-deep; } }
+}

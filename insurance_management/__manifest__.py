@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 {
     "name": "Gestión de Aseguradoras",
-    "version": "19.0.7.0.1",
+    "version": "19.0.8.0.0",
     "author": "Jhuliana Delgado",
     "maintainer": "Jhuliana Delgado",
     "website": "",
@@ -78,6 +78,9 @@ Ver static/description/index.html para la ficha completa.
             "insurance_management/static/src/dashboard/insurance_dashboard.scss",
             "insurance_management/static/src/dashboard/insurance_dashboard.js",
             "insurance_management/static/src/dashboard/insurance_dashboard.xml",
+        ],
+        "web.report_assets_common": [
+            "insurance_management/static/src/report/insurance_report.scss",
         ],
         "web.assets_frontend": [
             "insurance_management/static/src/team/team_portal.scss",

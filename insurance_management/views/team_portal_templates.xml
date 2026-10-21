@@ -7,7 +7,7 @@
         <div id="portal_client_category" position="before">
             <div t-if="request.env.user.ins_portal_access" class="o_ins_team_entry my-3">
                 <a href="/equipo" class="o_it_entry_card">
-                    <span class="o_it_entry_icon"><i class="fa fa-shield"/></span>
+                    <span class="o_it_entry_icon"><img src="/insurance_management/static/img/logo_mark_light.png" alt=""/></span>
                     <div>
                         <div class="o_it_entry_title">Portal del equipo</div>
                         <div class="o_it_entry_text">Emisiones, trámites, siniestros, cobranza y prospectos asignados a ti</div>
@@ -28,16 +28,22 @@
     <template id="team_layout" name="Equipo: base">
         <t t-call="portal.portal_layout">
             <t t-set="no_breadcrumbs" t-value="True"/>
+            <link rel="preconnect" href="https://fonts.googleapis.com"/>
+            <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&amp;display=swap"/>
             <div class="o_ins_team">
                 <header class="o_it_head">
                     <a href="/equipo" class="o_it_brand">
-                        <span class="o_it_logo"><i class="fa fa-shield"/></span>
-                        <div>
+                        <img class="o_it_logo_h" src="/insurance_management/static/img/logo_h_light.png" alt="Respaldo Patrimonial · Asesores de Seguros"/>
+                        <div class="o_it_head_meta">
                             <div class="o_it_kicker">Portal del equipo</div>
                             <div class="o_it_hello">Hola, <t t-out="(user.name or '').split(' ')[0]"/></div>
                         </div>
                     </a>
-                    <a href="/my" class="o_it_head_link ms-auto"><i class="fa fa-user-circle-o"/> <span class="d-none d-sm-inline">Mi cuenta</span></a>
+                    <div class="o_it_head_right">
+                        <span class="o_it_date" t-out="today_label"/>
+                        <a href="/my" class="o_it_avatar" t-att-title="'%s · Mi cuenta' % user.name" aria-label="Mi cuenta"
+                           t-out="''.join(w[:1] for w in (user.name or '?').split()[:2]).upper()"/>
+                    </div>
                 </header>
                 <nav t-if="nav" class="o_it_tabs" aria-label="Apartados">
                     <a href="/equipo" t-attf-class="#{'active' if team_page == 'home' else ''}"><i class="fa fa-home"/><span>Inicio</span></a>
@@ -128,11 +134,18 @@
     <template id="team_home" name="Equipo: inicio">
         <t t-call="insurance_management.team_layout">
             <t t-set="cards" t-value="dash['cards']"/>
+            <div class="o_it_welcome">
+                <div>
+                    <h1>¿Qué hacemos hoy?</h1>
+                    <p>Tus pendientes por área. Toca una tarjeta para entrar.</p>
+                </div>
+            </div>
             <section class="o_it_tiles">
                 <t t-foreach="nav" t-as="n">
                     <t t-set="c" t-value="cards.get(n[0], {})"/>
                     <a t-att-href="block_url[n[0]]" t-attf-class="o_it_tile o_it_tile_#{n[0]}">
                         <span class="o_it_tile_icon"><i t-attf-class="fa #{n[2]}"/></span>
+                        <i class="fa fa-arrow-right o_it_tile_go" aria-hidden="true"/>
                         <span class="o_it_tile_name" t-out="n[1]"/>
                         <span class="o_it_tile_count"><b t-out="c.get('count', 0)"/> <small t-out="'pendiente' if c.get('count') == 1 else 'pendientes'"/></span>
                         <span t-if="c.get('hot')" class="o_it_tile_hot"><t t-out="c['hot']"/> <t t-out="c['hot_label']"/></span>
@@ -309,6 +322,7 @@
                         <button class="btn o_it_btn" type="submit"><i class="fa fa-arrow-right"/> Pasar a la siguiente etapa</button>
                     </form>
                     <a t-if="svc.wa_link(policy.partner_id, '')" t-att-href="svc.wa_link(policy.partner_id, 'Hola %s, ' % (policy.partner_id.name or '').split(' ')[0])" target="_blank" class="btn o_it_btn_wa"><i class="fa fa-whatsapp"/> WhatsApp</a>
+                    <a t-att-href="'/equipo/pdf/emisiones/%s' % policy.id" target="_blank" class="btn o_it_btn_light"><i class="fa fa-file-pdf-o o_it_pdf"/> Resumen PDF</a>
                 </div>
                 <details t-if="policy.emission_stage != 'delivered'" class="o_it_details" t-att-open="policy.emission_stage == 'issued' or None">
                     <summary><i class="fa fa-handshake-o"/> Registrar entrega al cliente</summary>
@@ -561,6 +575,7 @@
                         <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
                         <button class="btn o_it_btn" type="submit"><i class="fa fa-paper-plane"/> Enviar a evaluación</button>
                     </form>
+                    <a t-att-href="'/equipo/pdf/siniestros/%s' % claim.id" target="_blank" class="btn o_it_btn_light"><i class="fa fa-file-pdf-o o_it_pdf"/> Seguimiento PDF</a>
                     <form t-if="claim.state in ('paid', 'rejected', 'authorized')" t-att-action="'/equipo/siniestros/%s/accion/close' % claim.id" method="post">
                         <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
                         <button class="btn o_it_btn_light" type="submit"><i class="fa fa-archive"/> Cerrar caso</button>
@@ -672,6 +687,10 @@
                         </div>
                     </div>
                     <div class="o_it_row_amount" t-out="money(ln.paid_amount if view == 'paid' else (ln.balance or ln.amount), ln.currency_id)"/>
+                    <div t-if="view == 'paid'" class="o_it_row_actions">
+                        <a t-att-href="'/equipo/pdf/cobranza/%s' % ln.id" target="_blank" class="btn btn-sm o_it_btn_light"><i class="fa fa-file-pdf-o o_it_pdf"/> <span>Comprobante</span></a>
+                        <a t-if="svc.wa_link(ln.partner_id, '')" t-att-href="svc.wa_link(ln.partner_id, 'Hola %s, recibimos su pago de la póliza %s. ¡Gracias!' % ((ln.partner_id.name or '').split(' ')[0], ln.policy_id.name))" target="_blank" class="btn btn-sm o_it_btn_wa"><i class="fa fa-whatsapp"/> <span>Agradecer</span></a>
+                    </div>
                     <div t-if="view != 'paid'" class="o_it_row_actions">
                         <a t-att-href="'/equipo/cobranza/%s/whatsapp' % ln.id" target="_blank" class="btn btn-sm o_it_btn_wa" t-att-aria-label="'WhatsApp a %s' % ln.partner_id.name"><i class="fa fa-whatsapp"/> <span>WhatsApp</span></a>
                         <form t-att-action="'/equipo/cobranza/%s/correo' % ln.id" method="post">

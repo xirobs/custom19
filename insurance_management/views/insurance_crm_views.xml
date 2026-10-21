@@ -648,6 +648,12 @@
                             <field name="insurance_daily_digest"/>
                         </setting>
                     </block>
+                    <block title="Identidad de la agencia" name="insurance_brand">
+                        <setting string="Logo y colores" help="Pone el logo de la agencia y sus colores (morado e índigo) en la empresa: facturas, correos, inicio de sesión y documentos de Odoo. Los reportes de seguros y el portal del equipo ya los usan.">
+                            <img src="/insurance_management/static/img/logo_h_dark.png" alt="Respaldo Patrimonial" style="height:48px" class="me-3"/>
+                            <button name="action_insurance_apply_brand" type="object" string="Aplicar a la empresa" class="btn-secondary" icon="fa-paint-brush"/>
+                        </setting>
+                    </block>
                 </app>
             </xpath>
         </field>
