@@ -360,7 +360,7 @@ class CalendarEvent(models.Model):
 class ScoutAttendanceLine(models.Model):
     _name = 'scout.attendance.line'
     _description = 'Registro de asistencia'
-    _order = 'date desc, member_id'
+    _order = 'date desc, member_type desc, member_id'
 
     event_id = fields.Many2one('calendar.event', string='Actividad', required=True, ondelete='cascade', index=True)
     member_id = fields.Many2one('res.partner', string='Miembro', required=True, index=True, ondelete='cascade',
@@ -378,7 +378,19 @@ class ScoutAttendanceLine(models.Model):
     section_id = fields.Many2one('scout.section', string='Sección', index=True,
                                  help='Sección del miembro al momento de pasar lista.')
     patrol_id = fields.Many2one(related='member_id.scout_patrol_id', string='Equipo')
+    member_type = fields.Selection([('youth', 'Miembro'), ('leader', 'Dirigente')], string='Tipo',
+                                   compute='_compute_member_type', store=True, index=True)
+    member_role = fields.Char(string='Cargo / equipo', compute='_compute_member_type')
     closed = fields.Boolean(related='event_id.scout_attendance_closed', string='Lista cerrada')
+
+    @api.depends('member_id.scout_type', 'member_id.scout_position_id', 'member_id.scout_patrol_id')
+    def _compute_member_type(self):
+        for line in self:
+            member = line.member_id.sudo()
+            is_leader = member.scout_type == 'leader'
+            line.member_type = 'leader' if is_leader else 'youth'
+            line.member_role = (member.scout_position_id.name or _('Dirigente')) if is_leader \
+                else (member.scout_patrol_id.name or '')
 
     _event_member_uniq = models.Constraint(
         'UNIQUE (event_id, member_id)', 'El miembro ya está en la lista de esta actividad.')

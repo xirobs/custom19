@@ -380,7 +380,7 @@ class ScoutLeaderPortal(models.AbstractModel):
         if event.scout_scope == 'group':
             members = self._members(section, include_leaders=True)
             lines = lines.filtered(lambda l: l.member_id in members or l.section_id == section)
-        return lines.sorted(lambda l: (l.member_id.scout_type == 'leader', l.patrol_id.sequence or 0,
+        return lines.sorted(lambda l: (l.member_type == 'leader', l.patrol_id.sequence or 0,
                                        l.patrol_id.name or '', l.member_id.name or ''))
 
     @api.model

@@ -407,6 +407,11 @@ $scout-wa: #25d366;
     // Recursos para dirigentes
     .o_sl_tile_res i { color: #2e7d8f; }
 
+    // Pase de lista: jefes separados y con borde azul
+    .o_sl_grid_head { grid-column: 1 / -1; margin: 0.6rem 0 0.1rem; font-weight: 800; color: $scout-navy;
+        border-top: 2px dashed #c8d2dc; padding-top: 0.6rem; i { color: $scout-orange; } }
+    .o_sl_card_leader { box-shadow: inset 0 0 0 3px $scout-navy; }
+
     // Nuevos ingresos y reinscripción
     .o_sl_tile_renew { background: $scout-navy; border-color: $scout-navy; color: #fff;
         i { color: $scout-orange; } small { color: #c9d6e2; } }

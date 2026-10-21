@@ -114,10 +114,13 @@
                     </div>
                     <field name="scout_attendance_line_ids" readonly="scout_attendance_closed">
                         <list editable="bottom" decoration-success="status in ('present', 'camp', 'outing')"
-                              decoration-danger="status == 'absent'" decoration-muted="status in ('na', 'no_roll', 'dropped')">
+                              decoration-danger="status == 'absent'" decoration-muted="status in ('na', 'no_roll', 'dropped')"
+                              decoration-bf="member_type == 'leader'">
                             <field name="member_id"/>
+                            <field name="member_type" widget="badge" decoration-info="member_type == 'leader'" decoration-muted="member_type == 'youth'"/>
+                            <field name="member_role" string="Cargo / equipo" optional="show"/>
                             <field name="section_id" optional="show"/>
-                            <field name="patrol_id" optional="show"/>
+                            <field name="patrol_id" optional="hide"/>
                             <field name="status"/>
                             <field name="note" optional="show"/>
                         </list>

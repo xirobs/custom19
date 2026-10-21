@@ -225,11 +225,13 @@
             <div t-attf-class="o_sl_grid #{'o_sl_closed' if event.scout_attendance_closed else ''}" data-sl-attendance="1">
                 <t t-foreach="lines" t-as="line">
                     <t t-set="person" t-value="line.member_id"/>
-                    <div t-attf-class="o_sl_card o_sl_st_#{status_labels.get(line.status, ('', 'na'))[1]}" t-att-data-line="line.id" t-att-data-status="line.status">
+                    <div t-if="line.member_type == 'leader' and (line_index == 0 or lines[line_index - 1].member_type != 'leader')"
+                         class="o_sl_grid_head"><i class="fa fa-star"/> Jefes y dirigentes</div>
+                    <div t-attf-class="o_sl_card o_sl_st_#{status_labels.get(line.status, ('', 'na'))[1]} #{'o_sl_card_leader' if line.member_type == 'leader' else ''}" t-att-data-line="line.id" t-att-data-status="line.status">
                         <button type="button" class="o_sl_card_tap" t-att-disabled="event.scout_attendance_closed or None">
                             <t t-call="scout_management.leader_avatar"/>
                             <span class="o_sl_card_name" t-out="person.scout_name or person.name.split(' ')[0]"/>
-                            <span class="o_sl_card_sub" t-out="'Dirigente' if person.scout_type == 'leader' else (line.patrol_id.name or '')"/>
+                            <span class="o_sl_card_sub" t-out="line.member_role or ''"/>
                             <span class="o_sl_card_state" t-out="status_labels.get(line.status, (line.status, ''))[0]"/>
                             <span t-if="person.scout_trial_attendance"
                                   t-attf-class="o_sl_card_alert #{'o_sl_card_alert_red' if person.scout_needs_registration else ''}"
