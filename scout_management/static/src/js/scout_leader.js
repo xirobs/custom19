@@ -345,6 +345,17 @@ function setupHelpers() {
 function start() {
     // Fotos: también en el portal de familias y en la ficha de registro.
     document.querySelectorAll(".o_scout_photo_pick input[data-sl-photo]").forEach(setupPhoto);
+    // Copiar la CLABE de los datos de transferencia
+    document.querySelectorAll(".o_scout_copy[data-copy]").forEach((btn) =>
+        btn.addEventListener("click", async () => {
+            try {
+                await navigator.clipboard.writeText(btn.dataset.copy);
+                btn.innerHTML = '<i class="fa fa-check"></i> Copiada';
+            } catch {
+                window.prompt("Copia la CLABE:", btn.dataset.copy);
+            }
+        })
+    );
     if (!document.querySelector(".o_scout_leader")) {
         return;
     }

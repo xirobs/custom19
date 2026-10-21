@@ -292,6 +292,38 @@ class ScoutRegistration(models.Model):
             reg.message_post(body=_('Pago en efectivo registrado por %s.', self.env.user.name))
         return True
 
+    def _scout_declare_transfer(self, reference, pay_date, amount, proof=False, proof_name=False):
+        """La familia avisa que pagó por transferencia: se guarda y tesorería recibe la tarea de verificarla."""
+        treasurers = self.env.ref('scout_management.group_scout_treasurer').sudo().all_user_ids.filtered(
+            lambda u: u.active and not u.share and u.id != 1)
+        todo = self.env.ref('mail.mail_activity_data_todo', raise_if_not_found=False)
+        for reg in self.sudo():
+            try:
+                pay_date = fields.Date.to_date(pay_date) if pay_date else False
+            except ValueError:
+                pay_date = False
+            try:
+                amount = float(amount or 0.0)
+            except ValueError:
+                amount = 0.0
+            vals = {'payment_method': 'transfer', 'declared_paid': True,
+                    'payment_reference': (reference or '').strip() or reg.payment_reference,
+                    'payment_date': pay_date or reg.payment_date or fields.Date.context_today(reg),
+                    'payment_amount': amount or reg.payment_amount}
+            if proof:
+                vals.update(payment_proof=proof, payment_proof_name=proof_name)
+            reg.write(vals)
+            note = _('%(name)s avisó que pagó el registro por transferencia: referencia %(ref)s del %(date)s por '
+                     '%(amount)s. Verifica en el banco y registra el pago en el cargo.',
+                     name=reg.member_id.name or reg.first_name, ref=reg.payment_reference or '-',
+                     date=reg.payment_date or '-', amount='$%.2f' % (reg.payment_amount or 0.0))
+            target = reg.invoice_id or reg
+            for user in treasurers[:2]:
+                target.activity_schedule(activity_type_id=todo.id if todo else False,
+                                         summary=_('Conciliar transferencia de registro'), note=note, user_id=user.id)
+            reg.message_post(body=note, attachment_ids=[])
+        return True
+
     def _scout_payment_path(self):
         """Página pública para elegir pago en línea o en efectivo (liga para la familia)."""
         self.ensure_one()

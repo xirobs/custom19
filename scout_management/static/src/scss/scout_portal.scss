@@ -502,3 +502,100 @@ $scout-wa: #25d366;
 .o_scout_avatar_big { width: 84px; height: 84px; border-radius: 50%; object-fit: cover; border: 3px solid #f36f45; display: block; }
 .o_scout_avatar_empty { display: flex; align-items: center; justify-content: center; background: #e8edf2; color: #5c6b7a; font-size: 1.6rem; }
 .o_scout_photo_cta { display: block; font-size: 0.75rem; font-weight: 700; color: #0f3049; margin-top: 0.25rem; }
+
+// Datos de transferencia
+.o_scout_transfer_box { background: #f4f8fb; border: 1px solid #c9d6e2; border-left: 4px solid #0f3049; border-radius: 10px;
+    padding: 0.8rem 1rem; color: #14212b;
+    dl { display: grid; grid-template-columns: max-content 1fr; gap: 0.15rem 0.8rem; margin: 0.4rem 0; }
+    dt { font-weight: 600; color: #5c6b7a; } dd { margin: 0; }
+    .o_scout_clabe { font-size: 1.05rem; letter-spacing: 0.04em; } }
+.o_scout_transfer_title { font-weight: 800; color: #0f3049; }
+.o_scout_register_form:not(:has(input[value="transfer"]:checked)) .o_scout_transfer { display: none; }
+
+// ===================== Aula virtual y avances (portal de familias) =====================
+$aula-navy: #0f3049;
+$aula-orange: #f36f45;
+$aula-green: #2e9e5b;
+.o_aula_entry { display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem;
+    @media (max-width: 575px) { grid-template-columns: 1fr; } }
+.o_aula_entry_btn { display: flex; align-items: center; gap: 0.8rem; padding: 1rem; border-radius: 16px; color: #fff !important;
+    text-decoration: none !important; box-shadow: 0 4px 14px rgba(15, 48, 73, 0.18);
+    i { font-size: 2rem; } span { display: flex; flex-direction: column; } small { opacity: 0.85; }
+    &:hover { transform: translateY(-1px); } }
+.o_aula_entry_class { background: linear-gradient(135deg, $aula-navy, #1f5f8b); }
+.o_aula_entry_board { background: linear-gradient(135deg, $aula-orange, #f5a03a); }
+.o_scout_aula { max-width: 760px; margin: 0 auto; }
+.o_aula_kicker { color: $aula-orange; font-weight: 800; font-size: 0.8rem; letter-spacing: 0.04em; text-transform: uppercase; }
+.o_aula_hero { display: flex; align-items: center; gap: 1rem; padding: 1.1rem; border-radius: 18px; color: #fff;
+    background: linear-gradient(135deg, $aula-navy, #1f5f8b); box-shadow: 0 6px 18px rgba(15, 48, 73, 0.2);
+    .o_aula_kicker { color: #ffc8b4; } h3 { color: #fff; } }
+.o_aula_hero_txt { flex: 1; }
+.o_aula_ring { --p: 0; width: 92px; height: 92px; border-radius: 50%; flex: 0 0 auto; display: flex; flex-direction: column;
+    align-items: center; justify-content: center; color: #fff; position: relative;
+    background: conic-gradient($aula-orange calc(var(--p) * 1%), rgba(255, 255, 255, 0.2) 0);
+    &::before { content: ""; position: absolute; inset: 9px; border-radius: 50%; background: #17476b; }
+    b, small { position: relative; } b { font-size: 1.3rem; line-height: 1; } small { font-size: 0.7rem; opacity: 0.85; } }
+.o_aula_stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.5rem; margin: 0.8rem 0 1rem;
+    > div, > a { background: #fff; border: 1px solid #e1e7ee; border-radius: 14px; padding: 0.6rem; text-align: center;
+        color: $aula-navy; text-decoration: none; display: flex; flex-direction: column; justify-content: center; }
+    b { font-size: 1.1rem; } small { color: #5c6b7a; font-size: 0.72rem; } a i { color: $aula-orange; font-size: 1.3rem; } }
+.o_aula_empty { text-align: center; color: #5c6b7a; background: #fff; border: 2px dashed #c8d2dc; border-radius: 16px; padding: 1.5rem; }
+.o_aula_path { position: relative; padding-left: 0.2rem; }
+.o_aula_unit { background: #fff; border: 1px solid #e1e7ee; border-radius: 16px; margin-bottom: 0.7rem; overflow: hidden;
+    box-shadow: 0 2px 6px rgba(15, 48, 73, 0.06);
+    summary { list-style: none; display: flex; align-items: center; gap: 0.75rem; padding: 0.8rem 0.9rem; cursor: pointer;
+        &::-webkit-details-marker { display: none; } }
+    &.o_aula_locked { background: #f4f6f8; summary { cursor: default; } .o_aula_unit_txt b { color: #7b8794; } }
+    &.o_aula_current { border: 2px solid $aula-orange; box-shadow: 0 4px 16px rgba(243, 111, 69, 0.2); } }
+.o_aula_dot { width: 42px; height: 42px; border-radius: 50%; display: flex; align-items: center; justify-content: center;
+    flex: 0 0 auto; background: $aula-navy; color: #fff; font-size: 1.1rem;
+    .o_aula_done & { background: $aula-green; } .o_aula_current & { background: $aula-orange; animation: o_aula_pulse 2s infinite; }
+    .o_aula_locked & { background: #c8d2dc; } }
+@keyframes o_aula_pulse { 0%, 100% { box-shadow: 0 0 0 0 rgba(243, 111, 69, 0.45); } 50% { box-shadow: 0 0 0 8px rgba(243, 111, 69, 0); } }
+.o_aula_unit_txt { flex: 1; display: flex; flex-direction: column; b { color: $aula-navy; } small { color: #5c6b7a; } }
+.o_aula_badge { background: $aula-orange; color: #fff; border-radius: 999px; font-size: 0.72rem; font-weight: 800; padding: 0.15rem 0.6rem; }
+.o_aula_badge_done { background: $aula-green; }
+.o_aula_bar { height: 8px; background: #e8edf2; border-radius: 999px; overflow: hidden; margin: 0.25rem 0;
+    span { display: block; height: 100%; background: $aula-green; border-radius: 999px; } }
+.o_aula_unit > .o_aula_bar { margin: 0 0.9rem 0.4rem; }
+.o_aula_bar_big { height: 12px; }
+.o_aula_items { display: flex; flex-direction: column; gap: 0.45rem; padding: 0.2rem 0.9rem 0.9rem; }
+.o_aula_item { display: flex; align-items: center; gap: 0.7rem; padding: 0.55rem; border-radius: 12px; background: #f7f9fb;
+    border: 1px solid #e8edf2; color: $aula-navy !important; text-decoration: none !important;
+    &:hover { background: #fff3ed; border-color: #f9c3b0; }
+    &.o_aula_seen { background: #eef8f1; border-color: #cde9d6; } }
+.o_aula_item_locked { opacity: 0.6; filter: grayscale(1); }
+.o_aula_item_icon { width: 54px; height: 42px; border-radius: 10px; flex: 0 0 auto; display: flex; align-items: center;
+    justify-content: center; font-size: 1.3rem; color: #fff; background: #5c6b7a; overflow: hidden;
+    img { width: 100%; height: 100%; object-fit: cover; }
+    .o_aula_k_pdf & { background: #d64545; } .o_aula_k_video & { background: #c4302b; } .o_aula_k_document & { background: #2b5797; }
+    .o_aula_k_presentation & { background: #d24726; } .o_aula_k_sheet & { background: #1e7145; } .o_aula_k_image & { background: #7e57c2; }
+    .o_aula_k_audio & { background: #00897b; } .o_aula_k_link & { background: #1f6fb5; } }
+.o_aula_item_txt { flex: 1; min-width: 0; display: flex; flex-direction: column;
+    b { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; } small { color: #5c6b7a; } }
+.o_aula_tick { color: $aula-green; font-size: 1.4rem; }
+.o_aula_go { color: $aula-orange; font-size: 1.4rem; }
+.o_aula_video { position: relative; padding-top: 56.25%; border-radius: 14px; overflow: hidden; background: #000;
+    iframe { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; } }
+.o_aula_pdf { width: 100%; height: 75vh; border: 0; border-radius: 12px; }
+.o_aula_big { text-align: center; font-size: 4rem; color: $aula-navy; background: #f4f6f8; border-radius: 14px; padding: 1.5rem; }
+.o_aula_next { background: $aula-orange !important; border-color: $aula-orange !important; }
+// Tablero de avances
+.o_board_h { margin: 1.1rem 0 0.5rem; color: $aula-navy; font-weight: 800; i { color: $aula-orange; } }
+.o_board_me { display: flex; align-items: center; gap: 0.8rem; padding: 0.9rem; border-radius: 16px; background: #fff3ed;
+    border: 2px solid $aula-orange; }
+.o_board_pos { width: 58px; height: 58px; border-radius: 50%; background: $aula-orange; color: #fff; display: flex;
+    flex-direction: column; align-items: center; justify-content: center; flex: 0 0 auto;
+    small { font-size: 0.6rem; line-height: 1; } b { font-size: 1.4rem; line-height: 1; } }
+.o_board_teams { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 0.5rem; }
+.o_board_team { background: #fff; border: 1px solid #e1e7ee; border-left: 5px solid var(--team); border-radius: 12px; padding: 0.6rem;
+    small { color: #5c6b7a; } &.o_board_team_mine { box-shadow: 0 0 0 2px var(--team); } }
+.o_board_medal { float: right; font-size: 1.2rem; }
+.o_board_list { display: flex; flex-direction: column; gap: 0.45rem; }
+.o_board_row { display: flex; align-items: center; gap: 0.6rem; background: #fff; border: 1px solid #e1e7ee; border-radius: 12px;
+    padding: 0.55rem 0.7rem; &.o_board_row_me { border: 2px solid $aula-orange; background: #fffaf7; } }
+.o_board_rank { width: 1.8rem; text-align: center; font-weight: 800; color: #5c6b7a; font-size: 1.05rem; flex: 0 0 auto; }
+.o_board_avatar { width: 40px; height: 40px; border-radius: 50%; object-fit: cover; flex: 0 0 auto; }
+.o_board_initials { display: flex; align-items: center; justify-content: center; color: #fff; font-weight: 800; font-size: 0.85rem; }
+.min-w-0 { min-width: 0; }
+.o_sl_res_aula { color: #2e9e5b; font-weight: 700; margin-left: 0.3rem; }

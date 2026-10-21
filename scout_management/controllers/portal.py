@@ -103,6 +103,87 @@ class ScoutPortal(CustomerPortal):
         })
         return request.render('scout_management.portal_scout_detail', values)
 
+    # ------------------------------------------------------------------ aula virtual y avances de la sección
+    @http.route(['/my/scouts/<int:member_id>/aula'], type='http', auth='user', website=True)
+    def portal_scout_classroom(self, member_id, **kw):
+        try:
+            member = self._scout_member_check(member_id)
+        except (AccessError, MissingError):
+            return request.redirect('/my/scouts')
+        values = self._prepare_portal_layout_values()
+        values.update({'member': member, 'aula': request.env['scout.resource'].sudo()._scout_classroom(member),
+                       'locked': kw.get('bloqueado'), 'page_name': 'scout_classroom'})
+        return request.render('scout_management.portal_scout_classroom', values)
+
+    def _scout_classroom_item(self, member, resource_id):
+        resource = request.env['scout.resource'].sudo().browse(int(resource_id)).exists()
+        if not resource or not resource.for_scouts or not resource._scout_unlocked_for(member):
+            return None
+        return resource
+
+    @http.route(['/my/scouts/<int:member_id>/aula/<int:resource_id>'], type='http', auth='user', website=True)
+    def portal_scout_classroom_resource(self, member_id, resource_id, **kw):
+        try:
+            member = self._scout_member_check(member_id)
+        except (AccessError, MissingError):
+            return request.redirect('/my/scouts')
+        resource = self._scout_classroom_item(member, resource_id)
+        if not resource:
+            return request.redirect(f'/my/scouts/{member.id}/aula?bloqueado=1')
+        resource._scout_mark_seen(member)
+        aula = request.env['scout.resource'].sudo()._scout_classroom(member)
+        unit = next((u for u in aula['units'] if any(i['resource'] == resource for i in u['items'])), None)
+        flat = [i['resource'] for u in aula['units'] if u['state'] != 'locked' for i in u['items']]
+        position = flat.index(resource) if resource in flat else -1
+        values = self._prepare_portal_layout_values()
+        values.update({
+            'member': member, 'resource': resource, 'unit': unit, 'aula': aula,
+            'next_resource': flat[position + 1] if 0 <= position < len(flat) - 1 else None,
+            'prev_resource': flat[position - 1] if position > 0 else None,
+            'file_url': f'/my/scouts/{member.id}/aula/{resource.id}/archivo', 'page_name': 'scout_classroom',
+        })
+        return request.render('scout_management.portal_scout_classroom_resource', values)
+
+    @http.route(['/my/scouts/<int:member_id>/aula/<int:resource_id>/archivo'], type='http', auth='user')
+    def portal_scout_classroom_file(self, member_id, resource_id, descargar=None, **kw):
+        try:
+            member = self._scout_member_check(member_id)
+        except (AccessError, MissingError):
+            return request.not_found()
+        resource = self._scout_classroom_item(member, resource_id)
+        if not resource or not resource.file:
+            return request.not_found()
+        stream = request.env['ir.binary']._get_stream_from(
+            resource, 'file', filename=resource.file_name or resource.name, mimetype=resource._scout_mimetype())
+        return stream.get_response(as_attachment=bool(descargar))
+
+    @http.route(['/my/scouts/<int:member_id>/avances'], type='http', auth='user', website=True)
+    def portal_scout_section_board(self, member_id, **kw):
+        """Tablero de avances de la sección (para motivar): cómo va cada scout y cada equipo."""
+        try:
+            member = self._scout_member_check(member_id)
+        except (AccessError, MissingError):
+            return request.redirect('/my/scouts')
+        section = member.sudo().scout_section_id
+        portal = request.env['scout.leader.portal'].sudo()
+        rows = portal.achievements(section, []) if section else []
+        rows.sort(key=lambda r: (-r['pct'], -r['specialties'], r['member'].name or ''))
+        teams = {}
+        for row in rows:
+            patrol = row['member'].scout_patrol_id
+            if patrol:
+                teams.setdefault(patrol, []).append(row['pct'])
+        team_rows = sorted(({'patrol': p, 'pct': round(sum(v) / len(v)), 'members': len(v)} for p, v in teams.items()),
+                           key=lambda t: -t['pct'])
+        values = self._prepare_portal_layout_values()
+        values.update({
+            'member': member, 'section': section, 'rows': rows, 'team_rows': team_rows,
+            'mine': next((r for r in rows if r['member'] == member), None),
+            'position': next((i + 1 for i, r in enumerate(rows) if r['member'] == member), 0),
+            'portal_svc': portal, 'page_name': 'scout_board',
+        })
+        return request.render('scout_management.portal_scout_section_board', values)
+
     @http.route(['/my/scouts/<int:member_id>/foto'], type='http', auth='user', website=True, methods=['POST'])
     def portal_scout_photo(self, member_id, **post):
         """El tutor (o el propio scout con su usuario) sube o cambia la foto del miembro."""
@@ -177,8 +258,12 @@ def scout_register_values(member, partner=None, error=None, section=None):
         rules[sec.id] = {'upper': pass_ or stay, 'gender': sec.gender or ''}
     previous = env['scout.registration'].sudo().search(
         [('member_id', '=', member.id), ('state', '!=', 'cancel')], order='id desc', limit=1) if member else None
+    cycle = env['scout.cycle'].sudo()._get_registration()
+    company = (section or member.scout_section_id).company_id or cycle.company_id or env.company
     return {
-        'member': member, 'cycle': env['scout.cycle'].sudo()._get_registration(),
+        'transfer': company._scout_transfer_info(member.name if member else None,
+                                                 member.scout_section_id if member else section),
+        'member': member, 'cycle': cycle,
         'partner': partner or member.scout_guardian_id or env['res.partner'],
         'previous': previous, 'preset_section': section or member.scout_section_id,
         'sections': sections, 'section_rules_json': json.dumps(rules),
@@ -369,12 +454,24 @@ class ScoutPublicRegistration(http.Controller):
                 reg._scout_set_payment_method('cash')
                 message = _('Listo: entrega el efectivo a tesorería o a la jefatura en la próxima junta. '
                             'Te darán tu recibo.')
+            if post.get('method') == 'transfer':
+                proof = post.get('payment_proof')
+                content = proof.read() if proof and hasattr(proof, 'read') else b''
+                if len(content) > MAX_PROOF_SIZE:
+                    message = _('El comprobante no debe superar 5 MB.')
+                else:
+                    reg._scout_declare_transfer(post.get('payment_reference'), post.get('payment_date'),
+                                                post.get('payment_amount'),
+                                                base64.b64encode(content) if content else False,
+                                                proof.filename if content else False)
+                    message = _('¡Gracias! Avisamos a tesorería; al verificar la transferencia tu registro quedará pagado.')
         invoice = reg.invoice_id
         return request.render('scout_management.scout_registration_payment', {
             'registration': reg, 'invoice': invoice, 'message': message, 'access_token': access_token,
             'can_online': bool(invoice and invoice.scout_can_pay_online and request.env['payment.provider'].sudo()
                                .search_count([('state', 'in', ('enabled', 'test'))])),
             'paid': reg.payment_state in ('paid', 'exempt'),
+            'transfer': reg.company_id._scout_transfer_info(reg.member_id.name or reg.first_name, reg.section_id),
         })
 
 

@@ -996,12 +996,23 @@ class ScoutLeaderPortal(models.AbstractModel):
         from .scout_online_payment import scout_qr_data_uri, scout_whatsapp_phone
         reg = self.registration(member)
         invoice = reg.invoice_id if reg else self.env['account.move']
+        company = (reg.company_id if reg else member.company_id) or self.env.company
+        transfer = company._scout_transfer_info(member.name, reg.section_id if reg else member.scout_section_id)
+        extra = {}
+        if transfer:
+            phone = scout_whatsapp_phone(member.scout_guardian_id.phone)
+            amount = f' por ${invoice.amount_residual:,.2f}' if invoice else ''
+            text = _('Hola, estos son los datos para pagar el registro de %(name)s%(amount)s por transferencia:\n'
+                     '%(data)s\nEnvía tu comprobante por WhatsApp. ¡Gracias!', name=member.name, amount=amount,
+                     data=transfer['text'])
+            extra = {'transfer': transfer, 'whatsapp_transfer': f'https://wa.me/{phone}?text={quote(text)}' if phone
+                     else f'https://wa.me/?text={quote(text)}'}
         if not invoice or not invoice.scout_can_pay_online:
-            return {'registration': reg, 'invoice': invoice}
+            return {'registration': reg, 'invoice': invoice, **extra}
         link = invoice._scout_payment_link()
         phone = scout_whatsapp_phone(invoice.partner_id.phone or member.scout_guardian_id.phone)
         text = invoice._scout_payment_message(link)
-        return {'registration': reg, 'invoice': invoice, 'link': link, 'qr': scout_qr_data_uri(link),
+        return {**extra, 'registration': reg, 'invoice': invoice, 'link': link, 'qr': scout_qr_data_uri(link),
                 'whatsapp': f'https://wa.me/{phone}?text={quote(text)}' if phone else
                 f'https://wa.me/?text={quote(text)}'}
 

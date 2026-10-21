@@ -60,3 +60,5 @@ access_scout_resource_category_user,scout.resource.category user,model_scout_res
 access_scout_resource_category_officer,scout.resource.category officer,model_scout_resource_category,group_scout_officer,1,1,1,1
 access_scout_resource_user,scout.resource user,model_scout_resource,group_scout_leader,1,0,0,0
 access_scout_resource_officer,scout.resource officer,model_scout_resource,group_scout_officer,1,1,1,1
+access_scout_resource_view_leader,scout.resource.view leader,model_scout_resource_view,scout_management.group_scout_leader,1,0,0,0
+access_scout_resource_view_officer,scout.resource.view officer,model_scout_resource_view,scout_management.group_scout_officer,1,1,1,1

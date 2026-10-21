@@ -18,6 +18,36 @@ class ResCompany(models.Model):
              '"por aprobar" hasta que el jefe de grupo los autoriza.')
 
 
+class ResCompanyTransfer(models.Model):
+    _inherit = 'res.company'
+
+    scout_bank_name = fields.Char(string='Banco', help='Ej. Banorte')
+    scout_bank_clabe = fields.Char(string='CLABE', help='CLABE interbancaria de 18 dígitos para transferencias (SPEI).')
+    scout_bank_holder = fields.Char(string='Nombre del titular')
+    scout_bank_phone = fields.Char(string='Teléfono para enviar el comprobante')
+    scout_bank_concept = fields.Char(string='Concepto / comentario', default='Nombre del niño y sección',
+                                     help='Qué deben escribir en el concepto de la transferencia.')
+
+    def _scout_transfer_info(self, member_name=None, section=None):
+        """Datos para pagar por transferencia (o False si no están configurados)."""
+        company = self[:1].sudo()
+        if not company or not company.scout_bank_clabe:
+            return False
+        section_name = section.display_name if section else ''
+        concept = ' - '.join(p for p in ((member_name or '').strip(), section_name) if p) or company.scout_bank_concept
+        lines = [_('Banco: %s', company.scout_bank_name or '-'), _('CLABE: %s', company.scout_bank_clabe),
+                 _('Nombre: %s', company.scout_bank_holder or company.name)]
+        if company.scout_bank_phone:
+            lines.append(_('Teléfono: %s', company.scout_bank_phone))
+        lines.append(_('Comentario: %s', concept))
+        return {
+            'bank': company.scout_bank_name or '', 'clabe': company.scout_bank_clabe,
+            'holder': company.scout_bank_holder or company.name, 'phone': company.scout_bank_phone or '',
+            'concept': concept, 'concept_hint': company.scout_bank_concept or '',
+            'text': '\n'.join(lines),
+        }
+
+
 class ResCompanyBranding(models.Model):
     _inherit = 'res.company'
 

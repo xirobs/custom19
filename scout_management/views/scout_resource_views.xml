@@ -30,6 +30,8 @@
                 <field name="kind"/>
                 <field name="pinned"/>
                 <field name="thumbnail_url"/>
+                <field name="for_scouts"/>
+                <field name="all_sections"/>
                 <templates>
                     <t t-name="card">
                         <div class="d-flex gap-2 align-items-start">
@@ -37,8 +39,10 @@
                             <div class="flex-grow-1">
                                 <field name="name" class="fw-bold"/>
                                 <i t-if="record.pinned.raw_value" class="fa fa-thumb-tack ms-1 text-warning" title="Destacado"/>
-                                <div class="text-muted small"><field name="kind"/></div>
-                                <field name="section_ids" widget="many2many_tags"/>
+                                <div class="text-muted small"><field name="kind"/>
+                                    <t t-if="record.for_scouts.raw_value"> · <span class="badge text-bg-success">Aula</span> <field name="stage_id"/></t></div>
+                                <span t-if="record.all_sections.raw_value" class="badge text-bg-secondary">Todas las secciones</span>
+                                <field t-else="" name="section_ids" widget="many2many_tags"/>
                             </div>
                         </div>
                     </t>
@@ -58,6 +62,9 @@
                 <field name="category_id"/>
                 <field name="kind"/>
                 <field name="section_ids" widget="many2many_tags" optional="show"/>
+                <field name="all_sections" optional="hide"/>
+                <field name="for_scouts" widget="boolean_toggle" optional="show"/>
+                <field name="stage_id" optional="show"/>
                 <field name="create_uid" string="Subido por" optional="hide"/>
                 <field name="create_date" string="Fecha" optional="hide"/>
             </list>
@@ -84,14 +91,22 @@
                             <field name="kind"/>
                         </group>
                         <group>
-                            <field name="section_ids" widget="many2many_tags" placeholder="Todas las secciones"/>
+                            <field name="all_sections"/>
+                            <field name="section_ids" widget="many2many_tags" invisible="all_sections" required="not all_sections"
+                                   placeholder="Ej. Lobatos"/>
+                            <field name="for_scouts"/>
+                            <field name="stage_id" invisible="not for_scouts" placeholder="Desde el inicio"
+                                   options="{'no_create': True}"/>
                             <field name="pinned"/>
+                            <field name="view_count" invisible="not for_scouts"/>
                             <field name="company_id" groups="base.group_multi_company"/>
                             <field name="active" invisible="1"/>
                         </group>
                     </group>
                     <field name="description" placeholder="Para qué sirve, a qué edad o etapa aplica, cuándo usarlo…"/>
                     <div class="text-muted small mt-2">
+                        <b>Aula virtual:</b> si marcas "Visible para los scouts", el recurso aparece en el portal de las familias
+                        dentro de la unidad del adelanto elegido, y se abre hasta que el scout llega a ese adelanto (así lo ven en orden).<br/>
                         Los videos pesados conviene subirlos a YouTube (puede ser "no listado") y pegar aquí la liga:
                         se ven dentro del portal sin gastar espacio del servidor.
                     </div>
@@ -111,6 +126,8 @@
                 <field name="category_id"/>
                 <field name="section_ids"/>
                 <filter name="pinned" string="Destacados" domain="[('pinned', '=', True)]"/>
+                <filter name="for_scouts" string="Aula virtual (scouts)" domain="[('for_scouts', '=', True)]"/>
+                <filter name="leaders_only" string="Solo jefes" domain="[('for_scouts', '=', False)]"/>
                 <separator/>
                 <filter name="videos" string="Videos" domain="[('kind', '=', 'video')]"/>
                 <filter name="pdfs" string="PDF" domain="[('kind', '=', 'pdf')]"/>
@@ -119,6 +136,7 @@
                 <group>
                     <filter name="group_category" string="Categoría" context="{'group_by': 'category_id'}"/>
                     <filter name="group_kind" string="Tipo" context="{'group_by': 'kind'}"/>
+                    <filter name="group_stage" string="Adelanto" context="{'group_by': 'stage_id'}"/>
                 </group>
             </search>
         </field>

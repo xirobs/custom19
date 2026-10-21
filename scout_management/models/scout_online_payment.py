@@ -64,12 +64,16 @@ class AccountMove(models.Model):
     def _scout_payment_message(self, link=None):
         self.ensure_one()
         member = self.scout_member_id
-        return _('Hola %(name)s, este es el enlace para pagar en línea %(concept)s%(member)s por %(amount)s '
-                 '(tarjeta, OXXO o Mercado Pago): %(link)s\n%(company)s',
+        text = _('Hola %(name)s, este es el enlace para pagar en línea %(concept)s%(member)s por %(amount)s '
+                 '(tarjeta, OXXO o Mercado Pago): %(link)s',
                  name=self.partner_id.name or '', concept=self.invoice_line_ids[:1].name or self.name,
                  member=_(' de %s', member.name) if member else '',
-                 amount=f'${self.amount_residual:,.2f}', link=link or self._scout_payment_link(),
-                 company=self.company_id.name)
+                 amount=f'${self.amount_residual:,.2f}', link=link or self._scout_payment_link())
+        transfer = self.company_id._scout_transfer_info(member.name if member else None,
+                                                        member.scout_section_id if member else None)
+        if transfer:
+            text += '\n\n' + _('O por transferencia:') + '\n' + transfer['text']
+        return text + '\n' + self.company_id.name
 
     def action_scout_payment_link(self):
         self.ensure_one()

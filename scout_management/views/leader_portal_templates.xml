@@ -1110,6 +1110,11 @@
                 <p t-if="pay['registration'].payment_method" class="small"><b>Forma elegida:</b> <t t-out="dict(pay['registration']._fields['payment_method'].selection).get(pay['registration'].payment_method)"/></p>
             </t>
             <div t-elif="inv and inv.payment_state in ('paid', 'in_payment')" class="alert alert-success o_sl_alert"><i class="fa fa-check-circle"/> El registro ya está pagado.</div>
+            <t t-if="pay.get('transfer') and inv and inv.payment_state not in ('paid', 'in_payment')">
+                <t t-set="transfer" t-value="pay['transfer']"/>
+                <div class="mt-3"><t t-call="scout_management.scout_transfer_box"/></div>
+                <a t-if="pay.get('whatsapp_transfer')" class="btn o_sl_btn_wa w-100 mt-2" t-att-href="pay['whatsapp_transfer']" target="_blank"><i class="fa fa-whatsapp"/> Enviar datos de transferencia</a>
+            </t>
             <div t-elif="pay.get('registration') and not inv" class="alert alert-info o_sl_alert">No hay cuota de registro configurada en el ciclo; tesorería hará el cargo.</div>
             <div t-elif="not pay.get('registration')" class="alert alert-warning o_sl_alert">Primero llena la ficha con la firma del tutor.
                 <a t-att-href="'/dirigentes/%s/miembro/%s/registro' % (section.id, member.id)">Llenar ficha</a></div>
@@ -1452,7 +1457,8 @@
             <div class="o_sl_res_body">
                 <div class="o_sl_res_title"><i t-if="r.pinned" class="fa fa-thumb-tack text-warning me-1" title="Destacado"/><t t-out="r.name"/></div>
                 <div class="o_sl_res_desc" t-if="r.description" t-out="r.description"/>
-                <div class="o_sl_res_meta"><span class="o_sl_res_kind" t-out="r._scout_kind_label()"/><t t-if="r.category_id"> · <t t-out="r.category_id.name"/></t></div>
+                <div class="o_sl_res_meta"><span class="o_sl_res_kind" t-out="r._scout_kind_label()"/><t t-if="r.category_id"> · <t t-out="r.category_id.name"/></t>
+                    <span t-if="r.for_scouts" class="o_sl_res_aula"><i class="fa fa-graduation-cap"/> Aula<t t-if="r.stage_id">: <t t-out="r.stage_id.name"/></t></span></div>
             </div>
         </a>
     </template>

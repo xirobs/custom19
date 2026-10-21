@@ -113,6 +113,12 @@
                 </a>
                 <span t-else="" class="badge text-bg-success fs-6">Ficha del ciclo: <t t-out="member.scout_current_registration_id.name"/></span>
             </div>
+            <div class="o_aula_entry mb-3">
+                <a t-attf-href="/my/scouts/#{member.id}/aula" class="o_aula_entry_btn o_aula_entry_class">
+                    <i class="fa fa-graduation-cap"/><span><b>Aula virtual</b><small>Videos, juegos y guías de su ruta de adelantos</small></span></a>
+                <a t-attf-href="/my/scouts/#{member.id}/avances" class="o_aula_entry_btn o_aula_entry_board">
+                    <i class="fa fa-trophy"/><span><b>Avances de su sección</b><small>Cómo va él y sus compañeros</small></span></a>
+            </div>
             <div class="row g-3">
                 <div class="col-lg-4">
                     <div class="card h-100"><div class="card-body text-center">
@@ -303,7 +309,9 @@
                         <div class="form-check"><input class="form-check-input" type="radio" name="payment_method" id="pm2" value="cash"/>
                             <label class="form-check-label" for="pm2"><b>Efectivo</b>: lo entrego a tesorería o a la jefatura en la junta</label></div>
                         <div class="form-check"><input class="form-check-input" type="radio" name="payment_method" id="pm3" value="transfer"/>
-                            <label class="form-check-label" for="pm3"><b>Ya pagué por transferencia</b></label></div>
+                            <label class="form-check-label" for="pm3"><b>Transferencia bancaria (SPEI)</b><t t-if="transfer">: <t t-out="transfer['bank']"/> · CLABE <t t-out="transfer['clabe']"/></t></label></div>
+                        <div class="o_scout_transfer mt-2"><t t-call="scout_management.scout_transfer_box"/>
+                            <p class="small mt-2 mb-1">Si ya transferiste, anota los datos y adjunta el comprobante (opcional: también puedes subirlo después de enviar la ficha).</p></div>
                         <div class="row g-2 mt-1 o_scout_transfer">
                             <div class="col-md-4"><label class="form-label">Nro. de transferencia</label><input name="payment_reference" class="form-control"/></div>
                             <div class="col-md-3"><label class="form-label">Fecha</label><input type="date" name="payment_date" class="form-control"/></div>
@@ -375,6 +383,24 @@
     </template>
 
     <!-- Pago del registro desde la liga de la familia -->
+    <!-- Datos para pagar por transferencia (SPEI) -->
+    <template id="scout_transfer_box" name="Datos de transferencia">
+        <div t-if="transfer" class="o_scout_transfer_box">
+            <div class="o_scout_transfer_title"><i class="fa fa-university"/> Pago por transferencia</div>
+            <dl class="mb-1">
+                <dt>Banco</dt><dd t-out="transfer['bank'] or '—'"/>
+                <dt>CLABE</dt><dd><b class="o_scout_clabe" t-out="transfer['clabe']"/>
+                    <button type="button" class="btn btn-sm btn-link p-0 ms-1 o_scout_copy" t-att-data-copy="transfer['clabe']"><i class="fa fa-copy"/> Copiar</button></dd>
+                <dt>Nombre</dt><dd t-out="transfer['holder']"/>
+                <dt t-if="transfer['phone']">Teléfono</dt><dd t-if="transfer['phone']">
+                    <a t-att-href="'https://wa.me/52%s' % ''.join(c for c in transfer['phone'] if c.isdigit())[-10:]" target="_blank" t-out="transfer['phone']"/>
+                    <small class="text-muted">(envía tu comprobante)</small></dd>
+                <dt>Comentario</dt><dd><b t-out="transfer['concept']"/></dd>
+            </dl>
+            <small class="text-muted">Escribe en el concepto o comentario el <b>nombre del scout y su sección</b> para identificar tu pago.</small>
+        </div>
+    </template>
+
     <template id="scout_registration_payment" name="Ficha: pago del registro">
         <t t-call="web.frontend_layout">
             <div class="container py-4" style="max-width: 560px">
@@ -396,9 +422,26 @@
                         <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
                         <input type="hidden" name="access_token" t-att-value="access_token"/>
                         <button t-if="can_online" class="btn btn-primary btn-lg" type="submit" name="method" value="online"><i class="fa fa-credit-card"/> Pagar en línea (tarjeta, OXXO, Mercado Pago)</button>
-                        <div t-else="" class="alert alert-warning small mb-0">El pago en línea no está disponible por ahora; puedes pagar en efectivo.</div>
+                        <div t-else="" class="alert alert-warning small mb-0">El pago en línea no está disponible por ahora; puedes pagar en efectivo<t t-if="transfer"> o por transferencia (datos abajo)</t>.</div>
                         <button class="btn btn-outline-secondary btn-lg" type="submit" name="method" value="cash"><i class="fa fa-money"/> Pagaré en efectivo en la junta</button>
                     </form>
+                    <t t-if="transfer">
+                        <div class="mt-4"><t t-call="scout_management.scout_transfer_box"/></div>
+                        <form method="post" enctype="multipart/form-data" class="card mt-2"><div class="card-body">
+                            <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
+                            <input type="hidden" name="access_token" t-att-value="access_token"/>
+                            <input type="hidden" name="method" value="transfer"/>
+                            <h6 class="mb-2">¿Ya transferiste? Avísanos aquí</h6>
+                            <div t-if="registration.declared_paid" class="alert alert-info small py-2">Ya nos avisaste de una transferencia<t t-if="registration.payment_reference"> (<t t-out="registration.payment_reference"/>)</t>. Tesorería la está verificando.</div>
+                            <div class="row g-2">
+                                <div class="col-6"><label class="form-label small">No. de transferencia / rastreo</label><input name="payment_reference" class="form-control"/></div>
+                                <div class="col-6"><label class="form-label small">Fecha</label><input type="date" name="payment_date" class="form-control"/></div>
+                                <div class="col-6"><label class="form-label small">Monto</label><input type="number" step="0.01" min="0" name="payment_amount" class="form-control" t-att-value="'%.2f' % invoice.amount_residual"/></div>
+                                <div class="col-6"><label class="form-label small">Comprobante</label><input type="file" name="payment_proof" class="form-control" accept="image/*,application/pdf"/></div>
+                            </div>
+                            <button class="btn btn-primary w-100 mt-2" type="submit"><i class="fa fa-paper-plane"/> Enviar comprobante a tesorería</button>
+                        </div></form>
+                    </t>
                 </t>
                 <div t-else="" class="alert alert-info">No hay cuota de registro por pagar en este momento.</div>
             </div>

@@ -1,0 +1,184 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Nombre corto para el tablero: nombre scout o primer nombre + inicial -->
+    <template id="scout_short_name" name="Scout: nombre corto">
+        <t t-set="_p" t-value="person.sudo()"/>
+        <t t-out="_p.scout_name or ('%s %s.' % ((_p.scout_first_name or _p.name or '').split(' ')[0], (_p.scout_last_name or ' ')[:1])).strip(' .')"/>
+    </template>
+
+    <!-- ===================== Aula virtual del scout ===================== -->
+    <template id="portal_scout_classroom" name="Aula virtual del scout">
+        <t t-call="portal.portal_layout">
+            <t t-set="breadcrumbs_searchbar" t-value="True"/>
+            <div class="o_scout_aula my-3">
+                <a class="small" t-attf-href="/my/scouts/#{member.id}"><i class="fa fa-chevron-left"/> <t t-out="member.name"/></a>
+                <div t-if="locked" class="alert alert-warning mt-2"><i class="fa fa-lock"/> Ese material todavía no está abierto: primero completa el adelanto anterior.</div>
+                <div class="o_aula_hero mt-2">
+                    <div class="o_aula_hero_txt">
+                        <div class="o_aula_kicker"><i class="fa fa-graduation-cap"/> Aula virtual · <t t-out="member.scout_section_id.display_name or ''"/></div>
+                        <h3 class="mb-1">¡Hola, <t t-out="member.scout_name or (member.scout_first_name or member.name).split(' ')[0]"/>!</h3>
+                        <div t-if="aula['current']">Vas en: <b t-out="aula['current'].name"/>. Aquí están tus materiales para lograrlo.</div>
+                        <div t-elif="aula['path_total']">¡Completaste toda tu ruta de adelantos! 🎉</div>
+                    </div>
+                    <div class="o_aula_ring" t-attf-style="--p: #{aula['pct']}">
+                        <b><t t-out="aula['pct']"/> %</b><small>visto</small>
+                    </div>
+                </div>
+                <div class="o_aula_stats">
+                    <div><span><b t-out="aula['seen']"/> de <b t-out="aula['total']"/></span><small>materiales vistos</small></div>
+                    <div><span><b t-out="aula['path_done']"/> de <b t-out="aula['path_total']"/></span><small>adelantos logrados</small></div>
+                    <a t-attf-href="/my/scouts/#{member.id}/avances"><i class="fa fa-trophy"/><small>Ver avances de mi sección</small></a>
+                </div>
+
+                <div t-if="not aula['units']" class="o_aula_empty">
+                    <i class="fa fa-book fa-2x d-block mb-2"/>Todavía no hay materiales en tu aula. ¡Pronto tus jefes subirán videos, juegos y guías!
+                </div>
+
+                <div class="o_aula_path">
+                    <t t-foreach="aula['units']" t-as="u">
+                        <t t-set="seen_count" t-value="len([i for i in u['items'] if i['seen']])"/>
+                        <details t-attf-class="o_aula_unit o_aula_#{u['state']}" t-att-open="u['state'] in ('current',) or (u['key'] == 'intro' and not aula['current']) or None">
+                            <summary>
+                                <span class="o_aula_dot">
+                                    <i t-if="u['state'] == 'done'" class="fa fa-check"/>
+                                    <i t-elif="u['state'] == 'locked'" class="fa fa-lock"/>
+                                    <i t-else="" t-attf-class="fa #{u['icon']}"/>
+                                </span>
+                                <span class="o_aula_unit_txt">
+                                    <b t-out="u['name']"/>
+                                    <small t-if="u['state'] == 'locked'">Se abre al lograr <t t-out="u['locked_by'].name if u['locked_by'] else 'el adelanto anterior'"/></small>
+                                    <small t-elif="u['items']"><t t-out="len(u['items'])"/> material(es) · <t t-out="seen_count"/> visto(s)</small>
+                                    <small t-else="">Pronto habrá materiales</small>
+                                </span>
+                                <span t-if="u['state'] == 'current'" class="o_aula_badge">¡Te toca!</span>
+                                <span t-elif="u['state'] == 'done'" class="o_aula_badge o_aula_badge_done">Logrado</span>
+                            </summary>
+                            <div t-if="u['items'] and u['state'] != 'locked'" class="o_aula_bar"><span t-attf-style="width: #{round(seen_count * 100.0 / len(u['items']))}%"/></div>
+                            <div class="o_aula_items">
+                                <t t-foreach="u['items']" t-as="it">
+                                    <t t-set="r" t-value="it['resource']"/>
+                                    <a t-if="u['state'] != 'locked'" t-attf-href="/my/scouts/#{member.id}/aula/#{r.id}"
+                                       t-attf-class="o_aula_item o_aula_k_#{r.kind} #{'o_aula_seen' if it['seen'] else ''}">
+                                        <span class="o_aula_item_icon">
+                                            <img t-if="r.thumbnail_url" t-att-src="r.thumbnail_url" alt="" loading="lazy"/>
+                                            <i t-else="" t-attf-class="fa #{r._scout_icon()}"/>
+                                        </span>
+                                        <span class="o_aula_item_txt"><b t-out="r.name"/><small t-out="r._scout_kind_label()"/></span>
+                                        <i t-if="it['seen']" class="fa fa-check-circle o_aula_tick"/>
+                                        <i t-else="" class="fa fa-play-circle o_aula_go"/>
+                                    </a>
+                                    <span t-else="" t-attf-class="o_aula_item o_aula_item_locked o_aula_k_#{r.kind}">
+                                        <span class="o_aula_item_icon"><i class="fa fa-lock"/></span>
+                                        <span class="o_aula_item_txt"><b t-out="r.name"/><small t-out="r._scout_kind_label()"/></span>
+                                    </span>
+                                </t>
+                            </div>
+                        </details>
+                    </t>
+                </div>
+            </div>
+        </t>
+    </template>
+
+    <template id="portal_scout_classroom_resource" name="Aula virtual: material">
+        <t t-call="portal.portal_layout">
+            <t t-set="breadcrumbs_searchbar" t-value="True"/>
+            <div class="o_scout_aula my-3">
+                <a class="small" t-attf-href="/my/scouts/#{member.id}/aula"><i class="fa fa-chevron-left"/> Aula virtual</a>
+                <div class="o_aula_kicker mt-2"><i class="fa fa-graduation-cap"/> <t t-out="unit['name'] if unit else 'Aula virtual'"/></div>
+                <h3 class="mb-1" t-out="resource.name"/>
+                <div class="text-muted small mb-3"><i t-attf-class="fa #{resource._scout_icon()}"/> <t t-out="resource._scout_kind_label()"/>
+                    · <span class="text-success"><i class="fa fa-check-circle"/> Marcado como visto</span></div>
+                <div class="o_aula_viewer mb-3">
+                    <t t-if="resource.video_embed_url">
+                        <div class="o_aula_video"><iframe t-att-src="resource.video_embed_url" title="Video" allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture; fullscreen" allowfullscreen="1"/></div>
+                    </t>
+                    <t t-elif="resource.file and resource.kind == 'video'">
+                        <video class="w-100 rounded" controls="1" preload="metadata" t-att-src="file_url"/>
+                    </t>
+                    <t t-elif="resource.file and resource.kind == 'audio'">
+                        <audio class="w-100" controls="1" t-att-src="file_url"/>
+                    </t>
+                    <t t-elif="resource.file and resource.kind == 'image'">
+                        <img class="img-fluid rounded" t-att-src="file_url" t-att-alt="resource.name"/>
+                    </t>
+                    <t t-elif="resource.file and resource.kind == 'pdf'">
+                        <iframe class="o_aula_pdf d-none d-md-block" t-att-src="file_url" title="PDF"/>
+                        <div class="o_aula_big d-md-none"><i class="fa fa-file-pdf-o"/></div>
+                    </t>
+                    <t t-else="">
+                        <div class="o_aula_big"><i t-attf-class="fa #{resource._scout_icon()}"/></div>
+                    </t>
+                </div>
+                <div t-if="resource.description" class="card mb-3"><div class="card-body" style="white-space: pre-line" t-out="resource.description"/></div>
+                <div class="d-grid gap-2 mb-3">
+                    <a t-if="resource.file and resource._scout_inline()" class="btn btn-outline-primary" t-att-href="file_url" target="_blank"><i class="fa fa-external-link"/> Abrir en pantalla completa</a>
+                    <a t-if="resource.file" class="btn btn-outline-secondary" t-att-href="file_url + '?descargar=1'"><i class="fa fa-download"/> Descargar</a>
+                    <a t-if="resource.url and not resource.video_embed_url" class="btn btn-outline-primary" t-att-href="resource.url" target="_blank" rel="noopener"><i class="fa fa-link"/> Abrir la liga</a>
+                </div>
+                <div class="d-flex gap-2">
+                    <a t-if="prev_resource" class="btn btn-light flex-fill" t-attf-href="/my/scouts/#{member.id}/aula/#{prev_resource.id}"><i class="fa fa-arrow-left"/> Anterior</a>
+                    <a t-if="next_resource" class="btn btn-primary flex-fill o_aula_next" t-attf-href="/my/scouts/#{member.id}/aula/#{next_resource.id}">Siguiente <i class="fa fa-arrow-right"/></a>
+                    <a t-else="" class="btn btn-success flex-fill" t-attf-href="/my/scouts/#{member.id}/aula"><i class="fa fa-flag-checkered"/> Volver al aula</a>
+                </div>
+            </div>
+        </t>
+    </template>
+
+    <!-- ===================== Avances de la sección (para las familias) ===================== -->
+    <template id="portal_scout_section_board" name="Avances de la sección">
+        <t t-call="portal.portal_layout">
+            <t t-set="breadcrumbs_searchbar" t-value="True"/>
+            <div class="o_scout_aula my-3">
+                <a class="small" t-attf-href="/my/scouts/#{member.id}"><i class="fa fa-chevron-left"/> <t t-out="member.name"/></a>
+                <div class="o_aula_kicker mt-2"><i class="fa fa-trophy"/> Avances de la sección</div>
+                <h3 class="mb-2" t-out="section.display_name if section else ''"/>
+                <div t-if="mine" class="o_board_me">
+                    <div class="o_board_pos"><small>Lugar</small><b t-out="position"/></div>
+                    <div class="flex-grow-1">
+                        <b t-out="member.scout_name or (member.scout_first_name or member.name).split(' ')[0]"/>: <t t-out="mine['done']"/> de <t t-out="mine['total']"/> adelantos
+                        <t t-if="mine['specialties']"> · <t t-out="mine['specialties']"/> especialidad(es)</t>
+                        <div class="o_aula_bar o_aula_bar_big"><span t-attf-style="width: #{mine['pct']}%"/></div>
+                        <small t-if="mine['next']">Siguiente meta: <b t-out="portal_svc.stage_label(mine['next'], section)"/></small>
+                    </div>
+                    <a class="btn btn-sm btn-light" t-attf-href="/my/scouts/#{member.id}/aula"><i class="fa fa-graduation-cap"/> Aula</a>
+                </div>
+
+                <t t-if="team_rows">
+                    <h6 class="o_board_h"><i class="fa fa-flag"/> <t t-out="section.patrol_label or 'Equipo'"/>s</h6>
+                    <div class="o_board_teams">
+                        <div t-foreach="team_rows" t-as="t" t-attf-class="o_board_team #{'o_board_team_mine' if t['patrol'] == member.scout_patrol_id else ''}"
+                             t-attf-style="--team: #{portal_svc.patrol_color(t['patrol'])}">
+                            <span class="o_board_medal" t-out="['🥇', '🥈', '🥉'][t_index] if t_index &lt; 3 else ''"/>
+                            <b t-out="t['patrol'].name"/>
+                            <div class="o_aula_bar"><span t-attf-style="width: #{t['pct']}%; background: var(--team)"/></div>
+                            <small><t t-out="t['pct']"/> % promedio · <t t-out="t['members']"/> scouts</small>
+                        </div>
+                    </div>
+                </t>
+
+                <h6 class="o_board_h"><i class="fa fa-users"/> Scouts de la sección</h6>
+                <div class="o_board_list">
+                    <div t-foreach="rows" t-as="row" t-attf-class="o_board_row #{'o_board_row_me' if row['member'] == member else ''}">
+                        <t t-set="person" t-value="row['member']"/>
+                        <span class="o_board_rank" t-out="['🥇', '🥈', '🥉'][row_index] if row_index &lt; 3 and row['pct'] else row_index + 1"/>
+                        <img t-if="person == member and person.image_128" class="o_board_avatar" t-att-src="image_data_uri(person.image_128)" alt=""/>
+                        <span t-else="" class="o_board_avatar o_board_initials"
+                              t-attf-style="background: #{portal_svc.patrol_color(person.scout_patrol_id)}"
+                              t-out="''.join(w[:1] for w in (person.scout_first_name or person.name or '?').split()[:1]).upper() + (person.scout_last_name or ' ')[:1].upper()"/>
+                        <div class="flex-grow-1 min-w-0">
+                            <div class="d-flex justify-content-between gap-2">
+                                <b class="text-truncate"><t t-call="scout_management.scout_short_name"/></b>
+                                <small class="text-nowrap"><t t-out="row['done']"/>/<t t-out="row['total']"/>
+                                    <t t-if="row['specialties']"> · <i class="fa fa-star text-warning"/> <t t-out="row['specialties']"/></t></small>
+                            </div>
+                            <div class="o_aula_bar"><span t-attf-style="width: #{row['pct']}%; background: #{portal_svc.patrol_color(person.scout_patrol_id)}"/></div>
+                            <small class="text-muted"><t t-out="person.scout_patrol_id.name or ''"/><t t-if="row['next']"><t t-if="person.scout_patrol_id"> · </t>va en <t t-out="portal_svc.stage_label(row['next'], section)"/></t></small>
+                        </div>
+                    </div>
+                </div>
+                <p class="small text-muted mt-3">Cada adelanto que logras sube tu barra y la de tu <t t-out="(section.patrol_label or 'equipo').lower()"/>. ¡Échale ganas! ⚜</p>
+            </div>
+        </t>
+    </template>
+</odoo>

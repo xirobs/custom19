@@ -209,6 +209,15 @@
                         <group string="Aprobaciones">
                             <field name="scout_expense_approval"/>
                         </group>
+                        <group string="Pago por transferencia (SPEI)">
+                            <field name="scout_bank_name" placeholder="Banorte"/>
+                            <field name="scout_bank_clabe"/>
+                            <field name="scout_bank_holder"/>
+                            <field name="scout_bank_phone"/>
+                            <field name="scout_bank_concept"/>
+                            <div colspan="2" class="text-muted small">Aparecen en la ficha de nuevo ingreso, renovación y reingreso,
+                                en la página de pago y en los mensajes de WhatsApp con la liga de pago.</div>
+                        </group>
                     </group>
                 </page>
             </xpath>

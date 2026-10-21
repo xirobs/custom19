@@ -75,13 +75,35 @@ class ScoutResource(models.Model):
     kind = fields.Selection(KINDS, string='Tipo', compute='_compute_kind', store=True)
     section_ids = fields.Many2many('scout.section', 'scout_resource_section_rel', 'resource_id', 'section_id',
                                   string='Secciones', domain=[('is_leadership', '=', False)],
-                                  help='Vacío: lo ven los dirigentes de todas las secciones.')
+                                  help='Solo estas secciones lo ven (sus jefes y, si es del aula, sus scouts).')
+    all_sections = fields.Boolean(string='Para todas las secciones',
+                                  help='Material general del grupo: lo ven todas las secciones.')
+    for_scouts = fields.Boolean(string='Visible para los scouts (aula virtual)',
+                                help='Además de los jefes, lo ven los scouts y sus familias en el aula virtual del portal.')
+    stage_id = fields.Many2one('scout.progression.stage', string='Adelanto de la ruta', index=True,
+                               domain="[('stage_type', 'in', ('promise', 'stage', 'link', 'terminal', 'specialty'))]",
+                               help='En el aula virtual se abre hasta que el scout llega a este adelanto '
+                                    '(vacío: se ve desde el inicio).')
+    view_ids = fields.One2many('scout.resource.view', 'resource_id', string='Vistas')
+    view_count = fields.Integer(string='Scouts que lo vieron', compute='_compute_view_count')
     pinned = fields.Boolean(string='Destacado', help='Aparece primero en el portal de dirigentes.')
     sequence = fields.Integer(default=10)
     active = fields.Boolean(default=True)
     company_id = fields.Many2one('res.company', string='Grupo', default=lambda self: self.env.company)
     video_embed_url = fields.Char(compute='_compute_embed', string='Video incrustado')
     thumbnail_url = fields.Char(compute='_compute_embed', string='Miniatura')
+
+    def _compute_view_count(self):
+        data = dict(self.env['scout.resource.view'].sudo()._read_group(
+            [('resource_id', 'in', self.ids)], ['resource_id'], ['__count']))
+        for resource in self:
+            resource.view_count = data.get(resource, 0)
+
+    @api.constrains('all_sections', 'section_ids')
+    def _check_audience(self):
+        for resource in self:
+            if not resource.all_sections and not resource.section_ids:
+                raise ValidationError(_('Elige la sección de "%s" (o marca "Para todas las secciones").', resource.name))
 
     @api.constrains('file', 'url')
     def _check_content(self):
@@ -144,8 +166,77 @@ class ScoutResource(models.Model):
         return bool(self.file) and self.kind in ('pdf', 'image', 'video', 'audio')
 
     @api.model
-    def _scout_for_section(self, section):
-        return self.sudo().search([
-            '|', ('section_ids', '=', False), ('section_ids', 'in', section.ids),
+    def _scout_for_section(self, section, scouts=False):
+        """Recursos de la sección (los de todas las secciones incluidos). scouts=True: solo los del aula virtual."""
+        domain = [
+            '|', ('all_sections', '=', True), ('section_ids', 'in', section.ids),
             '|', ('company_id', '=', False), ('company_id', '=', section.company_id.id or self.env.company.id),
-        ])
+        ]
+        if scouts:
+            domain.append(('for_scouts', '=', True))
+        return self.sudo().search(domain)
+
+    # ------------------------------------------------------------------ aula virtual (scouts)
+    @api.model
+    def _scout_classroom(self, member):
+        """Unidades del aula virtual del scout: una por adelanto de su ruta, abiertas hasta el que le toca."""
+        member = member.sudo()
+        section = member.scout_section_id
+        Stage = self.env['scout.progression.stage'].sudo()
+        if not section:
+            return {'units': [], 'total': 0, 'seen': 0, 'pct': 0, 'current': Stage}
+        portal = self.env['scout.leader.portal'].sudo()
+        path = portal.path_stages(section)
+        resources = self._scout_for_section(section, scouts=True)
+        progress = self.env['scout.member.progress'].sudo().search([('member_id', '=', member.id)])
+        achieved = progress.filtered(lambda p: p.state == 'achieved').stage_id
+        seen = set(self.env['scout.resource.view'].sudo().search(
+            [('member_id', '=', member.id), ('resource_id', 'in', resources.ids)]).resource_id.ids)
+        current_index = next((i for i, s in enumerate(path) if s not in achieved), len(path))
+
+        def items(recs):
+            return [{'resource': r, 'seen': r.id in seen} for r in recs.sorted(lambda r: (r.sequence, r.id))]
+
+        units = []
+        intro = resources.filtered(lambda r: not r.stage_id)
+        if intro:
+            units.append({'key': 'intro', 'name': _('Bienvenida'), 'stage': Stage, 'state': 'open',
+                          'items': items(intro), 'icon': 'fa-flag'})
+        for index, stage in enumerate(path):
+            state = 'done' if stage in achieved else ('current' if index == current_index else
+                                                     ('open' if index < current_index else 'locked'))
+            units.append({'key': stage.id, 'name': portal.stage_label(stage, section), 'stage': stage, 'state': state,
+                          'items': items(resources.filtered(lambda r, s=stage: r.stage_id == s)),
+                          'icon': 'fa-star', 'locked_by': path[index - 1] if state == 'locked' and index else Stage})
+        extra = resources.filtered(lambda r: r.stage_id and r.stage_id not in path)
+        if extra:
+            units.append({'key': 'extra', 'name': _('Especialidades y retos'), 'stage': Stage, 'state': 'open',
+                          'items': items(extra), 'icon': 'fa-trophy'})
+        unlocked = [i for u in units if u['state'] != 'locked' for i in u['items']]
+        total, done = len(unlocked), len([i for i in unlocked if i['seen']])
+        return {'units': units, 'total': total, 'seen': done, 'pct': round(done * 100.0 / total) if total else 0,
+                'current': path[current_index] if current_index < len(path) else Stage,
+                'path_done': len(achieved & path), 'path_total': len(path)}
+
+    def _scout_unlocked_for(self, member):
+        """¿El scout ya puede abrir este recurso?"""
+        self.ensure_one()
+        data = self._scout_classroom(member)
+        return any(i['resource'] == self for u in data['units'] if u['state'] != 'locked' for i in u['items'])
+
+    def _scout_mark_seen(self, member):
+        self.ensure_one()
+        View = self.env['scout.resource.view'].sudo()
+        if not View.search_count([('resource_id', '=', self.id), ('member_id', '=', member.id)]):
+            View.create({'resource_id': self.id, 'member_id': member.id})
+
+
+class ScoutResourceView(models.Model):
+    _name = 'scout.resource.view'
+    _description = 'Recurso visto por un scout'
+    _order = 'create_date desc'
+
+    resource_id = fields.Many2one('scout.resource', string='Recurso', required=True, ondelete='cascade', index=True)
+    member_id = fields.Many2one('res.partner', string='Scout', required=True, ondelete='cascade', index=True)
+
+    _resource_member_uniq = models.Constraint('UNIQUE (resource_id, member_id)', 'Ya estaba marcado como visto.')
