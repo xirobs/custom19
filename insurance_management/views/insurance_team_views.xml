@@ -257,6 +257,20 @@
                             <field name="ins_portal_all"/>
                         </group>
                     </group>
+                    <field name="share" invisible="1"/>
+                    <div invisible="share" class="alert alert-info d-flex align-items-center gap-3" role="status">
+                        <div class="flex-grow-1">
+                            Este usuario es <b>interno</b>: ocupa licencia y entra al sistema completo.
+                            Si solo va a trabajar en el portal del equipo, conviértelo en usuario de portal
+                            (conserva lo que marcaste arriba).
+                        </div>
+                        <button name="action_insurance_make_portal" type="object" class="btn btn-secondary"
+                                string="Convertir en usuario de portal"
+                                confirm="Este usuario dejará de entrar al sistema completo y solo usará el portal (/equipo y Mi cuenta). ¿Continuar?"/>
+                    </div>
+                    <div invisible="not share" class="alert alert-success" role="status">
+                        Usuario de <b>portal</b>: entra a <b>/equipo</b> con su correo y contraseña. No ocupa licencia.
+                    </div>
                 </page>
             </xpath>
         </field>

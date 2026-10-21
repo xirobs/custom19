@@ -91,6 +91,28 @@ class ResUsers(models.Model):
         self.ensure_one()
         return bool(self.sudo()["ins_portal_%s" % block])
 
+    def action_insurance_make_portal(self):
+        """Convierte un usuario interno en usuario de portal (Odoo 19 ya no muestra el tipo de usuario).
+
+        Conserva sus bloques del portal del equipo y deja de ocupar licencia.
+        """
+        if not self.env.user.has_group("insurance_management.group_insurance_manager"):
+            raise UserError(_("Solo un administrador de Seguros puede cambiar el tipo de usuario."))
+        portal = self.env.ref("base.group_portal")
+        for user in self:
+            if user == self.env.user:
+                raise UserError(_("No puedes convertir tu propio usuario en usuario de portal."))
+            if user.has_group("base.group_system"):
+                raise UserError(_("%s es administrador del sistema: quítale ese permiso antes de pasarlo a portal.") % user.name)
+            if user.share:
+                continue
+            user.sudo().write({"group_ids": [(6, 0, [portal.id])]})
+            user.partner_id.sudo().message_post(
+                body=_("%s pasó a usuario de portal (portal del equipo de seguros).") % user.name,
+                subtype_xmlid="mail.mt_note",
+            )
+        return True
+
 
 class InsuranceProcedureType(models.Model):
     _name = "insurance.procedure.type"

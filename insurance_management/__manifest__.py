@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 {
     "name": "Gestión de Aseguradoras",
-    "version": "19.0.7.0.0",
+    "version": "19.0.7.0.1",
     "author": "Jhuliana Delgado",
     "maintainer": "Jhuliana Delgado",
     "website": "",
