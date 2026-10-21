@@ -40,7 +40,8 @@ class ScoutPortal(CustomerPortal):
         partner = self._scout_partner()
         return request.env['res.partner'].sudo().search([
             ('is_scout', '=', True), ('scout_state', '!=', 'inactive'),
-            '|', ('scout_guardian_id', 'child_of', partner.id), ('scout_guardian2_id', 'child_of', partner.id)])
+            '|', '|', ('id', '=', partner.id),
+            ('scout_guardian_id', 'child_of', partner.id), ('scout_guardian2_id', 'child_of', partner.id)])
 
     def _scout_member_check(self, member_id):
         member = request.env['res.partner'].sudo().browse(int(member_id)).exists()
@@ -96,9 +97,25 @@ class ScoutPortal(CustomerPortal):
             'pid': pid,
             'hash': conversation._sign_token(pid),
             'already': kw.get('already'),
+            'photo_ok': kw.get('foto') == 'ok',
+            'photo_error': _('No se pudo leer la foto; intenta con otra imagen (JPG o PNG).') if kw.get('foto') == 'error' else None,
             'page_name': 'scout_detail',
         })
         return request.render('scout_management.portal_scout_detail', values)
+
+    @http.route(['/my/scouts/<int:member_id>/foto'], type='http', auth='user', website=True, methods=['POST'])
+    def portal_scout_photo(self, member_id, **post):
+        """El tutor (o el propio scout con su usuario) sube o cambia la foto del miembro."""
+        try:
+            member = self._scout_member_check(member_id)
+        except (AccessError, MissingError):
+            return request.redirect('/my/scouts')
+        photo = scout_photo_from_post(post.get('photo_data'))
+        if not photo:
+            return request.redirect(f'/my/scouts/{member.id}?foto=error')
+        member.sudo().with_context(scout_change_approved=True).image_1920 = photo
+        member.sudo().message_post(body=_('Foto actualizada desde el portal por %s.', request.env.user.name))
+        return request.redirect(f'/my/scouts/{member.id}?foto=ok')
 
     @http.route(['/my/scouts/register', '/my/scouts/<int:member_id>/register'], type='http', auth='user',
                 website=True, methods=['GET'])
@@ -133,6 +150,20 @@ class ScoutPortal(CustomerPortal):
             return self.portal_scout_register_form(member_id=member.id or None, error=error)
         registration.message_post(body=_('Ficha enviada desde el portal por %s.', request.env.user.name))
         return request.redirect(registration._scout_payment_path())
+
+
+def scout_photo_from_post(value):
+    """Foto reducida en el celular (data URL de imagen) → base64; None si no viene o no es imagen."""
+    if not isinstance(value, str) or not value.startswith('data:image/'):
+        return None
+    data = value.split(',', 1)[1] if ',' in value else ''
+    if not data or len(data) > MAX_PROOF_SIZE * 2:
+        return None
+    try:
+        base64.b64decode(data, validate=True)
+    except ValueError:
+        return None
+    return data.encode()
 
 
 # ---------------------------------------------------------------------- ficha de registro (compartida)
@@ -253,6 +284,9 @@ def scout_save_registration(post, member, guardian=None):
             registration = Registration.create(vals)
         registration._scout_prepare_for_payment()
         registration._scout_set_payment_method(method)
+        photo = scout_photo_from_post(post.get('photo_data'))
+        if photo and registration.member_id:
+            registration.member_id.sudo().with_context(scout_change_approved=True).image_1920 = photo
     except ValidationError as e:
         return None, str(e.args[0] if e.args else e)
     officers = env.ref('scout_management.group_scout_officer').sudo().all_user_ids.filtered(

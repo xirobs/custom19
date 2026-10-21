@@ -496,3 +496,9 @@ $scout-wa: #25d366;
     max-width: 64px;
     object-fit: contain;
 }
+
+// Foto del scout (portal de familias y ficha)
+.o_scout_photo_pick { cursor: pointer; margin: 0; position: relative; }
+.o_scout_avatar_big { width: 84px; height: 84px; border-radius: 50%; object-fit: cover; border: 3px solid #f36f45; display: block; }
+.o_scout_avatar_empty { display: flex; align-items: center; justify-content: center; background: #e8edf2; color: #5c6b7a; font-size: 1.6rem; }
+.o_scout_photo_cta { display: block; font-size: 0.75rem; font-weight: 700; color: #0f3049; margin-top: 0.25rem; }

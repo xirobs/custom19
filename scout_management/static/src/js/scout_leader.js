@@ -343,13 +343,15 @@ function setupHelpers() {
 }
 
 function start() {
+    // Fotos: también en el portal de familias y en la ficha de registro.
+    document.querySelectorAll(".o_scout_photo_pick input[data-sl-photo]").forEach(setupPhoto);
     if (!document.querySelector(".o_scout_leader")) {
         return;
     }
     document.querySelectorAll("[data-sl-attendance]").forEach(setupAttendance);
     document.querySelectorAll(".o_sl_teams").forEach(setupTeams);
     document.querySelectorAll("table[data-sl-achievements]").forEach(setupAchievements);
-    document.querySelectorAll("input[data-sl-photo]").forEach(setupPhoto);
+    document.querySelectorAll("input[data-sl-photo]:not(.o_scout_photo_pick input)").forEach(setupPhoto);
     document.querySelectorAll("form[data-sl-require-ine]").forEach(setupRequireIne);
     document.querySelectorAll("[data-sl-copy]").forEach(setupCopy);
     setupHelpers();

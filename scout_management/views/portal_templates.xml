@@ -84,10 +84,21 @@
         <t t-call="portal.portal_layout">
             <t t-set="breadcrumbs_searchbar" t-value="True"/>
             <div t-if="already" class="alert alert-info mt-3">La ficha de este ciclo ya fue enviada.</div>
+            <div t-if="photo_ok" class="alert alert-success mt-3"><i class="fa fa-check"/> Foto guardada. Aparece en su credencial.</div>
+            <div t-if="photo_error" class="alert alert-danger mt-3" t-out="photo_error"/>
             <div class="o_scout_greca mt-3"/>
             <div class="my-3 d-flex justify-content-between align-items-start flex-wrap gap-2">
                 <div class="d-flex gap-3 align-items-center">
-                    <img t-if="member.image_128" t-att-src="image_data_uri(member.image_128)" class="rounded-circle" style="width: 64px; height: 64px; object-fit: cover;"/>
+                    <form t-attf-action="/my/scouts/#{member.id}/foto" method="post" class="o_scout_photo_form text-center" data-sl-photo-autosubmit="1">
+                        <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
+                        <input type="hidden" name="photo_data"/>
+                        <label class="o_scout_photo_pick" title="Cambiar foto">
+                            <img t-if="member.image_128" t-att-src="image_data_uri(member.image_256)" class="o_sl_photo_preview o_scout_avatar_big" alt=""/>
+                            <span t-else="" class="o_scout_avatar_big o_scout_avatar_empty"><i class="fa fa-camera"/></span>
+                            <span class="o_scout_photo_cta"><i class="fa fa-camera"/> <t t-out="'Cambiar foto' if member.image_128 else 'Subir foto'"/></span>
+                            <input type="file" accept="image/*" class="d-none" data-sl-photo="1"/>
+                        </label>
+                    </form>
                     <div>
                         <h3 class="mb-0 o_scout_title" t-out="member.name"/>
                         <div class="text-muted">
@@ -230,6 +241,17 @@
                             <div class="col-12"><label class="form-label">Domicilio</label>
                                 <input name="street" class="form-control" t-att-value="member.street"/></div>
                             <div class="col-12 small text-muted o_scout_section_hint"/>
+                            <div class="col-12">
+                                <label class="form-label">Foto del scout <small class="text-muted">(de frente, para su credencial; la puede tomar el scout o su tutor)</small></label>
+                                <input type="hidden" name="photo_data"/>
+                                <label class="o_scout_photo_pick d-flex align-items-center gap-3">
+                                    <img t-if="member and member.image_128" t-att-src="image_data_uri(member.image_256)" class="o_sl_photo_preview o_scout_avatar_big" alt=""/>
+                                    <img t-else="" class="o_sl_photo_preview o_scout_avatar_big d-none" alt=""/>
+                                    <span class="btn btn-outline-secondary"><i class="fa fa-camera"/>
+                                        <t t-out="'Cambiar foto' if member and member.image_128 else 'Tomar o elegir foto'"/></span>
+                                    <input type="file" accept="image/*" class="d-none" data-sl-photo="1"/>
+                                </label>
+                            </div>
                         </div>
                     </div></fieldset>
 
