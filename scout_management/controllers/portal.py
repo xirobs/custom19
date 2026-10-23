@@ -15,18 +15,14 @@ _logger = logging.getLogger(__name__)
 MAX_PROOF_SIZE = 5 * 1024 * 1024  # 5 MB
 
 
-def _scout_pay_links(invoices):
-    """{id de cargo: liga de pago} solo si hay una pasarela activa (Mercado Pago)."""
+def _scout_pay_links(invoices, member=None):
+    """{id de cargo: liga para pagar en línea} solo si hay una pasarela activa (Mercado Pago).
+    La liga real (con la comisión, si aplica) se arma hasta que la familia da clic en "Pagar"."""
     env = request.env
-    if not invoices or not env['payment.provider'].sudo().search_count([('state', 'in', ('enabled', 'test'))]):
+    if not invoices or not member or \
+            not env['payment.provider'].sudo().search_count([('state', 'in', ('enabled', 'test'))]):
         return {}
-    links = {}
-    for inv in invoices.sudo():
-        try:
-            links[inv.id] = inv._scout_payment_link()
-        except Exception:  # noqa: BLE001
-            _logger.exception('No se pudo generar la liga de pago de %s', inv.name)
-    return links
+    return {inv.id: f'/my/scouts/{member.id}/pagar/{inv.id}' for inv in invoices if inv.scout_can_pay_online}
 
 
 class ScoutPortal(CustomerPortal):
@@ -86,7 +82,7 @@ class ScoutPortal(CustomerPortal):
         values = self._prepare_portal_layout_values()
         values.update({
             'member': member,
-            'pay_links': _scout_pay_links(invoices),
+            'pay_links': _scout_pay_links(invoices, member),
             'attendance_lines': lines,
             'activities': activities,
             'invoices': invoices,
@@ -102,6 +98,18 @@ class ScoutPortal(CustomerPortal):
             'page_name': 'scout_detail',
         })
         return request.render('scout_management.portal_scout_detail', values)
+
+    @http.route(['/my/scouts/<int:member_id>/pagar/<int:invoice_id>'], type='http', auth='user', website=True)
+    def portal_scout_pay(self, member_id, invoice_id, **kw):
+        """La familia eligió pagar en línea: se agrega la comisión (si aplica) y se abre Mercado Pago."""
+        try:
+            member = self._scout_member_check(member_id)
+        except (AccessError, MissingError):
+            return request.redirect('/my/scouts')
+        invoice = member.sudo().scout_invoice_ids.filtered(lambda m: m.id == invoice_id and m.scout_can_pay_online)
+        if not invoice:
+            return request.redirect(f'/my/scouts/{member.id}')
+        return request.redirect(invoice._scout_payment_link(), local=False)
 
     # ------------------------------------------------------------------ aula virtual y avances de la sección
     @http.route(['/my/scouts/<int:member_id>/aula'], type='http', auth='user', website=True)
@@ -449,7 +457,7 @@ class ScoutPublicRegistration(http.Controller):
         if request.httprequest.method == 'POST':
             if post.get('method') == 'online' and reg.invoice_id.scout_can_pay_online:
                 reg._scout_set_payment_method('online')
-                return request.redirect(reg.invoice_id._scout_payment_link())
+                return request.redirect(reg.invoice_id._scout_payment_link(), local=False)
             if post.get('method') == 'cash':
                 reg._scout_set_payment_method('cash')
                 message = _('Listo: entrega el efectivo a tesorería o a la jefatura en la próxima junta. '

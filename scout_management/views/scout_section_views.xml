@@ -218,6 +218,16 @@
                             <div colspan="2" class="text-muted small">Aparecen en la ficha de nuevo ingreso, renovación y reingreso,
                                 en la página de pago y en los mensajes de WhatsApp con la liga de pago.</div>
                         </group>
+                        <group string="Comisión del pago en línea (Mercado Pago)">
+                            <field name="scout_online_fee_active"/>
+                            <field name="scout_online_fee_min" invisible="not scout_online_fee_active"/>
+                            <field name="scout_online_fee_pct" invisible="not scout_online_fee_active"/>
+                            <field name="scout_online_fee_fixed" invisible="not scout_online_fee_active"/>
+                            <field name="scout_online_fee_vat" invisible="not scout_online_fee_active"/>
+                            <div colspan="2" class="text-muted small" invisible="not scout_online_fee_active">Se suma al cargo solo cuando
+                                la familia paga en línea y el monto es mayor al mínimo, calculada para que al grupo le llegue completo.
+                                Si paga en efectivo o transferencia, no se cobra. Revisa la tarifa vigente en tu cuenta de Mercado Pago.</div>
+                        </group>
                     </group>
                 </page>
             </xpath>

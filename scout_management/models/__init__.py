@@ -18,6 +18,7 @@ from . import scout_family_conversation
 from . import scout_section_report
 from . import scout_reports
 from . import scout_online_payment
+from . import scout_online_fee
 from . import scout_route
 from . import scout_event_plan
 from . import scout_member_tools

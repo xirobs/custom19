@@ -56,6 +56,7 @@ class AccountMove(models.Model):
         self.ensure_one()
         if not self.scout_can_pay_online:
             raise UserError(_('El cargo %s no tiene saldo pendiente.', self.name))
+        self._scout_apply_online_fee()  # comisión de Mercado Pago a cargo del cliente (si aplica)
         wizard = self.env['payment.link.wizard'].sudo().with_context(
             active_model='account.move', active_id=self.id).create({'amount': self.amount_residual})
         base = self.get_base_url().rstrip('/')
@@ -64,11 +65,15 @@ class AccountMove(models.Model):
     def _scout_payment_message(self, link=None):
         self.ensure_one()
         member = self.scout_member_id
+        link = link or self._scout_payment_link()
         text = _('Hola %(name)s, este es el enlace para pagar en línea %(concept)s%(member)s por %(amount)s '
                  '(tarjeta, OXXO o Mercado Pago): %(link)s',
                  name=self.partner_id.name or '', concept=self.invoice_line_ids[:1].name or self.name,
                  member=_(' de %s', member.name) if member else '',
-                 amount=f'${self.amount_residual:,.2f}', link=link or self._scout_payment_link())
+                 amount=f'${self.amount_residual:,.2f}', link=link)
+        if self.scout_online_fee:
+            text += '\n' + _('(Incluye %(fee)s de comisión por pago en línea. En efectivo o transferencia son %(base)s.)',
+                             fee=f'${self.scout_online_fee:,.2f}', base=f'${self._scout_fee_base():,.2f}')
         transfer = self.company_id._scout_transfer_info(member.name if member else None,
                                                         member.scout_section_id if member else None)
         if transfer:

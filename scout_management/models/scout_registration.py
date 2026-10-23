@@ -258,6 +258,8 @@ class ScoutRegistration(models.Model):
         todo = self.env.ref('mail.mail_activity_data_todo', raise_if_not_found=False)
         for reg in self.sudo():
             reg.payment_method = method
+            if method in ('cash', 'transfer'):
+                reg.invoice_id._scout_remove_online_fee()
             if method == 'cash' and reg.invoice_id and reg.payment_state not in ('paid', 'exempt'):
                 note = _('%(name)s pagará su registro en efectivo (%(amount)s). Al recibirlo usa "Registrar pago en '
                          'efectivo" en la ficha %(folio)s.', name=reg.member_id.name or reg.first_name,
@@ -273,6 +275,7 @@ class ScoutRegistration(models.Model):
             raise UserError(_('El pago en efectivo lo registra tesorería.'))
         for reg in self:
             reg._scout_prepare_for_payment()
+            reg.invoice_id._scout_remove_online_fee()
             invoice = reg.invoice_id
             if not invoice or invoice.payment_state in ('paid', 'in_payment'):
                 continue
@@ -297,6 +300,7 @@ class ScoutRegistration(models.Model):
         treasurers = self.env.ref('scout_management.group_scout_treasurer').sudo().all_user_ids.filtered(
             lambda u: u.active and not u.share and u.id != 1)
         todo = self.env.ref('mail.mail_activity_data_todo', raise_if_not_found=False)
+        self.sudo().invoice_id._scout_remove_online_fee()
         for reg in self.sudo():
             try:
                 pay_date = fields.Date.to_date(pay_date) if pay_date else False

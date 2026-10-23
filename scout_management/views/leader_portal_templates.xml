@@ -1094,6 +1094,7 @@
                 <div class="o_sl_card_box text-center">
                     <div>Saldo a pagar</div>
                     <div class="o_sl_big_amount" t-out="money(inv.amount_residual)"/>
+                    <small t-if="inv.scout_online_fee" class="d-block text-muted">Incluye <t t-out="money(inv.scout_online_fee)"/> de comisión en línea · en efectivo o transferencia: <b t-out="money(inv._scout_fee_base())"/></small>
                     <img t-att-src="pay['qr']" alt="QR de pago" class="o_sl_qr"/>
                     <small class="d-block text-muted">El tutor puede escanear el QR o abrir la liga: tarjeta, OXXO o Mercado Pago.</small>
                 </div>

@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo noupdate="1">
+    <record id="product_online_fee" model="product.product">
+        <field name="name">Comisión por pago en línea</field>
+        <field name="type">service</field>
+        <field name="sale_ok" eval="True"/>
+        <field name="purchase_ok" eval="False"/>
+        <field name="list_price">0</field>
+        <field name="taxes_id" eval="[Command.clear()]"/>
+    </record>
+</odoo>
