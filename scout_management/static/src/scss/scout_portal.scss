@@ -357,6 +357,9 @@ $scout-wa: #25d366;
     .o_sl_route_flag { font-weight: 900; font-size: 0.78rem; border-radius: 8px; padding: 0.2rem 0.5rem; margin-top: 0.35rem; }
     .o_sl_route_flag_yellow { background: #f2b705; color: $scout-navy; }
     .o_sl_route_flag_red { background: #d64545; color: #fff; }
+    .o_sl_pass_box > summary { list-style: none; cursor: pointer; }
+    .o_sl_pass_box > summary::-webkit-details-marker { display: none; }
+    .o_sl_pass_box[open] > summary { opacity: .75; }
     .o_sl_stats .o_sl_stat_red { background: #d64545; small { color: #fff; } }
     .o_sl_stats .o_sl_stat_yellow { background: #f2b705; color: $scout-navy; small { color: $scout-navy; } }
 
@@ -599,3 +602,26 @@ $aula-green: #2e9e5b;
 .o_board_initials { display: flex; align-items: center; justify-content: center; color: #fff; font-weight: 800; font-size: 0.85rem; }
 .min-w-0 { min-width: 0; }
 .o_sl_res_aula { color: #2e9e5b; font-weight: 700; margin-left: 0.3rem; }
+
+// Programa de la sesión: armado rápido
+.o_scout_leader {
+    .o_sl_quick_box { background: #fff3ed; border: 2px solid #f36f45; border-radius: 14px; padding: 0.8rem; margin-bottom: 0.75rem; }
+    .o_sl_quick_title { font-weight: 800; color: #0f3049; margin-bottom: 0.5rem; i { color: #f36f45; } }
+    .o_sl_quick_grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem; }
+    .o_sl_quick_opt { display: flex; flex-direction: column; align-items: flex-start; text-align: left; gap: 0.1rem; background: #fff;
+        border: 1px solid #f2c2b0; border-radius: 12px; padding: 0.6rem; color: #0f3049; white-space: normal;
+        i { font-size: 1.3rem; color: #f36f45; } small { color: #5c6b7a; font-weight: 400; line-height: 1.2; } }
+    .o_sl_plan_empty { text-align: center; color: #5c6b7a; border: 2px dashed #c8d2dc; border-radius: 12px; padding: 1rem; margin: 0.75rem 0; }
+    .o_sl_pline_compact { padding: 0.6rem; }
+    .o_sl_pline_head { display: flex; align-items: center; gap: 0.3rem;
+        input[type="time"] { flex: 1 1 0; min-width: 0; padding-left: 0.35rem; padding-right: 0.2rem; }
+        .btn { flex: 0 0 auto; padding: 0.2rem 0.45rem; } }
+    .o_sl_pnum { width: 1.6rem; height: 1.6rem; border-radius: 50%; background: #0f3049; color: #fff; font-weight: 800;
+        font-size: 0.8rem; display: flex; align-items: center; justify-content: center; flex: 0 0 auto; }
+    .o_sl_durs { display: flex; flex-wrap: wrap; gap: 0.3rem; margin-top: 0.35rem; align-items: center; }
+    .o_sl_dur { border: 1px solid #c8d2dc; background: #fff; border-radius: 999px; padding: 0.15rem 0.6rem; font-weight: 700;
+        font-size: 0.8rem; color: #0f3049;
+        &.on { background: #0f3049; border-color: #0f3049; color: #fff; } }
+    .o_sl_more_btn { border: 0; background: none; color: #1f6fb5; font-size: 0.8rem; padding: 0.3rem 0 0; font-weight: 600; }
+    .o_sl_quick_add_box { background: #fff; border: 2px dashed #c8d2dc; border-radius: 12px; padding: 0.6rem; margin-top: 0.5rem; }
+}

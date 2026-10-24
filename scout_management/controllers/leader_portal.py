@@ -501,11 +501,14 @@ class ScoutLeaderPortal(http.Controller):
             'lines': event._scout_plan_lines_dicts(), 'stages': parser.STAGES, 'kinds': parser.KINDS,
             'flags': [[f, parser.FLAG_LABELS[f]] for f in parser.FLAGS],
             'leaders': event._scout_plan_context()[2],
+            'template': event._scout_plan_template() if editable else [],
+            'copy_sources': event._scout_plan_copy_sources() if editable else [],
+            'session_start': '%02d:%02d' % divmod(event._scout_plan_window()[0], 60),
         }
         svc = self._svc()
         start, stop = svc._local(event.start), svc._local(event.stop)
         return self._render('scout_management.leader_session_plan', section, 'plan', event=event, sl_can_edit=editable,
-                            plan_json=json.dumps(data, ensure_ascii=False),
+                            plan_json=json.dumps(data, ensure_ascii=False), copy_sources=data['copy_sources'],
                             date=start.date().isoformat(), date_end=stop.date().isoformat(),
                             time_from=start.strftime('%H:%M'), time_to=stop.strftime('%H:%M'),
                             preset_type=None, leaders=svc.leader_partners(section),
@@ -519,6 +522,21 @@ class ScoutLeaderPortal(http.Controller):
             if not editable:
                 raise AccessError(_('Esta actividad la edita la jefatura.'))
             return {'ok': True, **event.scout_plan_interpret(text, lines)}
+        except (UserError, AccessError, ValidationError) as e:
+            return {'ok': False, 'error': str(e.args[0] if e.args else e)}
+
+    @http.route(['/dirigentes/api/plan/copiar'], type='jsonrpc', auth='user')
+    def leader_api_plan_copy(self, section_id, event_id, source_id, **kw):
+        """Actividades de otra junta de la sección, recorridas al horario de esta (no se guarda hasta "Guardar")."""
+        try:
+            section = self._svc()._section(section_id)
+            event, editable = self._plan_event(section, event_id)
+            if not editable:
+                raise AccessError(_('Esta actividad la edita la jefatura.'))
+            source = self._svc()._event(source_id)
+            if not (source.scout_section_ids & event.scout_section_ids):
+                raise AccessError(_('Esa junta no es de tu sección.'))
+            return {'ok': True, 'lines': event._scout_plan_copy_from(source)}
         except (UserError, AccessError, ValidationError) as e:
             return {'ok': False, 'error': str(e.args[0] if e.args else e)}
 
@@ -607,7 +625,7 @@ class ScoutLeaderPortal(http.Controller):
         svc = self._svc()
         return self._render('scout_management.leader_routes', section, 'members', ver='recibo' if ver == 'recibo' else 'mia',
                             routes=svc.routes(section), incoming=svc.incoming_routes(section),
-                            today=svc._today().isoformat())
+                            today=svc._today().isoformat(), svc=svc)
 
     @http.route(['/dirigentes/<int:section_id>/rutas/iniciar'], type='http', auth='user', website=True,
                 methods=['POST'])
@@ -622,6 +640,21 @@ class ScoutLeaderPortal(http.Controller):
             return self._back(url, error=str(e.args[0]))
         return self._back(url, ok=_('Ruta de enlace iniciada para %s. Se avisó a los jefes de ambas secciones.',
                                     route.member_id.name))
+
+    @http.route(['/dirigentes/<int:section_id>/rutas/pase'], type='http', auth='user', website=True,
+                methods=['POST'])
+    def leader_route_pass(self, section_id, **post):
+        section, redirect = self._section_or_redirect(section_id)
+        if redirect:
+            return redirect
+        url = f'/dirigentes/{section.id}/rutas'
+        try:
+            member, dest = self._svc().give_pass(section, post.get('route_id'), post.get('destination_id'),
+                                                 post.get('date') or None)
+        except (UserError, AccessError, ValidationError) as e:
+            return self._back(url, error=str(e.args[0]))
+        return self._back(url, ok=_('%(name)s pasó a %(dest)s. Se avisó a sus nuevos jefes.',
+                                    name=member.name, dest=dest.name))
 
     @http.route(['/dirigentes/<int:section_id>/rutas/recibir'], type='http', auth='user', website=True,
                 methods=['POST'])

@@ -10,89 +10,176 @@
         <field name="paperformat_id" ref="paperformat_scout_portrait"/>
     </record>
 
+    <!-- Frente de la credencial -->
+    <template id="report_member_card_front">
+        <t t-set="info" t-value="m._scout_card_info()"/>
+        <t t-set="reg" t-value="info[0] if m.scout_type == 'youth' else None"/>
+        <t t-set="cycle" t-value="info[1]"/>
+        <t t-set="valid" t-value="m._scout_card_valid()"/>
+        <div class="sc-card">
+            <img t-if="logo" class="sc-wm" t-att-src="logo" alt=""/>
+            <div class="sc-card-head sc-layer">
+                <table style="width:100%"><tr>
+                    <td style="width:9mm"><img t-if="logo" t-att-src="logo" alt=""/></td>
+                    <td><div class="g" t-out="company.name"/><div class="k">Credencial scout</div></td>
+                </tr></table>
+            </div>
+            <t t-call="scout_management.scout_greca"/>
+            <table class="sc-card-body sc-layer" style="width:100%; margin-top:1.5mm"><tr>
+                <td style="width:24mm; padding-left:2.5mm">
+                    <img t-if="m.image_512" class="sc-photo" t-att-src="image_data_uri(m.image_512)" alt=""/>
+                    <div t-else="" class="sc-nophoto"/>
+                </td>
+                <td style="padding: 0 1mm">
+                    <div class="sc-name" t-out="m.name"/>
+                    <div t-if="m.scout_name" class="sc-totem" t-out="m.scout_name"/>
+                    <div class="sc-small"><b t-out="m.scout_section_id.display_name or ''"/></div>
+                    <div class="sc-small" t-if="m.scout_patrol_id or m.scout_position_id"><t t-out="m.scout_patrol_id.name or ''"/><t t-if="m.scout_patrol_id and m.scout_position_id"> · </t><t t-out="m.scout_position_id.name or ''"/></div>
+                    <div class="sc-small" t-if="reg">Folio <t t-out="reg.name"/></div>
+                    <div class="sc-small" t-if="cycle">Ciclo <t t-out="cycle.name"/> · vence <t t-out="cycle.date_end.strftime('%d/%m/%Y')"/></div>
+                </td>
+                <td style="width:19mm; padding-right:2mm"><img class="sc-qr" t-att-src="m._scout_card_qr()" alt=""/></td>
+            </tr></table>
+            <div t-attf-class="sc-foot #{'sc-ok' if valid else 'sc-bad'}" t-out="'✔ REGISTRO VIGENTE' if valid else 'REGISTRO PENDIENTE'"/>
+        </div>
+    </template>
+
+    <!-- Reverso: emergencia, contacto del grupo y firma -->
+    <template id="report_member_card_back">
+        <t t-set="info" t-value="m._scout_card_info()"/>
+        <t t-set="cycle" t-value="info[1]"/>
+        <t t-set="blood" t-value="dict(m._fields['scout_blood_type'].selection).get(m.scout_blood_type) if m.scout_blood_type and m.scout_blood_type != 'unknown' else ''"/>
+        <t t-set="guardian" t-value="m.scout_guardian_id"/>
+        <div class="sc-card sc-back-card">
+            <img t-if="logo" class="sc-wm sc-wm-back" t-att-src="logo" alt=""/>
+            <div class="sc-back-head sc-layer">
+                <table style="width:100%"><tr>
+                    <td><div class="g" t-out="company.name"/><div class="k">En caso de emergencia</div></td>
+                    <td style="width:16mm; text-align:right">
+                        <div class="sc-blood"><small>SANGRE</small><b t-out="blood or '—'"/></div>
+                    </td>
+                </tr></table>
+            </div>
+            <div class="sc-greca-thin sc-layer"/>
+            <table class="sc-layer" style="width:100%; margin-top:1.4mm"><tr>
+                <td colspan="2" style="padding: 0 2.5mm"><div class="sc-who"><b t-out="m.name"/> · <t t-out="m.scout_section_id.display_name or ''"/></div></td>
+            </tr><tr>
+                <td style="padding: 0 1.5mm 0 2.5mm; vertical-align: top">
+                    <div class="sc-lbl">Avisar a</div>
+                    <t t-if="m.scout_emergency_ids">
+                        <div t-foreach="m.scout_emergency_ids[:2]" t-as="ec" class="sc-contact">
+                            <b t-out="ec.name"/><t t-if="ec.relationship"> (<t t-out="ec.relationship"/>)</t> · <span class="sc-phone" t-out="ec.phone"/>
+                        </div>
+                    </t>
+                    <div t-elif="guardian" class="sc-contact">
+                        <b t-out="guardian.name"/><t t-if="m.scout_guardian_relationship"> (<t t-out="m.scout_guardian_relationship"/>)</t>
+                        <t t-if="guardian.phone"> · <span class="sc-phone" t-out="guardian.phone"/></t>
+                    </div>
+                    <div t-else="" class="sc-contact">—</div>
+                    <t t-if="m.scout_allergies or m.scout_medical_conditions">
+                        <div class="sc-lbl">Alergias / cuidados</div>
+                        <div class="sc-contact" t-out="((m.scout_allergies or '') + (' · ' if m.scout_allergies and m.scout_medical_conditions else '') + (m.scout_medical_conditions or ''))[:90]"/>
+                    </t>
+                    <div class="sc-lbl">Servicio médico</div>
+                    <div class="sc-contact">
+                        <t t-out="dict(m._fields['scout_medical_service'].selection).get(m.scout_medical_service) or '—'"/>
+                        <t t-if="m.scout_medical_service not in (False, 'none') and m.scout_medical_policy and m.scout_medical_policy.strip().lower() not in ('no', '0', 'n/a', 'na', 'ninguno')"> · <t t-out="m.scout_medical_policy"/></t>
+                    </div>
+                </td>
+                <td style="width:27mm; padding-right:2.5mm; vertical-align: top; text-align: center">
+                    <div class="sc-sign-box"/>
+                    <div class="sc-sign">Jefe de grupo</div>
+                    <div t-if="cycle" class="sc-valid">Vigente al<br/><b t-out="cycle.date_end.strftime('%d/%m/%Y')"/></div>
+                </td>
+            </tr></table>
+            <div class="sc-found sc-layer">
+                Si encuentras esta credencial, avísanos<t t-if="company.phone">: <b t-out="company.phone"/></t><t t-elif="company.email">: <b t-out="company.email"/></t>. ¡Gracias!
+            </div>
+            <div class="sc-foot sc-foot-back">⚜ SIEMPRE LISTOS PARA SERVIR</div>
+        </div>
+    </template>
+
     <template id="report_member_card">
         <t t-call="web.html_container">
             <t t-call="web.basic_layout">
                 <style>
                     .sc-cards { font-family: Arial, sans-serif; color: #1d2733; }
+                    .sc-sheet { width: 180mm; margin: 0 auto; border-collapse: separate; border-spacing: 0; }
+                    .sc-sheet td.sc-slot { width: 86mm; height: 54mm; padding: 0; vertical-align: top; }
+                    .sc-sheet td.sc-gap { width: 8mm; }
+                    .sc-sheet tr.sc-rowgap td { height: 6mm; }
                     .sc-card { width: 86mm; height: 54mm; border: 0.3mm solid #0f3049; border-radius: 3mm; overflow: hidden;
-                               display: inline-block; vertical-align: top; margin: 0 4mm 6mm 0; background: #fff; position: relative; }
-                    .sc-card-head { background: #0f3049; color: #fff; padding: 1.6mm 2.5mm; height: 8mm; }
+                               background: #fff; position: relative; }
+                    .sc-card-head, .sc-back-head { background: #0f3049; color: #fff; padding: 1.6mm 2.5mm; height: 8mm; }
+                    .sc-back-head { height: 9.5mm; padding-top: 1.4mm; }
+                    .sc-who { font-size: 7.4pt; color: #0f3049; border-bottom: 0.2mm dashed #c8d2dc; padding-bottom: 0.6mm; }
                     .sc-card-head img { height: 7.5mm; vertical-align: middle; }
-                    .sc-card-head .g { font-size: 8.5pt; font-weight: bold; }
-                    .sc-card-head .k { font-size: 6.5pt; color: #f9b49c; letter-spacing: 0.4mm; text-transform: uppercase; }
+                    .sc-card-head .g, .sc-back-head .g { font-size: 8.5pt; font-weight: bold; }
+                    .sc-card-head .k, .sc-back-head .k { font-size: 6.5pt; color: #f9b49c; letter-spacing: 0.4mm; text-transform: uppercase; }
                     .sc-card .sc-greca img { width: 100%; height: 2.6mm; display: block; }
+                    .sc-greca-thin { height: 1.2mm; background: #f36f45; }
                     .sc-card-body td { vertical-align: top; }
                     .sc-photo { width: 21mm; height: 26mm; border-radius: 1.5mm; object-fit: cover; border: 0.4mm solid #f36f45; }
                     .sc-nophoto { width: 21mm; height: 26mm; border-radius: 1.5mm; background: #e9edf2; border: 0.4mm solid #f36f45; }
                     .sc-name { font-size: 9pt; font-weight: bold; color: #0f3049; line-height: 1.15; }
                     .sc-totem { font-size: 8pt; color: #f36f45; font-weight: bold; }
                     .sc-small { font-size: 6.6pt; line-height: 1.3; }
-                    .sc-qr { width: 17mm; height: 17mm; }
+                    .sc-qr { width: 17mm; height: 17mm; background: #fff; }
                     .sc-foot { position: absolute; bottom: 0; left: 0; right: 0; height: 5.5mm; line-height: 5.5mm; padding: 0 2.5mm;
                                font-size: 6.8pt; font-weight: bold; color: #fff; z-index: 2; }
                     .sc-ok { background: #2e9e44; } .sc-bad { background: #b8202f; }
+                    .sc-foot-back { background: #0f3049; text-align: center; letter-spacing: 0.3mm; }
                     .sc-wm { position: absolute; left: 22mm; top: 9mm; width: 42mm; height: 42mm; opacity: 0.12; z-index: 0; }
+                    .sc-wm-back { left: 24mm; top: 8mm; opacity: 0.10; }
                     .sc-layer { position: relative; z-index: 1; }
-                    .sc-qr { background: #fff; }
-                    .sc-back { padding: 3mm; font-size: 7pt; line-height: 1.45; }
-                    .sc-back h4 { font-size: 8pt; color: #0f3049; margin: 0 0 1mm 0; }
-                    .sc-sign { border-top: 0.2mm solid #555; margin-top: 7mm; padding-top: 0.8mm; font-size: 6.5pt; text-align: center; width: 45mm; }
+                    .sc-blood { display: inline-block; background: #fff; color: #b8202f; border-radius: 1.5mm; padding: 0.4mm 1.5mm;
+                                text-align: center; line-height: 1.05; }
+                    .sc-blood small { display: block; font-size: 4.8pt; font-weight: bold; letter-spacing: 0.3mm; }
+                    .sc-blood b { font-size: 9pt; }
+                    .sc-lbl { font-size: 5.8pt; font-weight: bold; color: #f36f45; text-transform: uppercase; letter-spacing: 0.3mm; margin-top: 0.8mm; }
+                    .sc-contact { font-size: 6.8pt; line-height: 1.3; color: #0f3049; }
+                    .sc-phone { font-weight: bold; white-space: nowrap; }
+                    .sc-sign-box { height: 8mm; }
+                    .sc-sign { border-top: 0.2mm solid #555; padding-top: 0.6mm; font-size: 6pt; color: #333; }
+                    .sc-valid { margin-top: 2mm; font-size: 6pt; color: #333; line-height: 1.25; }
+                    .sc-valid b { color: #0f3049; font-size: 7pt; }
+                    .sc-found { position: absolute; left: 2.5mm; right: 2.5mm; bottom: 6.6mm; font-size: 5.8pt; color: #5c6b7a; text-align: center; }
+                    .sc-page-label { font-size: 7pt; color: #9aa5b1; text-align: center; margin-bottom: 2mm; }
                 </style>
-                <div class="page sc-cards">
-                    <t t-foreach="docs" t-as="m">
-                        <t t-set="m" t-value="m.sudo()"/>
-                        <t t-set="info" t-value="m._scout_card_info()"/>
-                        <t t-set="reg" t-value="info[0] if m.scout_type == 'youth' else None"/>
-                        <t t-set="cycle" t-value="info[1]"/>
-                        <t t-set="logo" t-value="m._scout_card_logo()"/>
-                        <t t-set="valid" t-value="m._scout_card_valid()"/>
-                        <t t-set="company" t-value="m.company_id or m.env.company"/>
-                        <!-- Frente -->
-                        <div class="sc-card">
-                            <img t-if="logo" class="sc-wm" t-att-src="logo" alt=""/>
-                            <div class="sc-card-head sc-layer">
-                                <table style="width:100%"><tr>
-                                    <td style="width:9mm"><img t-if="company.logo" t-att-src="image_data_uri(company.logo)" alt=""/></td>
-                                    <td><div class="g" t-out="company.name"/><div class="k">Credencial scout</div></td>
-                                </tr></table>
-                            </div>
-                            <t t-call="scout_management.scout_greca"/>
-                            <table class="sc-card-body sc-layer" style="width:100%; margin-top:1.5mm"><tr>
-                                <td style="width:24mm; padding-left:2.5mm">
-                                    <img t-if="m.image_512" class="sc-photo" t-att-src="image_data_uri(m.image_512)" alt=""/>
-                                    <div t-else="" class="sc-nophoto"/>
-                                </td>
-                                <td style="padding: 0 1mm">
-                                    <div class="sc-name" t-out="m.name"/>
-                                    <div t-if="m.scout_name" class="sc-totem" t-out="m.scout_name"/>
-                                    <div class="sc-small"><b t-out="m.scout_section_id.display_name or ''"/></div>
-                                    <div class="sc-small" t-if="m.scout_patrol_id or m.scout_position_id"><t t-out="m.scout_patrol_id.name or ''"/><t t-if="m.scout_patrol_id and m.scout_position_id"> · </t><t t-out="m.scout_position_id.name or ''"/></div>
-                                    <div class="sc-small" t-if="reg">Folio <t t-out="reg.name"/></div>
-                                    <div class="sc-small" t-if="cycle">Ciclo <t t-out="cycle.name"/> · vence <t t-out="cycle.date_end.strftime('%d/%m/%Y')"/></div>
-                                </td>
-                                <td style="width:19mm; padding-right:2mm"><img class="sc-qr" t-att-src="m._scout_card_qr()" alt=""/></td>
-                            </tr></table>
-                            <div t-attf-class="sc-foot #{'sc-ok' if valid else 'sc-bad'}" t-out="'✔ REGISTRO VIGENTE' if valid else 'REGISTRO PENDIENTE'"/>
-                        </div>
-                        <!-- Reverso -->
-                        <div class="sc-card">
-                            <img t-if="logo" class="sc-wm" t-att-src="logo" alt=""/>
-                            <div class="sc-back sc-layer">
-                                <h4>En caso de emergencia</h4>
-                                <div>Tipo de sangre: <b t-out="dict(m._fields['scout_blood_type'].selection).get(m.scout_blood_type) or '—'"/></div>
-                                <div t-if="m.scout_allergies">Alergias: <t t-out="m.scout_allergies[:60]"/></div>
-                                <div t-foreach="m.scout_emergency_ids[:2]" t-as="ec"><t t-out="ec.name"/> (<t t-out="ec.relationship or ''"/>): <b t-out="ec.phone"/></div>
-                                <div t-if="not m.scout_emergency_ids and m.scout_guardian_id">Tutor: <t t-out="m.scout_guardian_id.name"/> <b t-out="m.scout_guardian_id.phone or ''"/></div>
-                                <div t-if="m.scout_promise_date">Promesa: <t t-out="m.scout_promise_date.strftime('%d/%m/%Y')"/></div>
-                                <div class="sc-sign">Jefe de grupo</div>
-                                <div style="font-size:6pt; color:#777; margin-top:1.5mm">Escanea el QR del frente para verificar la vigencia del registro.</div>
-                            </div>
-                            <div class="sc-foot" style="background:#0f3049">⚜ SIEMPRE LISTOS PARA SERVIR</div>
-                        </div>
-                        <br/>
-                    </t>
-                </div>
+                <t t-set="company" t-value="(docs[:1].company_id or docs.env.company).sudo()"/>
+                <t t-set="logo" t-value="docs[:1].sudo()._scout_card_logo() if docs else False"/>
+                <t t-set="members" t-value="docs.sudo()"/>
+                <!-- 8 credenciales por hoja: frentes en una página y reversos en la siguiente, en espejo,
+                     para que al imprimir a doble cara (volteando por el lado largo) cada reverso caiga atrás de su frente. -->
+                <t t-foreach="range(0, len(members), 8)" t-as="start">
+                    <t t-set="chunk" t-value="members[start:start + 8]"/>
+                    <div class="page sc-cards" style="page-break-after: always;">
+                        <div class="sc-page-label">Frente · imprime a doble cara, volteando por el lado largo</div>
+                        <table class="sc-sheet">
+                            <t t-foreach="range(0, len(chunk), 2)" t-as="r">
+                                <tr t-if="r" class="sc-rowgap"><td/><td/><td/></tr>
+                                <tr>
+                                    <td class="sc-slot"><t t-set="m" t-value="chunk[r]"/><t t-call="scout_management.report_member_card_front"/></td>
+                                    <td class="sc-gap"/>
+                                    <td class="sc-slot"><t t-if="r + 1 &lt; len(chunk)"><t t-set="m" t-value="chunk[r + 1]"/><t t-call="scout_management.report_member_card_front"/></t></td>
+                                </tr>
+                            </t>
+                        </table>
+                    </div>
+                    <div class="page sc-cards" t-att-style="'page-break-after: always;' if start + 8 &lt; len(members) else None">
+                        <div class="sc-page-label">Reverso</div>
+                        <table class="sc-sheet">
+                            <t t-foreach="range(0, len(chunk), 2)" t-as="r">
+                                <tr t-if="r" class="sc-rowgap"><td/><td/><td/></tr>
+                                <tr>
+                                    <td class="sc-slot"><t t-if="r + 1 &lt; len(chunk)"><t t-set="m" t-value="chunk[r + 1]"/><t t-call="scout_management.report_member_card_back"/></t></td>
+                                    <td class="sc-gap"/>
+                                    <td class="sc-slot"><t t-set="m" t-value="chunk[r]"/><t t-call="scout_management.report_member_card_back"/></td>
+                                </tr>
+                            </t>
+                        </table>
+                    </div>
+                </t>
             </t>
         </t>
     </template>

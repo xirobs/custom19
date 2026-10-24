@@ -94,6 +94,76 @@ class CalendarEventPlan(models.Model):
                 names.append(leader.scout_first_name.split()[0])
         return ref, self.location or '', sorted(set(n for n in names if len(n) > 2), key=len, reverse=True)
 
+    # ------------------------------------------------------------------ armar el programa sin capturar todo
+    # (nombre, minutos, etapa, tipo, casillas): la junta típica de 2 h 15 min; se ajusta al horario de la sesión.
+    BASE_PROGRAM = [
+        ('Formación y honores a la bandera', 15, 'opening', 'Ceremonia', ('structure', 'promise')),
+        ('Juego de desfogue', 15, 'first', 'Desfogue', ('groups', 'doing', 'outdoor')),
+        ('Técnica scout', 30, 'first', 'Técnica', ('progress', 'doing')),
+        ('Juego mediano', 20, 'second', 'Mediano', ('groups', 'doing')),
+        ('Trabajo por {equipos}: adelantos', 30, 'second', 'Técnica', ('progress', 'groups', 'adult')),
+        ('Reflexión y consejo', 15, 'closing', 'Reflexión', ('symbolic', 'adult')),
+        ('Cierre, avisos y despedida', 10, 'closing', 'Avisos', ('structure',)),
+    ]
+
+    def _scout_plan_window(self):
+        """(inicio, fin) de la sesión en minutos del día, hora local."""
+        self.ensure_one()
+        portal = self.env['scout.leader.portal']
+        start = portal._local(self.start) if self.start else None
+        stop = portal._local(self.stop) if self.stop else None
+        begin = start.hour * 60 + start.minute if start else 15 * 60 + 45
+        end = stop.hour * 60 + stop.minute if stop and stop.date() == start.date() else begin + 135
+        return begin, max(end, begin + 30)
+
+    def _scout_plan_template(self):
+        """Programa base listo para ajustar: las actividades típicas repartidas en el horario de la sesión."""
+        self.ensure_one()
+        begin, end = self._scout_plan_window()
+        total = sum(m for _n, m, *_r in self.BASE_PROGRAM)
+        scale = (end - begin) / total
+        label = (self.scout_section_ids[:1].patrol_label or 'equipo').lower()
+        teams = label + ('es' if label.endswith(('l', 'n', 'r')) else 's')
+        lines, cursor = [], begin
+        for index, (name, minutes, stage, kind, flags) in enumerate(self.BASE_PROGRAM):
+            length = max(5, int(round(minutes * scale / 5.0)) * 5)
+            stop = end if index == len(self.BASE_PROGRAM) - 1 else min(cursor + length, end)
+            lines.append(parser.new_line(
+                start='%02d:%02d' % divmod(cursor, 60), end='%02d:%02d' % divmod(stop, 60), stage=stage, kind=kind,
+                name=name.format(equipos=teams), flags={f: f in flags for f in parser.FLAGS}))
+            cursor = stop
+        return lines
+
+    def _scout_plan_copy_sources(self, limit=12):
+        """Otras sesiones de la sección que ya tienen programa (para copiarlo)."""
+        self.ensure_one()
+        events = self.sudo().search([
+            ('id', '!=', self.id), ('is_scout_event', '=', True), ('scout_plan_line_ids', '!=', False),
+            ('scout_section_ids', 'in', self.scout_section_ids.ids)], order='start desc', limit=limit)
+        portal = self.env['scout.leader.portal']
+        return [{'id': e.id, 'label': '%s · %s (%s act.)' % (portal._local(e.start).strftime('%d/%m/%Y'), e.name,
+                                                               len(e.scout_plan_line_ids))} for e in events]
+
+    def _scout_plan_copy_from(self, source):
+        """Actividades de otra sesión, recorridas al horario de esta."""
+        self.ensure_one()
+        lines = source.sudo()._scout_plan_lines_dicts()
+        begin, _end = self._scout_plan_window()
+        first = next((_hours(l['start']) for l in lines if l.get('start')), None)
+        offset = begin - int(round(first * 60)) if first is not None else 0
+
+        def shift(value):
+            if not value:
+                return value
+            minutes = int(round(_hours(value) * 60)) + offset
+            return '%02d:%02d' % divmod(max(0, min(minutes, 23 * 60 + 59)), 60)
+
+        for line in lines:
+            line.pop('id', None)
+            line['start'], line['end'] = shift(line.get('start')), shift(line.get('end'))
+            line['pending'] = []
+        return lines
+
     def _scout_plan_lines_dicts(self):
         self.ensure_one()
         return [line._to_dict() for line in self.scout_plan_line_ids]

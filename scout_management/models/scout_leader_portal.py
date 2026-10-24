@@ -1219,6 +1219,43 @@ class ScoutLeaderPortal(models.AbstractModel):
         return member
 
     @api.model
+    def pass_options(self, route):
+        """Secciones a las que puede pasar (la que corresponde por su sexo va primero)."""
+        options = route.section_id._route_destination_options()
+        default = route.destination_id or route.section_id._route_destination(route.member_id.scout_gender)
+        gender = route.member_id.scout_gender
+        if gender:
+            options = options.filtered(lambda s: not s.gender or s.gender == gender) or options
+        return default, (default | options) if default else options
+
+    @api.model
+    def can_give_pass(self, route):
+        return route.is_open and route.kind == 'transfer' and route.state in ('must_start', 'in_route', 'extension',
+                                                                             'overdue')
+
+    @api.model
+    def give_pass(self, section, route_id, destination_id=None, day=None):
+        """El jefe de la sección da el pase: el beneficiario pasa a la sección siguiente (sin patrulla)."""
+        route = self.env['scout.route'].sudo().browse(int(route_id or 0)).exists()
+        if not route or route.section_id != section or route.kind != 'transfer' or not route.is_open:
+            raise AccessError(_('Ese beneficiario no está en tu sección.'))
+        self._member(route.member_id.id, section)
+        if not self.can_give_pass(route):
+            raise UserError(_('%s todavía no tiene edad para el pase de sección.', route.member_id.name))
+        _default, options = self.pass_options(route)
+        destination = options.filtered(lambda s: s.id == int(destination_id or 0)) if destination_id else _default
+        if not destination:
+            raise UserError(_('Elige a qué sección pasa.'))
+        when = fields.Date.to_date(day) if day else self._today()
+        if when > self._today():
+            raise UserError(_('La fecha del pase no puede ser futura.'))
+        member = route.member_id
+        route.with_context(scout_route_receiver=True)._confirm(
+            when, destination, _('Pase dado por %s en el portal de dirigentes.', self.env.user.name))
+        self._note(member, _('Pase de sección a %s', destination.display_name))
+        return member, destination
+
+    @api.model
     def recent_arrivals(self, section, days=90):
         """Recién llegados de otra sección (para resaltarlos y asignarles patrulla)."""
         since = self._today() - timedelta(days=days)

@@ -120,7 +120,7 @@ class ScoutSectionRouteConfig(models.Model):
         """Edades oficiales del Grupo 7 Ethnos (solo donde aún no se configuraron)."""
         ref = lambda x: self.env.ref(f'scout_management.{x}', raise_if_not_found=False)  # noqa: E731
         rules = [
-            ('section_castores', (5, 6, 6, 0, 0, 0), 'section_lobatos', 'section_gacelas'),
+            ('section_castores', (6, 0, 6, 6, 0, 0), 'section_lobatos', 'section_gacelas'),
             ('section_lobatos', (10, 6, 11, 0, 0, 0), 'section_tropa_atlas', None),
             ('section_gacelas', (10, 6, 11, 0, 0, 0), 'section_tropa_hydra', None),
             ('section_tropa_atlas', (16, 6, 17, 0, 0, 0), 'section_clan_rover', None),
@@ -154,10 +154,19 @@ class ScoutSectionRouteConfig(models.Model):
             section.write(vals)
 
     def _route_destination(self, gender):
+        """Sección a la que pasa según el sexo. Si la sección se divide (Castores → Lobatos / Gacelas) y no se
+        sabe el sexo, queda por definir para no mandarla por error a la sección masculina."""
         self.ensure_one()
         if gender == 'f' and self.next_section_female_id:
             return self.next_section_female_id
+        if not gender and self.next_section_female_id:
+            return self.env['scout.section']
         return self.next_section_id
+
+    def _route_destination_options(self):
+        """Secciones a las que puede pasar un beneficiario de esta sección."""
+        self.ensure_one()
+        return (self.next_section_id | self.next_section_female_id).filtered(lambda s: not s.is_leadership)
 
 
 class ScoutRoute(models.Model):
@@ -448,6 +457,24 @@ class ScoutRoute(models.Model):
                 'res_model': 'scout.route.confirm.wizard', 'view_mode': 'form', 'target': 'new',
                 'context': {'default_route_id': self.id, 'default_destination_id': self.destination_id.id}}
 
+    def action_bulk_pass(self):
+        """Da el pase de sección (hoy) a los seleccionados, cada uno a su sección de destino."""
+        today = self._today()
+        done, missing = self.env['scout.route'], []
+        for route in self.filtered(lambda r: r.is_open and r.kind == 'transfer'):
+            if not route.destination_id:
+                missing.append(route.member_id.name)
+                continue
+            route._confirm(today)
+            done |= route
+        msg = _('%s beneficiario(s) pasaron de sección.', len(done))
+        if missing:
+            msg += ' ' + _('Sin destino (indica si es niño o niña): %s', ', '.join(missing))
+        return {'type': 'ir.actions.client', 'tag': 'display_notification',
+                'params': {'title': _('Pase de sección'), 'message': msg, 'sticky': bool(missing),
+                           'type': 'warning' if missing else 'success',
+                           'next': {'type': 'ir.actions.client', 'tag': 'soft_reload'}}}
+
     def _authorize_extension(self, ext_type, until, reason):
         self.ensure_one()
         self.env['scout.approval.mixin']._scout_check_manager(_('autorizar periodos extraordinarios'))
@@ -486,6 +513,16 @@ class ScoutRoute(models.Model):
             destination = destination or self.destination_id
             if not destination:
                 raise UserError(_('Indica la sección de destino.'))
+            gender = destination.gender if destination.gender in ('m', 'f') else False
+            if gender and member.scout_gender and member.scout_gender != gender \
+                    and destination in self.section_id._route_destination_options():
+                raise UserError(_('%(name)s está registrado(a) como %(sex)s y %(dest)s es una sección %(dsex)s. '
+                                  'Corrige el sexo en su ficha o elige la otra sección.', name=member.name,
+                                  sex=dict(member._fields['scout_gender'].selection).get(member.scout_gender),
+                                  dest=destination.name, dsex=_('femenina') if gender == 'f' else _('masculina')))
+            if gender and not member.scout_gender:
+                member.with_context(scout_change_approved=True, scout_route_closing=True).write(
+                    {'scout_gender': gender})
             vals.update(destination_id=destination.id,
                         destination_leaders=', '.join(self._leader_partners(destination).mapped('name')) or False)
         self.with_context(scout_route_system=True, scout_route_no_refresh=True).write(vals)
@@ -608,8 +645,10 @@ class ResPartnerRoute(models.Model):
                 vals = {}
                 if current.kind != kind:
                     vals['kind'] = kind
-                if kind == 'transfer' and destination and not current.destination_id:
-                    vals['destination_id'] = destination.id
+                auto = section._route_destination_options()
+                if kind == 'transfer' and not current.date_pass_real and current.destination_id != destination \
+                        and (not current.destination_id or current.destination_id in auto):
+                    vals['destination_id'] = destination.id if destination else False
                 if vals:
                     current.with_context(scout_route_system=True).write(vals)
 

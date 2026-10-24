@@ -1266,6 +1266,32 @@
                 <input type="date" name="date" class="form-control form-control-sm" t-att-value="today" style="max-width: 10rem"/>
                 <button class="btn btn-sm o_sl_btn flex-fill" type="submit"><i class="fa fa-road"/> Registrar inicio de ruta</button>
             </form>
+            <div t-if="r.kind == 'transfer' and not r.destination_id" class="o_sl_route_flag o_sl_route_flag_yellow">
+                Falta indicar si es niño o niña (en su ficha) para saber a qué sección pasa.</div>
+            <t t-if="not incoming_view and svc.can_give_pass(r)">
+                <t t-set="pass_opts" t-value="svc.pass_options(r)"/>
+                <details class="o_sl_pass_box mt-2">
+                    <summary class="btn btn-sm o_sl_btn w-100"><i class="fa fa-arrow-circle-right"/> Dar pase de sección</summary>
+                    <form t-att-action="'/dirigentes/%s/rutas/pase' % section.id" method="post" class="mt-2">
+                        <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
+                        <input type="hidden" name="route_id" t-att-value="r.id"/>
+                        <label class="small text-muted mb-1">Pasa a</label>
+                        <select name="destination_id" class="form-select form-select-sm mb-2" required="required">
+                            <option t-if="not pass_opts[0]" value="">Elige la sección…</option>
+                            <t t-foreach="pass_opts[1]" t-as="opt">
+                                <option t-att-value="opt.id" t-att-selected="opt == pass_opts[0]">
+                                    <t t-out="opt.name"/><t t-if="opt.gender == 'f'"> (niñas)</t><t t-elif="opt.gender == 'm'"> (niños)</t>
+                                </option>
+                            </t>
+                        </select>
+                        <div class="d-flex gap-2">
+                            <input type="date" name="date" class="form-control form-control-sm" t-att-value="today" t-att-max="today" style="max-width: 10rem"/>
+                            <button class="btn btn-sm o_sl_btn flex-fill" type="submit"><i class="fa fa-check"/> Confirmar pase</button>
+                        </div>
+                        <small class="d-block text-muted mt-1">Pasa a la nueva sección sin patrulla; sus nuevos jefes se la asignan.</small>
+                    </form>
+                </details>
+            </t>
             <form t-if="incoming_view and r.kind == 'transfer'" t-att-action="'/dirigentes/%s/rutas/recibir' % section.id" method="post" class="mt-2">
                 <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
                 <input type="hidden" name="route_id" t-att-value="r.id"/>
@@ -1289,7 +1315,7 @@
                     <div class="o_sl_stat_yellow"><b t-out="len(routes.filtered(lambda r: r.alert == 'yellow'))"/><small>En ruta / por iniciar</small></div>
                     <div><b t-out="len(routes.filtered(lambda r: r.alert == 'none'))"/><small>Permanencia regular</small></div>
                 </div>
-                <p class="o_sl_hint">Ordenados por urgencia. El tiempo restante se cuenta hasta la edad oficial de pase (en el Clan, hasta la partida). Las excepciones y el cambio definitivo los registra la jefatura de grupo.</p>
+                <p class="o_sl_hint">Ordenados por urgencia. El tiempo restante se cuenta hasta la edad oficial de pase (en el Clan, hasta la partida). Cuando ya cumplió su ruta, usa <b>Dar pase de sección</b>. Las excepciones las autoriza la jefatura de grupo.</p>
                 <div t-if="not routes" class="text-muted">No hay beneficiarios en la sección.</div>
                 <t t-foreach="routes" t-as="r"><t t-call="scout_management.leader_route_card"/></t>
             </t>
@@ -1313,7 +1339,7 @@
                 </div>
                 <a class="btn btn-sm o_sl_btn_outline" t-att-href="'/dirigentes/%s/lista/%s' % (section.id, event.id)" title="Pasar lista"><i class="fa fa-check-square-o"/></a>
             </div>
-            <details class="o_sl_card_box o_sl_session_data" t-att-open="(sl_can_edit and not (event.scout_theme or event.scout_objective)) or None">
+            <details class="o_sl_card_box o_sl_session_data">
                 <summary><b><i class="fa fa-pencil"/> Datos de la sesión</b> <small class="text-muted">nombre, horario, tipo, mística, objetivos, lugar, responsables</small></summary>
                 <form t-att-action="'/dirigentes/%s/actividad/guardar' % section.id" method="post" class="o_sl_form mt-2">
                     <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
@@ -1331,22 +1357,41 @@
             </div>
             <div t-if="not sl_can_edit" class="alert alert-info o_sl_alert">Esta actividad es de todo el grupo; la edita la jefatura. Aquí solo puedes verla.</div>
             <div class="o_sl_plan_app" t-att-data-plan="plan_json">
-                <div t-if="sl_can_edit" class="o_sl_voice">
-                    <button type="button" class="btn o_sl_btn_orange o_sl_btn_big o_sl_mic"><i class="fa fa-microphone"/> <span>Planificar con inteligencia artificial</span></button>
+                <div t-if="sl_can_edit" class="o_sl_quick_box">
+                    <div class="o_sl_quick_title"><i class="fa fa-bolt"/> Arma el programa rápido</div>
+                    <div class="o_sl_quick_grid">
+                        <button type="button" class="btn o_sl_quick_opt o_sl_use_base"><i class="fa fa-th-list"/><b>Programa base</b><small>Las actividades de una junta típica, ya con horario</small></button>
+                        <label t-if="copy_sources" class="btn o_sl_quick_opt mb-0"><i class="fa fa-files-o"/><b>Copiar otra junta</b><small>Usa el programa de una junta anterior</small>
+                            <select class="o_sl_copy_from form-select form-select-sm mt-1">
+                                <option value="">Elige la junta…</option>
+                                <option t-foreach="copy_sources" t-as="src" t-att-value="src['id']" t-out="src['label']"/>
+                            </select>
+                        </label>
+                    </div>
+                    <small class="text-muted d-block mt-1">Después solo cambia los nombres y toca los minutos de cada actividad: los horarios se acomodan solos.</small>
+                </div>
+                <details t-if="sl_can_edit" class="o_sl_voice o_sl_card_box">
+                    <summary><b><i class="fa fa-microphone"/> Dictar o escribir el programa</b> <small class="text-muted">(opcional)</small></summary>
+                    <button type="button" class="btn o_sl_btn_orange o_sl_btn_big o_sl_mic mt-2"><i class="fa fa-microphone"/> <span>Planificar con inteligencia artificial</span></button>
                     <p class="o_sl_hint mt-2 mb-1">Toca el micrófono y dicta de corrido: "A las cuatro honores a la bandera. A las cuatro y cuarto juego de desfogue por patrullas durante veinte minutos. Después…". También puedes dictar correcciones: "cambia la de las cuatro y media por…", "elimina la de los avisos", "agrega a las cinco…".</p>
                     <textarea class="form-control o_sl_dictation" rows="4" placeholder="Aquí aparece lo que dictas (también puedes escribir o usar el micrófono del teclado)."/>
                     <div class="d-flex gap-2 mt-2">
                         <button type="button" class="btn o_sl_btn flex-fill o_sl_interpret"><i class="fa fa-magic"/> Interpretar</button>
                         <button type="button" class="btn o_sl_btn_outline o_sl_clear_text" title="Borrar texto"><i class="fa fa-eraser"/></button>
                     </div>
-                </div>
+                </details>
                 <div class="o_sl_plan_msgs"/>
                 <div class="o_sl_plan_lines"/>
                 <t t-if="sl_can_edit">
-                    <button type="button" class="btn o_sl_btn_outline w-100 mt-2 o_sl_add_line"><i class="fa fa-plus"/> Agregar actividad (formato tradicional)</button>
+                    <div class="o_sl_quick_add_box">
+                        <input class="form-control o_sl_quick_name" placeholder="+ Agregar actividad, ej. Juego de la bandera"/>
+                        <div class="o_sl_durs mt-1"><small class="text-muted me-1">Dura:</small>
+                            <button t-foreach="[10, 15, 20, 30]" t-as="d" type="button" class="o_sl_dur o_sl_quick_add" t-att-data-dur="d"><i class="fa fa-plus"/> <t t-out="d"/>′</button>
+                        </div>
+                    </div>
                     <label class="o_sl_check mt-3 o_sl_confirm_wrap d-none"><input type="checkbox" class="o_sl_confirm_approved"/> Confirmo cambiar el programa que ya tiene visto bueno</label>
-                    <button type="button" class="btn o_sl_btn o_sl_btn_big mt-2 o_sl_save_plan"><i class="fa fa-save"/> Revisé el programa: guardar</button>
-                    <p class="small text-muted mt-2">Nada se guarda hasta que tocas "Guardar". Las casillas se marcan solo cuando el dictado lo respalda; tócalas para activarlas o quitarlas.</p>
+                    <button type="button" class="btn o_sl_btn o_sl_btn_big mt-2 o_sl_save_plan"><i class="fa fa-save"/> Guardar programa</button>
+                    <p class="small text-muted mt-2">Nada se guarda hasta que tocas "Guardar programa".</p>
                 </t>
             </div>
         </t>
