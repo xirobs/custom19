@@ -540,6 +540,22 @@ class ScoutLeaderPortal(http.Controller):
         except (UserError, AccessError, ValidationError) as e:
             return {'ok': False, 'error': str(e.args[0] if e.args else e)}
 
+    @http.route(['/dirigentes/api/plan/archivo'], type='http', auth='user', methods=['POST'])
+    def leader_api_plan_file(self, section_id=None, event_id=None, file=None, **kw):
+        """Lee el programa de un archivo (Excel, PDF o imagen) y lo regresa al editor sin guardarlo."""
+        try:
+            section = self._svc()._section(int(section_id or 0))
+            event, editable = self._plan_event(section, int(event_id or 0))
+            if not editable:
+                raise AccessError(_('Esta actividad la edita la jefatura.'))
+            if not file or not getattr(file, 'filename', None):
+                raise UserError(_('Elige el archivo del programa.'))
+            result = event.sudo().scout_plan_from_file(file.filename, file.read())
+            payload = {'ok': True, **result}
+        except (UserError, AccessError, ValidationError) as e:
+            payload = {'ok': False, 'error': str(e.args[0] if e.args else e)}
+        return request.make_json_response(payload)
+
     @http.route(['/dirigentes/api/plan/guardar'], type='jsonrpc', auth='user')
     def leader_api_plan_save(self, section_id, event_id, lines, dictation=None, confirm_approved=False, **kw):
         try:

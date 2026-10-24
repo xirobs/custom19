@@ -277,6 +277,43 @@ function setupPlan(root) {
         });
     }
 
+    const fileInput = root.querySelector(".o_sl_plan_file");
+    if (fileInput) {
+        const busy = root.querySelector(".o_sl_file_busy");
+        fileInput.addEventListener("change", async () => {
+            const file = fileInput.files && fileInput.files[0];
+            fileInput.value = "";
+            if (!file) {
+                return;
+            }
+            const form = new FormData();
+            form.append("csrf_token", (root.querySelector(".o_sl_csrf") || {}).value || "");
+            form.append("section_id", data.section_id);
+            form.append("event_id", data.event_id);
+            form.append("file", file, file.name);
+            busy && busy.classList.remove("d-none");
+            showMessages([], []);
+            try {
+                const response = await fetch("/dirigentes/api/plan/archivo", {
+                    method: "POST", body: form, credentials: "same-origin",
+                });
+                const result = await response.json();
+                if (!result.ok) {
+                    showMessages([], [], result.error);
+                    return;
+                }
+                if (replaceAll(result.lines, "las del archivo")) {
+                    showMessages(result.messages, result.warnings);
+                    root.querySelector(".o_sl_plan_lines").scrollIntoView({ behavior: "smooth", block: "start" });
+                }
+            } catch (error) {
+                showMessages([], [], "No se pudo leer el archivo (sin conexión o archivo muy pesado). Intenta de nuevo.");
+            } finally {
+                busy && busy.classList.add("d-none");
+            }
+        });
+    }
+
     const interpret = async () => {
         const text = (textEl.value || "").trim();
         if (!text) {

@@ -228,6 +228,16 @@
                                 la familia paga en línea y el monto es mayor al mínimo, calculada para que al grupo le llegue completo.
                                 Si paga en efectivo o transferencia, no se cobra. Revisa la tarifa vigente en tu cuenta de Mercado Pago.</div>
                         </group>
+                        <group string="Inteligencia artificial (leer programas en PDF o imagen)">
+                            <field name="scout_ai_provider"/>
+                            <field name="scout_ai_api_key" password="True" groups="base.group_system"/>
+                            <field name="scout_ai_model" placeholder="El recomendado"/>
+                            <field name="scout_ai_ready" invisible="1"/>
+                            <button name="action_scout_ai_test" type="object" string="Probar conexión" class="btn-secondary"
+                                    colspan="2" invisible="not scout_ai_ready" groups="base.group_system"/>
+                            <div colspan="2" class="text-muted small">Los jefes suben el programa de la junta (Excel, PDF o foto) y se
+                                llena solo. El Excel no necesita IA. Gemini tiene uso gratuito: crea la clave en aistudio.google.com/apikey.</div>
+                        </group>
                     </group>
                 </page>
             </xpath>

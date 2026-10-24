@@ -1367,7 +1367,12 @@
                                 <option t-foreach="copy_sources" t-as="src" t-att-value="src['id']" t-out="src['label']"/>
                             </select>
                         </label>
+                        <label class="btn o_sl_quick_opt o_sl_quick_file mb-0"><i class="fa fa-upload"/><b>Subir archivo</b><small>Excel, PDF o foto del programa: se llena solo</small>
+                            <input type="file" class="o_sl_plan_file d-none" accept=".xlsx,.xlsm,.csv,.pdf,image/*"/>
+                        </label>
                     </div>
+                    <input type="hidden" class="o_sl_csrf" t-att-value="request.csrf_token()"/>
+                    <div class="o_sl_file_busy d-none"><i class="fa fa-spinner fa-spin"/> Leyendo el archivo… puede tardar unos segundos.</div>
                     <small class="text-muted d-block mt-1">Después solo cambia los nombres y toca los minutos de cada actividad: los horarios se acomodan solos.</small>
                 </div>
                 <details t-if="sl_can_edit" class="o_sl_voice o_sl_card_box">

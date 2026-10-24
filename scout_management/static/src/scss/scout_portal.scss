@@ -608,6 +608,9 @@ $aula-green: #2e9e5b;
     .o_sl_quick_box { background: #fff3ed; border: 2px solid #f36f45; border-radius: 14px; padding: 0.8rem; margin-bottom: 0.75rem; }
     .o_sl_quick_title { font-weight: 800; color: #0f3049; margin-bottom: 0.5rem; i { color: #f36f45; } }
     .o_sl_quick_grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem; }
+    .o_sl_quick_grid > .o_sl_quick_file:nth-child(odd):last-child { grid-column: 1 / -1; }
+    .o_sl_quick_file { border-style: dashed !important; }
+    .o_sl_file_busy { margin-top: 0.5rem; font-weight: 700; color: $scout-navy; }
     .o_sl_quick_opt { display: flex; flex-direction: column; align-items: flex-start; text-align: left; gap: 0.1rem; background: #fff;
         border: 1px solid #f2c2b0; border-radius: 12px; padding: 0.6rem; color: #0f3049; white-space: normal;
         i { font-size: 1.3rem; color: #f36f45; } small { color: #5c6b7a; font-weight: 400; line-height: 1.2; } }
