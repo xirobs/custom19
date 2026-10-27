@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <menuitem id="menu_bita_root" name="Suscripciones" web_icon="bitascout_suscripciones,static/description/icon.png"
+              groups="group_bita_manager" sequence="46"/>
+    <menuitem id="menu_bita_subscriptions" name="Suscripciones" parent="menu_bita_root"
+              action="bita_subscription_action" sequence="10"/>
+    <menuitem id="menu_bita_platforms" name="Plataformas" parent="menu_bita_root"
+              action="bita_platform_action" sequence="20"/>
+</odoo>

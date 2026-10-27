@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Póliza base de accidentes personales; completa aseguradora, número y montos. -->
+    <data noupdate="1">
+        <record id="policy_accidentes_personales" model="rss.policy">
+            <field name="name">Accidentes Personales Scout</field>
+            <field name="coverage_type">Accidentes personales en actividades scouts</field>
+            <field name="report_day">10</field>
+            <field name="auto_generate" eval="True"/>
+            <field name="coverage_notes"><![CDATA[
+<p>Cubre a los miembros registrados del grupo durante actividades scouts oficiales:
+reuniones semanales, campamentos, excursiones, actividades deportivas, servicio
+comunitario y traslados a la actividad.</p>
+<p>Ajusta este texto con las condiciones generales y exclusiones de tu póliza.</p>]]></field>
+        </record>
+        <record id="coverage_fractures" model="rss.policy.coverage">
+            <field name="policy_id" ref="policy_accidentes_personales"/>
+            <field name="sequence">1</field>
+            <field name="name">Fracturas</field>
+            <field name="injury_type">fracture</field>
+        </record>
+        <record id="coverage_bruises" model="rss.policy.coverage">
+            <field name="policy_id" ref="policy_accidentes_personales"/>
+            <field name="sequence">2</field>
+            <field name="name">Golpes y contusiones</field>
+            <field name="injury_type">bruise</field>
+        </record>
+        <record id="coverage_cuts" model="rss.policy.coverage">
+            <field name="policy_id" ref="policy_accidentes_personales"/>
+            <field name="sequence">3</field>
+            <field name="name">Cortes y heridas</field>
+            <field name="injury_type">cut</field>
+        </record>
+        <record id="coverage_sprains" model="rss.policy.coverage">
+            <field name="policy_id" ref="policy_accidentes_personales"/>
+            <field name="sequence">4</field>
+            <field name="name">Esguinces y luxaciones</field>
+            <field name="injury_type">sprain</field>
+        </record>
+        <record id="coverage_burns" model="rss.policy.coverage">
+            <field name="policy_id" ref="policy_accidentes_personales"/>
+            <field name="sequence">5</field>
+            <field name="name">Quemaduras</field>
+            <field name="injury_type">burn</field>
+        </record>
+        <record id="coverage_medical" model="rss.policy.coverage">
+            <field name="policy_id" ref="policy_accidentes_personales"/>
+            <field name="sequence">6</field>
+            <field name="name">Gastos médicos por accidente</field>
+            <field name="injury_type">medical</field>
+        </record>
+    </data>
+</odoo>

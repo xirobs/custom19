@@ -1,0 +1,7 @@
+id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink
+access_bita_platform_user,bita.platform.user,model_bita_platform,base.group_user,1,0,0,0
+access_bita_platform_portal,bita.platform.portal,model_bita_platform,base.group_portal,1,0,0,0
+access_bita_platform_manager,bita.platform.manager,model_bita_platform,group_bita_manager,1,1,1,1
+access_bita_subscription_user,bita.subscription.user,model_bita_subscription,base.group_user,1,0,0,0
+access_bita_subscription_portal,bita.subscription.portal,model_bita_subscription,base.group_portal,1,0,0,0
+access_bita_subscription_manager,bita.subscription.manager,model_bita_subscription,group_bita_manager,1,1,1,1

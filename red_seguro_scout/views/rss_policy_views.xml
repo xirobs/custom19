@@ -1,0 +1,102 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="rss_policy_view_list" model="ir.ui.view">
+        <field name="name">rss.policy.list</field>
+        <field name="model">rss.policy</field>
+        <field name="arch" type="xml">
+            <list string="Pólizas" class="o_rss">
+                <field name="name"/>
+                <field name="policy_number"/>
+                <field name="insurer_id"/>
+                <field name="date_start"/>
+                <field name="date_end"/>
+                <field name="premium_per_member"/>
+                <field name="currency_id" column_invisible="1"/>
+                <field name="report_day"/>
+                <field name="company_id" groups="base.group_multi_company"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="rss_policy_view_form" model="ir.ui.view">
+        <field name="name">rss.policy.form</field>
+        <field name="model">rss.policy</field>
+        <field name="arch" type="xml">
+            <form string="Póliza" class="o_rss">
+                <sheet>
+                    <div class="oe_button_box" name="button_box">
+                        <button name="action_view_groups" type="object" class="oe_stat_button" icon="fa-users">
+                            <field name="group_count" widget="statinfo" string="Grupos"/>
+                        </button>
+                        <button class="oe_stat_button" icon="fa-shield" disabled="1">
+                            <field name="member_count" widget="statinfo" string="Asegurados"/>
+                        </button>
+                    </div>
+                    <widget name="web_ribbon" title="Archivada" bg_color="text-bg-danger" invisible="active"/>
+                    <field name="active" invisible="1"/>
+                    <div class="oe_title">
+                        <label for="name"/>
+                        <h1><field name="name" placeholder="Ej. Accidentes Personales Scout 2027"/></h1>
+                    </div>
+                    <group>
+                        <group string="Aseguradora">
+                            <field name="insurer_id"/>
+                            <field name="policy_number"/>
+                            <field name="insurer_email" widget="email"/>
+                            <field name="insurer_cc"/>
+                        </group>
+                        <group string="Vigencia y cuota">
+                            <field name="coverage_type"/>
+                            <label for="date_start" string="Vigencia"/>
+                            <div class="o_row">
+                                <field name="date_start"/> <span>a</span> <field name="date_end"/>
+                            </div>
+                            <field name="premium_per_member"/>
+                            <field name="currency_id" invisible="1"/>
+                            <field name="company_id" groups="base.group_multi_company"/>
+                        </group>
+                    </group>
+                    <group string="Relación mensual a la aseguradora">
+                        <group>
+                            <field name="auto_generate"/>
+                            <field name="report_day"/>
+                        </group>
+                        <group>
+                            <field name="auto_send"/>
+                            <field name="only_paid_groups"/>
+                        </group>
+                    </group>
+                    <notebook>
+                        <page string="Coberturas" name="coverages">
+                            <field name="coverage_line_ids">
+                                <list editable="bottom">
+                                    <field name="sequence" widget="handle"/>
+                                    <field name="name"/>
+                                    <field name="injury_type"/>
+                                    <field name="sum_insured"/>
+                                    <field name="deductible"/>
+                                    <field name="notes"/>
+                                    <field name="currency_id" column_invisible="1"/>
+                                </list>
+                            </field>
+                        </page>
+                        <page string="Condiciones y exclusiones" name="notes">
+                            <field name="coverage_notes"/>
+                        </page>
+                    </notebook>
+                </sheet>
+                <chatter/>
+            </form>
+        </field>
+    </record>
+
+    <record id="rss_policy_action" model="ir.actions.act_window">
+        <field name="name">Pólizas</field>
+        <field name="res_model">rss.policy</field>
+        <field name="view_mode">list,form</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">Registra la póliza de accidentes personales</p>
+            <p>Indica la aseguradora, el correo al que se envía la relación mensual y la cuota por miembro.</p>
+        </field>
+    </record>
+</odoo>

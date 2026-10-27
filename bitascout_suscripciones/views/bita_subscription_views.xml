@@ -1,0 +1,132 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="bita_subscription_view_search" model="ir.ui.view">
+        <field name="name">bita.subscription.search</field>
+        <field name="model">bita.subscription</field>
+        <field name="arch" type="xml">
+            <search string="Suscripciones">
+                <field name="user_id"/>
+                <field name="platform_id"/>
+                <field name="name"/>
+                <field name="payment_reference"/>
+                <filter name="current" string="Dan acceso hoy" domain="[('is_current', '=', True)]"/>
+                <filter name="trial" string="En prueba" domain="[('is_trial', '=', True), ('state', '=', 'active')]"/>
+                <filter name="pending" string="Pendientes de pago" domain="[('state', '=', 'draft')]"/>
+                <filter name="expired" string="Vencidas" domain="[('state', '=', 'expired')]"/>
+                <separator/>
+                <filter name="filter_end" string="Vencimiento" date="date_end"/>
+                <group>
+                    <filter name="by_platform" string="Plataforma" context="{'group_by': 'platform_id'}"/>
+                    <filter name="by_user" string="Usuario" context="{'group_by': 'user_id'}"/>
+                    <filter name="by_state" string="Estatus" context="{'group_by': 'state'}"/>
+                    <filter name="by_end_month" string="Mes de vencimiento" context="{'group_by': 'date_end:month'}"/>
+                </group>
+            </search>
+        </field>
+    </record>
+
+    <record id="bita_subscription_view_list" model="ir.ui.view">
+        <field name="name">bita.subscription.list</field>
+        <field name="model">bita.subscription</field>
+        <field name="arch" type="xml">
+            <list string="Suscripciones" decoration-muted="state in ('expired', 'cancel')"
+                  decoration-warning="state == 'active' and days_left &lt;= 7" decoration-info="state == 'draft'">
+                <field name="name"/>
+                <field name="user_id"/>
+                <field name="platform_id"/>
+                <field name="group_id" optional="show"/>
+                <field name="period" optional="show"/>
+                <field name="date_start"/>
+                <field name="date_end"/>
+                <field name="days_left" optional="show"/>
+                <field name="payment_method" optional="show"/>
+                <field name="amount" sum="Total" optional="show"/>
+                <field name="currency_id" column_invisible="1"/>
+                <field name="is_trial" optional="hide"/>
+                <field name="state" widget="badge" decoration-success="state == 'active'"
+                       decoration-info="state == 'draft'" decoration-danger="state == 'expired'"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="bita_subscription_view_form" model="ir.ui.view">
+        <field name="name">bita.subscription.form</field>
+        <field name="model">bita.subscription</field>
+        <field name="arch" type="xml">
+            <form string="Suscripción">
+                <header>
+                    <button name="action_activate" type="object" string="Registrar pago y activar"
+                            class="btn-primary" invisible="state != 'draft'"/>
+                    <button name="action_renew" type="object" string="Renovar / pagar suscripción"
+                            class="btn-primary" invisible="state not in ('active', 'expired')"/>
+                    <button name="action_cancel" type="object" string="Cancelar"
+                            invisible="state in ('cancel', 'expired')"
+                            confirm="El usuario perderá el acceso a la plataforma. ¿Cancelar?"/>
+                    <button name="action_draft" type="object" string="Regresar a pendiente" invisible="state != 'cancel'"/>
+                    <field name="state" widget="statusbar" statusbar_visible="draft,active,expired"/>
+                </header>
+                <sheet>
+                    <widget name="web_ribbon" title="Prueba" bg_color="text-bg-info" invisible="not is_trial or state != 'active'"/>
+                    <widget name="web_ribbon" title="Vencida" bg_color="text-bg-danger" invisible="state != 'expired'"/>
+                    <field name="is_trial" invisible="1"/>
+                    <field name="platform_group_ids" invisible="1"/>
+                    <div class="oe_title">
+                        <h1><field name="name"/></h1>
+                    </div>
+                    <group>
+                        <group string="Suscriptor">
+                            <field name="user_id" readonly="state != 'draft'"/>
+                            <field name="platform_id" readonly="state != 'draft'"/>
+                            <field name="group_id"/>
+                            <field name="is_current"/>
+                        </group>
+                        <group string="Vigencia">
+                            <field name="period" readonly="state not in ('draft', 'active')"/>
+                            <field name="date_start"/>
+                            <field name="date_end" readonly="period != 'custom'" force_save="1"/>
+                            <field name="days_left" invisible="state != 'active'"/>
+                        </group>
+                    </group>
+                    <group string="Pago">
+                        <group>
+                            <field name="amount"/>
+                            <field name="currency_id" invisible="1"/>
+                            <field name="payment_method"/>
+                        </group>
+                        <group>
+                            <field name="payment_date"/>
+                            <field name="payment_reference"/>
+                            <field name="origin"/>
+                        </group>
+                    </group>
+                    <field name="note" placeholder="Notas"/>
+                </sheet>
+                <chatter/>
+            </form>
+        </field>
+    </record>
+
+    <record id="bita_subscription_view_pivot" model="ir.ui.view">
+        <field name="name">bita.subscription.pivot</field>
+        <field name="model">bita.subscription</field>
+        <field name="arch" type="xml">
+            <pivot string="Suscripciones">
+                <field name="platform_id" type="row"/>
+                <field name="state" type="col"/>
+                <field name="amount" type="measure"/>
+            </pivot>
+        </field>
+    </record>
+
+    <record id="bita_subscription_action" model="ir.actions.act_window">
+        <field name="name">Suscripciones</field>
+        <field name="res_model">bita.subscription</field>
+        <field name="view_mode">list,form,pivot</field>
+        <field name="search_view_id" ref="bita_subscription_view_search"/>
+        <field name="context">{'search_default_by_platform': 1}</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">Registra la primera suscripción</p>
+            <p>Elige el usuario y la plataforma, captura el pago y actívala: el usuario recibe su rol al instante.</p>
+        </field>
+    </record>
+</odoo>

@@ -1,0 +1,588 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="demo_cluster_centro" model="rss.group.cluster">
+        <field name="name">Distrito Puebla Centro</field>
+        <field name="code">PUE-C</field>
+        <field name="kind">district</field>
+    </record>
+    <record id="demo_cluster_sur" model="rss.group.cluster">
+        <field name="name">Distrito Puebla Sur</field>
+        <field name="code">PUE-S</field>
+        <field name="kind">district</field>
+    </record>
+    <record id="red_seguro_scout.policy_accidentes_personales" model="rss.policy">
+        <field name="policy_number">AP-SCOUT-0001</field>
+        <field name="insurer_email">relaciones@aseguradora-ejemplo.mx</field>
+        <field name="premium_per_member">350</field>
+    </record>
+    <record id="demo_group_7" model="rss.scout.group">
+        <field name="name">Grupo 7</field>
+        <field name="number">7</field>
+        <field name="cluster_id" ref="demo_cluster_centro"/>
+        <field name="policy_id" ref="red_seguro_scout.policy_accidentes_personales"/>
+        <field name="leader_name">Laura Méndez</field>
+        <field name="motto">Siempre listos</field>
+        <field name="primary_color">#1B2A4A</field>
+        <field name="secondary_color">#F07C1E</field>
+        <field name="neckerchief">Azul marino, naranja y blanco con grecas negras</field>
+        <field name="leader_phone">222 555 0107</field>
+        <field name="city">Puebla</field>
+    </record>
+    <record id="demo_group_12" model="rss.scout.group">
+        <field name="name">Grupo 12</field>
+        <field name="number">12</field>
+        <field name="cluster_id" ref="demo_cluster_centro"/>
+        <field name="policy_id" ref="red_seguro_scout.policy_accidentes_personales"/>
+        <field name="leader_name">Ricardo Pérez</field>
+        <field name="motto">Dar lo mejor de nosotros</field>
+        <field name="primary_color">#2E6B3A</field>
+        <field name="secondary_color">#F2C94C</field>
+        <field name="leader_phone">222 555 0112</field>
+        <field name="city">Puebla</field>
+    </record>
+    <record id="demo_group_3" model="rss.scout.group">
+        <field name="name">Grupo 3</field>
+        <field name="number">3</field>
+        <field name="cluster_id" ref="demo_cluster_sur"/>
+        <field name="policy_id" ref="red_seguro_scout.policy_accidentes_personales"/>
+        <field name="leader_name">Ana Torres</field>
+        <field name="leader_phone">222 555 0103</field>
+        <field name="city">Puebla</field>
+    </record>
+    <record id="demo_group_21" model="rss.scout.group">
+        <field name="name">Grupo 21</field>
+        <field name="number">21</field>
+        <field name="cluster_id" ref="demo_cluster_sur"/>
+        <field name="policy_id" ref="red_seguro_scout.policy_accidentes_personales"/>
+        <field name="leader_name">Miguel Ríos</field>
+        <field name="leader_phone">222 555 0121</field>
+        <field name="city">Puebla</field>
+    </record>
+    <record id="demo_insured_1" model="rss.insured">
+        <field name="first_name">Mateo</field>
+        <field name="last_name_father">Hernández</field>
+        <field name="last_name_mother">Ortiz</field>
+        <field name="birthdate" eval="(DateTime.today() - relativedelta(years=17, days=197)).strftime('%Y-%m-%d')"/>
+        <field name="sex">male</field>
+        <field name="group_id" ref="demo_group_7"/>
+        <field name="tutor_name">Mónica Hernández Ramírez</field>
+        <field name="tutor_relationship">father</field>
+        <field name="tutor_phone">222 188 8104</field>
+        <field name="tutor_email">familia.hernandez1@correo-ejemplo.mx</field>
+        <field name="state">active</field>
+        <field name="date_start" eval="(DateTime.today() - relativedelta(months=2)).strftime('%Y-%m-01')"/>
+    </record>
+    <record id="demo_insured_2" model="rss.insured">
+        <field name="first_name">Emiliano</field><field name="second_name">Alejandro</field>
+        <field name="last_name_father">Castillo</field>
+        <field name="last_name_mother">García</field>
+        <field name="birthdate" eval="(DateTime.today() - relativedelta(years=19, days=124)).strftime('%Y-%m-%d')"/>
+        <field name="sex">male</field>
+        <field name="group_id" ref="demo_group_7"/>
+        <field name="state">active</field>
+        <field name="date_start" eval="(DateTime.today() - relativedelta(months=2)).strftime('%Y-%m-01')"/>
+    </record>
+    <record id="demo_insured_3" model="rss.insured">
+        <field name="first_name">María</field>
+        <field name="last_name_father">Flores</field>
+        <field name="last_name_mother">García</field>
+        <field name="birthdate" eval="(DateTime.today() - relativedelta(years=17, days=158)).strftime('%Y-%m-%d')"/>
+        <field name="sex">female</field>
+        <field name="group_id" ref="demo_group_7"/>
+        <field name="tutor_name">Patricia Flores Martínez</field>
+        <field name="tutor_relationship">mother</field>
+        <field name="tutor_phone">222 673 3961</field>
+        <field name="tutor_email">familia.flores3@correo-ejemplo.mx</field>
+        <field name="state">active</field>
+        <field name="date_start" eval="(DateTime.today() - relativedelta(months=3)).strftime('%Y-%m-07')"/>
+    </record>
+    <record id="demo_insured_4" model="rss.insured">
+        <field name="first_name">Andrés</field>
+        <field name="last_name_father">Jiménez</field>
+        <field name="last_name_mother">Hernández</field>
+        <field name="birthdate" eval="(DateTime.today() - relativedelta(years=17, days=298)).strftime('%Y-%m-%d')"/>
+        <field name="sex">male</field>
+        <field name="group_id" ref="demo_group_7"/>
+        <field name="tutor_name">Mónica Jiménez Ramírez</field>
+        <field name="tutor_relationship">mother</field>
+        <field name="tutor_phone">222 796 9711</field>
+        <field name="tutor_email">familia.jimenez4@correo-ejemplo.mx</field>
+        <field name="state">active</field>
+        <field name="date_start" eval="(DateTime.today() - relativedelta(months=2)).strftime('%Y-%m-01')"/>
+    </record>
+    <record id="demo_insured_5" model="rss.insured">
+        <field name="first_name">Sebastián</field>
+        <field name="last_name_father">Romero</field>
+        <field name="last_name_mother">Sánchez</field>
+        <field name="birthdate" eval="(DateTime.today() - relativedelta(years=13, days=102)).strftime('%Y-%m-%d')"/>
+        <field name="sex">male</field>
+        <field name="group_id" ref="demo_group_7"/>
+        <field name="tutor_name">Jorge Romero Morales</field>
+        <field name="tutor_relationship">mother</field>
+        <field name="tutor_phone">222 996 6627</field>
+        <field name="tutor_email">familia.romero5@correo-ejemplo.mx</field>
+        <field name="state">active</field>
+        <field name="date_start" eval="(DateTime.today() - relativedelta(months=4)).strftime('%Y-%m-04')"/>
+    </record>
+    <record id="demo_insured_6" model="rss.insured">
+        <field name="first_name">Renata</field>
+        <field name="last_name_father">Martínez</field>
+        <field name="last_name_mother">Cruz</field>
+        <field name="birthdate" eval="(DateTime.today() - relativedelta(years=15, days=185)).strftime('%Y-%m-%d')"/>
+        <field name="sex">female</field>
+        <field name="group_id" ref="demo_group_7"/>
+        <field name="tutor_name">Roberto Martínez Castillo</field>
+        <field name="tutor_relationship">father</field>
+        <field name="tutor_phone">222 784 2271</field>
+        <field name="tutor_email">familia.martinez6@correo-ejemplo.mx</field>
+        <field name="state">active</field>
+        <field name="date_start" eval="(DateTime.today() - relativedelta(months=3)).strftime('%Y-%m-03')"/>
+    </record>
+    <record id="demo_insured_7" model="rss.insured">
+        <field name="first_name">Paula</field>
+        <field name="last_name_father">Reyes</field>
+        <field name="last_name_mother">Jiménez</field>
+        <field name="birthdate" eval="(DateTime.today() - relativedelta(years=14, days=264)).strftime('%Y-%m-%d')"/>
+        <field name="sex">female</field>
+        <field name="group_id" ref="demo_group_7"/>
+        <field name="tutor_name">Jorge Reyes López</field>
+        <field name="tutor_relationship">mother</field>
+        <field name="tutor_phone">222 585 2064</field>
+        <field name="tutor_email">familia.reyes7@correo-ejemplo.mx</field>
+        <field name="state">active</field>
+        <field name="date_start" eval="(DateTime.today() - relativedelta(months=10)).strftime('%Y-%m-08')"/>
+    </record>
+    <record id="demo_insured_8" model="rss.insured">
+        <field name="first_name">Tomás</field>
+        <field name="last_name_father">Romero</field>
+        <field name="last_name_mother">Rodríguez</field>
+        <field name="birthdate" eval="(DateTime.today() - relativedelta(years=35, days=187)).strftime('%Y-%m-%d')"/>
+        <field name="sex">male</field>
+        <field name="group_id" ref="demo_group_7"/>
+        <field name="state">active</field>
+        <field name="date_start" eval="(DateTime.today() - relativedelta(months=7)).strftime('%Y-%m-01')"/>
+    </record>
+    <record id="demo_insured_9" model="rss.insured">
+        <field name="first_name">Sofía</field><field name="second_name">Guadalupe</field>
+        <field name="last_name_father">Martínez</field>
+        <field name="last_name_mother">Flores</field>
+        <field name="birthdate" eval="(DateTime.today() - relativedelta(years=8, days=157)).strftime('%Y-%m-%d')"/>
+        <field name="sex">female</field>
+        <field name="group_id" ref="demo_group_7"/>
+        <field name="tutor_name">Héctor Martínez Flores</field>
+        <field name="tutor_relationship">mother</field>
+        <field name="tutor_phone">222 500 9134</field>
+        <field name="tutor_email">familia.martinez9@correo-ejemplo.mx</field>
+        <field name="state">draft</field>
+        <field name="date_start" eval="(DateTime.today() - relativedelta(months=4)).strftime('%Y-%m-03')"/>
+    </record>
+    <record id="demo_insured_10" model="rss.insured">
+        <field name="first_name">Iker</field>
+        <field name="last_name_father">Cruz</field>
+        <field name="last_name_mother">Romero</field>
+        <field name="birthdate" eval="(DateTime.today() - relativedelta(years=10, days=291)).strftime('%Y-%m-%d')"/>
+        <field name="sex">male</field>
+        <field name="group_id" ref="demo_group_7"/>
+        <field name="tutor_name">Héctor Cruz Castillo</field>
+        <field name="tutor_relationship">mother</field>
+        <field name="tutor_phone">222 799 7233</field>
+        <field name="tutor_email">familia.cruz10@correo-ejemplo.mx</field>
+        <field name="state">active</field>
+        <field name="date_start" eval="(DateTime.today() - relativedelta(months=7)).strftime('%Y-%m-05')"/>
+    </record>
+    <record id="demo_insured_11" model="rss.insured">
+        <field name="first_name">Camila</field>
+        <field name="last_name_father">Sánchez</field>
+        <field name="last_name_mother">López</field>
+        <field name="birthdate" eval="(DateTime.today() - relativedelta(years=12, days=16)).strftime('%Y-%m-%d')"/>
+        <field name="sex">female</field>
+        <field name="group_id" ref="demo_group_7"/>
+        <field name="tutor_name">Mónica Sánchez Sánchez</field>
+        <field name="tutor_relationship">mother</field>
+        <field name="tutor_phone">222 388 1067</field>
+        <field name="tutor_email">familia.sanchez11@correo-ejemplo.mx</field>
+        <field name="state">active</field>
+        <field name="date_start" eval="(DateTime.today() - relativedelta(months=4)).strftime('%Y-%m-08')"/>
+    </record>
+    <record id="demo_insured_12" model="rss.insured">
+        <field name="first_name">Gael</field>
+        <field name="last_name_father">Reyes</field>
+        <field name="last_name_mother">López</field>
+        <field name="birthdate" eval="(DateTime.today() - relativedelta(years=35, days=326)).strftime('%Y-%m-%d')"/>
+        <field name="sex">male</field>
+        <field name="group_id" ref="demo_group_7"/>
+        <field name="state">active</field>
+        <field name="date_start" eval="(DateTime.today() - relativedelta(months=9)).strftime('%Y-%m-01')"/>
+    </record>
+    <record id="demo_insured_13" model="rss.insured">
+        <field name="first_name">Luis</field>
+        <field name="last_name_father">Vargas</field>
+        <field name="last_name_mother">Ramírez</field>
+        <field name="birthdate" eval="(DateTime.today() - relativedelta(years=15, days=256)).strftime('%Y-%m-%d')"/>
+        <field name="sex">male</field>
+        <field name="group_id" ref="demo_group_7"/>
+        <field name="tutor_name">Jorge Vargas Ramírez</field>
+        <field name="tutor_relationship">father</field>
+        <field name="tutor_phone">222 313 8219</field>
+        <field name="tutor_email">familia.vargas13@correo-ejemplo.mx</field>
+        <field name="state">active</field>
+        <field name="date_start" eval="(DateTime.today() - relativedelta(months=2)).strftime('%Y-%m-07')"/>
+    </record>
+    <record id="demo_insured_14" model="rss.insured">
+        <field name="first_name">Sebastián</field><field name="second_name">José</field>
+        <field name="last_name_father">Martínez</field>
+        <field name="last_name_mother">García</field>
+        <field name="birthdate" eval="(DateTime.today() - relativedelta(years=19, days=284)).strftime('%Y-%m-%d')"/>
+        <field name="sex">male</field>
+        <field name="group_id" ref="demo_group_7"/>
+        <field name="state">active</field>
+        <field name="date_start" eval="(DateTime.today() - relativedelta(months=3)).strftime('%Y-%m-02')"/>
+    </record>
+    <record id="demo_insured_15" model="rss.insured">
+        <field name="first_name">Paula</field>
+        <field name="last_name_father">López</field>
+        <field name="last_name_mother">Castillo</field>
+        <field name="birthdate" eval="(DateTime.today() - relativedelta(years=12, days=202)).strftime('%Y-%m-%d')"/>
+        <field name="sex">female</field>
+        <field name="group_id" ref="demo_group_12"/>
+        <field name="tutor_name">Héctor López Cruz</field>
+        <field name="tutor_relationship">mother</field>
+        <field name="tutor_phone">222 716 6966</field>
+        <field name="tutor_email">familia.lopez15@correo-ejemplo.mx</field>
+        <field name="state">active</field>
+        <field name="date_start" eval="(DateTime.today() - relativedelta(months=10)).strftime('%Y-%m-03')"/>
+    </record>
+    <record id="demo_insured_16" model="rss.insured">
+        <field name="first_name">Santiago</field>
+        <field name="last_name_father">Romero</field>
+        <field name="last_name_mother">Flores</field>
+        <field name="birthdate" eval="(DateTime.today() - relativedelta(years=16, days=53)).strftime('%Y-%m-%d')"/>
+        <field name="sex">male</field>
+        <field name="group_id" ref="demo_group_12"/>
+        <field name="tutor_name">Jorge Romero Reyes</field>
+        <field name="tutor_relationship">mother</field>
+        <field name="tutor_phone">222 590 3645</field>
+        <field name="tutor_email">familia.romero16@correo-ejemplo.mx</field>
+        <field name="state">active</field>
+        <field name="date_start" eval="(DateTime.today() - relativedelta(months=5)).strftime('%Y-%m-03')"/>
+    </record>
+    <record id="demo_insured_17" model="rss.insured">
+        <field name="first_name">Ximena</field>
+        <field name="last_name_father">Rodríguez</field>
+        <field name="last_name_mother">Jiménez</field>
+        <field name="birthdate" eval="(DateTime.today() - relativedelta(years=17, days=280)).strftime('%Y-%m-%d')"/>
+        <field name="sex">female</field>
+        <field name="group_id" ref="demo_group_12"/>
+        <field name="tutor_name">Héctor Rodríguez López</field>
+        <field name="tutor_relationship">mother</field>
+        <field name="tutor_phone">222 630 7008</field>
+        <field name="tutor_email">familia.rodriguez17@correo-ejemplo.mx</field>
+        <field name="state">active</field>
+        <field name="date_start" eval="(DateTime.today() - relativedelta(months=1)).strftime('%Y-%m-05')"/>
+    </record>
+    <record id="demo_insured_18" model="rss.insured">
+        <field name="first_name">Sofía</field><field name="second_name">Isabel</field>
+        <field name="last_name_father">Reyes</field>
+        <field name="last_name_mother">Ortiz</field>
+        <field name="birthdate" eval="(DateTime.today() - relativedelta(years=12, days=109)).strftime('%Y-%m-%d')"/>
+        <field name="sex">female</field>
+        <field name="group_id" ref="demo_group_12"/>
+        <field name="tutor_name">Roberto Reyes Flores</field>
+        <field name="tutor_relationship">father</field>
+        <field name="tutor_phone">222 630 9073</field>
+        <field name="tutor_email">familia.reyes18@correo-ejemplo.mx</field>
+        <field name="state">draft</field>
+        <field name="date_start" eval="(DateTime.today() - relativedelta(months=10)).strftime('%Y-%m-04')"/>
+    </record>
+    <record id="demo_insured_19" model="rss.insured">
+        <field name="first_name">Diego</field><field name="second_name">José</field>
+        <field name="last_name_father">Cruz</field>
+        <field name="last_name_mother">Flores</field>
+        <field name="birthdate" eval="(DateTime.today() - relativedelta(years=13, days=319)).strftime('%Y-%m-%d')"/>
+        <field name="sex">male</field>
+        <field name="group_id" ref="demo_group_12"/>
+        <field name="tutor_name">Roberto Cruz Jiménez</field>
+        <field name="tutor_relationship">mother</field>
+        <field name="tutor_phone">222 182 4612</field>
+        <field name="tutor_email">familia.cruz19@correo-ejemplo.mx</field>
+        <field name="state">active</field>
+        <field name="date_start" eval="(DateTime.today() - relativedelta(months=4)).strftime('%Y-%m-06')"/>
+    </record>
+    <record id="demo_insured_20" model="rss.insured">
+        <field name="first_name">Iker</field>
+        <field name="last_name_father">Reyes</field>
+        <field name="last_name_mother">Martínez</field>
+        <field name="birthdate" eval="(DateTime.today() - relativedelta(years=16, days=322)).strftime('%Y-%m-%d')"/>
+        <field name="sex">male</field>
+        <field name="group_id" ref="demo_group_12"/>
+        <field name="tutor_name">Roberto Reyes Jiménez</field>
+        <field name="tutor_relationship">father</field>
+        <field name="tutor_phone">222 954 2964</field>
+        <field name="tutor_email">familia.reyes20@correo-ejemplo.mx</field>
+        <field name="state">active</field>
+        <field name="date_start" eval="(DateTime.today() - relativedelta(months=10)).strftime('%Y-%m-01')"/>
+    </record>
+    <record id="demo_insured_21" model="rss.insured">
+        <field name="first_name">Andrea</field><field name="second_name">Isabel</field>
+        <field name="last_name_father">Ortiz</field>
+        <field name="last_name_mother">Romero</field>
+        <field name="birthdate" eval="(DateTime.today() - relativedelta(years=10, days=180)).strftime('%Y-%m-%d')"/>
+        <field name="sex">female</field>
+        <field name="group_id" ref="demo_group_12"/>
+        <field name="tutor_name">Héctor Ortiz Vargas</field>
+        <field name="tutor_relationship">mother</field>
+        <field name="tutor_phone">222 511 2391</field>
+        <field name="tutor_email">familia.ortiz21@correo-ejemplo.mx</field>
+        <field name="state">active</field>
+        <field name="date_start" eval="(DateTime.today() - relativedelta(months=7)).strftime('%Y-%m-02')"/>
+    </record>
+    <record id="demo_insured_22" model="rss.insured">
+        <field name="first_name">Camila</field><field name="second_name">Guadalupe</field>
+        <field name="last_name_father">García</field>
+        <field name="last_name_mother">López</field>
+        <field name="birthdate" eval="(DateTime.today() - relativedelta(years=19, days=84)).strftime('%Y-%m-%d')"/>
+        <field name="sex">female</field>
+        <field name="group_id" ref="demo_group_12"/>
+        <field name="state">active</field>
+        <field name="date_start" eval="(DateTime.today() - relativedelta(months=8)).strftime('%Y-%m-08')"/>
+    </record>
+    <record id="demo_insured_23" model="rss.insured">
+        <field name="first_name">Sofía</field><field name="second_name">Guadalupe</field>
+        <field name="last_name_father">Rodríguez</field>
+        <field name="last_name_mother">García</field>
+        <field name="birthdate" eval="(DateTime.today() - relativedelta(years=8, days=279)).strftime('%Y-%m-%d')"/>
+        <field name="sex">female</field>
+        <field name="group_id" ref="demo_group_12"/>
+        <field name="tutor_name">Roberto Rodríguez Ramírez</field>
+        <field name="tutor_relationship">father</field>
+        <field name="tutor_phone">222 128 5126</field>
+        <field name="tutor_email">familia.rodriguez23@correo-ejemplo.mx</field>
+        <field name="state">active</field>
+        <field name="date_start" eval="(DateTime.today() - relativedelta(months=2)).strftime('%Y-%m-03')"/>
+    </record>
+    <record id="demo_insured_24" model="rss.insured">
+        <field name="first_name">Gael</field>
+        <field name="last_name_father">Reyes</field>
+        <field name="last_name_mother">Rodríguez</field>
+        <field name="birthdate" eval="(DateTime.today() - relativedelta(years=17, days=77)).strftime('%Y-%m-%d')"/>
+        <field name="sex">male</field>
+        <field name="group_id" ref="demo_group_12"/>
+        <field name="tutor_name">Héctor Reyes Jiménez</field>
+        <field name="tutor_relationship">mother</field>
+        <field name="tutor_phone">222 778 9466</field>
+        <field name="tutor_email">familia.reyes24@correo-ejemplo.mx</field>
+        <field name="state">active</field>
+        <field name="date_start" eval="(DateTime.today() - relativedelta(months=7)).strftime('%Y-%m-01')"/>
+    </record>
+    <record id="demo_insured_25" model="rss.insured">
+        <field name="first_name">Gael</field>
+        <field name="last_name_father">Rodríguez</field>
+        <field name="last_name_mother">Cruz</field>
+        <field name="birthdate" eval="(DateTime.today() - relativedelta(years=17, days=235)).strftime('%Y-%m-%d')"/>
+        <field name="sex">male</field>
+        <field name="group_id" ref="demo_group_3"/>
+        <field name="tutor_name">Mónica Rodríguez García</field>
+        <field name="tutor_relationship">father</field>
+        <field name="tutor_phone">222 276 3319</field>
+        <field name="tutor_email">familia.rodriguez25@correo-ejemplo.mx</field>
+        <field name="state">active</field>
+        <field name="date_start" eval="(DateTime.today() - relativedelta(months=1)).strftime('%Y-%m-03')"/>
+    </record>
+    <record id="demo_insured_26" model="rss.insured">
+        <field name="first_name">Tomás</field><field name="second_name">Alejandro</field>
+        <field name="last_name_father">Hernández</field>
+        <field name="last_name_mother">Sánchez</field>
+        <field name="birthdate" eval="(DateTime.today() - relativedelta(years=24, days=281)).strftime('%Y-%m-%d')"/>
+        <field name="sex">male</field>
+        <field name="group_id" ref="demo_group_3"/>
+        <field name="state">active</field>
+        <field name="date_start" eval="(DateTime.today() - relativedelta(months=9)).strftime('%Y-%m-09')"/>
+    </record>
+    <record id="demo_insured_27" model="rss.insured">
+        <field name="first_name">Santiago</field><field name="second_name">José</field>
+        <field name="last_name_father">Flores</field>
+        <field name="last_name_mother">Martínez</field>
+        <field name="birthdate" eval="(DateTime.today() - relativedelta(years=13, days=60)).strftime('%Y-%m-%d')"/>
+        <field name="sex">male</field>
+        <field name="group_id" ref="demo_group_3"/>
+        <field name="tutor_name">Roberto Flores García</field>
+        <field name="tutor_relationship">father</field>
+        <field name="tutor_phone">222 553 6334</field>
+        <field name="tutor_email">familia.flores27@correo-ejemplo.mx</field>
+        <field name="state">draft</field>
+        <field name="date_start" eval="(DateTime.today() - relativedelta(months=1)).strftime('%Y-%m-09')"/>
+    </record>
+    <record id="demo_insured_28" model="rss.insured">
+        <field name="first_name">Natalia</field><field name="second_name">Isabel</field>
+        <field name="last_name_father">Cruz</field>
+        <field name="last_name_mother">Flores</field>
+        <field name="birthdate" eval="(DateTime.today() - relativedelta(years=17, days=254)).strftime('%Y-%m-%d')"/>
+        <field name="sex">female</field>
+        <field name="group_id" ref="demo_group_3"/>
+        <field name="tutor_name">Patricia Cruz Cruz</field>
+        <field name="tutor_relationship">father</field>
+        <field name="tutor_phone">222 960 8332</field>
+        <field name="tutor_email">familia.cruz28@correo-ejemplo.mx</field>
+        <field name="state">active</field>
+        <field name="date_start" eval="(DateTime.today() - relativedelta(months=9)).strftime('%Y-%m-09')"/>
+    </record>
+    <record id="demo_insured_29" model="rss.insured">
+        <field name="first_name">Santiago</field>
+        <field name="last_name_father">Romero</field>
+        <field name="last_name_mother">Sánchez</field>
+        <field name="birthdate" eval="(DateTime.today() - relativedelta(years=9, days=229)).strftime('%Y-%m-%d')"/>
+        <field name="sex">male</field>
+        <field name="group_id" ref="demo_group_3"/>
+        <field name="tutor_name">Patricia Romero Morales</field>
+        <field name="tutor_relationship">father</field>
+        <field name="tutor_phone">222 895 3530</field>
+        <field name="tutor_email">familia.romero29@correo-ejemplo.mx</field>
+        <field name="state">active</field>
+        <field name="date_start" eval="(DateTime.today() - relativedelta(months=4)).strftime('%Y-%m-02')"/>
+    </record>
+    <record id="demo_insured_30" model="rss.insured">
+        <field name="first_name">Lucía</field>
+        <field name="last_name_father">Rodríguez</field>
+        <field name="last_name_mother">Ortiz</field>
+        <field name="birthdate" eval="(DateTime.today() - relativedelta(years=10, days=122)).strftime('%Y-%m-%d')"/>
+        <field name="sex">female</field>
+        <field name="group_id" ref="demo_group_3"/>
+        <field name="tutor_name">Roberto Rodríguez Ortiz</field>
+        <field name="tutor_relationship">father</field>
+        <field name="tutor_phone">222 783 4665</field>
+        <field name="tutor_email">familia.rodriguez30@correo-ejemplo.mx</field>
+        <field name="state">active</field>
+        <field name="date_start" eval="(DateTime.today() - relativedelta(months=8)).strftime('%Y-%m-02')"/>
+    </record>
+    <record id="demo_insured_31" model="rss.insured">
+        <field name="first_name">Daniel</field>
+        <field name="last_name_father">Reyes</field>
+        <field name="last_name_mother">Ramírez</field>
+        <field name="birthdate" eval="(DateTime.today() - relativedelta(years=12, days=173)).strftime('%Y-%m-%d')"/>
+        <field name="sex">male</field>
+        <field name="group_id" ref="demo_group_3"/>
+        <field name="tutor_name">Héctor Reyes Jiménez</field>
+        <field name="tutor_relationship">father</field>
+        <field name="tutor_phone">222 446 8514</field>
+        <field name="tutor_email">familia.reyes31@correo-ejemplo.mx</field>
+        <field name="state">active</field>
+        <field name="date_start" eval="(DateTime.today() - relativedelta(months=6)).strftime('%Y-%m-02')"/>
+    </record>
+    <record id="demo_insured_32" model="rss.insured">
+        <field name="first_name">Diego</field>
+        <field name="last_name_father">Reyes</field>
+        <field name="last_name_mother">Cruz</field>
+        <field name="birthdate" eval="(DateTime.today() - relativedelta(years=19, days=272)).strftime('%Y-%m-%d')"/>
+        <field name="sex">male</field>
+        <field name="group_id" ref="demo_group_21"/>
+        <field name="state">active</field>
+        <field name="date_start" eval="(DateTime.today() - relativedelta(months=5)).strftime('%Y-%m-02')"/>
+    </record>
+    <record id="demo_insured_33" model="rss.insured">
+        <field name="first_name">Emiliano</field><field name="second_name">Alejandro</field>
+        <field name="last_name_father">López</field>
+        <field name="last_name_mother">Rodríguez</field>
+        <field name="birthdate" eval="(DateTime.today() - relativedelta(years=13, days=102)).strftime('%Y-%m-%d')"/>
+        <field name="sex">male</field>
+        <field name="group_id" ref="demo_group_21"/>
+        <field name="tutor_name">Patricia López Castillo</field>
+        <field name="tutor_relationship">mother</field>
+        <field name="tutor_phone">222 515 3447</field>
+        <field name="tutor_email">familia.lopez33@correo-ejemplo.mx</field>
+        <field name="state">active</field>
+        <field name="date_start" eval="(DateTime.today() - relativedelta(months=1)).strftime('%Y-%m-05')"/>
+    </record>
+    <record id="demo_insured_34" model="rss.insured">
+        <field name="first_name">Natalia</field>
+        <field name="last_name_father">Reyes</field>
+        <field name="last_name_mother">Hernández</field>
+        <field name="birthdate" eval="(DateTime.today() - relativedelta(years=13, days=103)).strftime('%Y-%m-%d')"/>
+        <field name="sex">female</field>
+        <field name="group_id" ref="demo_group_21"/>
+        <field name="tutor_name">Jorge Reyes Cruz</field>
+        <field name="tutor_relationship">father</field>
+        <field name="tutor_phone">222 749 2451</field>
+        <field name="tutor_email">familia.reyes34@correo-ejemplo.mx</field>
+        <field name="state">active</field>
+        <field name="date_start" eval="(DateTime.today() - relativedelta(months=1)).strftime('%Y-%m-07')"/>
+    </record>
+    <record id="demo_insured_35" model="rss.insured">
+        <field name="first_name">Regina</field><field name="second_name">Isabel</field>
+        <field name="last_name_father">López</field>
+        <field name="last_name_mother">Rodríguez</field>
+        <field name="birthdate" eval="(DateTime.today() - relativedelta(years=9, days=15)).strftime('%Y-%m-%d')"/>
+        <field name="sex">female</field>
+        <field name="group_id" ref="demo_group_21"/>
+        <field name="tutor_name">Mónica López Castillo</field>
+        <field name="tutor_relationship">mother</field>
+        <field name="tutor_phone">222 736 3117</field>
+        <field name="tutor_email">familia.lopez35@correo-ejemplo.mx</field>
+        <field name="state">active</field>
+        <field name="date_start" eval="(DateTime.today() - relativedelta(months=8)).strftime('%Y-%m-06')"/>
+    </record>
+    <record id="demo_insured_36" model="rss.insured">
+        <field name="first_name">Tomás</field>
+        <field name="last_name_father">Martínez</field>
+        <field name="last_name_mother">López</field>
+        <field name="birthdate" eval="(DateTime.today() - relativedelta(years=13, days=102)).strftime('%Y-%m-%d')"/>
+        <field name="sex">male</field>
+        <field name="group_id" ref="demo_group_21"/>
+        <field name="tutor_name">Claudia Martínez Morales</field>
+        <field name="tutor_relationship">father</field>
+        <field name="tutor_phone">222 396 8302</field>
+        <field name="tutor_email">familia.martinez36@correo-ejemplo.mx</field>
+        <field name="state">draft</field>
+        <field name="date_start" eval="(DateTime.today() - relativedelta(months=1)).strftime('%Y-%m-04')"/>
+    </record>
+    <!-- Una baja para ver el efecto en días cubiertos -->
+    <record id="demo_insured_3" model="rss.insured">
+        <field name="state">inactive</field>
+        <field name="date_end" eval="(DateTime.today() - relativedelta(months=1)).strftime('%Y-%m-15')"/>
+    </record>
+
+    <!-- Pagos -->
+    <record id="demo_payment_7" model="rss.payment">
+        <field name="group_id" ref="demo_group_7"/>
+        <field name="payer_name">Laura Méndez</field>
+        <field name="payment_method">transfer</field>
+        <field name="reference">SPEI 4471</field>
+        <field name="member_ids" eval="[(6, 0, [ref('demo_insured_%d' % i) for i in range(1, 15)])]"/>
+        <field name="amount">4900</field>
+    </record>
+    <record id="demo_payment_12" model="rss.payment">
+        <field name="group_id" ref="demo_group_12"/>
+        <field name="payer_name">Ricardo Pérez</field>
+        <field name="payment_method">cash</field>
+        <field name="member_ids" eval="[(6, 0, [ref('demo_insured_%d' % i) for i in range(15, 25)])]"/>
+        <field name="amount">3500</field>
+    </record>
+    <function model="rss.payment" name="action_confirm" eval="[[ref('demo_payment_7'), ref('demo_payment_12')]]"/>
+
+    <!-- Relaciones de meses anteriores (alimentan el análisis por periodo) -->
+    <record id="demo_report_m3" model="rss.report">
+        <field name="policy_id" ref="red_seguro_scout.policy_accidentes_personales"/>
+        <field name="period_date" eval="(DateTime.today() - relativedelta(months=3)).strftime('%Y-%m-01')"/>
+    </record>
+    <record id="demo_report_m2" model="rss.report">
+        <field name="policy_id" ref="red_seguro_scout.policy_accidentes_personales"/>
+        <field name="period_date" eval="(DateTime.today() - relativedelta(months=2)).strftime('%Y-%m-01')"/>
+    </record>
+    <record id="demo_report_m1" model="rss.report">
+        <field name="policy_id" ref="red_seguro_scout.policy_accidentes_personales"/>
+        <field name="period_date" eval="(DateTime.today() - relativedelta(months=1)).strftime('%Y-%m-01')"/>
+    </record>
+    <function model="rss.report" name="action_generate" eval="[[ref('demo_report_m3'), ref('demo_report_m2'), ref('demo_report_m1')]]"/>
+    <function model="rss.report" name="action_mark_sent" eval="[[ref('demo_report_m3'), ref('demo_report_m2')]]"/>
+
+    <!-- Un siniestro -->
+    <record id="demo_claim_1" model="rss.claim">
+        <field name="insured_id" ref="demo_insured_5"/>
+        <field name="date_accident" eval="(DateTime.today() - relativedelta(days=20)).strftime('%Y-%m-%d')"/>
+        <field name="activity_type">camp</field>
+        <field name="place">Campamento La Malinche</field>
+        <field name="injury_type">sprain</field>
+        <field name="body_part">Tobillo derecho</field>
+        <field name="description">Se torció el tobillo durante la caminata del sábado.</field>
+        <field name="amount_claimed">1800</field>
+    </record>
+</odoo>

@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <data noupdate="1">
+        <record id="mail_template_relacion_mensual" model="mail.template">
+            <field name="name">Red Seguro Scout: relación mensual a la aseguradora</field>
+            <field name="model_id" ref="model_rss_report"/>
+            <field name="subject">Relación de asegurados {{ object.name }}</field>
+            <field name="email_from">{{ (object.company_id.email_formatted or user.email_formatted) }}</field>
+            <field name="email_to">{{ object.policy_id.insurer_email }}</field>
+            <field name="email_cc">{{ object.policy_id.insurer_cc or '' }}</field>
+            <field name="description">Se envía con el Excel y el PDF de la relación mensual de asegurados</field>
+            <field name="body_html" type="html">
+<div style="font-family: Arial, sans-serif; font-size: 14px; color: #1A2233;">
+    <div style="background: #0A2A5E; border-bottom: 3px solid #D9A93A; color: #ffffff; padding: 14px 18px; border-radius: 8px 8px 0 0;">
+        <strong style="font-size: 16px;">Red Seguro Scout</strong>
+        <span style="opacity: .85;"> · Rumbo Seguro</span>
+        <div style="opacity: .85; font-size: 13px;">Relación mensual de asegurados</div>
+    </div>
+    <div style="border: 1px solid #D6DEEB; border-top: 0; padding: 18px; border-radius: 0 0 8px 8px;">
+        <p>Buen día,</p>
+        <p>Adjuntamos la relación de asegurados correspondiente a
+            <strong t-out="object.name or ''">Relación Octubre 2026</strong>
+            (póliza <t t-out="object.policy_id.policy_number or object.policy_id.name or ''">ABC-123</t>),
+            en Excel y PDF.</p>
+        <table style="border-collapse: collapse; margin: 10px 0;">
+            <tr><td style="padding: 4px 12px 4px 0; color: #4A5568;">Asegurados</td>
+                <td style="padding: 4px 0;"><strong t-out="object.insured_count">0</strong></td></tr>
+            <tr><td style="padding: 4px 12px 4px 0; color: #4A5568;">Grupos</td>
+                <td style="padding: 4px 0;"><strong t-out="object.group_count">0</strong></td></tr>
+            <tr><td style="padding: 4px 12px 4px 0; color: #4A5568;">Altas / bajas del mes</td>
+                <td style="padding: 4px 0;"><strong t-out="object.new_count">0</strong> /
+                    <strong t-out="object.drop_count">0</strong></td></tr>
+        </table>
+        <p>Quedamos atentos a su acuse de recibido.</p>
+        <p>Saludos,<br/><t t-out="object.company_id.name or ''">Grupo Scout</t></p>
+    </div>
+</div>
+            </field>
+            <field name="auto_delete" eval="False"/>
+        </record>
+    </data>
+</odoo>

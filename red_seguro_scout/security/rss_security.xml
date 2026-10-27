@@ -1,0 +1,76 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <data noupdate="0">
+        <record id="module_category_red_seguro_scout" model="ir.module.category">
+            <field name="name">Red Seguro Scout</field>
+            <field name="sequence">60</field>
+        </record>
+
+        <record id="res_groups_privilege_rss" model="res.groups.privilege">
+            <field name="name">Red Seguro Scout</field>
+            <field name="sequence">60</field>
+            <field name="category_id" ref="module_category_red_seguro_scout"/>
+        </record>
+
+        <!-- Captura de asegurados, grupos, relaciones y siniestros -->
+        <record id="group_rss_user" model="res.groups">
+            <field name="name">Capturista</field>
+            <field name="sequence">10</field>
+            <field name="privilege_id" ref="res_groups_privilege_rss"/>
+            <field name="implied_ids" eval="[(4, ref('base.group_user'))]"/>
+        </record>
+
+        <!-- Además: pólizas, agrupaciones, cancelación de pagos y configuración -->
+        <record id="group_rss_manager" model="res.groups">
+            <field name="name">Administrador</field>
+            <field name="sequence">20</field>
+            <field name="privilege_id" ref="res_groups_privilege_rss"/>
+            <field name="implied_ids" eval="[(4, ref('group_rss_user'))]"/>
+            <field name="user_ids" eval="[(4, ref('base.user_root')), (4, ref('base.user_admin'))]"/>
+        </record>
+    </data>
+
+    <data noupdate="1">
+        <!-- Multiempresa: cada organización ve solo sus registros -->
+        <record id="rule_rss_policy_company" model="ir.rule">
+            <field name="name">Red Seguro Scout: pólizas por organización</field>
+            <field name="model_id" ref="model_rss_policy"/>
+            <field name="domain_force">[('company_id', 'in', company_ids + [False])]</field>
+        </record>
+        <record id="rule_rss_cluster_company" model="ir.rule">
+            <field name="name">Red Seguro Scout: agrupaciones por organización</field>
+            <field name="model_id" ref="model_rss_group_cluster"/>
+            <field name="domain_force">[('company_id', 'in', company_ids + [False])]</field>
+        </record>
+        <record id="rule_rss_group_company" model="ir.rule">
+            <field name="name">Red Seguro Scout: grupos por organización</field>
+            <field name="model_id" ref="model_rss_scout_group"/>
+            <field name="domain_force">[('company_id', 'in', company_ids + [False])]</field>
+        </record>
+        <record id="rule_rss_insured_company" model="ir.rule">
+            <field name="name">Red Seguro Scout: asegurados por organización</field>
+            <field name="model_id" ref="model_rss_insured"/>
+            <field name="domain_force">[('company_id', 'in', company_ids + [False])]</field>
+        </record>
+        <record id="rule_rss_payment_company" model="ir.rule">
+            <field name="name">Red Seguro Scout: pagos por organización</field>
+            <field name="model_id" ref="model_rss_payment"/>
+            <field name="domain_force">[('company_id', 'in', company_ids + [False])]</field>
+        </record>
+        <record id="rule_rss_report_company" model="ir.rule">
+            <field name="name">Red Seguro Scout: relaciones por organización</field>
+            <field name="model_id" ref="model_rss_report"/>
+            <field name="domain_force">[('company_id', 'in', company_ids + [False])]</field>
+        </record>
+        <record id="rule_rss_report_line_company" model="ir.rule">
+            <field name="name">Red Seguro Scout: líneas de relación por organización</field>
+            <field name="model_id" ref="model_rss_report_line"/>
+            <field name="domain_force">[('company_id', 'in', company_ids + [False])]</field>
+        </record>
+        <record id="rule_rss_claim_company" model="ir.rule">
+            <field name="name">Red Seguro Scout: siniestros por organización</field>
+            <field name="model_id" ref="model_rss_claim"/>
+            <field name="domain_force">[('company_id', 'in', company_ids + [False])]</field>
+        </record>
+    </data>
+</odoo>

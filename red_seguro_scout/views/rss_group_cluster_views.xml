@@ -1,0 +1,90 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="rss_group_cluster_view_list" model="ir.ui.view">
+        <field name="name">rss.group.cluster.list</field>
+        <field name="model">rss.group.cluster</field>
+        <field name="arch" type="xml">
+            <list string="Agrupaciones" class="o_rss">
+                <field name="name"/>
+                <field name="code"/>
+                <field name="kind"/>
+                <field name="responsible_name"/>
+                <field name="group_count"/>
+                <field name="member_count"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="rss_group_cluster_view_form" model="ir.ui.view">
+        <field name="name">rss.group.cluster.form</field>
+        <field name="model">rss.group.cluster</field>
+        <field name="arch" type="xml">
+            <form string="Agrupación" class="o_rss">
+                <header>
+                    <button name="action_attach_pdf_to_groups" type="object" string="Adjuntar PDF a sus grupos"
+                            class="btn-primary" icon="fa-file-pdf-o"/>
+                </header>
+                <sheet>
+                    <div class="oe_button_box" name="button_box">
+                        <button name="action_view_groups" type="object" class="oe_stat_button" icon="fa-users">
+                            <field name="group_count" widget="statinfo" string="Grupos"/>
+                        </button>
+                        <button class="oe_stat_button" icon="fa-shield" disabled="1">
+                            <field name="member_count" widget="statinfo" string="Asegurados"/>
+                        </button>
+                    </div>
+                    <field name="active" invisible="1"/>
+                    <div class="oe_title">
+                        <label for="name"/>
+                        <h1><field name="name" placeholder="Ej. Distrito Puebla Centro"/></h1>
+                    </div>
+                    <group>
+                        <group>
+                            <field name="kind"/>
+                            <field name="code"/>
+                        </group>
+                        <group>
+                            <field name="responsible_name"/>
+                            <field name="responsible_email" widget="email"/>
+                            <field name="company_id" groups="base.group_multi_company"/>
+                        </group>
+                    </group>
+                    <notebook>
+                        <page string="Documentos PDF" name="documents">
+                            <div class="o_rss_hint">
+                                Los PDF de la agrupación (póliza firmada, condiciones, circulares)
+                                los ven todos los grupos que pertenecen a ella.
+                            </div>
+                            <field name="attachment_ids" widget="many2many_binary"
+                                   options="{'accepted_file_extensions': '.pdf'}"/>
+                        </page>
+                        <page string="Grupos" name="groups">
+                            <field name="group_ids">
+                                <list>
+                                    <field name="name"/>
+                                    <field name="leader_name"/>
+                                    <field name="member_count" sum="Total"/>
+                                    <field name="paid_current_year" widget="boolean_toggle" readonly="1"/>
+                                </list>
+                            </field>
+                        </page>
+                        <page string="Notas" name="notes">
+                            <field name="notes"/>
+                        </page>
+                    </notebook>
+                </sheet>
+                <chatter/>
+            </form>
+        </field>
+    </record>
+
+    <record id="rss_group_cluster_action" model="ir.actions.act_window">
+        <field name="name">Agrupaciones</field>
+        <field name="res_model">rss.group.cluster</field>
+        <field name="view_mode">list,form</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">Crea una agrupación (distrito, provincia...)</p>
+            <p>Reúne varios grupos y adjunta los PDF que aplican a todos.</p>
+        </field>
+    </record>
+</odoo>

@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <data noupdate="1">
+        <!-- Diario: del día 1 al día límite (10) genera la relación del mes si falta -->
+        <record id="ir_cron_rss_relacion_mensual" model="ir.cron">
+            <field name="name">Red Seguro Scout: generar relación mensual (días 1 al 10)</field>
+            <field name="model_id" ref="model_rss_report"/>
+            <field name="state">code</field>
+            <field name="code">model._cron_generate_monthly()</field>
+            <field name="interval_number">1</field>
+            <field name="interval_type">days</field>
+            <field name="nextcall" eval="(DateTime.now() + timedelta(days=1)).strftime('%Y-%m-%d 12:00:00')"/>
+            <field name="active" eval="True"/>
+        </record>
+        <!-- Diario: recalcula edades (cumpleaños) -->
+        <record id="ir_cron_rss_update_ages" model="ir.cron">
+            <field name="name">Red Seguro Scout: actualizar edades</field>
+            <field name="model_id" ref="model_rss_insured"/>
+            <field name="state">code</field>
+            <field name="code">model._cron_update_ages()</field>
+            <field name="interval_number">1</field>
+            <field name="interval_type">days</field>
+            <field name="nextcall" eval="(DateTime.now() + timedelta(days=1)).strftime('%Y-%m-%d 11:00:00')"/>
+            <field name="active" eval="True"/>
+        </record>
+    </data>
+</odoo>

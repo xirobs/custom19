@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Aviso de suscripción vencida en el portal de dirigentes -->
+    <template id="leader_no_access_subscription" inherit_id="scout_management.leader_no_access">
+        <xpath expr="//div[hasclass('o_sl_empty')]" position="attributes">
+            <attribute name="t-if">not request.env.user.sudo()._bita_scout_blocked()</attribute>
+        </xpath>
+        <xpath expr="//div[hasclass('o_sl_empty')]" position="after">
+            <div class="o_sl_empty" t-if="request.env.user.sudo()._bita_scout_blocked()">
+                <i class="fa fa-id-card fa-3x"/>
+                <h4>Tu suscripción a BitaScout no está vigente</h4>
+                <p>Tu periodo de prueba o tu suscripción terminó. Pide a tu jefatura de grupo o a
+                   BitaScout que registren tu pago para volver a entrar a tu sección.</p>
+                <a href="/my" class="btn o_sl_btn">Volver a mi cuenta</a>
+            </div>
+        </xpath>
+    </template>
+</odoo>

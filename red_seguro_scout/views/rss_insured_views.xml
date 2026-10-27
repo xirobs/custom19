@@ -1,0 +1,207 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="rss_insured_view_search" model="ir.ui.view">
+        <field name="name">rss.insured.search</field>
+        <field name="model">rss.insured</field>
+        <field name="arch" type="xml">
+            <search string="Asegurados">
+                <field name="name" string="Nombre"/>
+                <field name="curp"/>
+                <field name="group_id"/>
+                <field name="cluster_id"/>
+                <field name="tutor_name"/>
+                <filter name="active_insured" string="Asegurados" domain="[('state', '=', 'active')]"/>
+                <filter name="draft" string="Pre-registro" domain="[('state', '=', 'draft')]"/>
+                <filter name="inactive" string="Bajas" domain="[('state', '=', 'inactive')]"/>
+                <separator/>
+                <filter name="minors" string="Menores de edad" domain="[('is_minor', '=', True)]"/>
+                <filter name="adults" string="Adultos" domain="[('is_minor', '=', False)]"/>
+                <filter name="no_tutor" string="Menores sin tutor" domain="[('is_minor', '=', True), '|', ('tutor_name', '=', False), ('tutor_phone', '=', False)]"/>
+                <separator/>
+                <filter name="male" string="Masculino" domain="[('sex', '=', 'male')]"/>
+                <filter name="female" string="Femenino" domain="[('sex', '=', 'female')]"/>
+                <separator/>
+                <filter name="filter_date_start" string="Fecha de alta" date="date_start"/>
+                <filter name="filter_birthdate" string="Fecha de nacimiento" date="birthdate"/>
+                <separator/>
+                <filter name="archived" string="Archivados" domain="[('active', '=', False)]"/>
+                <group>
+                    <filter name="by_group" string="Grupo" context="{'group_by': 'group_id'}"/>
+                    <filter name="by_cluster" string="Agrupación" context="{'group_by': 'cluster_id'}"/>
+                    <filter name="by_section" string="Rama" context="{'group_by': 'section'}"/>
+                    <filter name="by_sex" string="Sexo" context="{'group_by': 'sex'}"/>
+                    <filter name="by_state" string="Estatus" context="{'group_by': 'state'}"/>
+                    <filter name="by_age" string="Edad" context="{'group_by': 'age'}"/>
+                    <separator/>
+                    <filter name="by_start_day" string="Alta: día" context="{'group_by': 'date_start:day'}"/>
+                    <filter name="by_start_month" string="Alta: mes" context="{'group_by': 'date_start:month'}"/>
+                    <filter name="by_start_quarter" string="Alta: trimestre" context="{'group_by': 'date_start:quarter'}"/>
+                    <filter name="by_start_year" string="Alta: año" context="{'group_by': 'date_start:year'}"/>
+                </group>
+            </search>
+        </field>
+    </record>
+
+    <record id="rss_insured_view_list" model="ir.ui.view">
+        <field name="name">rss.insured.list</field>
+        <field name="model">rss.insured</field>
+        <field name="arch" type="xml">
+            <list string="Asegurados" class="o_rss" multi_edit="1"
+                  decoration-muted="state == 'inactive'" decoration-info="state == 'draft'">
+                <field name="group_id"/>
+                <field name="last_name_father"/>
+                <field name="last_name_mother"/>
+                <field name="first_name"/>
+                <field name="second_name" optional="show"/>
+                <field name="birthdate" optional="show"/>
+                <field name="age"/>
+                <field name="sex"/>
+                <field name="section" optional="show"/>
+                <field name="tutor_name" optional="show"/>
+                <field name="tutor_phone" optional="show"/>
+                <field name="tutor_email" optional="hide"/>
+                <field name="date_start" optional="show"/>
+                <field name="date_end" optional="hide"/>
+                <field name="cluster_id" optional="hide"/>
+                <field name="curp" optional="hide"/>
+                <field name="state" widget="badge"
+                       decoration-success="state == 'active'"
+                       decoration-info="state == 'draft'"
+                       decoration-muted="state == 'inactive'"/>
+                <button name="action_activate" type="object" string="Alta" icon="fa-check"
+                        invisible="state == 'active'"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="rss_insured_view_form" model="ir.ui.view">
+        <field name="name">rss.insured.form</field>
+        <field name="model">rss.insured</field>
+        <field name="arch" type="xml">
+            <form string="Asegurado" class="o_rss">
+                <header>
+                    <button name="action_activate" type="object" string="Dar de alta en el seguro"
+                            class="btn-primary" invisible="state == 'active'"/>
+                    <button name="action_deactivate" type="object" string="Dar de baja"
+                            invisible="state != 'active'"
+                            confirm="¿Dar de baja a este asegurado? Dejará de aparecer en las relaciones siguientes."/>
+                    <button name="action_new_claim" type="object" string="Reportar siniestro"
+                            icon="fa-medkit" invisible="state == 'draft'"/>
+                    <button name="action_reset_draft" type="object" string="Regresar a pre-registro"
+                            invisible="state != 'inactive'" groups="red_seguro_scout.group_rss_manager"/>
+                    <field name="state" widget="statusbar" statusbar_visible="draft,active,inactive"/>
+                </header>
+                <sheet>
+                    <div class="oe_button_box" name="button_box">
+                        <button name="action_view_claims" type="object" class="oe_stat_button" icon="fa-medkit">
+                            <field name="claim_count" widget="statinfo" string="Siniestros"/>
+                        </button>
+                    </div>
+                    <widget name="web_ribbon" title="Baja" bg_color="text-bg-secondary" invisible="state != 'inactive'"/>
+                    <field name="active" invisible="1"/>
+                    <field name="is_minor" invisible="1"/>
+                    <div class="oe_title">
+                        <h1><field name="name" readonly="1" placeholder="Nombre del scout"/></h1>
+                        <div class="o_rss_subtitle">
+                            <field name="group_id" readonly="1" invisible="not id" class="me-2"/>
+                            <span invisible="not birthdate"><field name="age" readonly="1" class="oe_inline"/> años</span>
+                        </div>
+                    </div>
+                    <group>
+                        <group string="Datos del scout">
+                            <field name="first_name"/>
+                            <field name="second_name"/>
+                            <field name="last_name_father"/>
+                            <field name="last_name_mother"/>
+                            <field name="birthdate"/>
+                            <field name="sex" widget="radio" options="{'horizontal': true}"/>
+                            <field name="curp" placeholder="18 caracteres (opcional)"/>
+                        </group>
+                        <group string="Grupo y cobertura">
+                            <field name="group_id"/>
+                            <field name="section"/>
+                            <field name="member_number"/>
+                            <field name="cluster_id"/>
+                            <field name="policy_id"/>
+                            <field name="date_start"/>
+                            <field name="date_end" invisible="state != 'inactive' and not date_end"/>
+                        </group>
+                    </group>
+                    <group string="Padre, madre o tutor">
+                        <group>
+                            <field name="tutor_name" required="is_minor and state == 'active'"/>
+                            <field name="tutor_relationship"/>
+                        </group>
+                        <group>
+                            <field name="tutor_phone" widget="phone" required="is_minor and state == 'active'"/>
+                            <field name="tutor_email" widget="email"/>
+                        </group>
+                    </group>
+                    <notebook>
+                        <page string="Siniestros" name="claims">
+                            <field name="claim_ids" readonly="1">
+                                <list>
+                                    <field name="name"/>
+                                    <field name="date_accident"/>
+                                    <field name="activity_type"/>
+                                    <field name="injury_type"/>
+                                    <field name="state" widget="badge"/>
+                                </list>
+                            </field>
+                        </page>
+                        <page string="Observaciones" name="notes">
+                            <field name="notes" placeholder="Notas internas"/>
+                        </page>
+                    </notebook>
+                </sheet>
+                <chatter/>
+            </form>
+        </field>
+    </record>
+
+    <record id="rss_insured_view_pivot" model="ir.ui.view">
+        <field name="name">rss.insured.pivot</field>
+        <field name="model">rss.insured</field>
+        <field name="arch" type="xml">
+            <pivot string="Asegurados" sample="1">
+                <field name="group_id" type="row"/>
+                <field name="date_start" interval="month" type="col"/>
+            </pivot>
+        </field>
+    </record>
+
+    <record id="rss_insured_view_graph" model="ir.ui.view">
+        <field name="name">rss.insured.graph</field>
+        <field name="model">rss.insured</field>
+        <field name="arch" type="xml">
+            <graph string="Asegurados" type="bar" stacked="1" sample="1">
+                <field name="group_id" type="row"/>
+                <field name="sex" type="col"/>
+            </graph>
+        </field>
+    </record>
+
+    <record id="rss_insured_action" model="ir.actions.act_window">
+        <field name="name">Asegurados</field>
+        <field name="res_model">rss.insured</field>
+        <field name="view_mode">list,form,pivot,graph</field>
+        <field name="search_view_id" ref="rss_insured_view_search"/>
+        <field name="context">{'search_default_active_insured': 1, 'search_default_draft': 1}</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">Captura al primer asegurado</p>
+            <p>Nombres, apellidos, fecha de nacimiento, sexo, grupo y datos del tutor.
+               Al darlo de alta aparecerá en la relación mensual para la aseguradora.</p>
+        </field>
+    </record>
+
+    <record id="rss_insured_action_analysis" model="ir.actions.act_window">
+        <field name="name">Análisis de asegurados</field>
+        <field name="res_model">rss.insured</field>
+        <field name="view_mode">pivot,graph,list</field>
+        <field name="search_view_id" ref="rss_insured_view_search"/>
+        <field name="context">{'search_default_active_insured': 1}</field>
+        <field name="view_ids" eval="[(5, 0, 0),
+            (0, 0, {'view_mode': 'pivot', 'view_id': ref('rss_insured_view_pivot')}),
+            (0, 0, {'view_mode': 'graph', 'view_id': ref('rss_insured_view_graph')})]"/>
+    </record>
+</odoo>

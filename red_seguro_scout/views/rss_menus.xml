@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <menuitem id="menu_rss_root" name="Red Seguro Scout"
+              web_icon="red_seguro_scout,static/description/icon.png"
+              groups="group_rss_user" sequence="45"/>
+
+    <menuitem id="menu_rss_members" name="Asegurados" parent="menu_rss_root" sequence="10"/>
+    <menuitem id="menu_rss_insured" name="Asegurados" parent="menu_rss_members"
+              action="rss_insured_action" sequence="10"/>
+    <menuitem id="menu_rss_groups" name="Grupos" parent="menu_rss_members"
+              action="rss_scout_group_action" sequence="20"/>
+    <menuitem id="menu_rss_clusters" name="Agrupaciones" parent="menu_rss_members"
+              action="rss_group_cluster_action" sequence="30"/>
+
+    <menuitem id="menu_rss_insurance" name="Seguro" parent="menu_rss_root" sequence="20"/>
+    <menuitem id="menu_rss_reports_monthly" name="Relaciones mensuales" parent="menu_rss_insurance"
+              action="rss_report_action" sequence="10"/>
+    <menuitem id="menu_rss_payments" name="Pagos de grupos" parent="menu_rss_insurance"
+              action="rss_payment_action" sequence="20"/>
+    <menuitem id="menu_rss_claims" name="Siniestros" parent="menu_rss_insurance"
+              action="rss_claim_action" sequence="30"/>
+
+    <menuitem id="menu_rss_analysis" name="Reportes" parent="menu_rss_root" sequence="30"/>
+    <menuitem id="menu_rss_analysis_period" name="Asegurados por periodo" parent="menu_rss_analysis"
+              action="rss_report_line_action" sequence="10"/>
+    <menuitem id="menu_rss_analysis_compare" name="Comparativa de grupos" parent="menu_rss_analysis"
+              action="rss_scout_group_action_compare" sequence="20"/>
+    <menuitem id="menu_rss_analysis_insured" name="Análisis de asegurados" parent="menu_rss_analysis"
+              action="rss_insured_action_analysis" sequence="30"/>
+
+    <menuitem id="menu_rss_config" name="Configuración" parent="menu_rss_root" sequence="90"
+              groups="group_rss_manager"/>
+    <menuitem id="menu_rss_policies" name="Pólizas" parent="menu_rss_config"
+              action="rss_policy_action" sequence="10"/>
+</odoo>

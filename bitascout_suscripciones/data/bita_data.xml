@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <data noupdate="1">
+        <record id="seq_bita_subscription" model="ir.sequence">
+            <field name="name">Suscripciones BitaScout</field>
+            <field name="code">bita.subscription</field>
+            <field name="prefix">SUS/%(year)s/</field>
+            <field name="padding">4</field>
+            <field name="company_id" eval="False"/>
+        </record>
+
+        <!-- El administrador principal nunca pierde acceso -->
+        <record id="base.user_admin" model="res.users">
+            <field name="bita_exempt" eval="True"/>
+        </record>
+
+        <record id="ir_cron_bita_subscriptions" model="ir.cron">
+            <field name="name">Suscripciones BitaScout: vencimientos y permisos</field>
+            <field name="model_id" ref="model_bita_subscription"/>
+            <field name="state">code</field>
+            <field name="code">model._cron_check_subscriptions()</field>
+            <field name="interval_number">1</field>
+            <field name="interval_type">days</field>
+            <field name="nextcall" eval="(DateTime.now() + timedelta(days=1)).strftime('%Y-%m-%d 07:00:00')"/>
+        </record>
+
+        <record id="mail_template_bita_expiring" model="mail.template">
+            <field name="name">Suscripciones BitaScout: aviso de vencimiento</field>
+            <field name="model_id" ref="model_bita_subscription"/>
+            <field name="subject">{{ object.is_trial and 'Tu prueba de' or 'Tu suscripción a' }} {{ object.platform_id.name }} vence el {{ object.date_end.strftime('%d/%m/%Y') }}</field>
+            <field name="email_from">{{ (object.company_id.email_formatted or user.email_formatted) }}</field>
+            <field name="email_to">{{ object.user_id.email }}</field>
+            <field name="body_html" type="html">
+<div style="font-family: Arial, sans-serif; font-size: 14px; color: #14213D;">
+    <div style="background: #0A2A5E; color: #ffffff; padding: 14px 18px; border-radius: 8px 8px 0 0; border-bottom: 3px solid #D9A93A;">
+        <strong style="font-size: 16px;" t-out="object.platform_id.name or ''">BitaScout</strong>
+        <span style="opacity: .85;" t-if="object.platform_id.tagline"> · <t t-out="object.platform_id.tagline"/></span>
+    </div>
+    <div style="border: 1px solid #D6DEEB; border-top: 0; padding: 18px; border-radius: 0 0 8px 8px;">
+        <p>Hola <t t-out="object.user_id.name or ''">Ana</t>,</p>
+        <p t-if="object.is_trial">Tu periodo de prueba de <strong t-out="object.platform_id.name or ''">BitaScout</strong>
+            termina el <strong t-out="object.date_end.strftime('%d/%m/%Y')">31/01/2027</strong>.
+            Para seguir usándolo, paga tu suscripción antes de esa fecha.</p>
+        <p t-else="">Tu suscripción a <strong t-out="object.platform_id.name or ''">BitaScout</strong>
+            vence el <strong t-out="object.date_end.strftime('%d/%m/%Y')">31/01/2027</strong>.
+            Renuévala para no perder el acceso.</p>
+        <p t-if="object.platform_id.price_month or object.platform_id.price_year" style="color: #4A5568;">
+            <t t-if="object.platform_id.price_month">Mensual: <t t-out="object.platform_id.price_month" t-options="{'widget': 'monetary', 'display_currency': object.currency_id}"/>.</t>
+            <t t-if="object.platform_id.price_year"> Anual: <t t-out="object.platform_id.price_year" t-options="{'widget': 'monetary', 'display_currency': object.currency_id}"/>.</t>
+        </p>
+        <p>Saludos,<br/><t t-out="object.company_id.name or ''">BitaScout</t></p>
+    </div>
+</div>
+            </field>
+            <field name="auto_delete" eval="True"/>
+        </record>
+    </data>
+</odoo>

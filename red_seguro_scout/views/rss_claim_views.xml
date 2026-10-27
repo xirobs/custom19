@@ -1,0 +1,148 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="rss_claim_view_search" model="ir.ui.view">
+        <field name="name">rss.claim.search</field>
+        <field name="model">rss.claim</field>
+        <field name="arch" type="xml">
+            <search string="Siniestros">
+                <field name="name"/>
+                <field name="insured_id"/>
+                <field name="group_id"/>
+                <field name="insurer_claim_number"/>
+                <filter name="open" string="Abiertos" domain="[('state', 'in', ('reported', 'in_process', 'approved'))]"/>
+                <filter name="not_covered" string="Sin cobertura ese día" domain="[('covered_on_date', '=', False)]"/>
+                <separator/>
+                <filter name="filter_date" string="Fecha del accidente" date="date_accident"/>
+                <group>
+                    <filter name="by_group" string="Grupo" context="{'group_by': 'group_id'}"/>
+                    <filter name="by_injury" string="Tipo de lesión" context="{'group_by': 'injury_type'}"/>
+                    <filter name="by_activity" string="Actividad" context="{'group_by': 'activity_type'}"/>
+                    <filter name="by_state" string="Estatus" context="{'group_by': 'state'}"/>
+                    <filter name="by_month" string="Mes" context="{'group_by': 'date_accident:month'}"/>
+                </group>
+            </search>
+        </field>
+    </record>
+
+    <record id="rss_claim_view_list" model="ir.ui.view">
+        <field name="name">rss.claim.list</field>
+        <field name="model">rss.claim</field>
+        <field name="arch" type="xml">
+            <list string="Siniestros" class="o_rss" decoration-danger="not covered_on_date">
+                <field name="name"/>
+                <field name="date_accident"/>
+                <field name="insured_id"/>
+                <field name="group_id"/>
+                <field name="activity_type"/>
+                <field name="injury_type"/>
+                <field name="amount_claimed" sum="Total" optional="show"/>
+                <field name="amount_paid" sum="Total" optional="show"/>
+                <field name="currency_id" column_invisible="1"/>
+                <field name="covered_on_date" column_invisible="1"/>
+                <field name="state" widget="badge"
+                       decoration-success="state == 'paid'"
+                       decoration-info="state in ('in_process', 'approved')"
+                       decoration-danger="state == 'rejected'"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="rss_claim_view_form" model="ir.ui.view">
+        <field name="name">rss.claim.form</field>
+        <field name="model">rss.claim</field>
+        <field name="arch" type="xml">
+            <form string="Siniestro" class="o_rss">
+                <header>
+                    <button name="action_in_process" type="object" string="Enviar a trámite"
+                            class="btn-primary" invisible="state != 'reported'"/>
+                    <button name="action_approve" type="object" string="Aprobado"
+                            invisible="state != 'in_process'"/>
+                    <button name="action_paid" type="object" string="Pagado"
+                            class="btn-primary" invisible="state != 'approved'"/>
+                    <button name="action_reject" type="object" string="Rechazado"
+                            invisible="state not in ('in_process', 'approved')"/>
+                    <button name="action_reopen" type="object" string="Reabrir"
+                            invisible="state not in ('rejected', 'paid')"
+                            groups="red_seguro_scout.group_rss_manager"/>
+                    <field name="state" widget="statusbar" statusbar_visible="reported,in_process,approved,paid"/>
+                </header>
+                <sheet>
+                    <div class="alert alert-danger" role="alert" invisible="covered_on_date or not insured_id">
+                        El asegurado no tenía cobertura vigente en la fecha del accidente.
+                    </div>
+                    <field name="covered_on_date" invisible="1"/>
+                    <div class="oe_title">
+                        <label for="name"/>
+                        <h1><field name="name"/></h1>
+                    </div>
+                    <group>
+                        <group string="Asegurado">
+                            <field name="insured_id"/>
+                            <field name="group_id"/>
+                            <field name="tutor_name"/>
+                            <field name="tutor_phone" widget="phone"/>
+                            <field name="policy_id"/>
+                        </group>
+                        <group string="Accidente">
+                            <field name="date_accident"/>
+                            <field name="activity_type"/>
+                            <field name="place"/>
+                            <field name="injury_type"/>
+                            <field name="body_part"/>
+                            <field name="medical_center"/>
+                        </group>
+                    </group>
+                    <group>
+                        <group string="Reclamación">
+                            <field name="insurer_claim_number"/>
+                            <field name="amount_claimed"/>
+                            <field name="amount_paid"/>
+                            <field name="currency_id" invisible="1"/>
+                        </group>
+                    </group>
+                    <notebook>
+                        <page string="Descripción" name="description">
+                            <field name="description" placeholder="¿Qué pasó, cómo y quién atendió?"/>
+                        </page>
+                        <page string="Documentos" name="documents">
+                            <field name="attachment_ids" widget="many2many_binary"/>
+                        </page>
+                    </notebook>
+                </sheet>
+                <chatter/>
+            </form>
+        </field>
+    </record>
+
+    <record id="rss_claim_view_pivot" model="ir.ui.view">
+        <field name="name">rss.claim.pivot</field>
+        <field name="model">rss.claim</field>
+        <field name="arch" type="xml">
+            <pivot string="Siniestros" sample="1">
+                <field name="injury_type" type="row"/>
+                <field name="date_accident" interval="quarter" type="col"/>
+            </pivot>
+        </field>
+    </record>
+
+    <record id="rss_claim_view_graph" model="ir.ui.view">
+        <field name="name">rss.claim.graph</field>
+        <field name="model">rss.claim</field>
+        <field name="arch" type="xml">
+            <graph string="Siniestros" type="pie" sample="1">
+                <field name="injury_type" type="row"/>
+            </graph>
+        </field>
+    </record>
+
+    <record id="rss_claim_action" model="ir.actions.act_window">
+        <field name="name">Siniestros</field>
+        <field name="res_model">rss.claim</field>
+        <field name="view_mode">list,form,pivot,graph</field>
+        <field name="search_view_id" ref="rss_claim_view_search"/>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">Reporta un accidente</p>
+            <p>Fracturas, golpes, cortes y demás lesiones ocurridas en actividades scouts.</p>
+        </field>
+    </record>
+</odoo>

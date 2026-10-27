@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_users_form_bita" model="ir.ui.view">
+        <field name="name">res.users.form.bita</field>
+        <field name="model">res.users</field>
+        <field name="inherit_id" ref="base.view_users_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//notebook" position="inside">
+                <page string="Suscripciones" name="bita_subscriptions" groups="bitascout_suscripciones.group_bita_manager">
+                    <group>
+                        <field name="bita_exempt"/>
+                        <field name="bita_access_summary"/>
+                    </group>
+                    <field name="bita_subscription_ids" readonly="1">
+                        <list decoration-muted="state in ('expired', 'cancel')">
+                            <field name="name"/>
+                            <field name="platform_id"/>
+                            <field name="group_id"/>
+                            <field name="date_start"/>
+                            <field name="date_end"/>
+                            <field name="payment_method"/>
+                            <field name="state" widget="badge" decoration-success="state == 'active'"/>
+                        </list>
+                    </field>
+                </page>
+            </xpath>
+        </field>
+    </record>
+</odoo>

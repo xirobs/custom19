@@ -1,0 +1,177 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="rss_payment_view_search" model="ir.ui.view">
+        <field name="name">rss.payment.search</field>
+        <field name="model">rss.payment</field>
+        <field name="arch" type="xml">
+            <search string="Pagos">
+                <field name="name"/>
+                <field name="group_id"/>
+                <field name="cluster_id"/>
+                <field name="reference"/>
+                <field name="insurer_folio"/>
+                <filter name="draft" string="Borrador" domain="[('state', '=', 'draft')]"/>
+                <filter name="confirmed" string="Pago recibido (por remitir)" domain="[('state', '=', 'confirmed')]"/>
+                <filter name="remitted" string="Remitidos" domain="[('state', '=', 'remitted')]"/>
+                <separator/>
+                <filter name="filter_date" string="Fecha de pago" date="date"/>
+                <group>
+                    <filter name="by_group" string="Grupo" context="{'group_by': 'group_id'}"/>
+                    <filter name="by_year" string="Ejercicio" context="{'group_by': 'year'}"/>
+                    <filter name="by_state" string="Estatus" context="{'group_by': 'state'}"/>
+                    <filter name="by_method" string="Forma de pago" context="{'group_by': 'payment_method'}"/>
+                    <filter name="by_month" string="Mes" context="{'group_by': 'date:month'}"/>
+                </group>
+            </search>
+        </field>
+    </record>
+
+    <record id="rss_payment_view_list" model="ir.ui.view">
+        <field name="name">rss.payment.list</field>
+        <field name="model">rss.payment</field>
+        <field name="arch" type="xml">
+            <list string="Pagos de grupos" class="o_rss" decoration-muted="state == 'cancel'">
+                <field name="name"/>
+                <field name="date"/>
+                <field name="group_id"/>
+                <field name="year"/>
+                <field name="payment_method" optional="show"/>
+                <field name="member_count" sum="Total"/>
+                <field name="amount" sum="Total"/>
+                <field name="amount_difference" optional="hide"/>
+                <field name="currency_id" column_invisible="1"/>
+                <field name="insurer_folio" optional="show"/>
+                <field name="state" widget="badge"
+                       decoration-success="state == 'remitted'"
+                       decoration-info="state == 'confirmed'"
+                       decoration-muted="state == 'cancel'"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="rss_payment_view_form" model="ir.ui.view">
+        <field name="name">rss.payment.form</field>
+        <field name="model">rss.payment</field>
+        <field name="arch" type="xml">
+            <form string="Pago del seguro" class="o_rss">
+                <header>
+                    <button name="action_confirm" type="object" string="Registrar pago y emitir recibo"
+                            class="btn-primary" invisible="state != 'draft'"/>
+                    <button name="action_print_receipt" type="object" string="Imprimir recibo"
+                            icon="fa-print" class="btn-primary" invisible="state not in ('confirmed', 'remitted')"/>
+                    <button name="action_remit" type="object" string="Marcar remitido a aseguradora"
+                            invisible="state != 'confirmed'"/>
+                    <button name="action_load_members" type="object" string="Cargar miembros del grupo"
+                            invisible="state != 'draft'"/>
+                    <button name="action_cancel" type="object" string="Cancelar"
+                            invisible="state not in ('draft', 'confirmed')"
+                            groups="red_seguro_scout.group_rss_manager"
+                            confirm="¿Cancelar este pago?"/>
+                    <button name="action_draft" type="object" string="Regresar a borrador"
+                            invisible="state != 'cancel'"/>
+                    <field name="state" widget="statusbar" statusbar_visible="draft,confirmed,remitted"/>
+                </header>
+                <sheet>
+                    <widget name="web_ribbon" title="Remitido" bg_color="text-bg-success" invisible="state != 'remitted'"/>
+                    <widget name="web_ribbon" title="Cancelado" bg_color="text-bg-danger" invisible="state != 'cancel'"/>
+                    <div class="oe_title">
+                        <label for="name"/>
+                        <h1><field name="name"/></h1>
+                    </div>
+                    <group>
+                        <group string="Grupo">
+                            <field name="group_id" readonly="state != 'draft'"/>
+                            <field name="cluster_id"/>
+                            <field name="policy_id" readonly="state != 'draft'"/>
+                            <field name="year" readonly="state != 'draft'" options="{'format': false}"/>
+                            <field name="company_id" groups="base.group_multi_company" readonly="state != 'draft'"/>
+                        </group>
+                        <group string="Pago">
+                            <field name="date" readonly="state != 'draft'"/>
+                            <field name="payer_name" readonly="state != 'draft'"/>
+                            <field name="received_by" readonly="state != 'draft'"/>
+                            <field name="payment_method" readonly="state != 'draft'"/>
+                            <field name="reference" readonly="state != 'draft'"/>
+                            <field name="currency_id" invisible="1"/>
+                        </group>
+                    </group>
+                    <div class="o_rss_stats">
+                        <div><span class="o_rss_stat_v"><field name="member_count" nolabel="1"/></span><span>Miembros</span></div>
+                        <div><span class="o_rss_stat_v"><field name="amount_per_member" nolabel="1" readonly="state != 'draft'"/></span><span>Cuota por miembro</span></div>
+                        <div><span class="o_rss_stat_v"><field name="amount_expected" nolabel="1"/></span><span>Esperado</span></div>
+                        <div class="o_rss_stat_main"><span class="o_rss_stat_v"><field name="amount" nolabel="1" readonly="state != 'draft'"/></span><span>Recibido</span></div>
+                        <div invisible="not amount_difference"><span class="o_rss_stat_v"><field name="amount_difference" nolabel="1"/></span><span>Diferencia</span></div>
+                    </div>
+                    <group string="Remisión a la aseguradora" invisible="state == 'draft'">
+                        <group>
+                            <field name="insurer_folio" readonly="state == 'remitted'"/>
+                            <field name="date_remitted" readonly="state == 'remitted'"/>
+                        </group>
+                        <group>
+                            <field name="date_confirmed"/>
+                        </group>
+                    </group>
+                    <notebook>
+                        <page string="Miembros cubiertos" name="members">
+                            <field name="member_ids" readonly="state != 'draft'"
+                                   options="{'no_create': True}">
+                                <list>
+                                    <field name="last_name_father"/>
+                                    <field name="last_name_mother"/>
+                                    <field name="first_name"/>
+                                    <field name="age"/>
+                                    <field name="section"/>
+                                    <field name="state" widget="badge"
+                                           decoration-success="state == 'active'"
+                                           decoration-info="state == 'draft'"/>
+                                </list>
+                            </field>
+                        </page>
+                        <page string="Comprobantes" name="proofs">
+                            <field name="attachment_ids" widget="many2many_binary"/>
+                        </page>
+                        <page string="Notas" name="notes">
+                            <field name="notes"/>
+                        </page>
+                    </notebook>
+                </sheet>
+                <chatter/>
+            </form>
+        </field>
+    </record>
+
+    <record id="rss_payment_view_pivot" model="ir.ui.view">
+        <field name="name">rss.payment.pivot</field>
+        <field name="model">rss.payment</field>
+        <field name="arch" type="xml">
+            <pivot string="Pagos" sample="1">
+                <field name="group_id" type="row"/>
+                <field name="year" type="col"/>
+                <field name="amount" type="measure"/>
+                <field name="member_count" type="measure"/>
+            </pivot>
+        </field>
+    </record>
+
+    <record id="rss_payment_view_graph" model="ir.ui.view">
+        <field name="name">rss.payment.graph</field>
+        <field name="model">rss.payment</field>
+        <field name="arch" type="xml">
+            <graph string="Pagos" type="bar" sample="1">
+                <field name="group_id" type="row"/>
+                <field name="amount" type="measure"/>
+            </graph>
+        </field>
+    </record>
+
+    <record id="rss_payment_action" model="ir.actions.act_window">
+        <field name="name">Pagos de grupos</field>
+        <field name="res_model">rss.payment</field>
+        <field name="view_mode">list,form,pivot,graph</field>
+        <field name="search_view_id" ref="rss_payment_view_search"/>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">Registra el pago del seguro de un grupo</p>
+            <p>Al registrarlo se emite el recibo; después márcalo como remitido con el acuse de la aseguradora.</p>
+        </field>
+    </record>
+</odoo>

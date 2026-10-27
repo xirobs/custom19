@@ -1,0 +1,290 @@
+// Red Seguro Scout · «Rumbo Seguro»
+// Paleta del emblema: azul marino, oro y rojo. Solo afecta las vistas del módulo
+// (clase .o_rss / .o_rss_kanban). Cada grupo pinta sus tarjetas con sus colores.
+
+$rss-forest: #0A2A5E;   // azul marino del escudo
+$rss-green: #D9A93A;    // oro del contorno
+$rss-leaf: #B00625;     // rojo de la flor de lis
+$rss-mist: #EEF2F8;
+$rss-line: #D6DEEB;
+$rss-ink: #1A2233;
+
+.o_rss,
+.o_rss_kanban {
+    --rss-forest: #{$rss-forest};
+    --rss-green: #{$rss-green};
+
+    .btn-primary {
+        --btn-bg: #{$rss-forest};
+        --btn-border-color: #{$rss-forest};
+        --btn-hover-bg: #{darken($rss-forest, 5%)};
+        --btn-hover-border-color: #{darken($rss-forest, 5%)};
+        --btn-active-bg: #{darken($rss-forest, 8%)};
+        --btn-active-border-color: #{darken($rss-forest, 8%)};
+        --btn-disabled-bg: #{$rss-green};
+        --btn-disabled-border-color: #{$rss-green};
+        background-color: $rss-forest;
+        border-color: $rss-forest;
+    }
+}
+
+.o_rss {
+    // Hoja con franja verde superior
+    .o_form_sheet {
+        border-top: 4px solid $rss-forest;
+        background-image: linear-gradient(180deg, rgba($rss-mist, .55) 0, rgba($rss-mist, 0) 90px);
+    }
+
+    .oe_title h1 {
+        color: $rss-forest;
+    }
+
+    .o_horizontal_separator,
+    .o_form_label.o_horizontal_separator,
+    .o_rss_section_title {
+        color: $rss-forest;
+        border-bottom-color: $rss-line;
+    }
+
+    // Barra de estatus
+    .o_statusbar_status .o_arrow_button_current {
+        --btn-bg: #{$rss-forest} !important;
+        background-color: $rss-forest !important;
+        color: #fff !important;
+    }
+
+    // Botones inteligentes
+    .oe_button_box .oe_stat_button .o_stat_value,
+    .oe_button_box .oe_stat_button .fa {
+        color: $rss-forest;
+    }
+
+    // Pestañas
+    .nav-tabs .nav-link.active {
+        border-top: 2px solid $rss-forest;
+        color: $rss-forest;
+    }
+
+    // Encabezados de listas
+    &.o_list_renderer thead,
+    .o_list_renderer thead {
+        background-color: $rss-mist;
+        th {
+            color: $rss-forest;
+        }
+    }
+}
+
+// Tarjetas de indicadores dentro de los formularios
+.o_rss_stats {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin: 6px 0 16px 0;
+
+    > div {
+        flex: 1 1 120px;
+        display: flex;
+        flex-direction: column;
+        padding: 8px 12px;
+        border-radius: 8px;
+        background: $rss-mist;
+        border-left: 4px solid $rss-green;
+
+        > span:last-child {
+            font-size: 0.72rem;
+            text-transform: uppercase;
+            letter-spacing: .04em;
+            color: lighten($rss-ink, 25%);
+        }
+    }
+
+    .o_rss_stat_main {
+        background: $rss-forest;
+        border-left-color: $rss-leaf;
+        .o_rss_stat_v,
+        .o_rss_stat_v *,
+        > span:last-child {
+            color: #fff !important;
+        }
+    }
+
+    .o_rss_stat_v {
+        font-size: 1.35rem;
+        font-weight: 700;
+        color: $rss-forest;
+        line-height: 1.2;
+
+        .o_field_widget, input {
+            font-size: inherit;
+            font-weight: inherit;
+            color: inherit;
+        }
+    }
+}
+
+.o_rss_hint {
+    background: $rss-mist;
+    border-left: 3px solid $rss-green;
+    color: $rss-ink;
+    padding: 6px 12px;
+    margin-bottom: 10px;
+    border-radius: 4px;
+    font-size: 0.85rem;
+}
+
+.o_rss_subtitle {
+    color: $rss-forest;
+    font-weight: 500;
+}
+
+// Kanban de grupos: cada tarjeta con la personalidad de su grupo
+.o_rss_kanban {
+    .o_kanban_record {
+        border-top: 4px solid var(--rss-group-primary, #{$rss-forest});
+        border-radius: 8px;
+        box-shadow: inset 0 -3px 0 var(--rss-group-secondary, #{$rss-green});
+    }
+
+    .o_rss_group_logo {
+        width: 42px;
+        height: 42px;
+        object-fit: contain;
+        border-radius: 8px;
+        background: var(--rss-group-tint, #{$rss-mist});
+        padding: 3px;
+    }
+
+    .o_rss_group_initial {
+        width: 42px;
+        height: 42px;
+        border-radius: 8px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 700;
+        font-size: 1.1rem;
+        background: var(--rss-group-primary, #{$rss-forest});
+        color: var(--rss-group-on-primary, #fff);
+        border-bottom: 3px solid var(--rss-group-secondary, #{$rss-green});
+    }
+
+    .o_rss_card_head {
+        display: flex;
+        align-items: flex-start;
+        justify-content: space-between;
+        gap: 6px;
+        color: $rss-forest;
+    }
+
+    .o_rss_card_kpis {
+        display: flex;
+        align-items: center;
+        gap: 14px;
+        margin-top: 10px;
+    }
+
+    .o_rss_kpi_main {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        min-width: 74px;
+        padding: 6px 10px;
+        border-radius: 8px;
+        background: var(--rss-group-primary, #{$rss-forest});
+        color: var(--rss-group-on-primary, #fff);
+
+        .o_field_widget, span:first-child {
+            font-size: 1.6rem;
+            font-weight: 700;
+            line-height: 1.1;
+        }
+        > span {
+            font-size: .68rem;
+            text-transform: uppercase;
+            letter-spacing: .05em;
+            opacity: .85;
+        }
+    }
+
+    .o_rss_kpi_split {
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
+        color: $rss-ink;
+        .fa {
+            width: 14px;
+            color: var(--rss-group-primary, #{$rss-forest});
+        }
+    }
+
+    .o_rss_link {
+        color: $rss-forest;
+    }
+}
+
+.o_rss_badge {
+    font-size: .7rem;
+    font-weight: 600;
+    padding: 2px 8px;
+    border-radius: 10px;
+    white-space: nowrap;
+}
+
+.o_rss_badge_ok {
+    background: #D7F0DF;
+    color: $rss-forest;
+}
+
+.o_rss_badge_warn {
+    background: #FDEBD3;
+    color: #8A4B0A;
+}
+
+// Franja de identidad en la ficha del grupo
+.o_rss_group_identity {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 10px 14px;
+    margin-bottom: 14px;
+    border-radius: 10px;
+    background: var(--rss-group-primary, #{$rss-forest});
+    color: var(--rss-group-on-primary, #fff);
+    border-bottom: 4px solid var(--rss-group-secondary, #{$rss-green});
+
+    img {
+        height: 54px;
+        width: 54px;
+        object-fit: contain;
+        background: rgba(255, 255, 255, .92);
+        border-radius: 8px;
+        padding: 3px;
+    }
+
+    .o_rss_identity_name {
+        font-size: 1.25rem;
+        font-weight: 700;
+    }
+
+    .o_rss_identity_motto {
+        font-style: italic;
+        opacity: .9;
+    }
+
+    .o_rss_identity_seal {
+        margin-left: auto;
+        font-size: .75rem;
+        opacity: .85;
+        text-align: right;
+    }
+}
+
+// Indicadores dorados sobre el azul
+.o_rss .o_rss_stats > div {
+    border-left-color: $rss-green;
+}
+
+.o_rss .o_rss_stats .o_rss_stat_main {
+    border-left-color: $rss-green;
+}

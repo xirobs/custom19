@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Red Seguro Scout como plataforma por suscripción: el acceso lo da el pago del seguro -->
+    <data noupdate="1">
+        <record id="bita_platform_red_seguro_scout" model="bita.platform">
+            <field name="name">Red Seguro Scout</field>
+            <field name="code">red_seguro_scout</field>
+            <field name="tagline">Rumbo Seguro</field>
+            <field name="sequence">20</field>
+            <field name="image" type="base64" file="red_seguro_scout/static/description/icon.png"/>
+            <field name="group_ids" eval="[(6, 0, [ref('group_rss_user'), ref('group_rss_manager')])]"/>
+            <field name="default_group_id" ref="group_rss_user"/>
+            <field name="trial_months">0</field>
+            <field name="grace_days">15</field>
+        </record>
+    </data>
+</odoo>

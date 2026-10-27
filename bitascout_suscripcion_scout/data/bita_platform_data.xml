@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <data noupdate="1">
+        <record id="bita_platform_bitascout" model="bita.platform">
+            <field name="name">BitaScout</field>
+            <field name="code">bitascout</field>
+            <field name="tagline">Sistema de Bitácora Scout</field>
+            <field name="sequence">10</field>
+            <field name="image" type="base64" file="bitascout_suscripcion_scout/static/description/icon.png"/>
+            <field name="group_ids" eval="[(6, 0, [ref('scout_management.group_scout_leader'), ref('scout_management.group_scout_officer'), ref('scout_management.group_scout_treasurer'), ref('scout_management.group_scout_manager')])]"/>
+            <field name="default_group_id" ref="scout_management.group_scout_leader"/>
+            <field name="trial_months">3</field>
+            <field name="grace_days">3</field>
+        </record>
+    </data>
+</odoo>

@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="rss_attach_pdf_wizard_view_form" model="ir.ui.view">
+        <field name="name">rss.attach.pdf.wizard.form</field>
+        <field name="model">rss.attach.pdf.wizard</field>
+        <field name="arch" type="xml">
+            <form string="Adjuntar PDF" class="o_rss">
+                <p class="text-muted">
+                    El mismo PDF se guarda en el expediente de cada grupo seleccionado
+                    y, si lo indicas, en los documentos de la agrupación.
+                </p>
+                <group>
+                    <field name="file" filename="filename" options="{'accepted_file_extensions': '.pdf'}"/>
+                    <field name="filename" invisible="1"/>
+                    <field name="description" placeholder="Ej. Póliza firmada 2027, circular de cobertura..."/>
+                    <field name="cluster_id"/>
+                    <field name="attach_to_cluster" invisible="not cluster_id"/>
+                    <field name="group_ids" widget="many2many_tags"/>
+                </group>
+                <footer>
+                    <button name="action_attach" type="object" string="Adjuntar PDF" class="btn-primary"/>
+                    <button string="Cancelar" special="cancel" class="btn-secondary"/>
+                </footer>
+            </form>
+        </field>
+    </record>
+</odoo>

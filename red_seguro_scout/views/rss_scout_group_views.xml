@@ -1,0 +1,287 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="rss_scout_group_view_search" model="ir.ui.view">
+        <field name="name">rss.scout.group.search</field>
+        <field name="model">rss.scout.group</field>
+        <field name="arch" type="xml">
+            <search string="Grupos">
+                <field name="name"/>
+                <field name="number"/>
+                <field name="cluster_id"/>
+                <field name="leader_name"/>
+                <filter name="paid" string="Pagado este año" domain="[('paid_current_year', '=', True)]"/>
+                <filter name="unpaid" string="Sin pago este año" domain="[('paid_current_year', '=', False)]"/>
+                <separator/>
+                <filter name="archived" string="Archivados" domain="[('active', '=', False)]"/>
+                <group>
+                    <filter name="by_cluster" string="Agrupación" context="{'group_by': 'cluster_id'}"/>
+                    <filter name="by_policy" string="Póliza" context="{'group_by': 'policy_id'}"/>
+                </group>
+            </search>
+        </field>
+    </record>
+
+    <record id="rss_scout_group_view_kanban" model="ir.ui.view">
+        <field name="name">rss.scout.group.kanban</field>
+        <field name="model">rss.scout.group</field>
+        <field name="arch" type="xml">
+            <kanban class="o_rss_kanban" sample="1">
+                <field name="color"/>
+                <field name="paid_current_year"/>
+                <field name="brand_style"/>
+                <field name="logo"/>
+                <field name="id"/>
+                <templates>
+                    <t t-name="card" class="o_rss_card">
+                        <div t-att-style="record.brand_style.raw_value" class="d-flex flex-column h-100">
+                            <div class="o_rss_card_head">
+                                <div class="d-flex align-items-center gap-2">
+                                    <img t-if="record.logo.raw_value" class="o_rss_group_logo"
+                                         t-att-src="'/web/image/rss.scout.group/' + record.id.raw_value + '/logo/128x128'" alt="Logo"/>
+                                    <span t-else="" class="o_rss_group_initial" t-out="(record.name.value or '?')[0]"/>
+                                    <div>
+                                        <field name="name" class="fw-bold fs-5 d-block"/>
+                                        <field name="motto" class="small fst-italic text-muted"/>
+                                    </div>
+                                </div>
+                                <span t-if="record.paid_current_year.raw_value" class="o_rss_badge o_rss_badge_ok">Pagado</span>
+                                <span t-else="" class="o_rss_badge o_rss_badge_warn">Sin pago</span>
+                            </div>
+                            <field name="cluster_id" class="text-muted small mt-1"/>
+                            <div class="o_rss_card_kpis">
+                                <div class="o_rss_kpi_main">
+                                    <field name="member_count"/>
+                                    <span>asegurados</span>
+                                </div>
+                                <div class="o_rss_kpi_split">
+                                    <div><i class="fa fa-male" title="Hombres"/> <field name="male_count"/></div>
+                                    <div><i class="fa fa-female" title="Mujeres"/> <field name="female_count"/></div>
+                                    <div t-if="record.draft_count.raw_value"><i class="fa fa-pencil" title="Pre-registros"/> <field name="draft_count"/></div>
+                                </div>
+                            </div>
+                            <footer class="pt-1 mt-auto">
+                                <field name="leader_name" class="small text-muted"/>
+                                <div class="ms-auto">
+                                    <a type="object" name="action_view_members" class="btn btn-sm btn-link o_rss_link" role="button">
+                                        <i class="fa fa-users"/> Miembros
+                                    </a>
+                                </div>
+                            </footer>
+                        </div>
+                    </t>
+                </templates>
+            </kanban>
+        </field>
+    </record>
+
+    <record id="rss_scout_group_view_list" model="ir.ui.view">
+        <field name="name">rss.scout.group.list</field>
+        <field name="model">rss.scout.group</field>
+        <field name="arch" type="xml">
+            <list string="Grupos" class="o_rss">
+                <field name="sequence" widget="handle"/>
+                <field name="number" optional="show"/>
+                <field name="name"/>
+                <field name="cluster_id"/>
+                <field name="leader_name" optional="show"/>
+                <field name="leader_phone" optional="hide"/>
+                <field name="member_count" sum="Total"/>
+                <field name="male_count" optional="show" sum="Total"/>
+                <field name="female_count" optional="show" sum="Total"/>
+                <field name="draft_count" optional="hide" sum="Total"/>
+                <field name="paid_current_year" widget="boolean_toggle" readonly="1"/>
+                <field name="last_payment_date" optional="hide"/>
+                <field name="company_id" groups="base.group_multi_company" optional="hide"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="rss_scout_group_view_form" model="ir.ui.view">
+        <field name="name">rss.scout.group.form</field>
+        <field name="model">rss.scout.group</field>
+        <field name="arch" type="xml">
+            <form string="Grupo scout" class="o_rss">
+                <header>
+                    <button name="action_new_payment" type="object" string="Registrar pago del seguro"
+                            class="btn-primary" icon="fa-money"/>
+                    <button name="action_attach_pdf" type="object" string="Adjuntar PDF" icon="fa-file-pdf-o"/>
+                </header>
+                <sheet>
+                    <div class="oe_button_box" name="button_box">
+                        <button name="action_view_members" type="object" class="oe_stat_button" icon="fa-users">
+                            <field name="member_count" widget="statinfo" string="Asegurados"/>
+                        </button>
+                        <button name="action_view_payments" type="object" class="oe_stat_button" icon="fa-money">
+                            <field name="payment_count" widget="statinfo" string="Pagos"/>
+                        </button>
+                        <button class="oe_stat_button" icon="fa-file-pdf-o" disabled="1">
+                            <field name="document_count" widget="statinfo" string="Documentos"/>
+                        </button>
+                    </div>
+                    <widget name="web_ribbon" title="Pagado" bg_color="text-bg-success" invisible="not paid_current_year or not active"/>
+                    <widget name="web_ribbon" title="Archivado" bg_color="text-bg-danger" invisible="active"/>
+                    <field name="active" invisible="1"/>
+                    <field name="paid_current_year" invisible="1"/>
+                    <field name="identity_banner" nolabel="1" readonly="1" invisible="not id" class="d-block w-100"/>
+                    <div class="oe_title">
+                        <label for="name"/>
+                        <h1><field name="name" placeholder="Ej. Grupo 7"/></h1>
+                    </div>
+                    <group>
+                        <group string="Grupo">
+                            <field name="number"/>
+                            <field name="cluster_id"/>
+                            <field name="policy_id"/>
+                            <field name="city"/>
+                            <field name="meeting_place"/>
+                            <field name="company_id" groups="base.group_multi_company"/>
+                        </group>
+                        <group string="Contacto">
+                            <field name="leader_name"/>
+                            <field name="leader_phone" widget="phone"/>
+                            <field name="leader_email" widget="email"/>
+                            <field name="treasurer_name"/>
+                            <field name="user_ids" widget="many2many_tags"
+                                   help="Reciben acceso a Red Seguro Scout cuando el grupo paga su seguro."/>
+                            <field name="last_payment_date"/>
+                        </group>
+                    </group>
+                    <div class="o_rss_stats">
+                        <div><span class="o_rss_stat_v"><field name="member_count" nolabel="1"/></span><span>Asegurados</span></div>
+                        <div><span class="o_rss_stat_v"><field name="male_count" nolabel="1"/></span><span>Hombres</span></div>
+                        <div><span class="o_rss_stat_v"><field name="female_count" nolabel="1"/></span><span>Mujeres</span></div>
+                        <div><span class="o_rss_stat_v"><field name="minor_count" nolabel="1"/></span><span>Menores</span></div>
+                        <div><span class="o_rss_stat_v"><field name="adult_count" nolabel="1"/></span><span>Adultos</span></div>
+                        <div><span class="o_rss_stat_v"><field name="draft_count" nolabel="1"/></span><span>Pre-registros</span></div>
+                    </div>
+                    <notebook>
+                        <page string="Miembros" name="members">
+                            <field name="member_ids" context="{'default_group_id': id}">
+                                <list decoration-muted="state == 'inactive'" decoration-info="state == 'draft'">
+                                    <field name="last_name_father"/>
+                                    <field name="last_name_mother"/>
+                                    <field name="first_name"/>
+                                    <field name="second_name" optional="hide"/>
+                                    <field name="age"/>
+                                    <field name="sex"/>
+                                    <field name="section"/>
+                                    <field name="tutor_name" optional="show"/>
+                                    <field name="tutor_phone" optional="show"/>
+                                    <field name="state" widget="badge"
+                                           decoration-success="state == 'active'"
+                                           decoration-info="state == 'draft'"
+                                           decoration-muted="state == 'inactive'"/>
+                                </list>
+                            </field>
+                        </page>
+                        <page string="Expediente PDF" name="documents">
+                            <div class="o_rss_hint">Sube aquí los PDF del grupo (registro, póliza, comprobantes).</div>
+                            <field name="attachment_ids" widget="many2many_binary"
+                                   options="{'accepted_file_extensions': '.pdf'}"/>
+                            <div invisible="not cluster_attachment_ids">
+                                <h5 class="o_rss_section_title mt-4">Documentos de la agrupación</h5>
+                                <field name="cluster_attachment_ids" widget="many2many_binary" readonly="1"/>
+                            </div>
+                        </page>
+                        <page string="Pagos" name="payments">
+                            <field name="payment_ids" readonly="1">
+                                <list>
+                                    <field name="name"/>
+                                    <field name="date"/>
+                                    <field name="year"/>
+                                    <field name="member_count"/>
+                                    <field name="amount" sum="Total"/>
+                                    <field name="currency_id" column_invisible="1"/>
+                                    <field name="state" widget="badge"
+                                           decoration-success="state == 'remitted'"
+                                           decoration-info="state == 'confirmed'"
+                                           decoration-muted="state == 'cancel'"/>
+                                </list>
+                            </field>
+                        </page>
+                        <page string="Identidad del grupo" name="identity">
+                            <div class="o_rss_hint">
+                                El grupo conserva su personalidad: su logo, colores y lema aparecen en sus
+                                recibos, en la relación (cuando es solo de este grupo), en el Excel y en su tarjeta.
+                                Si lo dejas vacío se usan los de la organización y, al final, los de Red Seguro Scout.
+                            </div>
+                            <group>
+                                <group>
+                                    <field name="logo" widget="image" options="{'size': [128, 128]}"/>
+                                    <field name="motto" placeholder="Ej. Siempre listos"/>
+                                    <field name="neckerchief" placeholder="Ej. azul marino y naranja con franja blanca"/>
+                                </group>
+                                <group>
+                                    <field name="primary_color" widget="color"/>
+                                    <field name="secondary_color" widget="color"/>
+                                </group>
+                            </group>
+                        </page>
+                        <page string="Notas" name="notes">
+                            <field name="notes"/>
+                        </page>
+                    </notebook>
+                </sheet>
+                <chatter/>
+            </form>
+        </field>
+    </record>
+
+    <!-- Comparativa de grupos por cantidad de miembros -->
+    <record id="rss_scout_group_view_graph" model="ir.ui.view">
+        <field name="name">rss.scout.group.graph</field>
+        <field name="model">rss.scout.group</field>
+        <field name="arch" type="xml">
+            <graph string="Comparativa de grupos" type="bar" order="desc" sample="1">
+                <field name="name" type="row"/>
+                <field name="member_count" type="measure"/>
+            </graph>
+        </field>
+    </record>
+
+    <record id="rss_scout_group_view_pivot" model="ir.ui.view">
+        <field name="name">rss.scout.group.pivot</field>
+        <field name="model">rss.scout.group</field>
+        <field name="arch" type="xml">
+            <pivot string="Comparativa de grupos" sample="1">
+                <field name="cluster_id" type="row"/>
+                <field name="name" type="row"/>
+                <field name="member_count" type="measure"/>
+                <field name="male_count" type="measure"/>
+                <field name="female_count" type="measure"/>
+                <field name="minor_count" type="measure"/>
+                <field name="adult_count" type="measure"/>
+            </pivot>
+        </field>
+    </record>
+
+    <record id="rss_scout_group_action" model="ir.actions.act_window">
+        <field name="name">Grupos</field>
+        <field name="res_model">rss.scout.group</field>
+        <field name="view_mode">kanban,list,form,graph,pivot</field>
+        <field name="search_view_id" ref="rss_scout_group_view_search"/>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">Registra el primer grupo scout</p>
+            <p>Cada grupo reúne a sus miembros asegurados, sus pagos y su expediente PDF.</p>
+        </field>
+    </record>
+
+    <record id="rss_scout_group_action_compare" model="ir.actions.act_window">
+        <field name="name">Comparativa de grupos</field>
+        <field name="res_model">rss.scout.group</field>
+        <field name="view_mode">graph,pivot,list</field>
+        <field name="search_view_id" ref="rss_scout_group_view_search"/>
+        <field name="view_ids" eval="[(5, 0, 0),
+            (0, 0, {'view_mode': 'graph', 'view_id': ref('rss_scout_group_view_graph')}),
+            (0, 0, {'view_mode': 'pivot', 'view_id': ref('rss_scout_group_view_pivot')})]"/>
+    </record>
+
+    <record id="rss_scout_group_server_action_attach" model="ir.actions.server">
+        <field name="name">Adjuntar PDF a los grupos seleccionados</field>
+        <field name="model_id" ref="model_rss_scout_group"/>
+        <field name="binding_model_id" ref="model_rss_scout_group"/>
+        <field name="binding_view_types">list,kanban</field>
+        <field name="state">code</field>
+        <field name="code">action = records.action_attach_pdf()</field>
+    </record>
+</odoo>

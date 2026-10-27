@@ -1,0 +1,107 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="action_report_recibo_pago" model="ir.actions.report">
+        <field name="name">Recibo de pago del seguro</field>
+        <field name="model">rss.payment</field>
+        <field name="report_type">qweb-pdf</field>
+        <field name="report_name">red_seguro_scout.report_recibo_pago</field>
+        <field name="report_file">red_seguro_scout.report_recibo_pago</field>
+        <field name="print_report_name">'Recibo_%s' % (object.name or '').replace('/', '_')</field>
+        <field name="paperformat_id" ref="paperformat_rss_portrait"/>
+        <field name="binding_model_id" ref="model_rss_payment"/>
+        <field name="binding_type">report</field>
+    </record>
+
+    <template id="report_recibo_pago_document">
+        <t t-set="brand" t-value="doc._rss_brand()"/>
+        <t t-set="method_labels" t-value="dict(doc._fields['payment_method'].selection)"/>
+        <t t-set="section_labels" t-value="dict(doc.member_ids._fields['section'].selection)"/>
+        <div class="page rs-doc">
+            <t t-out="doc._rss_report_css(brand)"/>
+            <t t-call="red_seguro_scout.rss_brand_header">
+                <t t-set="doc_title" t-value="'RECIBO DE PAGO'"/>
+                <t t-set="company_name" t-value="doc.company_id.name"/>
+                <div class="rs-sub" style="font-size: 14px; font-weight: bold;" t-out="doc.name"/>
+                <div class="rs-sub">Fecha: <t t-out="doc.date.strftime('%d/%m/%Y')"/></div>
+            </t>
+
+            <table class="rs-receipt-box">
+                <tr>
+                    <td class="k">Recibimos del grupo</td>
+                    <td><strong t-out="doc.group_id.name"/>
+                        <t t-if="doc.cluster_id"> · <t t-out="doc.cluster_id.name"/></t></td>
+                </tr>
+                <tr t-if="doc.payer_name">
+                    <td class="k">Entregó</td>
+                    <td t-out="doc.payer_name"/>
+                </tr>
+                <tr>
+                    <td class="k">La cantidad de</td>
+                    <td>
+                        <span class="rs-amount" t-out="doc.amount" t-options="{'widget': 'monetary', 'display_currency': doc.currency_id}"/>
+                        <div style="font-size: 10.5px; color: #4A5568;" t-out="doc._amount_in_words()"/>
+                    </td>
+                </tr>
+                <tr>
+                    <td class="k">Por concepto de</td>
+                    <td>Seguro de <t t-out="(doc.policy_id.coverage_type or 'accidentes personales').lower()"/>,
+                        ejercicio <t t-out="doc.year"/>, para <strong t-out="doc.member_count"/> miembros
+                        <t t-if="doc.amount_per_member">(cuota de
+                            <t t-out="doc.amount_per_member" t-options="{'widget': 'monetary', 'display_currency': doc.currency_id}"/> por miembro)</t>.
+                    </td>
+                </tr>
+                <tr>
+                    <td class="k">Forma de pago</td>
+                    <td><t t-out="method_labels.get(doc.payment_method, '')"/>
+                        <t t-if="doc.reference"> · Ref. <t t-out="doc.reference"/></t></td>
+                </tr>
+                <tr t-if="doc.policy_id.policy_number">
+                    <td class="k">Póliza</td>
+                    <td><t t-out="doc.policy_id.policy_number"/>
+                        <t t-if="doc.policy_id.insurer_id"> · <t t-out="doc.policy_id.insurer_id.name"/></t></td>
+                </tr>
+                <tr t-if="doc.state == 'remitted'">
+                    <td class="k">Estatus</td>
+                    <td><span class="rs-stamp">REMITIDO A LA ASEGURADORA · <t t-out="doc.insurer_folio"/></span></td>
+                </tr>
+            </table>
+
+            <h4 class="rs-h4">Miembros cubiertos</h4>
+            <table class="rs-table">
+                <thead><tr>
+                    <th class="rs-c">#</th><th>Nombre</th><th>Rama</th>
+                    <th class="rs-c">Edad</th><th class="rs-c">F. nacimiento</th>
+                </tr></thead>
+                <tbody>
+                    <t t-foreach="doc.member_ids.sorted(lambda m: ((m.last_name_father or '').lower(), (m.first_name or '').lower()))" t-as="m">
+                        <tr t-att-class="'rs-zebra' if m_index % 2 else ''">
+                            <td class="rs-c" t-out="m_index + 1"/>
+                            <td t-out="' '.join(filter(None, [m.last_name_father, m.last_name_mother, m.first_name, m.second_name])).upper()"/>
+                            <td t-out="section_labels.get(m.section, '')"/>
+                            <td class="rs-c" t-out="m.age"/>
+                            <td class="rs-c" t-out="m.birthdate and m.birthdate.strftime('%d/%m/%Y')"/>
+                        </tr>
+                    </t>
+                </tbody>
+            </table>
+
+            <table class="rs-sign"><tr>
+                <td><span>Entregó<br/><t t-out="doc.payer_name or doc.group_id.leader_name or ''"/></span></td>
+                <td><span>Recibió<br/><t t-out="doc.received_by.name or ''"/></span></td>
+            </tr></table>
+            <t t-call="red_seguro_scout.rss_brand_footer">
+                Este recibo ampara el pago del seguro de los miembros listados. Consérvalo para cualquier aclaración.
+            </t>
+        </div>
+    </template>
+
+    <template id="report_recibo_pago">
+        <t t-call="web.html_container">
+            <t t-foreach="docs" t-as="doc">
+                <t t-call="web.basic_layout">
+                    <t t-call="red_seguro_scout.report_recibo_pago_document"/>
+                </t>
+            </t>
+        </t>
+    </template>
+</odoo>

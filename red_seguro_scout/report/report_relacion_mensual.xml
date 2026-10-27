@@ -1,0 +1,156 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="action_report_relacion_mensual" model="ir.actions.report">
+        <field name="name">Relación mensual (PDF)</field>
+        <field name="model">rss.report</field>
+        <field name="report_type">qweb-pdf</field>
+        <field name="report_name">red_seguro_scout.report_relacion_mensual</field>
+        <field name="report_file">red_seguro_scout.report_relacion_mensual</field>
+        <field name="print_report_name">'Relacion_asegurados_%s' % (object.date_from and object.date_from.strftime('%Y_%m') or '')</field>
+        <field name="paperformat_id" ref="paperformat_rss_landscape"/>
+        <field name="binding_model_id" ref="model_rss_report"/>
+        <field name="binding_type">report</field>
+    </record>
+
+    <!-- Encabezado con la personalidad del grupo / organización -->
+    <template id="rss_brand_header">
+        <div class="rs-band">
+            <table><tr>
+                <td style="width: 60%;">
+                    <table style="width: auto;"><tr>
+                        <td t-if="brand['logo']"><img class="rs-logo" t-att-src="'data:image/png;base64,%s' % brand['logo']"/></td>
+                        <td t-elif="not brand['own']"><img class="rs-logo" t-att-src="'data:image/png;base64,%s' % brand['emblem']"/></td>
+                        <td>
+                            <div class="rs-brand" t-out="brand['name'] if brand['own'] else 'Red Seguro Scout'"/>
+                            <div t-if="brand['motto']" class="rs-motto">«<t t-out="brand['motto']"/>»</div>
+                            <div t-elif="not brand['own']" class="rs-motto">Rumbo Seguro · Altas y control de seguros</div>
+                            <div t-else="" style="opacity: .85;" t-out="company_name"/>
+                        </td>
+                    </tr></table>
+                </td>
+                <td>
+                    <div class="rs-title" t-out="doc_title"/>
+                    <t t-out="0"/>
+                </td>
+            </tr></table>
+        </div>
+    </template>
+
+    <template id="rss_brand_footer">
+        <div class="rs-foot">
+            <table><tr>
+                <td><t t-out="0"/></td>
+                <td class="rs-seal">Red Seguro Scout · <i>Rumbo Seguro</i>
+                    <img t-att-src="'data:image/png;base64,%s' % brand['emblem']"/></td>
+            </tr></table>
+        </div>
+    </template>
+
+    <template id="report_relacion_mensual_document">
+        <t t-set="brand" t-value="doc._rss_brand()"/>
+        <t t-set="sex_labels" t-value="dict(doc.line_ids._fields['sex'].selection)"/>
+        <t t-set="section_labels" t-value="dict(doc.line_ids._fields['section'].selection)"/>
+        <div class="page rs-doc">
+            <t t-out="doc._rss_report_css(brand)"/>
+            <t t-call="red_seguro_scout.rss_brand_header">
+                <t t-set="doc_title" t-value="'Relación de asegurados · %s' % doc._period_label()"/>
+                <t t-set="company_name" t-value="doc.company_id.name"/>
+                <div class="rs-sub">
+                    Póliza <t t-out="doc.policy_id.policy_number or doc.policy_id.name"/>
+                    <t t-if="doc.policy_id.insurer_id"> · <t t-out="doc.policy_id.insurer_id.name"/></t>
+                </div>
+                <div class="rs-sub">
+                    Periodo del <t t-out="doc.date_from.strftime('%d/%m/%Y')"/>
+                    al <t t-out="doc.date_to.strftime('%d/%m/%Y')"/>
+                </div>
+            </t>
+
+            <table class="rs-kpis"><tr>
+                <td class="rs-kpi"><div class="v" t-out="doc.insured_count"/><div class="l">Asegurados</div></td>
+                <td class="rs-kpi"><div class="v" t-out="doc.group_count"/><div class="l">Grupos</div></td>
+                <td class="rs-kpi"><div class="v" t-out="doc.new_count"/><div class="l">Altas del mes</div></td>
+                <td class="rs-kpi"><div class="v" t-out="doc.drop_count"/><div class="l">Bajas del mes</div></td>
+                <td class="rs-kpi"><div class="v" t-out="doc.total_days"/><div class="l">Días-asegurado</div></td>
+            </tr></table>
+
+            <div t-if="doc.unpaid_group_names" class="rs-warn">
+                Grupos sin pago registrado del ejercicio: <t t-out="doc.unpaid_group_names"/>
+            </div>
+
+            <table class="rs-table">
+                <thead>
+                    <tr>
+                        <th class="rs-c">#</th>
+                        <th>Apellido paterno</th>
+                        <th>Apellido materno</th>
+                        <th>Nombre(s)</th>
+                        <th class="rs-c">F. nacimiento</th>
+                        <th class="rs-c">Edad</th>
+                        <th>Sexo</th>
+                        <th>Rama</th>
+                        <th>Tutor</th>
+                        <th>Teléfono</th>
+                        <th class="rs-c">Alta</th>
+                        <th class="rs-c">Días</th>
+                        <th class="rs-c">Mov.</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <t t-set="counter" t-value="0"/>
+                    <t t-foreach="doc.line_ids.group_id.sorted(lambda g: (g.number or 0, g.name or ''))" t-as="grp">
+                        <t t-set="glines" t-value="doc.line_ids.filtered(lambda l: l.group_id == grp).sorted(lambda l: ((l.last_name_father or '').lower(), (l.last_name_mother or '').lower(), (l.first_name or '').lower()))"/>
+                        <tr class="rs-group">
+                            <td colspan="13">
+                                <t t-out="grp.name"/>
+                                <t t-if="grp.cluster_id"> · <t t-out="grp.cluster_id.name"/></t>
+                                <span style="float: right;"><t t-out="len(glines)"/> asegurados</span>
+                            </td>
+                        </tr>
+                        <t t-foreach="glines" t-as="line">
+                            <t t-set="counter" t-value="counter + 1"/>
+                            <tr t-att-class="'rs-zebra' if line_index % 2 else ''">
+                                <td class="rs-c" t-out="counter"/>
+                                <td t-out="(line.last_name_father or '').upper()"/>
+                                <td t-out="(line.last_name_mother or '').upper()"/>
+                                <td t-out="' '.join(filter(None, [line.first_name, line.second_name])).upper()"/>
+                                <td class="rs-c" t-out="line.birthdate and line.birthdate.strftime('%d/%m/%Y')"/>
+                                <td class="rs-c" t-out="line.age"/>
+                                <td t-out="sex_labels.get(line.sex, '')"/>
+                                <td t-out="section_labels.get(line.section, '')"/>
+                                <td t-out="line.tutor_name or ''"/>
+                                <td t-out="line.tutor_phone or ''"/>
+                                <td class="rs-c" t-out="line.date_start and line.date_start.strftime('%d/%m/%Y')"/>
+                                <td class="rs-c" t-out="line.days_covered"/>
+                                <td class="rs-c">
+                                    <span t-if="line.is_new" class="rs-tag rs-tag-new">ALTA</span>
+                                    <span t-elif="line.is_drop" class="rs-tag rs-tag-drop">BAJA</span>
+                                </td>
+                            </tr>
+                        </t>
+                    </t>
+                    <tr class="rs-subtotal">
+                        <td colspan="11" class="rs-r">Total de asegurados: <t t-out="doc.insured_count"/> · Días-asegurado</td>
+                        <td class="rs-c" t-out="doc.total_days"/>
+                        <td/>
+                    </tr>
+                </tbody>
+            </table>
+
+            <t t-call="red_seguro_scout.rss_brand_footer">
+                Cobertura: <t t-out="doc.policy_id.coverage_type or ''"/>.
+                Generada el <t t-out="doc.date_generated and context_timestamp(doc.date_generated).strftime('%d/%m/%Y %H:%M')"/>.
+                Fecha límite de envío: <t t-out="doc.deadline and doc.deadline.strftime('%d/%m/%Y')"/>.
+            </t>
+        </div>
+    </template>
+
+    <template id="report_relacion_mensual">
+        <t t-call="web.html_container">
+            <t t-foreach="docs" t-as="doc">
+                <t t-call="web.basic_layout">
+                    <t t-call="red_seguro_scout.report_relacion_mensual_document"/>
+                </t>
+            </t>
+        </t>
+    </template>
+</odoo>
