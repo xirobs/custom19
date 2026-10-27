@@ -1,0 +1,23 @@
+// Red Seguro Scout · modo oscuro
+// Odoo carga este archivo solo en el paquete web.assets_web_dark.
+// Sobre fondo oscuro el azul marino no se lee: títulos y acentos pasan a oro claro,
+// el texto a gris muy claro y los fondos suaves a azul noche.
+
+:root {
+    --rss-accent: #F0C75E;        // oro claro: títulos, separadores, pestañas
+    --rss-btn: #2D5DA8;           // azul más claro para que el botón destaque
+    --rss-btn-hover: #3A6CBB;
+    --rss-gold: #E0B04A;
+    --rss-red: #F0566D;
+    --rss-tint: #1E2A42;
+    --rss-line: #34425E;
+    --rss-ink: #E6EAF2;
+    --rss-muted: #A9B3C7;
+    --rss-main-bg: #173A75;
+    --rss-main-ink: #FFFFFF;
+    --rss-sheet-glow: rgba(45, 93, 168, .14);
+    --rss-ok-bg: #1C3A2A;
+    --rss-ok-ink: #8FD9A8;
+    --rss-warn-bg: #3B2A14;
+    --rss-warn-ink: #F2B872;
+}

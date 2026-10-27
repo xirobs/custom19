@@ -1,76 +1,88 @@
 // Red Seguro Scout · «Rumbo Seguro»
 // Paleta del emblema: azul marino, oro y rojo. Solo afecta las vistas del módulo
 // (clase .o_rss / .o_rss_kanban). Cada grupo pinta sus tarjetas con sus colores.
+//
+// Todos los colores son variables CSS: este archivo trae los valores del modo claro y
+// red_seguro_scout.dark.scss (paquete web.assets_web_dark) los cambia para el modo oscuro.
 
-$rss-forest: #0A2A5E;   // azul marino del escudo
-$rss-green: #D9A93A;    // oro del contorno
-$rss-leaf: #B00625;     // rojo de la flor de lis
-$rss-mist: #EEF2F8;
-$rss-line: #D6DEEB;
-$rss-ink: #1A2233;
+:root {
+    --rss-accent: #0A2A5E;        // títulos, separadores, pestañas (azul marino)
+    --rss-btn: #0A2A5E;           // fondo de botones principales
+    --rss-btn-hover: #071F47;
+    --rss-gold: #D9A93A;          // oro del contorno del escudo
+    --rss-red: #B00625;           // rojo de la flor de lis
+    --rss-tint: #EEF2F8;          // fondos suaves (indicadores, avisos, encabezados)
+    --rss-line: #D6DEEB;
+    --rss-ink: #1A2233;
+    --rss-muted: #4A5568;
+    --rss-main-bg: #0A2A5E;       // indicador principal
+    --rss-main-ink: #FFFFFF;
+    --rss-sheet-glow: rgba(238, 242, 248, .55);
+    --rss-ok-bg: #D7F0DF;
+    --rss-ok-ink: #1B5E3B;
+    --rss-warn-bg: #FDEBD3;
+    --rss-warn-ink: #8A4B0A;
+}
 
 .o_rss,
 .o_rss_kanban {
-    --rss-forest: #{$rss-forest};
-    --rss-green: #{$rss-green};
-
     .btn-primary {
-        --btn-bg: #{$rss-forest};
-        --btn-border-color: #{$rss-forest};
-        --btn-hover-bg: #{darken($rss-forest, 5%)};
-        --btn-hover-border-color: #{darken($rss-forest, 5%)};
-        --btn-active-bg: #{darken($rss-forest, 8%)};
-        --btn-active-border-color: #{darken($rss-forest, 8%)};
-        --btn-disabled-bg: #{$rss-green};
-        --btn-disabled-border-color: #{$rss-green};
-        background-color: $rss-forest;
-        border-color: $rss-forest;
+        --btn-bg: var(--rss-btn);
+        --btn-border-color: var(--rss-btn);
+        --btn-color: #FFFFFF;
+        --btn-hover-bg: var(--rss-btn-hover);
+        --btn-hover-border-color: var(--rss-btn-hover);
+        --btn-hover-color: #FFFFFF;
+        --btn-active-bg: var(--rss-btn-hover);
+        --btn-active-border-color: var(--rss-btn-hover);
+        --btn-disabled-bg: var(--rss-btn);
+        --btn-disabled-border-color: var(--rss-btn);
     }
 }
 
 .o_rss {
-    // Hoja con franja verde superior
+    // Hoja con franja dorada superior
     .o_form_sheet {
-        border-top: 4px solid $rss-forest;
-        background-image: linear-gradient(180deg, rgba($rss-mist, .55) 0, rgba($rss-mist, 0) 90px);
+        border-top: 4px solid var(--rss-gold);
+        background-image: linear-gradient(180deg, var(--rss-sheet-glow) 0, transparent 90px);
     }
 
     .oe_title h1 {
-        color: $rss-forest;
+        color: var(--rss-accent);
     }
 
     .o_horizontal_separator,
     .o_form_label.o_horizontal_separator,
     .o_rss_section_title {
-        color: $rss-forest;
-        border-bottom-color: $rss-line;
+        color: var(--rss-accent);
+        border-bottom-color: var(--rss-line);
     }
 
     // Barra de estatus
     .o_statusbar_status .o_arrow_button_current {
-        --btn-bg: #{$rss-forest} !important;
-        background-color: $rss-forest !important;
-        color: #fff !important;
+        --btn-bg: var(--rss-btn) !important;
+        background-color: var(--rss-btn) !important;
+        color: #FFFFFF !important;
     }
 
     // Botones inteligentes
     .oe_button_box .oe_stat_button .o_stat_value,
     .oe_button_box .oe_stat_button .fa {
-        color: $rss-forest;
+        color: var(--rss-accent);
     }
 
     // Pestañas
     .nav-tabs .nav-link.active {
-        border-top: 2px solid $rss-forest;
-        color: $rss-forest;
+        border-top: 2px solid var(--rss-gold);
+        color: var(--rss-accent);
     }
 
     // Encabezados de listas
     &.o_list_renderer thead,
     .o_list_renderer thead {
-        background-color: $rss-mist;
+        background-color: var(--rss-tint);
         th {
-            color: $rss-forest;
+            color: var(--rss-accent);
         }
     }
 }
@@ -88,31 +100,31 @@ $rss-ink: #1A2233;
         flex-direction: column;
         padding: 8px 12px;
         border-radius: 8px;
-        background: $rss-mist;
-        border-left: 4px solid $rss-green;
+        background: var(--rss-tint);
+        border-left: 4px solid var(--rss-gold);
 
         > span:last-child {
             font-size: 0.72rem;
             text-transform: uppercase;
             letter-spacing: .04em;
-            color: lighten($rss-ink, 25%);
+            color: var(--rss-muted);
         }
     }
 
     .o_rss_stat_main {
-        background: $rss-forest;
-        border-left-color: $rss-leaf;
+        background: var(--rss-main-bg);
+        border-left-color: var(--rss-gold);
         .o_rss_stat_v,
         .o_rss_stat_v *,
         > span:last-child {
-            color: #fff !important;
+            color: var(--rss-main-ink) !important;
         }
     }
 
     .o_rss_stat_v {
         font-size: 1.35rem;
         font-weight: 700;
-        color: $rss-forest;
+        color: var(--rss-accent);
         line-height: 1.2;
 
         .o_field_widget, input {
@@ -124,9 +136,9 @@ $rss-ink: #1A2233;
 }
 
 .o_rss_hint {
-    background: $rss-mist;
-    border-left: 3px solid $rss-green;
-    color: $rss-ink;
+    background: var(--rss-tint);
+    border-left: 3px solid var(--rss-gold);
+    color: var(--rss-ink);
     padding: 6px 12px;
     margin-bottom: 10px;
     border-radius: 4px;
@@ -134,16 +146,16 @@ $rss-ink: #1A2233;
 }
 
 .o_rss_subtitle {
-    color: $rss-forest;
+    color: var(--rss-accent);
     font-weight: 500;
 }
 
 // Kanban de grupos: cada tarjeta con la personalidad de su grupo
 .o_rss_kanban {
     .o_kanban_record {
-        border-top: 4px solid var(--rss-group-primary, #{$rss-forest});
+        border-top: 4px solid var(--rss-group-primary, var(--rss-btn));
         border-radius: 8px;
-        box-shadow: inset 0 -3px 0 var(--rss-group-secondary, #{$rss-green});
+        box-shadow: inset 0 -3px 0 var(--rss-group-secondary, var(--rss-gold));
     }
 
     .o_rss_group_logo {
@@ -151,7 +163,7 @@ $rss-ink: #1A2233;
         height: 42px;
         object-fit: contain;
         border-radius: 8px;
-        background: var(--rss-group-tint, #{$rss-mist});
+        background: #FFFFFF;
         padding: 3px;
     }
 
@@ -164,9 +176,9 @@ $rss-ink: #1A2233;
         justify-content: center;
         font-weight: 700;
         font-size: 1.1rem;
-        background: var(--rss-group-primary, #{$rss-forest});
-        color: var(--rss-group-on-primary, #fff);
-        border-bottom: 3px solid var(--rss-group-secondary, #{$rss-green});
+        background: var(--rss-group-primary, var(--rss-btn));
+        color: var(--rss-group-on-primary, #FFFFFF);
+        border-bottom: 3px solid var(--rss-group-secondary, var(--rss-gold));
     }
 
     .o_rss_card_head {
@@ -174,7 +186,7 @@ $rss-ink: #1A2233;
         align-items: flex-start;
         justify-content: space-between;
         gap: 6px;
-        color: $rss-forest;
+        color: var(--rss-accent);
     }
 
     .o_rss_card_kpis {
@@ -191,8 +203,8 @@ $rss-ink: #1A2233;
         min-width: 74px;
         padding: 6px 10px;
         border-radius: 8px;
-        background: var(--rss-group-primary, #{$rss-forest});
-        color: var(--rss-group-on-primary, #fff);
+        background: var(--rss-group-primary, var(--rss-btn));
+        color: var(--rss-group-on-primary, #FFFFFF);
 
         .o_field_widget, span:first-child {
             font-size: 1.6rem;
@@ -211,15 +223,15 @@ $rss-ink: #1A2233;
         display: flex;
         flex-direction: column;
         gap: 2px;
-        color: $rss-ink;
+        color: var(--rss-ink);
         .fa {
             width: 14px;
-            color: var(--rss-group-primary, #{$rss-forest});
+            color: var(--rss-gold);
         }
     }
 
     .o_rss_link {
-        color: $rss-forest;
+        color: var(--rss-accent);
     }
 }
 
@@ -232,16 +244,16 @@ $rss-ink: #1A2233;
 }
 
 .o_rss_badge_ok {
-    background: #D7F0DF;
-    color: $rss-forest;
+    background: var(--rss-ok-bg);
+    color: var(--rss-ok-ink);
 }
 
 .o_rss_badge_warn {
-    background: #FDEBD3;
-    color: #8A4B0A;
+    background: var(--rss-warn-bg);
+    color: var(--rss-warn-ink);
 }
 
-// Franja de identidad en la ficha del grupo
+// Franja de identidad en la ficha del grupo (colores del propio grupo)
 .o_rss_group_identity {
     display: flex;
     align-items: center;
@@ -249,9 +261,9 @@ $rss-ink: #1A2233;
     padding: 10px 14px;
     margin-bottom: 14px;
     border-radius: 10px;
-    background: var(--rss-group-primary, #{$rss-forest});
-    color: var(--rss-group-on-primary, #fff);
-    border-bottom: 4px solid var(--rss-group-secondary, #{$rss-green});
+    background: var(--rss-group-primary, var(--rss-btn));
+    color: var(--rss-group-on-primary, #FFFFFF);
+    border-bottom: 4px solid var(--rss-group-secondary, var(--rss-gold));
 
     img {
         height: 54px;
@@ -278,13 +290,4 @@ $rss-ink: #1A2233;
         opacity: .85;
         text-align: right;
     }
-}
-
-// Indicadores dorados sobre el azul
-.o_rss .o_rss_stats > div {
-    border-left-color: $rss-green;
-}
-
-.o_rss .o_rss_stats .o_rss_stat_main {
-    border-left-color: $rss-green;
 }
