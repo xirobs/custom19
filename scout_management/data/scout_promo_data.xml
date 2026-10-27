@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo noupdate="1">
+    <record id="promo_banner_platform" model="scout.promo.banner">
+        <field name="name">¿Conoces otro grupo scout que necesite esta plataforma?</field>
+        <field name="text">Recomiéndala: inscripciones, pase de lista, pagos y adelantos desde el celular.</field>
+        <field name="cta_label">Ver la plataforma</field>
+        <field name="url">/plataforma-scout</field>
+        <field name="style">navy</field>
+        <field name="show_leaders" eval="True"/>
+    </record>
+</odoo>

@@ -228,6 +228,24 @@
                                 la familia paga en línea y el monto es mayor al mínimo, calculada para que al grupo le llegue completo.
                                 Si paga en efectivo o transferencia, no se cobra. Revisa la tarifa vigente en tu cuenta de Mercado Pago.</div>
                         </group>
+                        <group string="App en el celular">
+                            <field name="scout_app_active"/>
+                            <field name="scout_app_name" invisible="not scout_app_active" placeholder="Nombre de la empresa"/>
+                            <field name="scout_app_short_name" invisible="not scout_app_active"/>
+                            <field name="scout_app_icon" widget="image" class="oe_avatar" invisible="not scout_app_active"/>
+                            <div colspan="2" class="text-muted small" invisible="not scout_app_active">En el portal aparece "Instalar la app":
+                                en Android se instala con un toque; en iPhone, Compartir → Agregar a inicio. El ícono abre directo
+                                el portal de jefes o "Mis scouts" según quién entre.</div>
+                        </group>
+                        <group string="Página de la plataforma y publicidad">
+                            <field name="scout_promo_email"/>
+                            <field name="scout_promo_whatsapp" placeholder="10 dígitos"/>
+                            <field name="scout_promo_brand"/>
+                            <field name="scout_promo_login"/>
+                            <div colspan="2" class="text-muted small">La página pública está en /plataforma-scout. Las solicitudes llegan a
+                                Configuración → Plataforma y publicidad, y al correo indicado. Los banners de los portales se
+                                administran en el mismo menú.</div>
+                        </group>
                         <group string="Inteligencia artificial (leer programas en PDF o imagen)">
                             <field name="scout_ai_provider"/>
                             <field name="scout_ai_api_key" password="True" groups="base.group_system"/>

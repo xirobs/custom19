@@ -1,0 +1,329 @@
+// Página pública de la plataforma, entrada con diseño scout y banners de los portales
+$sp-navy: #0f3049;
+$sp-navy-2: #18466a;
+$sp-orange: #f36f45;
+$sp-cream: #fbf7f0;
+$sp-green: #3f8f5a;
+$sp-ink: #1d2b36;
+$sp-muted: #5c6b78;
+
+.o_sp {
+    color: $sp-ink;
+    background: $sp-cream;
+    font-size: 1rem;
+    line-height: 1.55;
+    overflow-x: hidden;
+    h1, h2, h3 { color: $sp-navy; font-weight: 800; letter-spacing: -0.01em; }
+    a { text-decoration: none; }
+}
+.o_sp_wrap { max-width: 1120px; margin: 0 auto; padding: 0 16px; }
+.o_sp_kicker {
+    display: inline-block; font-size: 0.78rem; font-weight: 800; letter-spacing: 0.12em; text-transform: uppercase;
+    color: $sp-orange; margin-bottom: 0.5rem;
+}
+.o_sp_btn {
+    display: inline-flex; align-items: center; justify-content: center; gap: 0.5rem; border: 0; cursor: pointer;
+    padding: 0.8rem 1.4rem; border-radius: 999px; font-weight: 800; transition: transform 0.12s, box-shadow 0.12s;
+    &:hover { transform: translateY(-1px); box-shadow: 0 8px 20px rgba(15, 48, 73, 0.18); }
+}
+.o_sp_btn_sm { padding: 0.45rem 1rem; font-size: 0.9rem; }
+.o_sp_btn_orange { background: $sp-orange; color: #fff !important; }
+.o_sp_btn_ghost { background: rgba(255, 255, 255, 0.1); color: #fff !important; border: 2px solid rgba(255, 255, 255, 0.45); }
+.o_sp_btn_whats { background: #25d366; color: #fff !important; margin: 0.5rem 0.5rem 0.5rem 0; }
+.o_sp_greca_band {
+    height: 22px; background: #fff url("/scout_management/static/img/greca.svg") repeat-x;
+}
+
+// Barra superior
+.o_sp_nav { background: $sp-navy; position: sticky; top: 0; z-index: 20; box-shadow: 0 2px 10px rgba(0, 0, 0, 0.15); }
+.o_sp_nav_in { display: flex; align-items: center; justify-content: space-between; min-height: 64px; gap: 1rem; }
+.o_sp_brand {
+    display: flex; align-items: center; gap: 0.6rem; color: #fff !important; font-size: 1.15rem;
+    img { width: 36px; height: 36px; border-radius: 8px; background: #fff; }
+    b { color: $sp-orange; }
+}
+.o_sp_nav_links {
+    display: flex; align-items: center; gap: 1.2rem;
+    a { color: rgba(255, 255, 255, 0.85); font-weight: 600; &:hover { color: #fff; } }
+    .o_sp_nav_login { color: #fff; }
+}
+@media (max-width: 767px) {
+    .o_sp_nav_links > a:not(.o_sp_btn):not(.o_sp_nav_login) { display: none; }
+}
+
+// Portada
+.o_sp_hero {
+    position: relative; color: #fff;
+    background:
+        radial-gradient(circle at 85% 20%, rgba(243, 111, 69, 0.25), transparent 45%),
+        linear-gradient(160deg, $sp-navy 0%, $sp-navy-2 100%);
+    &::before {
+        content: ""; position: absolute; inset: 0; opacity: 0.06; pointer-events: none;
+        background: url("/scout_management/static/img/flor_de_lis.png") no-repeat left -60px bottom -40px / 420px auto;
+    }
+    h1 { color: #fff; font-size: clamp(2rem, 4.6vw, 3.3rem); line-height: 1.1; margin: 0 0 1rem;
+         span { color: $sp-orange; } }
+}
+.o_sp_hero_in {
+    position: relative; display: grid; grid-template-columns: 1.2fr 0.8fr; gap: 3rem; align-items: center;
+    padding-top: 4.5rem; padding-bottom: 4.5rem;
+}
+.o_sp_lead { font-size: 1.15rem; color: rgba(255, 255, 255, 0.85); max-width: 38rem; }
+.o_sp_hero_cta { display: flex; flex-wrap: wrap; gap: 0.75rem; margin: 1.6rem 0 1.2rem; }
+.o_sp_hero_points {
+    list-style: none; padding: 0; margin: 0; color: rgba(255, 255, 255, 0.8); font-size: 0.95rem;
+    li { margin: 0.25rem 0; } i { color: $sp-orange; margin-right: 0.4rem; }
+}
+@media (max-width: 900px) {
+    .o_sp_hero_in { grid-template-columns: 1fr; padding-top: 3rem; padding-bottom: 3rem; gap: 2rem; }
+}
+
+// Celular de muestra
+.o_sp_phone {
+    justify-self: center; width: 270px; padding: 12px; border-radius: 38px; background: #0a1f30;
+    box-shadow: 0 30px 60px rgba(0, 0, 0, 0.35), inset 0 0 0 2px rgba(255, 255, 255, 0.08);
+    transform: rotate(3deg);
+}
+.o_sp_phone_screen { background: #f4f6f8; border-radius: 28px; overflow: hidden; color: $sp-ink; }
+.o_sp_ph_greca { height: 12px; background: #fff url("/scout_management/static/img/greca.svg") repeat-x; background-size: auto 12px; }
+.o_sp_ph_head {
+    background: $sp-navy; color: #fff; margin: 8px; border-radius: 12px; padding: 8px 12px;
+    small { display: block; color: $sp-orange; font-size: 0.6rem; font-weight: 800; letter-spacing: 0.08em; }
+    b { font-size: 0.95rem; }
+}
+.o_sp_ph_title {
+    display: flex; justify-content: space-between; padding: 4px 12px; font-weight: 800; color: $sp-navy; font-size: 0.85rem;
+    span { color: $sp-orange; }
+}
+.o_sp_ph_grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; padding: 6px 10px 10px; }
+.o_sp_ph_card {
+    border-radius: 10px; border: 2px solid; padding: 6px 2px; text-align: center; background: #fff;
+    i { display: grid; place-items: center; width: 30px; height: 30px; margin: 0 auto 4px; border-radius: 50%;
+        background: #e7ebf0; font-style: normal; font-weight: 800; font-size: 0.7rem; color: $sp-navy; }
+    em { display: inline-block; font-style: normal; font-size: 0.6rem; font-weight: 800; color: #fff; border-radius: 99px;
+         padding: 1px 6px; }
+    &.ok { border-color: #8cc79f; background: #f0f8f2; em { background: $sp-green; } }
+    &.no { border-color: #e7a3a3; background: #fcf1f1; em { background: #cc5b5b; } }
+}
+.o_sp_ph_nav {
+    display: flex; justify-content: space-around; background: $sp-navy; color: rgba(255, 255, 255, 0.7); padding: 10px 0;
+    span:last-child { color: $sp-orange; }
+}
+
+// Secciones
+.o_sp_section { padding: 4.5rem 0; }
+.o_sp_head {
+    text-align: center; max-width: 44rem; margin: 0 auto 2.5rem;
+    h2 { font-size: clamp(1.6rem, 3vw, 2.3rem); margin: 0 0 0.5rem; }
+    p { color: $sp-muted; margin: 0; }
+}
+.o_sp_roles { padding: 0; margin-top: -2.2rem; position: relative; z-index: 2; }
+.o_sp_roles_grid {
+    display: grid; grid-template-columns: repeat(4, 1fr); gap: 1rem;
+    > div {
+        background: #fff; border-radius: 16px; padding: 1.2rem; box-shadow: 0 10px 30px rgba(15, 48, 73, 0.1);
+        border-top: 4px solid $sp-orange; display: flex; flex-direction: column; gap: 0.3rem;
+    }
+    i { font-size: 1.5rem; color: $sp-navy; }
+    b { color: $sp-navy; }
+    span { color: $sp-muted; font-size: 0.92rem; }
+}
+.o_sp_features {
+    display: grid; grid-template-columns: repeat(3, 1fr); gap: 1.2rem;
+}
+.o_sp_feature {
+    background: #fff; border-radius: 16px; padding: 1.5rem; border: 1px solid #ebe4d8;
+    i { display: grid; place-items: center; width: 48px; height: 48px; border-radius: 14px; font-size: 1.3rem;
+        background: rgba(243, 111, 69, 0.12); color: $sp-orange; margin-bottom: 0.9rem; }
+    h3 { font-size: 1.1rem; margin: 0 0 0.35rem; }
+    p { color: $sp-muted; margin: 0; font-size: 0.95rem; }
+}
+.o_sp_dark {
+    background: $sp-navy; color: #fff;
+    h2, h3 { color: #fff; }
+    .o_sp_head p { color: rgba(255, 255, 255, 0.75); }
+}
+.o_sp_services { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; }
+.o_sp_service {
+    display: flex; gap: 1rem; padding: 1.3rem; border-radius: 16px; background: rgba(255, 255, 255, 0.06);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    > i { flex: 0 0 auto; font-size: 1.4rem; color: $sp-orange; margin-top: 0.15rem; }
+    h3 { font-size: 1.05rem; margin: 0 0 0.25rem; }
+    p { margin: 0; color: rgba(255, 255, 255, 0.75); font-size: 0.93rem; }
+}
+.o_sp_steps {
+    list-style: none; counter-reset: sp; padding: 0; margin: 0;
+    display: grid; grid-template-columns: repeat(4, 1fr); gap: 1rem;
+    li {
+        counter-increment: sp; position: relative; background: #fff; border-radius: 16px; padding: 3.2rem 1.2rem 1.3rem;
+        border: 1px solid #ebe4d8;
+        &::before {
+            content: counter(sp); position: absolute; top: 1rem; left: 1.2rem; width: 34px; height: 34px; border-radius: 50%;
+            display: grid; place-items: center; background: $sp-navy; color: #fff; font-weight: 800;
+        }
+        b { display: block; color: $sp-navy; font-size: 1.05rem; margin-bottom: 0.25rem; }
+        span { color: $sp-muted; font-size: 0.93rem; }
+    }
+}
+@media (max-width: 900px) {
+    .o_sp_roles_grid, .o_sp_steps { grid-template-columns: repeat(2, 1fr); }
+    .o_sp_features, .o_sp_services { grid-template-columns: 1fr 1fr; }
+}
+@media (max-width: 600px) {
+    .o_sp_roles_grid, .o_sp_steps, .o_sp_features, .o_sp_services { grid-template-columns: 1fr; }
+    .o_sp_section { padding: 3rem 0; }
+}
+
+// Contacto
+.o_sp_contact { background: linear-gradient(180deg, $sp-cream 0%, #f3ece0 100%); }
+.o_sp_contact_in { display: grid; grid-template-columns: 0.8fr 1.2fr; gap: 3rem; align-items: start; }
+.o_sp_contact_text {
+    h2 { font-size: clamp(1.8rem, 3.4vw, 2.6rem); margin: 0 0 0.6rem; }
+    p { color: $sp-muted; font-size: 1.05rem; }
+}
+.o_sp_contact_mail { display: inline-flex; gap: 0.4rem; align-items: center; color: $sp-navy; font-weight: 700; }
+.o_sp_signature { margin-top: 1.5rem; padding-top: 1rem; border-top: 2px dashed #d9cfbf; color: $sp-navy; font-weight: 700; }
+.o_sp_form_card {
+    background: #fff; border-radius: 20px; padding: 1.6rem; box-shadow: 0 20px 50px rgba(15, 48, 73, 0.12);
+    border-top: 6px solid $sp-orange;
+}
+.o_sp_form {
+    display: flex; flex-direction: column; gap: 0.9rem;
+    label { display: flex; flex-direction: column; gap: 0.3rem; font-weight: 700; color: $sp-navy; font-size: 0.9rem; flex: 1 1 0; min-width: 0; }
+    input[type="text"], input[type="email"], input[type="tel"], select, textarea {
+        width: 100%; border: 1.5px solid #d9dfe5; border-radius: 10px; padding: 0.65rem 0.8rem; font-weight: 400;
+        font-size: 1rem; color: $sp-ink; background: #fff;
+        &:focus { outline: none; border-color: $sp-orange; box-shadow: 0 0 0 3px rgba(243, 111, 69, 0.15); }
+    }
+}
+.o_sp_row { display: flex; gap: 0.9rem; }
+.o_sp_checks {
+    border: 0; padding: 0; margin: 0; display: grid; grid-template-columns: 1fr 1fr; gap: 0.35rem 1rem;
+    legend { grid-column: 1 / -1; float: left; width: 100%; font-weight: 700; color: $sp-navy; font-size: 0.9rem; margin-bottom: 0.3rem; }
+    label { flex-direction: row; align-items: flex-start; gap: 0.45rem; font-weight: 400; color: $sp-ink; }
+    input { margin-top: 0.3rem; accent-color: $sp-orange; }
+}
+.o_sp_hp { position: absolute; left: -9999px; height: 0; overflow: hidden; }
+.o_sp_errors { background: #fcf1f1; border: 1px solid #e7a3a3; color: #a33; border-radius: 10px; padding: 0.6rem 0.8rem; font-weight: 600; }
+.o_sp_privacy { color: $sp-muted; text-align: center; }
+.o_sp_sent {
+    text-align: center; padding: 2rem 1rem;
+    i { font-size: 3rem; color: $sp-green; }
+}
+@media (max-width: 900px) {
+    .o_sp_contact_in { grid-template-columns: 1fr; gap: 2rem; }
+}
+@media (max-width: 600px) {
+    .o_sp_row { flex-direction: column; }
+    .o_sp_checks { grid-template-columns: 1fr; }
+}
+.o_sp_footer {
+    background: $sp-navy; color: rgba(255, 255, 255, 0.8);
+    a { color: $sp-orange; font-weight: 700; }
+    b { color: $sp-orange; }
+}
+.o_sp_footer_in { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 0.8rem; padding-top: 1.4rem; padding-bottom: 1.4rem; }
+
+// ------------------------------------------------------------ Entrada (login) con diseño scout
+#wrapwrap:has(.o_scout_login_brand), .o_database_list:has(.o_scout_login_brand) {
+    background:
+        radial-gradient(circle at 85% 15%, rgba(243, 111, 69, 0.28), transparent 40%),
+        url("/scout_management/static/img/greca_band.svg") repeat-x left bottom / auto 22px,
+        linear-gradient(160deg, $sp-navy 0%, $sp-navy-2 100%) !important;
+}
+#wrapwrap:has(.o_scout_login_brand) {
+    > header, > footer { display: none !important; }
+    main { min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 2rem 16px; }
+}
+.oe_website_login_container:has(.o_scout_login_brand), .o_database_list .card-body:has(.o_scout_login_brand) {
+    width: 100%; max-width: 400px; margin: 0 auto; background: #fff; border-radius: 22px; overflow: hidden;
+    box-shadow: 0 30px 70px rgba(0, 0, 0, 0.35); padding: 0 1.6rem 1.4rem;
+    .oe_login_form { max-width: none !important; }
+    .btn-primary { background: $sp-orange; border-color: $sp-orange; border-radius: 999px; font-weight: 800; padding: 0.65rem; }
+    .form-control { border-radius: 10px; }
+    .form-label { color: $sp-navy; font-weight: 700; }
+}
+.o_scout_login_brand {
+    text-align: center; margin: 0 -1.6rem 1.2rem; padding: 0 1.6rem 1.2rem; background: $sp-cream;
+    border-bottom: 3px solid $sp-orange;
+}
+.o_slg_greca { height: 18px; margin: 0 -1.6rem 1rem; background: #fff url("/scout_management/static/img/greca.svg") repeat-x; background-size: auto 18px; }
+.o_slg_logo { max-height: 84px; max-width: 70%; }
+.o_slg_kicker { margin-top: 0.6rem; font-size: 0.72rem; font-weight: 800; letter-spacing: 0.14em; text-transform: uppercase; color: $sp-orange; }
+.o_slg_title { font-size: 1.25rem; font-weight: 800; color: $sp-navy; line-height: 1.2; }
+.o_slg_chips {
+    display: flex; justify-content: center; gap: 0.35rem; margin-top: 0.6rem;
+    span { font-size: 0.72rem; font-weight: 700; color: $sp-navy; background: #fff; border: 1px solid #e3d9c8; border-radius: 99px; padding: 0.1rem 0.6rem; }
+}
+.o_scout_login_foot {
+    text-align: center; margin-top: 1rem; padding-top: 0.9rem; border-top: 1px dashed #dde3e8; font-size: 0.88rem;
+    a { color: $sp-navy; font-weight: 700; }
+}
+.o_slg_motto { color: $sp-orange; font-weight: 800; margin-bottom: 0.2rem; }
+
+// ------------------------------------------------------------ Banner publicitario en los portales
+.o_scout_banner {
+    display: flex; align-items: center; gap: 1rem; margin: 1.2rem 0 0.5rem; padding: 1rem 1.1rem; border-radius: 16px;
+    position: relative; overflow: hidden; color: #fff;
+    background: linear-gradient(135deg, $sp-navy 0%, $sp-navy-2 100%);
+    &::after {
+        content: ""; position: absolute; right: -20px; bottom: -30px; width: 140px; height: 140px; opacity: 0.08;
+        background: url("/scout_management/static/img/flor_de_lis.png") no-repeat center / contain; pointer-events: none;
+    }
+    > img { width: 96px; height: 64px; object-fit: cover; border-radius: 10px; flex: 0 0 auto; }
+}
+.o_scout_banner_body {
+    flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; gap: 0.15rem; position: relative; z-index: 1;
+    b { font-size: 1rem; line-height: 1.25; }
+    span { font-size: 0.85rem; opacity: 0.85; }
+}
+.o_scout_banner_sponsor { font-size: 0.68rem; text-transform: uppercase; letter-spacing: 0.08em; opacity: 0.75; }
+.o_scout_banner_cta {
+    flex: 0 0 auto; position: relative; z-index: 1; background: $sp-orange; color: #fff !important; font-weight: 800;
+    border-radius: 999px; padding: 0.5rem 0.95rem; font-size: 0.85rem; white-space: nowrap; text-decoration: none;
+}
+.o_scout_banner_orange { background: linear-gradient(135deg, #f36f45 0%, #e0532a 100%); .o_scout_banner_cta { background: #fff; color: $sp-navy !important; } }
+.o_scout_banner_green { background: linear-gradient(135deg, #3f8f5a 0%, #2d6f45 100%); }
+.o_scout_banner_light {
+    background: $sp-cream; color: $sp-navy; border: 1px solid #e8dfcf;
+}
+@media (max-width: 520px) {
+    .o_scout_banner { flex-wrap: wrap; }
+    .o_scout_banner > img { width: 100%; height: 120px; }
+    .o_scout_banner_cta { width: 100%; text-align: center; }
+}
+.o_sp_brand span, .o_sp_btn { white-space: nowrap; }
+@media (max-width: 420px) {
+    .o_sp_brand { font-size: 1rem; img { width: 30px; height: 30px; } }
+    .o_sp_nav_links { gap: 0.7rem; }
+    .o_sp_btn_sm { padding: 0.4rem 0.75rem; font-size: 0.82rem; }
+}
+
+// ------------------------------------------------------------ Instalar la app
+.o_scout_install {
+    display: flex; align-items: center; gap: 0.75rem; margin: 0.8rem 0; padding: 0.7rem 0.8rem; border-radius: 16px;
+    background: #fff; border: 1px solid #e6dccb; box-shadow: 0 6px 18px rgba(15, 48, 73, 0.1); text-align: left;
+    > img { width: 48px; height: 48px; border-radius: 12px; flex: 0 0 auto; }
+    &.d-none { display: none !important; }
+}
+.o_scout_install_text {
+    flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; line-height: 1.25;
+    b { color: $sp-navy; font-size: 0.95rem; }
+    span { color: $sp-muted; font-size: 0.8rem; }
+}
+.o_scout_install_ios { display: none; }
+.o_scout_install_is_ios {
+    .o_scout_install_ios { display: inline; }
+    .o_scout_install_android, .o_scout_install_btn { display: none; }
+}
+.o_scout_install_btn {
+    flex: 0 0 auto; border: 0; border-radius: 999px; background: $sp-orange; color: #fff; font-weight: 800;
+    padding: 0.5rem 1rem; font-size: 0.88rem;
+}
+.o_scout_install_close {
+    flex: 0 0 auto; border: 0; background: transparent; color: $sp-muted; font-size: 1.4rem; line-height: 1; padding: 0 0.2rem;
+}
+// Abierta como app: sin la barra del sitio web ni el pie de página en los portales
+@media (display-mode: standalone) {
+    #wrapwrap:has(.o_scout_leader) > header, #wrapwrap:has(.o_scout_leader) > footer { display: none !important; }
+}

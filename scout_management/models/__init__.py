@@ -26,3 +26,4 @@ from . import scout_member_tools
 from . import scout_resource
 from . import scout_session_auto
 from . import scout_leader_portal
+from . import scout_promo

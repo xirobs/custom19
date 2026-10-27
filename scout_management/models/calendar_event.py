@@ -1,6 +1,8 @@
 # -*- coding: utf-8 -*-
 import pytz
 
+import logging
+
 from odoo import _, api, fields, models
 from odoo.exceptions import AccessError, UserError
 
@@ -21,6 +23,8 @@ PLAN_KEY_FIELDS = ('start', 'stop', 'scout_activity_type', 'scout_category', 'lo
 
 ATTENDANCE_FIELDS = {'scout_attendance_line_ids', 'scout_attendance_closed', 'scout_done', 'scout_result'}
 
+
+_logger = logging.getLogger(__name__)
 
 class CalendarEvent(models.Model):
     _inherit = 'calendar.event'
@@ -327,11 +331,37 @@ class CalendarEvent(models.Model):
             return members.sorted(lambda p: (p.scout_type == 'leader', p.scout_patrol_id.sequence or 0, p.name or ''))
         return Partner.search(domain)
 
+    def _scout_prune_attendance(self, include_closed=False):
+        """Quita de la lista a quien ya no es de la sección (cambió de sección o se corrigió su ficha) y quedó
+        marcado como falta. Se respeta a quien asistió y a quien sí estaba en esa sección ese día (pasó después)."""
+        removed = self.env['scout.attendance.line']
+        for event in self.sudo().filtered(lambda e: e.scout_scope == 'section' and e.scout_section_ids):
+            if event.scout_attendance_closed and not include_closed:
+                continue
+            sections = event.scout_section_ids
+            current = event._scout_members_to_call()
+            for line in event.scout_attendance_line_ids:
+                member = line.member_id
+                if member in current or line.status != 'absent':
+                    continue
+                # ¿Estaba en esa sección el día de la actividad y se cambió después? Entonces la falta es válida.
+                moved_later = member.sudo().scout_route_ids.filtered(
+                    lambda r: r.section_id in sections and r.date_pass_real
+                    and (not event.scout_date or r.date_pass_real > event.scout_date))
+                if moved_later:
+                    continue
+                removed |= line
+        if removed:
+            _logger.info('Scouts: %s registro(s) de asistencia de miembros de otra sección eliminados', len(removed))
+            removed.unlink()
+        return removed
+
     def action_scout_load_members(self):
         self._scout_check_attendance()
         for event in self.sudo():
             if event.scout_attendance_closed:
                 raise UserError(_('La lista ya está cerrada; reábrela para modificarla.'))
+            event._scout_prune_attendance()
             existing = event.scout_attendance_line_ids.member_id
             status = DEFAULT_STATUS_BY_TYPE.get(event.scout_activity_type, 'absent')
             members = event._scout_members_to_call() - existing

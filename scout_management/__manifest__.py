@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 {
     'name': 'Gestión de Grupo Scout',
-    'version': '19.0.4.16.0',
+    'version': '19.0.4.18.0',
     'summary': 'Grupo scout sobre Contactos, Calendario, Contabilidad y Conversaciones: miembros, actividades, asistencia, adelantos, actas, tesorería y portal para padres',
     'description': """
 Gestión de Grupo Scout
@@ -43,6 +43,7 @@ Ver static/description/index.html para la ficha completa y doc/ para el manual d
         'data/scout_route_cron.xml',
         'data/scout_resource_data.xml',
         'data/scout_online_fee.xml',
+        'data/scout_promo_data.xml',
         'report/scout_report_actions.xml',
         'report/report_registration.xml',
         'report/report_attendance.xml',
@@ -71,9 +72,11 @@ Ver static/description/index.html para la ficha completa y doc/ para el manual d
         'wizard/scout_member_import_views.xml',
         'wizard/scout_product_import_views.xml',
         'views/scout_menus.xml',
+        'views/scout_promo_views.xml',
         'views/portal_templates.xml',
         'views/portal_classroom_templates.xml',
         'views/leader_portal_templates.xml',
+        'views/scout_promo_templates.xml',
     ],
     'assets': {
         'web.assets_backend': [
@@ -84,7 +87,9 @@ Ver static/description/index.html para la ficha completa y doc/ para el manual d
             'scout_management/static/src/js/scout_signature.js',
             'scout_management/static/src/js/scout_leader.js',
             'scout_management/static/src/js/scout_plan_voice.js',
+            'scout_management/static/src/js/scout_app_install.js',
             'scout_management/static/src/scss/scout_portal.scss',
+            'scout_management/static/src/scss/scout_promo.scss',
         ],
     },
     'images': ['static/description/1.png'],

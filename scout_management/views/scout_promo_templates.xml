@@ -1,0 +1,308 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- ============================================================ Página pública de la plataforma -->
+    <template id="scout_promo_page" name="Plataforma scout: página pública">
+        <t t-call="portal.frontend_layout">
+            <t t-set="no_header" t-value="True"/>
+            <t t-set="no_footer" t-value="True"/>
+            <t t-set="title">Plataforma Scout · Todo tu grupo en un solo lugar</t>
+            <div class="o_sp">
+                <!-- Barra superior -->
+                <nav class="o_sp_nav">
+                    <div class="o_sp_wrap o_sp_nav_in">
+                        <a href="/plataforma-scout" class="o_sp_brand">
+                            <img src="/scout_management/static/description/icon.png" alt=""/>
+                            <span>Plataforma <b>Scout</b></span>
+                        </a>
+                        <div class="o_sp_nav_links">
+                            <a href="#funciones">Funciones</a>
+                            <a href="#servicios">Servicios</a>
+                            <a href="#como">Cómo empezar</a>
+                            <a href="/web/login" class="o_sp_nav_login">Entrar</a>
+                            <a href="#contacto" class="o_sp_btn o_sp_btn_orange o_sp_btn_sm">Pide una demo</a>
+                        </div>
+                    </div>
+                </nav>
+
+                <!-- Portada -->
+                <header class="o_sp_hero">
+                    <div class="o_sp_wrap o_sp_hero_in">
+                        <div class="o_sp_hero_text">
+                            <div class="o_sp_kicker">Para grupos scouts · hecha sobre Odoo 19</div>
+                            <h1>Todo tu grupo scout en un solo lugar, <span>desde el celular</span>.</h1>
+                            <p class="o_sp_lead">Inscripciones, pase de lista, pagos en línea, adelantos, rutas de enlace y el programa
+                                de cada junta. Los jefes trabajan desde su teléfono, las familias ven todo desde su portal y la
+                                jefatura tiene los números claros.</p>
+                            <div class="o_sp_hero_cta">
+                                <a href="#contacto" class="o_sp_btn o_sp_btn_orange">Quiero verla en mi grupo</a>
+                                <a t-if="whatsapp_url" t-att-href="whatsapp_url" target="_blank" rel="noopener" class="o_sp_btn o_sp_btn_ghost">
+                                    <i class="fa fa-whatsapp"/> Escríbeme por WhatsApp</a>
+                                <a t-else="" href="#funciones" class="o_sp_btn o_sp_btn_ghost">Ver funciones</a>
+                            </div>
+                            <ul class="o_sp_hero_points">
+                                <li><i class="fa fa-check"/> Nacida dentro de un grupo scout en operación</li>
+                                <li><i class="fa fa-check"/> Funciona en Odoo Community: sin licencias por usuario</li>
+                            </ul>
+                        </div>
+                        <!-- Celular de muestra: pase de lista -->
+                        <div class="o_sp_phone" aria-hidden="true">
+                            <div class="o_sp_phone_screen">
+                                <div class="o_sp_ph_greca"/>
+                                <div class="o_sp_ph_head">
+                                    <small>PORTAL DE DIRIGENTES</small>
+                                    <b>Manada de Lobatos</b>
+                                </div>
+                                <div class="o_sp_ph_title">Junta del sábado <span>12 / 15</span></div>
+                                <div class="o_sp_ph_grid">
+                                    <t t-foreach="[('AM', 1), ('LC', 1), ('JR', 0), ('PG', 1), ('SV', 1), ('DH', 1), ('EN', 0), ('MR', 1), ('TB', 1)]" t-as="p">
+                                        <div t-attf-class="o_sp_ph_card #{'ok' if p[1] else 'no'}">
+                                            <i t-out="p[0]"/>
+                                            <em t-out="'Asistió' if p[1] else 'Falta'"/>
+                                        </div>
+                                    </t>
+                                </div>
+                                <div class="o_sp_ph_nav"><span class="fa fa-home"/><span class="fa fa-calendar"/><span class="fa fa-star"/><span class="fa fa-file-text-o"/><span class="fa fa-users"/></div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="o_sp_greca_band"/>
+                </header>
+
+                <!-- Para quién -->
+                <section class="o_sp_section o_sp_roles">
+                    <div class="o_sp_wrap">
+                        <div class="o_sp_roles_grid">
+                            <div><i class="fa fa-shield"/><b>Jefatura de grupo</b><span>Aprobaciones, fichas, cambios de sección, informes y tablero de todo el grupo.</span></div>
+                            <div><i class="fa fa-mobile"/><b>Jefes de sección</b><span>Pase de lista, programa de la junta, adelantos y avisos desde el celular.</span></div>
+                            <div><i class="fa fa-home"/><b>Familias</b><span>Ficha, pagos, credencial, avances de su scout y aula virtual.</span></div>
+                            <div><i class="fa fa-calculator"/><b>Tesorería</b><span>Cobros, caja y bancos, egresos con autorización y balance para el consejo.</span></div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Funciones -->
+                <section id="funciones" class="o_sp_section">
+                    <div class="o_sp_wrap">
+                        <div class="o_sp_head">
+                            <div class="o_sp_kicker">Funciones</div>
+                            <h2>Lo que tu grupo hace cada semana, ordenado</h2>
+                            <p>Cada parte se pensó con jefes, familias y tesorería de un grupo real.</p>
+                        </div>
+                        <div class="o_sp_features">
+                            <t t-foreach="[
+                                ('fa-id-card-o', 'Inscripción y reinscripción', 'Ficha en línea con foto, firma del tutor y datos médicos. Detecta duplicados y prepara el nuevo ciclo.'),
+                                ('fa-check-square-o', 'Pase de lista en segundos', 'Juntas semanales creadas solas, lista con miembros y jefes, porcentaje de asistencia y alertas.'),
+                                ('fa-credit-card', 'Pagos en línea y transferencia', 'Liga de pago con Mercado Pago, QR y WhatsApp; datos de transferencia en cada ficha y recibo.'),
+                                ('fa-list-ol', 'Programa de cada junta', 'Programa base, copiar otra junta, dictado por voz o subir el Excel, PDF o foto y se llena solo.'),
+                                ('fa-star', 'Adelantos y especialidades', 'Cuadro de logros por patrulla, especialidades por colores y avance de cada scout.'),
+                                ('fa-road', 'Rutas de enlace y pase de sección', 'Edades oficiales por sección, alertas amarilla y roja, y pase a la sección que corresponde (niños y niñas).'),
+                                ('fa-graduation-cap', 'Aula virtual para familias', 'Recursos por sección que se abren conforme el scout avanza en su recorrido.'),
+                                ('fa-qrcode', 'Credencial con QR', 'Credencial electrónica e impresa por ambos lados, válida mientras el registro esté pagado.'),
+                                ('fa-bar-chart', 'Tesorería e informes', 'Ingresos, egresos con visto bueno, balance para el consejo, informes trimestrales y actas.'),
+                            ]" t-as="f">
+                                <div class="o_sp_feature">
+                                    <i t-attf-class="fa #{f[0]}"/>
+                                    <h3 t-out="f[1]"/>
+                                    <p t-out="f[2]"/>
+                                </div>
+                            </t>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Servicios -->
+                <section id="servicios" class="o_sp_section o_sp_dark">
+                    <div class="o_sp_wrap">
+                        <div class="o_sp_head">
+                            <div class="o_sp_kicker">Servicios</div>
+                            <h2>Te acompaño de principio a fin</h2>
+                            <p>No es solo un programa: dejo tu grupo funcionando y a tus jefes usándolo.</p>
+                        </div>
+                        <div class="o_sp_services">
+                            <t t-foreach="[
+                                ('fa-cogs', 'Implementación', 'Configuro secciones, ciclos, cuotas, cajas y bancos con las reglas de tu grupo.'),
+                                ('fa-file-excel-o', 'Migración de datos', 'Paso tus listas de Excel: miembros, tutores, secciones y patrullas.'),
+                                ('fa-users', 'Capacitación', 'Sesiones cortas para jefes, tesorería y jefatura, con manual sencillo.'),
+                                ('fa-paint-brush', 'Imagen de tu grupo', 'Logo, colores y pañoleta de tu grupo en portales, credenciales y reportes.'),
+                                ('fa-cloud', 'Hospedaje y respaldos', 'Tu plataforma en línea con dominio propio y respaldos (opcional).'),
+                                ('fa-life-ring', 'Soporte y mejoras', 'Ajustes a la medida conforme tu grupo los vaya necesitando.'),
+                            ]" t-as="s">
+                                <div class="o_sp_service">
+                                    <i t-attf-class="fa #{s[0]}"/>
+                                    <div><h3 t-out="s[1]"/><p t-out="s[2]"/></div>
+                                </div>
+                            </t>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Cómo empezar -->
+                <section id="como" class="o_sp_section">
+                    <div class="o_sp_wrap">
+                        <div class="o_sp_head">
+                            <div class="o_sp_kicker">Cómo empezar</div>
+                            <h2>Tu grupo en línea en cuatro pasos</h2>
+                        </div>
+                        <ol class="o_sp_steps">
+                            <li><b>Platicamos</b><span>Me cuentas cómo trabaja tu grupo y te muestro la plataforma.</span></li>
+                            <li><b>Cargamos tus datos</b><span>Secciones, miembros y tutores desde tus listas de Excel.</span></li>
+                            <li><b>Capacitamos</b><span>Jefes, tesorería y jefatura aprenden lo suyo en sesiones cortas.</span></li>
+                            <li><b>¡Siempre listos!</b><span>Las familias reciben su acceso y tu grupo trabaja en línea.</span></li>
+                        </ol>
+                    </div>
+                </section>
+
+                <!-- Contacto -->
+                <section id="contacto" class="o_sp_section o_sp_contact">
+                    <div class="o_sp_wrap o_sp_contact_in">
+                        <div class="o_sp_contact_text">
+                            <div class="o_sp_kicker">Contacto</div>
+                            <h2>¿Lo platicamos?</h2>
+                            <p>Déjame tus datos y te escribo para agendar una demostración con tu jefatura. Sin compromiso.</p>
+                            <a t-if="whatsapp_url" t-att-href="whatsapp_url" target="_blank" rel="noopener" class="o_sp_btn o_sp_btn_whats">
+                                <i class="fa fa-whatsapp"/> WhatsApp</a>
+                            <a t-if="company.scout_promo_email" t-att-href="'mailto:%s' % company.scout_promo_email" class="o_sp_contact_mail">
+                                <i class="fa fa-envelope-o"/> <t t-out="company.scout_promo_email"/></a>
+                            <div t-if="promo_brand" class="o_sp_signature" t-out="promo_brand"/>
+                        </div>
+                        <div class="o_sp_form_card">
+                            <div t-if="sent" class="o_sp_sent">
+                                <i class="fa fa-check-circle"/>
+                                <h3>¡Gracias! Recibí tus datos.</h3>
+                                <p>Te contacto muy pronto para agendar la demostración.</p>
+                            </div>
+                            <form t-else="" action="/plataforma-scout/contacto" method="post" class="o_sp_form">
+                                <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
+                                <input type="hidden" name="form_ts" t-att-value="form_ts"/>
+                                <div class="o_sp_hp" aria-hidden="true"><input type="text" name="website" tabindex="-1" autocomplete="off"/></div>
+                                <div t-if="errors" class="o_sp_errors"><t t-foreach="errors" t-as="e"><div><i class="fa fa-exclamation-circle"/> <t t-out="e"/></div></t></div>
+                                <div class="o_sp_row">
+                                    <label>Tu nombre *<input type="text" name="name" required="required" t-att-value="post.get('name')"/></label>
+                                    <label>Grupo scout<input type="text" name="group_name" placeholder="Ej. Grupo 12" t-att-value="post.get('group_name')"/></label>
+                                </div>
+                                <div class="o_sp_row">
+                                    <label>Correo<input type="email" name="email" t-att-value="post.get('email')"/></label>
+                                    <label>WhatsApp<input type="tel" name="phone" placeholder="10 dígitos" t-att-value="post.get('phone')"/></label>
+                                </div>
+                                <div class="o_sp_row">
+                                    <label>Ciudad<input type="text" name="city" t-att-value="post.get('city')"/></label>
+                                    <label>Miembros del grupo
+                                        <select name="members">
+                                            <option value="">—</option>
+                                            <option t-foreach="member_ranges" t-as="m" t-att-value="m[0]" t-att-selected="post.get('members') == m[0]" t-out="m[1]"/>
+                                        </select>
+                                    </label>
+                                </div>
+                                <fieldset class="o_sp_checks">
+                                    <legend>¿Qué te interesa?</legend>
+                                    <label t-foreach="interests" t-as="i"><input type="checkbox" t-att-name="'interest_%s' % i[0]" value="1" t-att-checked="post.get('interest_%s' % i[0])"/> <span t-out="i[1]"/></label>
+                                </fieldset>
+                                <label>Mensaje<textarea name="message" rows="3" placeholder="Cuéntame de tu grupo"><t t-out="post.get('message') or ''"/></textarea></label>
+                                <button type="submit" class="o_sp_btn o_sp_btn_orange w-100">Enviar</button>
+                                <small class="o_sp_privacy">Usaré tus datos solo para contactarte sobre la plataforma.</small>
+                            </form>
+                        </div>
+                    </div>
+                </section>
+
+                <footer class="o_sp_footer">
+                    <div class="o_sp_greca_band"/>
+                    <div class="o_sp_wrap o_sp_footer_in">
+                        <span>Plataforma <b>Scout</b> · Siempre listos</span>
+                        <span t-if="promo_brand" t-out="promo_brand"/>
+                        <a href="/web/login">Entrar a la plataforma</a>
+                    </div>
+                </footer>
+            </div>
+        </t>
+    </template>
+
+    <!-- ============================================================ Entrada (inicio de sesión) con diseño scout -->
+    <template id="scout_login" inherit_id="web.login" name="Scouts: entrada con diseño del grupo" priority="40">
+        <xpath expr="//form[@data-captcha='login']" position="before">
+            <t t-set="scout_login_company" t-value="request.env.company.sudo()"/>
+            <div t-if="scout_login_company.scout_promo_login" class="o_scout_login_brand">
+                <div class="o_slg_greca"/>
+                <img class="o_slg_logo" t-attf-src="/web/binary/company_logo?company={{ scout_login_company.id }}" alt=""/>
+                <div class="o_slg_kicker">Plataforma Scout</div>
+                <div class="o_slg_title" t-out="scout_login_company.name"/>
+                <div class="o_slg_chips"><span>Familias</span><span>Dirigentes</span><span>Jefatura</span></div>
+            </div>
+        </xpath>
+        <xpath expr="//form[@data-captcha='login']" position="after">
+            <div t-if="scout_login_company and scout_login_company.scout_promo_login" class="o_scout_login_foot">
+                <div class="o_slg_motto">⚜ Siempre listos</div>
+                <a href="/plataforma-scout">¿Qué es esta plataforma?</a>
+                <t t-call="scout_management.scout_app_install_bar"/>
+            </div>
+        </xpath>
+    </template>
+
+    <!-- ============================================================ Banner publicitario -->
+    <template id="scout_promo_banner" name="Scouts: banner publicitario">
+        <t t-set="banner" t-value="request.env['scout.promo.banner'].sudo()._scout_pick(banner_where or 'leader')"/>
+        <div t-if="banner" t-attf-class="o_scout_banner o_scout_banner_#{banner.style} #{'o_scout_banner_img' if banner.image else ''}">
+            <img t-if="banner.image" t-att-src="image_data_uri(banner.image)" t-att-alt="banner.name"/>
+            <div class="o_scout_banner_body">
+                <small t-if="banner.sponsor" class="o_scout_banner_sponsor">Patrocinado por <t t-out="banner.sponsor"/></small>
+                <b t-out="banner.name"/>
+                <span t-if="banner.text" t-out="banner.text"/>
+            </div>
+            <a t-if="banner.url" class="o_scout_banner_cta" t-att-href="banner.url"
+               t-att-target="'_blank' if banner.url.startswith('http') else None" rel="noopener" t-out="banner.cta_label or 'Conoce más'"/>
+        </div>
+    </template>
+
+    <template id="leader_layout_banner" inherit_id="scout_management.leader_layout" name="Dirigentes: banner">
+        <xpath expr="//main[hasclass('o_sl_main')]" position="inside">
+            <t t-call="scout_management.scout_promo_banner"><t t-set="banner_where" t-value="'leader'"/></t>
+        </xpath>
+    </template>
+
+    <template id="portal_my_scouts_banner" inherit_id="scout_management.portal_my_scouts" name="Mis scouts: banner">
+        <xpath expr="//t[@t-call='portal.portal_layout']" position="inside">
+            <t t-call="scout_management.scout_promo_banner"><t t-set="banner_where" t-value="'family'"/></t>
+        </xpath>
+    </template>
+    <!-- ============================================================ App instalable (PWA) -->
+    <template id="scout_app_head" inherit_id="web.frontend_layout" name="Scouts: app instalable">
+        <xpath expr="//head/meta[@name='viewport']" position="after">
+            <t t-set="scout_app_company" t-value="request and request.env.company.sudo()"/>
+            <t t-if="scout_app_company and scout_app_company.scout_app_active">
+                <link rel="manifest" href="/scouts/manifest.webmanifest"/>
+                <meta name="theme-color" content="#0f3049"/>
+                <meta name="mobile-web-app-capable" content="yes"/>
+                <meta name="apple-mobile-web-app-capable" content="yes"/>
+                <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
+                <meta name="apple-mobile-web-app-title" t-att-content="scout_app_company.scout_app_short_name or 'Scouts'"/>
+                <link rel="apple-touch-icon" t-attf-href="/scouts/app-icon/180.png?c={{ scout_app_company.id }}"/>
+            </t>
+        </xpath>
+    </template>
+
+    <template id="scout_app_install_bar" name="Scouts: instalar la app">
+        <t t-set="scout_app_company" t-value="request.env.company.sudo()"/>
+        <div t-if="scout_app_company.scout_app_active" class="o_scout_install d-none" role="region" aria-label="Instalar la app">
+            <img t-attf-src="/scouts/app-icon/192.png?c={{ scout_app_company.id }}" alt=""/>
+            <div class="o_scout_install_text">
+                <b>Instala la app <t t-out="scout_app_company.scout_app_short_name or 'Scouts'"/></b>
+                <span class="o_scout_install_android">Entra con un toque desde la pantalla de tu celular.</span>
+                <span class="o_scout_install_ios">En iPhone toca <i class="fa fa-share-square-o"/> Compartir y luego <b>Agregar a inicio</b>.</span>
+            </div>
+            <button type="button" class="o_scout_install_btn">Instalar</button>
+            <button type="button" class="o_scout_install_close" aria-label="Cerrar">×</button>
+        </div>
+    </template>
+
+    <template id="leader_layout_install" inherit_id="scout_management.leader_layout" name="Dirigentes: instalar app">
+        <xpath expr="//main[hasclass('o_sl_main')]" position="before">
+            <t t-call="scout_management.scout_app_install_bar"/>
+        </xpath>
+    </template>
+
+    <template id="portal_my_scouts_install" inherit_id="scout_management.portal_my_scouts" name="Mis scouts: instalar app">
+        <xpath expr="//div[hasclass('o_scout_greca')]" position="before">
+            <t t-call="scout_management.scout_app_install_bar"/>
+        </xpath>
+    </template>
+</odoo>

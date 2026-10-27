@@ -664,4 +664,10 @@ class ResPartnerRoute(models.Model):
                 and not self.env.context.get('scout_route_closing'):
             self._scout_ensure_route()
             self.sudo().scout_route_ids.filtered('is_open')._scout_refresh_status()
+        if {'scout_section_id', 'scout_state'} & set(vals):
+            # Ya no aparece en las listas de hoy en adelante de la sección que dejó
+            lines = self.env['scout.attendance.line'].sudo().search([
+                ('member_id', 'in', self.ids), ('date', '>=', fields.Date.context_today(self)),
+                ('status', '=', 'absent')])
+            lines.event_id._scout_prune_attendance(include_closed=True)
         return res

@@ -371,6 +371,7 @@ class ScoutLeaderPortal(models.AbstractModel):
     # ------------------------------------------------------------------ asistencia
     @api.model
     def attendance_lines(self, event, section):
+        event._scout_prune_attendance(include_closed=True)
         if not event.scout_attendance_closed:
             # Carga la lista (o agrega a quien se integró a la sección después de crearla).
             missing = event._scout_members_to_call() - event.scout_attendance_line_ids.member_id

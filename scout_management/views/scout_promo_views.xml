@@ -1,0 +1,128 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Solicitudes de la página de la plataforma -->
+    <record id="view_scout_promo_lead_list" model="ir.ui.view">
+        <field name="name">scout.promo.lead.list</field>
+        <field name="model">scout.promo.lead</field>
+        <field name="arch" type="xml">
+            <list decoration-info="state == 'new'" decoration-muted="state == 'lost'" decoration-success="state == 'won'">
+                <field name="create_date" string="Fecha" widget="date"/>
+                <field name="name"/>
+                <field name="group_name"/>
+                <field name="city" optional="show"/>
+                <field name="phone"/>
+                <field name="email" optional="show"/>
+                <field name="members" optional="hide"/>
+                <field name="state" widget="badge" decoration-info="state == 'new'" decoration-warning="state in ('contacted', 'demo')"
+                       decoration-success="state == 'won'"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_scout_promo_lead_form" model="ir.ui.view">
+        <field name="name">scout.promo.lead.form</field>
+        <field name="model">scout.promo.lead</field>
+        <field name="arch" type="xml">
+            <form>
+                <header>
+                    <field name="state" widget="statusbar" options="{'clickable': '1'}" statusbar_visible="new,contacted,demo,won"/>
+                </header>
+                <sheet>
+                    <div class="oe_title"><h1><field name="name"/></h1><h3><field name="group_name" placeholder="Grupo scout"/></h3></div>
+                    <group>
+                        <group>
+                            <field name="phone" widget="phone"/>
+                            <field name="whatsapp_url" widget="url" text="Abrir WhatsApp" invisible="not whatsapp_url"/>
+                            <field name="email" widget="email"/>
+                            <field name="city"/>
+                        </group>
+                        <group>
+                            <field name="members"/>
+                            <field name="interest_ids" readonly="1"/>
+                            <field name="create_date" string="Recibida"/>
+                        </group>
+                    </group>
+                    <field name="message" placeholder="Mensaje"/>
+                </sheet>
+                <chatter/>
+            </form>
+        </field>
+    </record>
+
+    <record id="action_scout_promo_lead" model="ir.actions.act_window">
+        <field name="name">Solicitudes de la plataforma</field>
+        <field name="res_model">scout.promo.lead</field>
+        <field name="view_mode">list,form</field>
+        <field name="help" type="html"><p class="o_view_nocontent_smiling_face">Aquí llegan los grupos que llenan el contacto de
+            /plataforma-scout</p></field>
+    </record>
+
+    <!-- Banners publicitarios -->
+    <record id="view_scout_promo_banner_list" model="ir.ui.view">
+        <field name="name">scout.promo.banner.list</field>
+        <field name="model">scout.promo.banner</field>
+        <field name="arch" type="xml">
+            <list>
+                <field name="sequence" widget="handle"/>
+                <field name="name"/>
+                <field name="sponsor" optional="show"/>
+                <field name="show_leaders"/>
+                <field name="show_families"/>
+                <field name="date_start" optional="show"/>
+                <field name="date_end" optional="show"/>
+                <field name="active" widget="boolean_toggle"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_scout_promo_banner_form" model="ir.ui.view">
+        <field name="name">scout.promo.banner.form</field>
+        <field name="model">scout.promo.banner</field>
+        <field name="arch" type="xml">
+            <form>
+                <sheet>
+                    <widget name="web_ribbon" title="Oculto" bg_color="text-bg-secondary" invisible="active"/>
+                    <field name="image" widget="image" class="oe_avatar" options="{'size': [240, 80]}"/>
+                    <div class="oe_title"><h1><field name="name" placeholder="Título del banner"/></h1></div>
+                    <group>
+                        <group string="Contenido">
+                            <field name="text"/>
+                            <field name="cta_label"/>
+                            <field name="url" widget="url" placeholder="/plataforma-scout o https://..."/>
+                            <field name="style"/>
+                            <field name="sponsor"/>
+                        </group>
+                        <group string="Dónde y cuándo">
+                            <field name="show_leaders"/>
+                            <field name="show_families"/>
+                            <field name="date_start"/>
+                            <field name="date_end"/>
+                            <field name="company_id" groups="base.group_multi_company"/>
+                            <field name="active"/>
+                        </group>
+                    </group>
+                    <div class="text-muted small">Si hay varios banners vigentes se alternan. El portal de jefes lo muestra al final de cada
+                        página; el de familias, en "Mis scouts".</div>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="action_scout_promo_banner" model="ir.actions.act_window">
+        <field name="name">Publicidad en los portales</field>
+        <field name="res_model">scout.promo.banner</field>
+        <field name="view_mode">list,form</field>
+        <field name="context">{'active_test': False}</field>
+    </record>
+
+    <record id="action_scout_promo_page_url" model="ir.actions.act_url">
+        <field name="name">Ver página de la plataforma</field>
+        <field name="url">/plataforma-scout</field>
+        <field name="target">new</field>
+    </record>
+
+    <menuitem id="menu_scout_promo" name="Plataforma y publicidad" parent="menu_scout_config" sequence="95" groups="group_scout_manager"/>
+    <menuitem id="menu_scout_promo_lead" name="Solicitudes de contacto" parent="menu_scout_promo" action="action_scout_promo_lead" sequence="10"/>
+    <menuitem id="menu_scout_promo_banner" name="Banners publicitarios" parent="menu_scout_promo" action="action_scout_promo_banner" sequence="20"/>
+    <menuitem id="menu_scout_promo_page" name="Ver página de la plataforma" parent="menu_scout_promo" action="action_scout_promo_page_url" sequence="30"/>
+</odoo>
