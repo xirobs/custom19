@@ -9,3 +9,4 @@ from . import rss_payment
 from . import rss_report
 from . import rss_claim
 from . import rss_bita
+from . import rss_advisor

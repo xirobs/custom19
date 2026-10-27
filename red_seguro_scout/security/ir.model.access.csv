@@ -17,3 +17,5 @@ access_rss_report_line_user,rss.report.line.user,model_rss_report_line,group_rss
 access_rss_claim_user,rss.claim.user,model_rss_claim,group_rss_user,1,1,1,0
 access_rss_claim_manager,rss.claim.manager,model_rss_claim,group_rss_manager,1,1,1,1
 access_rss_attach_pdf_wizard_user,rss.attach.pdf.wizard.user,model_rss_attach_pdf_wizard,group_rss_user,1,1,1,1
+access_rss_advisor_user,rss.advisor.user,model_rss_advisor,group_rss_user,1,0,0,0
+access_rss_advisor_manager,rss.advisor.manager,model_rss_advisor,group_rss_manager,1,1,1,1

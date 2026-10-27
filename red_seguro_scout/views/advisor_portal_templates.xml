@@ -1,0 +1,310 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- ===================== Portal del asesor de seguros (/seguro) ===================== -->
+
+    <!-- Acceso desde "Mi cuenta" -->
+    <template id="portal_my_home_rss_advisor" name="Portal: asesor de seguros" inherit_id="portal.portal_my_home" priority="42">
+        <div id="portal_client_category" position="before">
+            <div t-if="request.env['rss.advisor']._for_user(request.env.user)" class="my-3">
+                <a href="/seguro" class="o_rssp_entry">
+                    <img src="/red_seguro_scout/static/description/icon.png" alt=""/>
+                    <div>
+                        <div class="o_rssp_entry_title">Red Seguro Scout · Asesor</div>
+                        <div class="o_rssp_entry_text">Asegurados, relaciones mensuales, pagos y siniestros</div>
+                    </div>
+                    <i class="fa fa-chevron-right ms-auto"/>
+                </a>
+            </div>
+        </div>
+    </template>
+
+    <template id="advisor_layout" name="Asesor: base">
+        <t t-call="portal.portal_layout">
+            <t t-set="no_breadcrumbs" t-value="True"/>
+            <div class="o_rssp">
+                <header class="o_rssp_head">
+                    <a href="/seguro" class="o_rssp_brand">
+                        <img src="/red_seguro_scout/static/description/icon.png" alt=""/>
+                        <div>
+                            <div class="o_rssp_kicker">Red Seguro Scout · <i>Rumbo Seguro</i></div>
+                            <div class="o_rssp_title">Portal del asesor</div>
+                        </div>
+                    </a>
+                    <div class="o_rssp_who" t-if="advisor">
+                        <span t-out="advisor.name"/>
+                        <small t-if="advisor.insurer_id" t-out="advisor.insurer_id.name"/>
+                    </div>
+                </header>
+                <div t-if="error" class="alert alert-danger o_rssp_alert" role="alert"><i class="fa fa-exclamation-circle"/> <t t-out="error"/></div>
+                <div t-if="ok" class="alert alert-success o_rssp_alert" role="status"><i class="fa fa-check-circle"/> <t t-out="ok"/></div>
+                <main class="o_rssp_main"><t t-out="0"/></main>
+                <nav t-if="advisor" class="o_rssp_nav">
+                    <a href="/seguro" t-attf-class="#{'active' if advisor_page == 'home' else ''}"><i class="fa fa-home"/><span>Inicio</span></a>
+                    <a href="/seguro/asegurados" t-attf-class="#{'active' if advisor_page == 'insured' else ''}"><i class="fa fa-users"/><span>Asegurados</span></a>
+                    <a href="/seguro/relaciones" t-attf-class="#{'active' if advisor_page == 'reports' else ''}"><i class="fa fa-file-excel-o"/><span>Relaciones</span></a>
+                    <a href="/seguro/pagos" t-attf-class="#{'active' if advisor_page == 'payments' else ''}"><i class="fa fa-money"/><span>Pagos</span></a>
+                    <a href="/seguro/siniestros" t-attf-class="#{'active' if advisor_page == 'claims' else ''}"><i class="fa fa-medkit"/><span>Siniestros</span></a>
+                </nav>
+            </div>
+        </t>
+    </template>
+
+    <template id="advisor_no_access" name="Asesor: sin acceso">
+        <t t-call="red_seguro_scout.advisor_layout">
+            <t t-set="advisor" t-value="False"/>
+            <div class="o_rssp_empty">
+                <i class="fa fa-lock fa-3x"/>
+                <h4>No tienes acceso al portal del asesor</h4>
+                <p>Si eres asesor de seguros del grupo, pide a la jefatura que te registre en Red Seguro Scout.</p>
+                <a href="/my" class="btn o_rssp_btn">Volver a mi cuenta</a>
+            </div>
+        </t>
+    </template>
+
+    <!-- Inicio -->
+    <template id="advisor_home" name="Asesor: inicio">
+        <t t-call="red_seguro_scout.advisor_layout">
+            <div class="o_rssp_kpis">
+                <a href="/seguro/asegurados" class="o_rssp_kpi o_rssp_kpi_main"><b t-out="stats['insured']"/><span>Asegurados vigentes</span></a>
+                <div class="o_rssp_kpi"><b t-out="stats['groups']"/><span>Grupos</span></div>
+                <a href="/seguro/siniestros" class="o_rssp_kpi"><b t-out="stats['claims_open']"/><span>Siniestros abiertos</span></a>
+                <a href="/seguro/pagos" class="o_rssp_kpi"><b t-out="stats['unpaid']"/><span>Grupos sin pago del año</span></a>
+            </div>
+
+            <section class="o_rssp_card">
+                <h5>Relación de este mes</h5>
+                <t t-if="report">
+                    <div class="o_rssp_row">
+                        <div>
+                            <b t-out="report.name"/>
+                            <div class="o_rssp_muted"><t t-out="report.insured_count"/> asegurados · límite <t t-out="fmt_date(report.deadline)"/></div>
+                        </div>
+                        <span t-attf-class="o_rssp_pill o_rssp_pill_#{report.state}" t-out="labels('rss.report', 'state').get(report.state)"/>
+                    </div>
+                    <div class="o_rssp_actions" t-if="report.state != 'draft'">
+                        <a class="btn o_rssp_btn" t-attf-href="/seguro/relaciones/#{report.id}/excel"><i class="fa fa-file-excel-o"/> Excel</a>
+                        <a class="btn o_rssp_btn_ghost" t-attf-href="/seguro/relaciones/#{report.id}/pdf"><i class="fa fa-file-pdf-o"/> PDF</a>
+                    </div>
+                </t>
+                <p t-else="" class="o_rssp_muted">Todavía no se genera la relación de este mes (se genera del día 1 al 10).</p>
+            </section>
+
+            <section class="o_rssp_card" t-if="claims">
+                <h5>Siniestros por atender</h5>
+                <a t-foreach="claims" t-as="c" class="o_rssp_list_item" t-attf-href="/seguro/siniestros/#{c.id}">
+                    <div>
+                        <b t-out="c.insured_id.name"/>
+                        <div class="o_rssp_muted"><t t-out="labels('rss.claim', 'injury_type').get(c.injury_type)"/> · <t t-out="c.group_id.name"/> · <t t-out="fmt_date(c.date_accident)"/></div>
+                    </div>
+                    <span t-attf-class="o_rssp_pill o_rssp_pill_#{c.state}" t-out="labels('rss.claim', 'state').get(c.state)"/>
+                </a>
+            </section>
+
+            <section class="o_rssp_card">
+                <h5>Grupos</h5>
+                <a t-foreach="groups" t-as="g" class="o_rssp_list_item" t-attf-href="/seguro/asegurados?grupo=#{g.id}">
+                    <div>
+                        <b t-out="g.name"/>
+                        <div class="o_rssp_muted"><t t-out="g.member_count"/> asegurados<t t-if="g.cluster_id"> · <t t-out="g.cluster_id.name"/></t></div>
+                    </div>
+                    <span t-if="g.paid_current_year" class="o_rssp_pill o_rssp_pill_ok">Pagado</span>
+                    <span t-else="" class="o_rssp_pill o_rssp_pill_warn">Sin pago</span>
+                </a>
+            </section>
+        </t>
+    </template>
+
+    <!-- Asegurados -->
+    <template id="advisor_insured" name="Asesor: asegurados">
+        <t t-call="red_seguro_scout.advisor_layout">
+            <form class="o_rssp_filters" method="get" action="/seguro/asegurados">
+                <input type="search" name="q" t-att-value="q" class="form-control" placeholder="Nombre, CURP o tutor"/>
+                <select name="grupo" class="form-select">
+                    <option value="">Todos los grupos</option>
+                    <option t-foreach="groups" t-as="g" t-att-value="g.id" t-att-selected="g == group" t-out="g.name"/>
+                </select>
+                <select name="estatus" class="form-select">
+                    <option value="active" t-att-selected="estatus == 'active'">Asegurados</option>
+                    <option value="draft" t-att-selected="estatus == 'draft'">Pre-registro</option>
+                    <option value="inactive" t-att-selected="estatus == 'inactive'">Bajas</option>
+                    <option value="all" t-att-selected="estatus == 'all'">Todos</option>
+                </select>
+                <button type="submit" class="btn o_rssp_btn"><i class="fa fa-search"/> Buscar</button>
+            </form>
+            <p class="o_rssp_muted"><t t-out="total"/> resultados</p>
+            <div class="o_rssp_table_wrap">
+                <table class="table o_rssp_table">
+                    <thead><tr>
+                        <th>Nombre</th><th>Grupo</th><th class="text-center">Edad</th><th>Sexo</th><th>Rama</th>
+                        <th>Tutor</th><th>Teléfono</th><th>Alta</th><th>Estatus</th>
+                    </tr></thead>
+                    <tbody>
+                        <tr t-foreach="insured" t-as="i">
+                            <td><b t-out="i.name"/><div class="o_rssp_muted" t-if="i.curp" t-out="i.curp"/></td>
+                            <td t-out="i.group_id.name"/>
+                            <td class="text-center" t-out="i.age"/>
+                            <td t-out="labels('rss.insured', 'sex').get(i.sex)"/>
+                            <td t-out="labels('rss.insured', 'section').get(i.section, '')"/>
+                            <td t-out="i.tutor_name or ''"/>
+                            <td><a t-if="i.tutor_phone" t-attf-href="tel:#{i.tutor_phone}" t-out="i.tutor_phone"/></td>
+                            <td t-out="fmt_date(i.date_start)"/>
+                            <td><span t-attf-class="o_rssp_pill o_rssp_pill_#{i.state}" t-out="labels('rss.insured', 'state').get(i.state)"/></td>
+                        </tr>
+                        <tr t-if="not insured"><td colspan="9" class="o_rssp_muted text-center">Sin resultados.</td></tr>
+                    </tbody>
+                </table>
+            </div>
+            <div class="o_rssp_pager" t-if="total &gt; page_size">
+                <a t-if="page &gt; 1" class="btn o_rssp_btn_ghost" t-attf-href="/seguro/asegurados?q=#{q}&amp;grupo=#{group.id or ''}&amp;estatus=#{estatus}&amp;page=#{page - 1}">Anterior</a>
+                <span>Página <t t-out="page"/></span>
+                <a t-if="page * page_size &lt; total" class="btn o_rssp_btn_ghost" t-attf-href="/seguro/asegurados?q=#{q}&amp;grupo=#{group.id or ''}&amp;estatus=#{estatus}&amp;page=#{page + 1}">Siguiente</a>
+            </div>
+        </t>
+    </template>
+
+    <!-- Relaciones mensuales -->
+    <template id="advisor_reports" name="Asesor: relaciones">
+        <t t-call="red_seguro_scout.advisor_layout">
+            <h4 class="o_rssp_h">Relaciones mensuales</h4>
+            <p t-if="advisor._is_restricted()" class="o_rssp_muted">Solo se muestran las relaciones de tus grupos.</p>
+            <section t-foreach="reports" t-as="r" class="o_rssp_card">
+                <div class="o_rssp_row">
+                    <div>
+                        <b t-out="r.name"/>
+                        <div class="o_rssp_muted"><t t-out="r.insured_count"/> asegurados · <t t-out="r.group_count"/> grupos · altas <t t-out="r.new_count"/> · bajas <t t-out="r.drop_count"/></div>
+                        <div class="o_rssp_muted" t-if="r.insurer_ack">Acuse: <b t-out="r.insurer_ack"/></div>
+                    </div>
+                    <span t-attf-class="o_rssp_pill o_rssp_pill_#{r.state}" t-out="labels('rss.report', 'state').get(r.state)"/>
+                </div>
+                <div class="o_rssp_actions">
+                    <a class="btn o_rssp_btn" t-attf-href="/seguro/relaciones/#{r.id}/excel"><i class="fa fa-file-excel-o"/> Excel</a>
+                    <a class="btn o_rssp_btn_ghost" t-attf-href="/seguro/relaciones/#{r.id}/pdf"><i class="fa fa-file-pdf-o"/> PDF</a>
+                </div>
+                <form t-if="advisor.can_ack_reports and r.state == 'sent'" class="o_rssp_inline_form" method="post"
+                      t-attf-action="/seguro/relaciones/#{r.id}/acuse">
+                    <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
+                    <input type="text" name="insurer_ack" class="form-control" placeholder="Folio o acuse de la aseguradora" required="required"/>
+                    <button type="submit" class="btn o_rssp_btn">Registrar acuse</button>
+                </form>
+            </section>
+            <div t-if="not reports" class="o_rssp_empty"><i class="fa fa-file-o fa-2x"/><p>Aún no hay relaciones generadas.</p></div>
+        </t>
+    </template>
+
+    <!-- Pagos -->
+    <template id="advisor_payments" name="Asesor: pagos">
+        <t t-call="red_seguro_scout.advisor_layout">
+            <h4 class="o_rssp_h">Pagos de los grupos</h4>
+            <div class="o_rssp_table_wrap">
+                <table class="table o_rssp_table">
+                    <thead><tr><th>Recibo</th><th>Grupo</th><th>Fecha</th><th class="text-center">Miembros</th><th class="text-end">Importe</th><th>Estatus</th><th/></tr></thead>
+                    <tbody>
+                        <tr t-foreach="payments" t-as="p">
+                            <td><b t-out="p.name"/></td>
+                            <td t-out="p.group_id.name"/>
+                            <td t-out="fmt_date(p.date)"/>
+                            <td class="text-center" t-out="p.member_count"/>
+                            <td class="text-end" t-out="money(p.amount)"/>
+                            <td><span t-attf-class="o_rssp_pill o_rssp_pill_#{p.state}" t-out="labels('rss.payment', 'state').get(p.state)"/>
+                                <div class="o_rssp_muted" t-if="p.insurer_folio" t-out="p.insurer_folio"/></td>
+                            <td><a class="btn btn-sm o_rssp_btn_ghost" t-attf-href="/seguro/pagos/#{p.id}/recibo"><i class="fa fa-file-pdf-o"/> Recibo</a></td>
+                        </tr>
+                        <tr t-if="not payments"><td colspan="7" class="o_rssp_muted text-center">Aún no hay pagos registrados.</td></tr>
+                    </tbody>
+                </table>
+            </div>
+            <section class="o_rssp_card" t-if="groups.filtered(lambda g: not g.paid_current_year)">
+                <h5>Grupos sin pago del año</h5>
+                <span t-foreach="groups.filtered(lambda g: not g.paid_current_year)" t-as="g" class="o_rssp_pill o_rssp_pill_warn me-1" t-out="g.name"/>
+            </section>
+        </t>
+    </template>
+
+    <!-- Siniestros -->
+    <template id="advisor_claims" name="Asesor: siniestros">
+        <t t-call="red_seguro_scout.advisor_layout">
+            <div class="o_rssp_tabs">
+                <a t-attf-class="#{'active' if estatus == 'open' else ''}" href="/seguro/siniestros?estatus=open">Abiertos</a>
+                <a t-attf-class="#{'active' if estatus == 'paid' else ''}" href="/seguro/siniestros?estatus=paid">Pagados</a>
+                <a t-attf-class="#{'active' if estatus == 'rejected' else ''}" href="/seguro/siniestros?estatus=rejected">Rechazados</a>
+                <a t-attf-class="#{'active' if estatus == 'all' else ''}" href="/seguro/siniestros?estatus=all">Todos</a>
+            </div>
+            <a t-foreach="claims" t-as="c" class="o_rssp_list_item o_rssp_card" t-attf-href="/seguro/siniestros/#{c.id}">
+                <div>
+                    <b t-out="c.insured_id.name"/> <small class="o_rssp_muted" t-out="c.name"/>
+                    <div class="o_rssp_muted"><t t-out="labels('rss.claim', 'injury_type').get(c.injury_type)"/> · <t t-out="labels('rss.claim', 'activity_type').get(c.activity_type)"/> · <t t-out="c.group_id.name"/> · <t t-out="fmt_date(c.date_accident)"/></div>
+                    <div t-if="not c.covered_on_date" class="o_rssp_warn_text"><i class="fa fa-exclamation-triangle"/> Sin cobertura vigente ese día</div>
+                </div>
+                <span t-attf-class="o_rssp_pill o_rssp_pill_#{c.state}" t-out="labels('rss.claim', 'state').get(c.state)"/>
+            </a>
+            <div t-if="not claims" class="o_rssp_empty"><i class="fa fa-medkit fa-2x"/><p>No hay siniestros en esta lista.</p></div>
+        </t>
+    </template>
+
+    <template id="advisor_claim" name="Asesor: siniestro">
+        <t t-call="red_seguro_scout.advisor_layout">
+            <a href="/seguro/siniestros" class="o_rssp_back"><i class="fa fa-arrow-left"/> Siniestros</a>
+            <section class="o_rssp_card">
+                <div class="o_rssp_row">
+                    <div>
+                        <h4 class="o_rssp_h mb-0" t-out="claim.insured_id.name"/>
+                        <div class="o_rssp_muted"><t t-out="claim.name"/> · <t t-out="claim.group_id.name"/></div>
+                    </div>
+                    <span t-attf-class="o_rssp_pill o_rssp_pill_#{claim.state}" t-out="labels('rss.claim', 'state').get(claim.state)"/>
+                </div>
+                <div t-if="not claim.covered_on_date" class="alert alert-warning mt-2 mb-0">El asegurado no tenía cobertura vigente en la fecha del accidente.</div>
+                <dl class="o_rssp_dl">
+                    <dt>Fecha</dt><dd t-out="fmt_date(claim.date_accident)"/>
+                    <dt>Actividad</dt><dd t-out="labels('rss.claim', 'activity_type').get(claim.activity_type)"/>
+                    <dt>Lugar</dt><dd t-out="claim.place or '—'"/>
+                    <dt>Lesión</dt><dd><t t-out="labels('rss.claim', 'injury_type').get(claim.injury_type)"/><t t-if="claim.body_part"> · <t t-out="claim.body_part"/></t></dd>
+                    <dt>Atención</dt><dd t-out="claim.medical_center or '—'"/>
+                    <dt>Tutor</dt><dd><t t-out="claim.tutor_name or '—'"/> <a t-if="claim.tutor_phone" t-attf-href="tel:#{claim.tutor_phone}" t-out="claim.tutor_phone"/></dd>
+                    <dt>Edad</dt><dd><t t-out="claim.insured_id.age"/> años</dd>
+                </dl>
+                <p t-if="claim.description" class="o_rssp_desc" t-out="claim.description"/>
+                <div t-if="claim.attachment_ids" class="o_rssp_docs">
+                    <a t-foreach="claim.attachment_ids" t-as="a" class="o_rssp_doc" t-attf-href="/seguro/siniestros/#{claim.id}/documento/#{a.id}">
+                        <i class="fa fa-paperclip"/> <t t-out="a.name"/>
+                    </a>
+                </div>
+            </section>
+
+            <section class="o_rssp_card" t-if="advisor.can_update_claims">
+                <h5>Seguimiento</h5>
+                <form method="post" enctype="multipart/form-data" class="o_rssp_form" t-attf-action="/seguro/siniestros/#{claim.id}">
+                    <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
+                    <label for="rssp_state">Estatus</label>
+                    <select id="rssp_state" name="state" class="form-select">
+                        <option t-foreach="states" t-as="s" t-att-value="s" t-att-selected="s == claim.state" t-out="labels('rss.claim', 'state').get(s)"/>
+                    </select>
+                    <label for="rssp_number">Número de siniestro (aseguradora)</label>
+                    <input id="rssp_number" type="text" name="insurer_claim_number" class="form-control" t-att-value="claim.insurer_claim_number or ''"/>
+                    <div class="o_rssp_two">
+                        <div>
+                            <label for="rssp_claimed">Monto reclamado</label>
+                            <input id="rssp_claimed" type="text" inputmode="decimal" name="amount_claimed" class="form-control" t-att-value="claim.amount_claimed or ''"/>
+                        </div>
+                        <div>
+                            <label for="rssp_paid">Monto pagado</label>
+                            <input id="rssp_paid" type="text" inputmode="decimal" name="amount_paid" class="form-control" t-att-value="claim.amount_paid or ''"/>
+                        </div>
+                    </div>
+                    <label for="rssp_note">Nota para el grupo</label>
+                    <textarea id="rssp_note" name="note" rows="3" class="form-control" placeholder="Qué falta, qué se aprobó, siguiente paso..."/>
+                    <label for="rssp_docs">Documentos (informe médico, facturas, carta finiquito)</label>
+                    <input id="rssp_docs" type="file" name="documents" multiple="multiple" class="form-control" accept=".pdf,image/*"/>
+                    <button type="submit" class="btn o_rssp_btn mt-2">Guardar seguimiento</button>
+                </form>
+            </section>
+
+            <section class="o_rssp_card" t-if="messages">
+                <h5>Historial</h5>
+                <div t-foreach="messages" t-as="m" class="o_rssp_msg">
+                    <div class="o_rssp_muted"><b t-out="m.author_id.name"/> · <t t-out="m.date and m.date.strftime('%d/%m/%Y %H:%M')"/></div>
+                    <div t-out="m.body"/>
+                </div>
+            </section>
+        </t>
+    </template>
+</odoo>

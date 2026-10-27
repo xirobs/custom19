@@ -65,3 +65,17 @@ Todo queda en el chatter con seguimiento de cambios.
 4. Para el PDF se requiere `wkhtmltopdf` (el mismo que usan los demás reportes de Odoo).
 
 Pruebas: `odoo-bin -d <bd> -i red_seguro_scout --test-tags /red_seguro_scout --stop-after-init`
+
+## Portal del asesor de seguros (`/seguro`)
+
+El asesor entra como **usuario de portal** (sin licencia interna), igual que los dirigentes.
+
+1. *Red Seguro Scout › Configuración › Asesores de seguros › Nuevo*: nombre, correo, aseguradora.
+2. Opcional: limítalo a ciertas **agrupaciones** o **grupos** (vacío = todos).
+3. Decide si **actualiza siniestros** y si **registra acuses** (si no, queda solo de consulta).
+4. Botón **Dar acceso al portal**: crea su usuario de portal y le llega la invitación por correo.
+
+En `/seguro` (o desde *Mi cuenta*) ve: inicio con indicadores, asegurados con búsqueda y filtros,
+relaciones mensuales con Excel/PDF y registro de acuse, pagos con recibo PDF, y siniestros donde
+actualiza estatus, número de siniestro, montos, notas y documentos. Todo queda en el historial del
+siniestro a su nombre. No ve nada fuera de sus grupos.

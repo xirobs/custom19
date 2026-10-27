@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 {
     'name': 'Red Seguro Scout',
-    'version': '19.0.1.0.1',
+    'version': '19.0.1.1.0',
     'category': 'Services',
     'summary': 'Rumbo Seguro · Altas y control del seguro de accidentes personales de grupos scouts, '
                'con la identidad de cada grupo',
@@ -17,12 +17,13 @@ que cubre a los miembros de los grupos scouts durante sus actividades.
 * Pagos del seguro por grupo con recibo imprimible y seguimiento del proceso.
 * Siniestros (accidentes) por asegurado.
 * Análisis en lista, pivote y gráfica: por día, mes, trimestre y año; comparativa de grupos.
+* Portal del asesor de seguros (usuario de portal, sin licencia): asegurados, relaciones, pagos y siniestros.
 * Acceso solo para quien paga el seguro (Suscripciones BitaScout).
 * Personalidad del grupo: logo, colores y lema propios en recibos, relaciones y Excel.
     """,
     'author': 'Jhuliana · BitaScout / Red Seguro Scout',
     'license': 'LGPL-3',
-    'depends': ['base', 'mail', 'bitascout_suscripciones'],
+    'depends': ['base', 'mail', 'portal', 'bitascout_suscripciones'],
     'data': [
         'security/rss_security.xml',
         'security/ir.model.access.csv',
@@ -42,6 +43,8 @@ que cubre a los miembros de los grupos scouts durante sus actividades.
         'views/rss_payment_views.xml',
         'views/rss_report_views.xml',
         'views/rss_claim_views.xml',
+        'views/rss_advisor_views.xml',
+        'views/advisor_portal_templates.xml',
         'views/rss_menus.xml',
     ],
     'demo': [
@@ -50,6 +53,9 @@ que cubre a los miembros de los grupos scouts durante sus actividades.
     'assets': {
         'web.assets_backend': [
             'red_seguro_scout/static/src/scss/red_seguro_scout.scss',
+        ],
+        'web.assets_frontend': [
+            'red_seguro_scout/static/src/scss/rss_advisor_portal.scss',
         ],
         'web.assets_web_dark': [
             'red_seguro_scout/static/src/scss/red_seguro_scout.dark.scss',

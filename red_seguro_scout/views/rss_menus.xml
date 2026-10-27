@@ -32,4 +32,6 @@
               groups="group_rss_manager"/>
     <menuitem id="menu_rss_policies" name="Pólizas" parent="menu_rss_config"
               action="rss_policy_action" sequence="10"/>
+    <menuitem id="menu_rss_advisors" name="Asesores de seguros" parent="menu_rss_config"
+              action="rss_advisor_action" sequence="20"/>
 </odoo>

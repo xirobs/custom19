@@ -1,0 +1,81 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="rss_advisor_view_list" model="ir.ui.view">
+        <field name="name">rss.advisor.list</field>
+        <field name="model">rss.advisor</field>
+        <field name="arch" type="xml">
+            <list string="Asesores de seguros" class="o_rss">
+                <field name="name"/>
+                <field name="email"/>
+                <field name="phone" optional="show"/>
+                <field name="insurer_id" optional="show"/>
+                <field name="cluster_ids" widget="many2many_tags" optional="show"/>
+                <field name="group_ids" widget="many2many_tags" optional="show"/>
+                <field name="has_portal" widget="boolean_toggle" readonly="1"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="rss_advisor_view_form" model="ir.ui.view">
+        <field name="name">rss.advisor.form</field>
+        <field name="model">rss.advisor</field>
+        <field name="arch" type="xml">
+            <form string="Asesor de seguros" class="o_rss">
+                <header>
+                    <button name="action_grant_portal" type="object" string="Dar acceso al portal"
+                            class="btn-primary" invisible="has_portal"/>
+                    <button name="action_grant_portal" type="object" string="Reenviar acceso"
+                            invisible="not has_portal"/>
+                    <button name="action_open_portal" type="object" string="Ver portal" icon="fa-external-link"
+                            invisible="not has_portal"/>
+                    <button name="action_revoke_portal" type="object" string="Quitar acceso"
+                            invisible="not has_portal"
+                            confirm="El asesor ya no podrá entrar al portal. ¿Continuar?"/>
+                </header>
+                <sheet>
+                    <widget name="web_ribbon" title="Con portal" bg_color="text-bg-success" invisible="not has_portal"/>
+                    <field name="active" invisible="1"/>
+                    <field name="has_portal" invisible="1"/>
+                    <div class="oe_title">
+                        <label for="partner_id" string="Asesor"/>
+                        <h1><field name="partner_id" placeholder="Nombre del asesor" options="{'no_open': True}"/></h1>
+                    </div>
+                    <group>
+                        <group string="Contacto">
+                            <field name="email" widget="email" required="1"/>
+                            <field name="phone" widget="phone"/>
+                            <field name="insurer_id"/>
+                            <field name="user_id" readonly="1" invisible="not user_id"/>
+                        </group>
+                        <group string="Qué puede hacer">
+                            <field name="can_update_claims"/>
+                            <field name="can_ack_reports"/>
+                            <field name="company_id" groups="base.group_multi_company"/>
+                        </group>
+                    </group>
+                    <group string="Qué grupos ve">
+                        <div class="o_rss_hint" colspan="2">
+                            Déjalo vacío para que vea todos los grupos. Si eliges agrupaciones o grupos,
+                            solo verá esos (y las relaciones mensuales que solo incluyan sus grupos).
+                        </div>
+                        <field name="cluster_ids" widget="many2many_tags"/>
+                        <field name="group_ids" widget="many2many_tags"/>
+                    </group>
+                    <field name="notes" placeholder="Notas internas"/>
+                </sheet>
+                <chatter/>
+            </form>
+        </field>
+    </record>
+
+    <record id="rss_advisor_action" model="ir.actions.act_window">
+        <field name="name">Asesores de seguros</field>
+        <field name="res_model">rss.advisor</field>
+        <field name="view_mode">list,form</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">Registra al asesor de seguros</p>
+            <p>Entra como usuario de portal (sin licencia) a /seguro: consulta asegurados, relaciones y pagos,
+               y da seguimiento a los siniestros.</p>
+        </field>
+    </record>
+</odoo>
