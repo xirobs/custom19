@@ -301,27 +301,61 @@ $sp-muted: #5c6b78;
 
 // ------------------------------------------------------------ Instalar la app
 .o_scout_install {
-    display: flex; align-items: center; gap: 0.75rem; margin: 0.8rem 0; padding: 0.7rem 0.8rem; border-radius: 16px;
+    margin: 0.8rem 0; padding: 0.7rem 0.8rem; border-radius: 16px;
     background: #fff; border: 1px solid #e6dccb; box-shadow: 0 6px 18px rgba(15, 48, 73, 0.1); text-align: left;
-    > img { width: 48px; height: 48px; border-radius: 12px; flex: 0 0 auto; }
     &.d-none { display: none !important; }
+}
+.o_scout_install_row {
+    display: flex; align-items: center; gap: 0.75rem;
+    > img { width: 48px; height: 48px; border-radius: 12px; flex: 0 0 auto; }
 }
 .o_scout_install_text {
     flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; line-height: 1.25;
     b { color: $sp-navy; font-size: 0.95rem; }
     span { color: $sp-muted; font-size: 0.8rem; }
 }
-.o_scout_install_ios { display: none; }
-.o_scout_install_is_ios {
-    .o_scout_install_ios { display: inline; }
+// Por defecto (Android con instalación directa): texto y botón "Instalar"
+.o_scout_install_manual, .o_scout_install_how { display: none; }
+.o_scout_install_is_manual {
+    .o_scout_install_manual { display: inline; }
+    .o_scout_install_how { display: inline-block; }
     .o_scout_install_android, .o_scout_install_btn { display: none; }
+    .o_scout_install_row { cursor: pointer; }
 }
 .o_scout_install_btn {
     flex: 0 0 auto; border: 0; border-radius: 999px; background: $sp-orange; color: #fff; font-weight: 800;
-    padding: 0.5rem 1rem; font-size: 0.88rem;
+    padding: 0.5rem 1rem; font-size: 0.88rem; white-space: nowrap;
+}
+.o_scout_install_how {
+    align-self: flex-start; margin-top: 0.35rem; border: 0; border-radius: 999px; background: $sp-orange; color: #fff;
+    font-weight: 800; font-size: 0.82rem; padding: 0.3rem 0.8rem;
 }
 .o_scout_install_close {
     flex: 0 0 auto; border: 0; background: transparent; color: $sp-muted; font-size: 1.4rem; line-height: 1; padding: 0 0.2rem;
+}
+.o_scout_install_steps {
+    margin-top: 0.75rem; padding-top: 0.75rem; border-top: 1px dashed #e6dccb; color: $sp-navy; font-size: 0.9rem;
+    &.d-none { display: none !important; }
+    [data-install-mode] { display: none; }
+    ol { margin: 0; padding-left: 1.3rem; display: grid; gap: 0.45rem; }
+    li { line-height: 1.35; }
+    .fa { color: $sp-orange; }
+}
+.o_scout_install_mode_inapp [data-install-mode="inapp"],
+.o_scout_install_mode_ios [data-install-mode="ios"],
+.o_scout_install_mode_ios-other [data-install-mode="ios-other"],
+.o_scout_install_mode_android-manual [data-install-mode="android-manual"] { display: block; }
+.o_scout_install_ios_only, .o_scout_install_android_only { display: none; }
+.o_scout_install_on_ios .o_scout_install_ios_only,
+.o_scout_install_on_android .o_scout_install_android_only { display: inline; }
+.o_scout_install_alert {
+    margin: 0 0 0.6rem; padding: 0.5rem 0.7rem; border-radius: 10px; background: #fff3e8; color: #8a3c0a; font-weight: 600;
+}
+.o_scout_install_note { margin: 0.6rem 0 0; font-size: 0.8rem; color: $sp-muted; }
+.o_scout_install_copy {
+    display: flex; gap: 0.5rem; margin-top: 0.5rem;
+    input { flex: 1 1 auto; min-width: 0; border: 1px solid #e6dccb; border-radius: 10px; padding: 0.4rem 0.6rem; font-size: 0.85rem; color: $sp-navy; }
+    button { flex: 0 0 auto; border: 0; border-radius: 10px; background: $sp-navy; color: #fff; font-weight: 700; padding: 0.4rem 0.8rem; }
 }
 // Abierta como app: sin la barra del sitio web ni el pie de página en los portales
 @media (display-mode: standalone) {

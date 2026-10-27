@@ -282,15 +282,64 @@
 
     <template id="scout_app_install_bar" name="Scouts: instalar la app">
         <t t-set="scout_app_company" t-value="request.env.company.sudo()"/>
+        <t t-set="scout_app_name" t-value="scout_app_company.scout_app_short_name or 'Scouts'"/>
         <div t-if="scout_app_company.scout_app_active" class="o_scout_install d-none" role="region" aria-label="Instalar la app">
-            <img t-attf-src="/scouts/app-icon/192.png?c={{ scout_app_company.id }}" alt=""/>
-            <div class="o_scout_install_text">
-                <b>Instala la app <t t-out="scout_app_company.scout_app_short_name or 'Scouts'"/></b>
-                <span class="o_scout_install_android">Entra con un toque desde la pantalla de tu celular.</span>
-                <span class="o_scout_install_ios">En iPhone toca <i class="fa fa-share-square-o"/> Compartir y luego <b>Agregar a inicio</b>.</span>
+            <div class="o_scout_install_row">
+                <img t-attf-src="/scouts/app-icon/192.png?c={{ scout_app_company.id }}" alt=""/>
+                <div class="o_scout_install_text">
+                    <b>Instala la app <t t-out="scout_app_name"/></b>
+                    <span class="o_scout_install_android">Entra con un toque desde la pantalla de tu celular.</span>
+                    <span class="o_scout_install_manual">Tenla en tu pantalla de inicio, como cualquier app.</span>
+                    <button type="button" class="o_scout_install_how" aria-expanded="false">Ver cómo instalarla</button>
+                </div>
+                <button type="button" class="o_scout_install_btn">Instalar</button>
+                <button type="button" class="o_scout_install_close" aria-label="Cerrar">×</button>
             </div>
-            <button type="button" class="o_scout_install_btn">Instalar</button>
-            <button type="button" class="o_scout_install_close" aria-label="Cerrar">×</button>
+
+            <!-- Pasos según el celular y el navegador (el script muestra solo los que aplican) -->
+            <div class="o_scout_install_steps d-none">
+                <!-- Dentro de WhatsApp, Instagram, Facebook... -->
+                <div data-install-mode="inapp">
+                    <p class="o_scout_install_alert">Estás viendo la página dentro de otra app (WhatsApp, Instagram o Facebook). Desde ahí no se puede instalar.</p>
+                    <ol>
+                        <li><span class="o_scout_install_ios_only">Toca <b>Abrir en Safari</b> <i class="fa fa-compass"/> o los tres puntos <b>⋯</b> y elige <b>Abrir en el navegador</b>.</span>
+                            <span class="o_scout_install_android_only">Toca los tres puntos <b>⋮</b> arriba a la derecha y elige <b>Abrir en Chrome</b>.</span></li>
+                        <li>Si no ves esa opción, copia la liga y pégala en <span class="o_scout_install_ios_only">Safari</span><span class="o_scout_install_android_only">Chrome</span>:</li>
+                    </ol>
+                    <div class="o_scout_install_copy">
+                        <input type="text" readonly="readonly" class="o_scout_install_url" aria-label="Liga de la plataforma"/>
+                        <button type="button" class="o_scout_install_copy_btn">Copiar liga</button>
+                    </div>
+                </div>
+
+                <!-- iPhone con Safari -->
+                <div data-install-mode="ios">
+                    <ol>
+                        <li>Toca <b>Compartir</b> <i class="fa fa-share-square-o"/> en la barra de Safari. Si no lo ves, toca los tres puntos <b>⋯</b> y luego <b>Compartir</b>.</li>
+                        <li>Desliza hacia abajo y toca <b>Agregar a inicio</b> <i class="fa fa-plus-square-o"/>.</li>
+                        <li>Toca <b>Agregar</b>. Abre la app desde el ícono <b t-out="scout_app_name"/> en tu pantalla.</li>
+                    </ol>
+                    <p class="o_scout_install_note"><i class="fa fa-user-secret"/> Si la barra de Safari se ve oscura y dice <b>Privada</b>, cambia a una pestaña normal: en navegación privada no se guarda tu sesión.</p>
+                </div>
+
+                <!-- iPhone con Chrome, Firefox o Edge -->
+                <div data-install-mode="ios-other">
+                    <ol>
+                        <li>Toca <b>Compartir</b> <i class="fa fa-share-square-o"/> junto a la barra de dirección (o en el menú <b>⋯</b>).</li>
+                        <li>Elige <b>Agregar a pantalla de inicio</b>.</li>
+                        <li>Si no aparece, abre esta misma página en <b>Safari</b> y sigue los pasos ahí.</li>
+                    </ol>
+                </div>
+
+                <!-- Android sin botón de instalar (otro navegador o vista de app) -->
+                <div data-install-mode="android-manual">
+                    <ol>
+                        <li>Toca los tres puntos <b>⋮</b> del navegador.</li>
+                        <li>Elige <b>Instalar app</b> o <b>Agregar a la pantalla principal</b>.</li>
+                        <li>Si no aparece, abre esta página en <b>Chrome</b>.</li>
+                    </ol>
+                </div>
+            </div>
         </div>
     </template>
 
