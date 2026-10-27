@@ -26,6 +26,7 @@ import requests
 from odoo import _, api, fields, models
 from odoo.exceptions import UserError
 
+from . import scout_pdf_layout as layout
 from . import scout_plan_parser as parser
 
 _logger = logging.getLogger(__name__)
@@ -144,7 +145,12 @@ def _stage(value):
 
 
 def _checked(value):
+    raw = str(value if value is not None else '').strip()
     text = _norm(value)
+    if not raw:
+        return False
+    if any(mark in raw for mark in ('✔', '✓', '☑', '✅', '●', '•')):
+        return True
     return bool(text) and text not in ('no', '0', '-', 'n/a', 'na', 'false', 'falso')
 
 
@@ -230,6 +236,11 @@ class CalendarEventPlanImport(models.Model):
         if not sheets:
             raise UserError(_('El Excel no tiene hojas.'))
         sheet_name, rows = self._scout_plan_pick_sheet(sheets)
+        return self._scout_plan_from_rows(rows, _('Excel (hoja "%s")', sheet_name), _('el Excel'))
+
+    def _scout_plan_from_rows(self, rows, source, what):
+        """Filas de una tabla (Excel o tabla de un PDF) → actividades."""
+        ref, location, leaders = self._scout_plan_context()
         header_idx, mapping = None, None
         for idx, row in enumerate(rows[:40]):
             mapping = _header_map(row)
@@ -240,12 +251,12 @@ class CalendarEventPlanImport(models.Model):
             # Tabla sin encabezados reconocibles: se interpreta como texto (o con IA si está configurada).
             text = '\n'.join(' | '.join(_cell_text(c) for c in row if _cell_text(c)) for row in rows)
             if self._scout_ai_ready():
-                return self._scout_plan_ai(text=text, source=_('Excel'))
-            return self._scout_plan_from_text(text, _('el Excel'))
+                return self._scout_plan_ai(text=text, source=source)
+            return self._scout_plan_from_text(text, what)
         lines = []
         for row in rows[header_idx + 1:]:
             get = lambda key: row[mapping[key]] if key in mapping and mapping[key] < len(row) else None  # noqa: E731
-            name = _cell_text(get('name'))
+            name = re.sub(r'\s*Por confirmar:.*$', '', _cell_text(get('name'))).strip()
             if not name:
                 continue
             if _norm(name) in ('actividad', 'actividades', 'total'):
@@ -266,10 +277,23 @@ class CalendarEventPlanImport(models.Model):
             else:
                 parser._reclassify(line, location, leaders)
             lines.append(line)
-        return self._scout_plan_finish(lines, _('Excel (hoja "%s")', sheet_name))
+        return self._scout_plan_finish(lines, source)
 
     # ------------------------------------------------------------------ PDF e imagen
     def _scout_plan_from_pdf(self, content):
+        # 1) Tabla del programa (formato del grupo u otra con encabezados): se lee por posición, sin IA.
+        items = layout.pdf_items(content)
+        rows = layout.table_rows(items, lambda row: len(_header_map(row) or {}) >= 3)
+        if len(rows) > 1:
+            try:
+                result = self._scout_plan_from_rows(rows, _('el PDF'), _('el PDF'))
+                if result['lines']:
+                    return result
+            except UserError:
+                pass
+        if layout.calendar_events(items)[0]:
+            raise UserError(_('Este PDF es un calendario de actividades, no el programa de una junta. Súbelo en '
+                              'Planificación → Calendario del grupo → "Subir calendario".'))
         if self._scout_ai_ready():
             return self._scout_plan_ai(content=content, mimetype='application/pdf', source=_('PDF'))
         text = self._scout_pdf_text(content)

@@ -313,7 +313,7 @@ function setupCopy(button) {
     button.addEventListener("click", async () => {
         try {
             await navigator.clipboard.writeText(button.dataset.slCopy);
-            toast("Liga copiada");
+            toast(button.dataset.slCopyMsg || "Copiado");
         } catch (error) {
             window.prompt("Copia la liga:", button.dataset.slCopy);
         }
@@ -336,7 +336,12 @@ function setupHelpers() {
         input.addEventListener("input", () => {
             const term = input.value.trim().toLowerCase();
             document.querySelectorAll(input.dataset.slFilter).forEach((row) => {
-                row.classList.toggle("d-none", term && !row.textContent.toLowerCase().includes(term));
+                const hit = !term || row.textContent.toLowerCase().includes(term);
+                row.classList.toggle("d-none", !hit);
+                const box = row.closest("details");
+                if (box && term && hit) {
+                    box.open = true;
+                }
             });
         })
     );
@@ -365,6 +370,14 @@ function start() {
     document.querySelectorAll("input[data-sl-photo]:not(.o_scout_photo_pick input)").forEach(setupPhoto);
     document.querySelectorAll("form[data-sl-require-ine]").forEach(setupRequireIne);
     document.querySelectorAll("[data-sl-copy]").forEach(setupCopy);
+    // Aviso por WhatsApp: marca a quién ya se le abrió el chat
+    document.querySelectorAll(".o_sl_wa_send").forEach((link) =>
+        link.addEventListener("click", () => {
+            const row = link.closest(".o_sl_wa_row");
+            row && row.classList.add("o_sl_wa_done");
+            link.innerHTML = '<i class="fa fa-check"></i> Enviado';
+        })
+    );
     setupHelpers();
 }
 

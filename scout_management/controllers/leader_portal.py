@@ -42,7 +42,8 @@ class ScoutLeaderPortal(http.Controller):
             params['error'] = error
         if ok:
             params['ok'] = ok
-        return request.redirect(url + ('?' + urlencode(params) if params else ''))
+        sep = '&' if '?' in url else '?'
+        return request.redirect(url + (sep + urlencode(params) if params else ''))
 
     def _render(self, template, section=None, page='home', **values):
         svc = self._svc()
@@ -216,6 +217,17 @@ class ScoutLeaderPortal(http.Controller):
             return self._back(f'/dirigentes/{section.id}/plan', error=str(e.args[0] if e.args else e))
         return request.redirect(f'/dirigentes/{section.id}/actividad/{event.id}/programa')
 
+    # ------------------------------------------------------------------ jefatura: avances de todo el grupo
+    def _group_progress_page(self, section, seccion=None):
+        svc = self._svc()
+        data = svc.group_progress()
+        try:
+            selected = int(seccion or 0)
+        except ValueError:
+            selected = 0
+        return self._render('scout_management.leader_group_progress', section, 'progress', groups=data,
+                            selected=selected, svc=svc)
+
     # ------------------------------------------------------------------ adelantos
     @http.route(['/dirigentes/<int:section_id>/adelantos'], type='http', auth='user', website=True,
                 methods=['GET'])
@@ -224,6 +236,8 @@ class ScoutLeaderPortal(http.Controller):
         if redirect:
             return redirect
         svc = self._svc()
+        if section.is_leadership:
+            return self._group_progress_page(section, kw.get('seccion'))
         stages = svc.stages(section)
         stage = stages.filtered(lambda s: s.id == int(stage_id or 0) if str(stage_id or '').isdigit() else False)
         path = svc.path_stages(section)
@@ -338,9 +352,28 @@ class ScoutLeaderPortal(http.Controller):
         if redirect:
             return redirect
         tipo, start, end, label, offset = self._plan_period(section, tipo, q)
+        if section.is_leadership and kw.get('ver') != 'jefatura':
+            ver = kw.get('ver') if kw.get('ver') in ('jefes', 'secciones') else 'resumen'
+            return self._render('scout_management.leader_group_attendance', section, 'attendance',
+                                data=self._svc().group_attendance(start, end), ver=ver, tipo=tipo, label=label,
+                                offset=offset, today_event=self._svc().today_event(section))
         matrix = self._svc().attendance_matrix(section, start, end)
         return self._render('scout_management.leader_attendance_control', section, 'attendance', matrix=matrix,
                             tipo=tipo, label=label, offset=offset, today_event=self._svc().today_event(section))
+
+    @http.route(['/dirigentes/<int:section_id>/asistencia/grupo.xlsx'], type='http', auth='user', website=True)
+    def leader_group_attendance_xlsx(self, section_id, tipo='trimestral', q='0', **kw):
+        section, redirect = self._section_or_redirect(section_id)
+        if redirect:
+            return redirect
+        if not section.is_leadership:
+            return request.redirect(f'/dirigentes/{section.id}/asistencia')
+        tipo, start, end, label, _offset = self._plan_period(section, tipo, q)
+        content = self._svc().group_attendance_xlsx(start, end, label)
+        headers = [('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'),
+                   ('Content-Length', len(content)),
+                   ('Content-Disposition', f'attachment; filename="Asistencia del grupo {label}.xlsx"')]
+        return request.make_response(content, headers=headers)
 
     @http.route(['/dirigentes/<int:section_id>/asistencia/pdf'], type='http', auth='user', website=True)
     def leader_attendance_pdf(self, section_id, tipo='trimestral', q='0', **kw):
@@ -415,8 +448,41 @@ class ScoutLeaderPortal(http.Controller):
         section, redirect = self._section_or_redirect(section_id)
         if redirect:
             return redirect
+        svc = self._svc()
+        if section.is_leadership:
+            conversations, members = [], request.env['res.partner']
+            for sec in svc._group_sections():
+                conversations += svc.conversations(sec)
+                members |= svc._members(sec)
+            conversations.sort(key=lambda r: r['last'].date, reverse=True)
+            return self._render('scout_management.leader_messages', section, 'messages',
+                                conversations=conversations, members=members.sorted('name'))
         return self._render('scout_management.leader_messages', section, 'messages',
-                            conversations=self._svc().conversations(section), members=self._svc()._members(section))
+                            conversations=svc.conversations(section), members=svc._members(section))
+
+    @http.route(['/dirigentes/<int:section_id>/whatsapp'], type='http', auth='user', website=True,
+                methods=['GET', 'POST'])
+    def leader_whatsapp(self, section_id, **post):
+        """Aviso por WhatsApp a las familias o a los jefes de una o varias secciones."""
+        section, redirect = self._section_or_redirect(section_id)
+        if redirect:
+            return redirect
+        svc = self._svc()
+        options = svc._group_sections() if section.is_leadership else section
+        form = request.httprequest.form if request.httprequest.method == 'POST' else request.httprequest.args
+        chosen_ids = {int(x) for x in form.getlist('seccion') if str(x).isdigit()}
+        chosen = options.filtered(lambda s: s.id in chosen_ids) if chosen_ids else (
+            options if not section.is_leadership else options.browse())
+        audience = 'leaders' if post.get('para') == 'jefes' else 'families'
+        text = (post.get('texto') or '').strip()
+        recipients, missing = [], []
+        if request.httprequest.method == 'POST' and text and chosen:
+            recipients, missing = svc.whatsapp_recipients(chosen, audience, text)
+        default_text = _('Hola {nombre}, te escribimos de %s: ', section.display_name if not section.is_leadership
+                         else request.env.company.name)
+        return self._render('scout_management.leader_whatsapp', section, 'messages', options=options,
+                            chosen=chosen, audience=audience, text=text or default_text, recipients=recipients,
+                            missing=missing, sent=request.httprequest.method == 'POST')
 
     @http.route(['/dirigentes/<int:section_id>/mensajes/<int:conv_id>'], type='http', auth='user', website=True)
     def leader_message_thread(self, section_id, conv_id, **kw):
@@ -449,6 +515,10 @@ class ScoutLeaderPortal(http.Controller):
         section, redirect = self._section_or_redirect(section_id)
         if redirect:
             return redirect
+        if section.is_leadership and kw.get('ver') != 'jefatura':
+            return self._render('scout_management.leader_group_members', section, 'members',
+                                groups=self._svc().group_members(), alerts=self._svc().alerts(section),
+                                open_id=int(kw.get('seccion') or 0) if str(kw.get('seccion') or '').isdigit() else 0)
         members = self._svc()._members(section, include_leaders=True)
         orden = kw.get('orden') if kw.get('orden') in ('equipo', 'nombre', 'edad', 'alertas') else 'equipo'
         youth = members.filtered(lambda m: m.scout_type == 'youth')
@@ -639,6 +709,10 @@ class ScoutLeaderPortal(http.Controller):
         if redirect:
             return redirect
         svc = self._svc()
+        if section.is_leadership:
+            groups = svc.group_routes()
+            return self._render('scout_management.leader_group_routes', section, 'members', groups=groups,
+                                seccion=int(kw.get('seccion') or 0), today=svc._today().isoformat(), svc=svc)
         return self._render('scout_management.leader_routes', section, 'members', ver='recibo' if ver == 'recibo' else 'mia',
                             routes=svc.routes(section), incoming=svc.incoming_routes(section),
                             today=svc._today().isoformat(), svc=svc)
@@ -738,6 +812,8 @@ class ScoutLeaderPortal(http.Controller):
         if redirect:
             return redirect
         svc = self._svc()
+        if section.is_leadership:
+            return self._render('scout_management.leader_org_chart', section, 'members', org=svc.org_chart())
         return self._render('scout_management.leader_teams', section, 'members', board=svc.team_board(section),
                             arrivals=svc.recent_arrivals(section))
 
@@ -781,6 +857,11 @@ class ScoutLeaderPortal(http.Controller):
         section, redirect = self._section_or_redirect(section_id)
         if redirect:
             return redirect
+        if section.is_leadership and not (categoria or tipo or q):
+            groups = self._svc().group_resources()
+            sel = int(kw.get('seccion') or 0) if str(kw.get('seccion') or '').isdigit() else 0
+            return self._render('scout_management.leader_group_resources', section, 'resources', groups=groups,
+                                selected=sel, general=request.env['scout.resource']._scout_for_section(section))
         everything = request.env['scout.resource']._scout_for_section(section)
         resources = everything
         category = request.env['scout.resource.category'].sudo().browse(int(categoria)).exists() \
@@ -840,6 +921,8 @@ class ScoutLeaderPortal(http.Controller):
         if redirect:
             return redirect
         svc = self._svc()
+        if section.is_leadership:
+            return self._group_progress_page(section, kw.get('seccion'))
         categories = svc.specialty_categories(section)
         columns, title, current = svc.path_stages(section), _('Adelantos'), 'adelantos'
         if ver == 'colores':
@@ -1001,15 +1084,63 @@ class ScoutLeaderPortal(http.Controller):
             month_start = date(year, month, 1)
         except (ValueError, TypeError):
             month_start = svc._today().replace(day=1)
-        cal = svc.general_calendar(month_start)
+        ver = kw.get('ver') if kw.get('ver') in ('grupo', 'juntas') else 'todo'
+        cal = svc.general_calendar(month_start, ver)
         prev_start = date(month_start.year - (month_start.month == 1), (month_start.month - 2) % 12 + 1, 1)
         next_start = date(month_start.year + (month_start.month == 12), month_start.month % 12 + 1, 1)
         all_sections = request.env['scout.section'].sudo().search([('is_leadership', '=', False)])
         return self._render('scout_management.leader_group_calendar', section, 'plan', cal=cal,
                             month_label=f'{MONTHS[month_start.month - 1].capitalize()} {month_start.year}',
                             prev_mes=prev_start.strftime('%Y-%m'), next_mes=next_start.strftime('%Y-%m'),
-                            all_sections=all_sections, today=svc._today(),
+                            all_sections=all_sections, today=svc._today(), ver=ver,
+                            can_import=svc._is_group_manager(), type_labels=dict(ACTIVITY_TYPES),
                             base_url=f'/dirigentes/{section.id}/calendario' if section else '/dirigentes/calendario')
+
+    # ------------------------------------------------------------------ jefatura: subir el calendario del grupo
+    @http.route(['/dirigentes/<int:section_id>/calendario/subir'], type='http', auth='user', website=True,
+                methods=['GET', 'POST'])
+    def leader_calendar_upload(self, section_id, file=None, **post):
+        section, redirect = self._section_or_redirect(section_id)
+        if redirect:
+            return redirect
+        svc = self._svc()
+        if not svc._is_group_manager():
+            return self._back(f'/dirigentes/{section.id}/calendario', error=_('El calendario del grupo lo sube la jefatura.'))
+        values = {'events': [], 'notes': [], 'source': '', 'type_labels': dict(ACTIVITY_TYPES),
+                  'type_options': [t for t in ACTIVITY_TYPES if t[0] != 'regular']}
+        if request.httprequest.method == 'POST' and file and getattr(file, 'filename', None):
+            try:
+                data = request.env['calendar.event']._scout_calendar_parse(file.filename, file.read())
+                values.update(data, events_json=json.dumps(data['events']))
+            except (UserError, ValidationError) as e:
+                values['error'] = str(e.args[0] if e.args else e)
+        return self._render('scout_management.leader_calendar_upload', section, 'plan', **values)
+
+    @http.route(['/dirigentes/<int:section_id>/calendario/agregar'], type='http', auth='user', website=True,
+                methods=['POST'])
+    def leader_calendar_add(self, section_id, events_json='[]', **post):
+        section, redirect = self._section_or_redirect(section_id)
+        if redirect:
+            return redirect
+        svc = self._svc()
+        if not svc._is_group_manager():
+            return request.redirect(f'/dirigentes/{section.id}/calendario')
+        try:
+            events = json.loads(events_json or '[]')
+        except ValueError:
+            events = []
+        form = request.httprequest.form
+        chosen = []
+        for idx, ev in enumerate(events):
+            if not form.get(f'sel_{idx}'):
+                continue
+            ev['title'] = (form.get(f'title_{idx}') or ev.get('title') or '').strip()
+            ev['type'] = form.get(f'type_{idx}') or ev.get('type')
+            chosen.append(ev)
+        created = request.env['calendar.event']._scout_calendar_create(chosen)
+        first = min(created.mapped('scout_date')) if created else svc._today()
+        return self._back(f'/dirigentes/{section.id}/calendario?mes={first.strftime("%Y-%m")}',
+                          ok=_('%s actividad(es) agregadas al calendario del grupo.', len(created)))
 
 
 def _card_values(member):

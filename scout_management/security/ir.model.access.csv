@@ -65,3 +65,5 @@ access_scout_resource_view_officer,scout.resource.view officer,model_scout_resou
 access_scout_promo_lead_manager,scout.promo.lead manager,model_scout_promo_lead,group_scout_manager,1,1,1,1
 access_scout_promo_banner_manager,scout.promo.banner manager,model_scout_promo_banner,group_scout_manager,1,1,1,1
 access_scout_promo_banner_user,scout.promo.banner user,model_scout_promo_banner,base.group_user,1,0,0,0
+access_scout_calendar_import_wizard,scout.calendar.import.wizard officer,model_scout_calendar_import_wizard,group_scout_officer,1,1,1,1
+access_scout_calendar_import_wizard_line,scout.calendar.import.wizard.line officer,model_scout_calendar_import_wizard_line,group_scout_officer,1,1,1,1

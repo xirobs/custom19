@@ -1046,15 +1046,23 @@ class ScoutLeaderPortal(models.AbstractModel):
                 for state in ('draft', 'proposed', 'reviewed', 'approved', 'changes')}
 
     @api.model
-    def general_calendar(self, month_start):
-        """Semanas del mes con las actividades de todas las secciones y del grupo."""
+    def general_calendar(self, month_start, ver='todo'):
+        """Semanas del mes con las actividades de todas las secciones y del grupo.
+        ver: 'todo', 'grupo' (consejos, eventos, campamentos: sin las juntas ordinarias) o 'juntas'."""
         start = month_start.replace(day=1)
         end = start + relativedelta(months=1, days=-1)
         grid_start = start - timedelta(days=start.weekday())
         grid_end = end + timedelta(days=6 - end.weekday())
-        events = self.env['calendar.event'].sudo().search(
-            [('is_scout_event', '=', True), ('scout_date', '<=', grid_end),
-             '|', ('scout_date_end', '>=', grid_start), ('scout_date', '>=', grid_start)], order='start')
+        domain = [('is_scout_event', '=', True), ('scout_date', '<=', grid_end),
+                  '|', ('scout_date_end', '>=', grid_start), ('scout_date', '>=', grid_start)]
+        if ver == 'grupo':
+            domain += ['|', ('scout_scope', '=', 'group'), ('scout_activity_type', '!=', 'regular')]
+        elif ver == 'juntas':
+            domain += [('scout_scope', '=', 'section'), ('scout_activity_type', '=', 'regular')]
+        events = self.env['calendar.event'].sudo().search(domain, order='start')
+        # Primero lo de todo el grupo y lo especial; después las juntas de cada sección
+        events = events.sorted(lambda e: (e.scout_scope != 'group', e.scout_activity_type == 'regular',
+                                          e.start or datetime.min))
         weeks, day = [], grid_start
         while day <= grid_end:
             week = []
@@ -1069,6 +1077,324 @@ class ScoutLeaderPortal(models.AbstractModel):
     def category_hex(self, event):
         return CATEGORY_HEX.get(event.scout_category or 'ordinary')
 
+
+    # ------------------------------------------------------------------ vista de toda la jefatura de grupo
+    @api.model
+    def _is_group_manager(self):
+        """Jefatura de grupo: oficiales del grupo o quien atiende la sección de jefatura."""
+        user = self.env.user
+        if not user.share and user.has_group('scout_management.group_scout_officer'):
+            return True
+        return bool(self._sections().filtered('is_leadership'))
+
+    @api.model
+    def _group_sections(self):
+        """Secciones de beneficiarios que puede ver la jefatura (sin la propia jefatura)."""
+        return self._sections().filtered(lambda s: not s.is_leadership).sorted(lambda s: (s.sequence, s.name or ''))
+
+    @api.model
+    def _route_allowed(self, section, route):
+        """La sección de la ruta, o la jefatura de grupo sobre cualquier sección que atienda."""
+        if not route:
+            return False
+        if route.section_id == section:
+            return True
+        return bool(section.is_leadership and route.section_id in self._group_sections())
+
+    GROUP_TYPE_LABELS = [('regular', 'Juntas'), ('council', 'Consejos'), ('camp', 'Campamentos'),
+                         ('outing', 'Salidas'), ('group', 'Eventos de grupo'), ('special', 'Especiales'),
+                         ('training', 'Formación')]
+
+    @api.model
+    def _leader_home_section(self, partner):
+        """Sección que atiende un dirigente (la primera que dirige, o la suya)."""
+        partner = partner.sudo()
+        leading = partner.scout_leading_section_ids.filtered(lambda s: not s.is_leadership)
+        return (leading.sorted(lambda s: (s.sequence, s.name or ''))[:1] or partner.scout_section_id)
+
+    @api.model
+    def group_attendance(self, start, end):
+        """Asistencia de todo el grupo en el periodo (solo listas cerradas): por tipo de actividad, por sección
+        (miembros y dirigentes) y de cada jefe y subjefe."""
+        from .scout_common import ATTENDED_STATUSES, COUNTED_STATUSES
+        types = [t for t, _l in self.GROUP_TYPE_LABELS]
+        lines = self.env['scout.attendance.line'].sudo().search([
+            ('event_id.is_scout_event', '=', True), ('event_id.scout_attendance_closed', '=', True),
+            ('date', '>=', start), ('date', '<=', end)])
+
+        def blank():
+            return {'counted': 0, 'attended': 0, 'events': set()}
+
+        def add(bucket, line):
+            if line.status in COUNTED_STATUSES:
+                bucket['counted'] += 1
+                bucket['attended'] += line.status in ATTENDED_STATUSES
+            bucket['events'].add(line.event_id.id)
+
+        def pct(bucket):
+            return round(bucket['attended'] * 100.0 / bucket['counted']) if bucket['counted'] else None
+        by_type = {t: {'youth': blank(), 'leader': blank(), 'all': blank()} for t in types}
+        sections = self._group_sections()
+        by_section = {sec.id: {'section': sec, 'youth': blank(), 'leader': blank(),
+                               'types': {t: blank() for t in types}} for sec in sections}
+        leaders = {}
+        for line in lines:
+            etype = line.event_id.scout_activity_type if line.event_id.scout_activity_type in by_type else 'special'
+            kind = 'leader' if line.member_type == 'leader' else 'youth'
+            add(by_type[etype][kind], line)
+            add(by_type[etype]['all'], line)
+            member = line.member_id
+            if kind == 'leader':
+                sec = self._leader_home_section(member)
+                row = leaders.setdefault(member.id, {'member': member, 'section': sec, 'total': blank(),
+                                                     'types': {t: blank() for t in types}})
+                add(row['total'], line)
+                add(row['types'][etype], line)
+            else:
+                sec = line.section_id or member.scout_section_id
+            if sec and sec.id in by_section:
+                add(by_section[sec.id][kind], line)
+                add(by_section[sec.id]['types'][etype], line)
+        # Jefes y subjefes activos aunque todavía no tengan listas cerradas
+        active_leaders = self.env['res.partner'].sudo().search([
+            ('is_scout', '=', True), ('scout_type', '=', 'leader'), ('scout_state', 'in', ('trial', 'active'))])
+        for member in active_leaders:
+            leaders.setdefault(member.id, {'member': member, 'section': self._leader_home_section(member),
+                                           'total': blank(), 'types': {t: blank() for t in types}})
+        leader_rows = []
+        for row in leaders.values():
+            row['pct'] = pct(row['total'])
+            row['type_pct'] = {t: (row['types'][t]['attended'], row['types'][t]['counted']) for t in types}
+            leader_rows.append(row)
+        order = {sec.id: k for k, sec in enumerate(sections)}
+        leader_rows.sort(key=lambda r: (order.get(r['section'].id, 99) if r['section'] else 100,
+                                        r['member'].name or ''))
+        section_rows = []
+        for data in by_section.values():
+            data['youth_pct'], data['leader_pct'] = pct(data['youth']), pct(data['leader'])
+            data['type_pct'] = {t: pct(data['types'][t]) for t in types}
+            data['events'] = len(data['youth']['events'] | data['leader']['events'])
+            section_rows.append(data)
+        type_rows = []
+        for t, label in self.GROUP_TYPE_LABELS:
+            data = by_type[t]
+            if not data['all']['events']:
+                continue
+            type_rows.append({'type': t, 'label': label, 'events': len(data['all']['events']),
+                              'youth_pct': pct(data['youth']), 'leader_pct': pct(data['leader']),
+                              'pct': pct(data['all'])})
+        total = blank()
+        for line in lines:
+            add(total, line)
+        youth_all, leader_all = blank(), blank()
+        for data in by_type.values():
+            for key, target in (('youth', youth_all), ('leader', leader_all)):
+                target['counted'] += data[key]['counted']
+                target['attended'] += data[key]['attended']
+                target['events'] |= data[key]['events']
+        return {'types': type_rows, 'sections': section_rows, 'leaders': leader_rows,
+                'type_labels': self.GROUP_TYPE_LABELS, 'events': len(total['events']), 'pct': pct(total),
+                'youth_pct': pct(youth_all), 'leader_pct': pct(leader_all)}
+
+    @api.model
+    def group_attendance_xlsx(self, start, end, label):
+        """El reporte general de asistencia en Excel (resumen, secciones y jefes)."""
+        import io
+        from openpyxl import Workbook
+        from openpyxl.styles import Alignment, Font, PatternFill
+        data = self.group_attendance(start, end)
+        wb = Workbook()
+        navy = PatternFill('solid', fgColor='0F3049')
+        head_font = Font(bold=True, color='FFFFFF')
+
+        def sheet(ws, title, headers, rows, widths):
+            ws.title = title
+            ws.append([f'{self.env.company.name} · Asistencia {label}'])
+            ws['A1'].font = Font(bold=True, size=13)
+            ws.append(headers)
+            for cell in ws[2]:
+                cell.fill, cell.font = navy, head_font
+                cell.alignment = Alignment(horizontal='center', vertical='center', wrap_text=True)
+            for row in rows:
+                ws.append(row)
+            for k, w in enumerate(widths, start=1):
+                ws.column_dimensions[ws.cell(row=2, column=k).column_letter].width = w
+
+        def fmt(value):
+            return '' if value is None else value / 100.0
+        ws = wb.active
+        sheet(ws, 'Por tipo', ['Tipo de actividad', 'Actividades', '% miembros', '% dirigentes', '% total'],
+              [[r['label'], r['events'], fmt(r['youth_pct']), fmt(r['leader_pct']), fmt(r['pct'])]
+               for r in data['types']], [24, 12, 13, 13, 11])
+        labels = data['type_labels']
+        sheet(wb.create_sheet(), 'Por sección',
+              ['Sección', 'Actividades', '% miembros', '% dirigentes'] + [lab for _t, lab in labels],
+              [[r['section'].name, r['events'], fmt(r['youth_pct']), fmt(r['leader_pct'])]
+               + [fmt(r['type_pct'][t]) for t, _l in labels] for r in data['sections']],
+              [24, 12, 13, 13] + [12] * len(labels))
+        sheet(wb.create_sheet(), 'Jefes y subjefes',
+              ['Dirigente', 'Cargo', 'Sección', 'Asistió', 'De', '%'] + [lab for _t, lab in labels],
+              [[r['member'].name, r['member'].scout_position_id.name or '', r['section'].name if r['section'] else '',
+                r['total']['attended'], r['total']['counted'], fmt(r['pct'])]
+               + ['%s/%s' % r['type_pct'][t] if r['type_pct'][t][1] else '' for t, _l in labels]
+               for r in data['leaders']], [32, 20, 20, 9, 7, 8] + [11] * len(labels))
+        for ws in wb.worksheets:
+            for row in ws.iter_rows(min_row=3):
+                for cell in row:
+                    if isinstance(cell.value, float):
+                        cell.number_format = '0%'
+        out = io.BytesIO()
+        wb.save(out)
+        return out.getvalue()
+
+    @api.model
+    def org_chart(self):
+        """Organigrama: jefatura de grupo arriba (jefe, subjefes y staff) y cada sección con sus jefes y
+        subjefes, sus equipos con guía y cuántos miembros tiene."""
+        Partner = self.env['res.partner'].sudo()
+        leaders = Partner.search([('is_scout', '=', True), ('scout_type', '=', 'leader'),
+                                  ('scout_state', 'in', ('trial', 'active'))])
+        rank = {'group_chief': 0, 'chief': 1, 'assistant': 2, 'secretary': 3, 'treasurer': 4, 'scouter': 5,
+                'candidate': 6}
+
+        def key(p):
+            return (rank.get(p.scout_position_id.kind, 9), p.name or '')
+        top = leaders.filtered(lambda p: p.scout_position_id.kind == 'group_chief').sorted(key)
+        group_level = leaders.filtered(lambda p: p.scout_position_id.kind in ('secretary', 'treasurer')
+                                       or not self._leader_home_section(p)
+                                       or self._leader_home_section(p).is_leadership) - top
+        sections = []
+        for sec in self._group_sections():
+            sec_leaders = leaders.filtered(lambda p, sec=sec: sec in p.scout_leading_section_ids
+                                           or p.scout_section_id == sec) - top - group_level
+            youth = Partner.search([('is_scout', '=', True), ('scout_type', '=', 'youth'),
+                                    ('scout_state', 'in', ('trial', 'active')), ('scout_section_id', '=', sec.id)])
+            patrols = []
+            for patrol in youth.scout_patrol_id.sorted(lambda t: (t.sequence, t.name or '')):
+                members = youth.filtered(lambda m, t=patrol: m.scout_patrol_id == t)
+                guide = members.filtered(lambda m: m.scout_position_id.kind == 'guide')[:1]
+                sub = members.filtered(lambda m: m.scout_position_id.kind == 'subguide')[:1]
+                patrols.append({'patrol': patrol, 'count': len(members), 'guide': guide, 'subguide': sub})
+            sections.append({
+                'section': sec,
+                'chiefs': sec_leaders.filtered(lambda p: p.scout_position_id.kind == 'chief').sorted(key),
+                'others': sec_leaders.filtered(lambda p: p.scout_position_id.kind != 'chief').sorted(key),
+                'youth': len(youth), 'patrols': patrols,
+                'no_patrol': len(youth.filtered(lambda m: not m.scout_patrol_id)),
+            })
+        return {'top': top, 'group_level': group_level.sorted(key), 'sections': sections,
+                'leaders': len(leaders)}
+
+    @api.model
+    def group_members(self):
+        """[(sección, jefes, miembros)] de todas las secciones para la jefatura."""
+        result = []
+        for sec in self._group_sections():
+            members = self._members(sec, include_leaders=True)
+            youth = members.filtered(lambda m: m.scout_type == 'youth')
+            result.append({'section': sec, 'leaders': members - youth, 'youth': youth,
+                           'alerts': len(youth.filtered(lambda m: m.scout_needs_registration or m.scout_age_alert))})
+        return result
+
+    @api.model
+    def group_resources(self):
+        """Por sección: plan de adelantos (recursos ligados a cada adelanto), recursos y videos de actividades."""
+        Resource = self.env['scout.resource']
+        result = []
+        for sec in self._group_sections():
+            items = Resource._scout_for_section(sec)
+            path = self.path_stages(sec)
+            by_stage = []
+            for stage in path:
+                stage_items = items.filtered(lambda r, st=stage: r.stage_id == st)
+                by_stage.append((stage, stage_items))
+            staged = items.filtered('stage_id')
+            other_staged = staged.filtered(lambda r: r.stage_id not in path)
+            videos = (items - staged).filtered(lambda r: r.kind == 'video')
+            rest = items - staged - videos
+            result.append({'section': sec, 'stages': by_stage, 'other_staged': other_staged, 'videos': videos,
+                           'resources': rest, 'total': len(items),
+                           'stage_count': len(staged)})
+        return result
+
+    @api.model
+    def whatsapp_recipients(self, sections, audience='families', text=''):
+        """Destinatarios de un aviso por WhatsApp: familias (tutor de cada scout) o jefes de las secciones.
+        Cada uno con su liga wa.me y el texto personalizado ({nombre} = nombre del scout o del jefe)."""
+        from urllib.parse import quote
+        from .scout_online_payment import scout_whatsapp_phone
+        Partner = self.env['res.partner'].sudo()
+        recipients, seen = [], set()
+
+        def add(person, phone_raw, label, name_for_text, sec):
+            phone = scout_whatsapp_phone(phone_raw)
+            if not phone or phone in seen:
+                if phone in seen:
+                    for r in recipients:
+                        if r['phone'] == phone and label not in r['label']:
+                            r['label'] += ', ' + label
+                return
+            seen.add(phone)
+            body = (text or '').replace('{nombre}', name_for_text or '').replace('{seccion}', sec.name or '')
+            recipients.append({'name': person.name, 'label': label, 'phone': phone, 'section': sec,
+                               'url': f'https://wa.me/{phone}?text={quote(body)}'})
+        missing = []
+        for sec in sections:
+            if audience == 'leaders':
+                leaders = Partner.search([('is_scout', '=', True), ('scout_type', '=', 'leader'),
+                                          ('scout_state', 'in', ('trial', 'active')),
+                                          '|', ('scout_leading_section_ids', 'in', sec.ids),
+                                          ('scout_section_id', '=', sec.id)])
+                for leader in leaders.sorted('name'):
+                    if not scout_whatsapp_phone(leader.phone):
+                        missing.append(leader.name)
+                    add(leader, leader.phone, leader.scout_position_id.name or _('Dirigente'),
+                        (leader.scout_name or leader.name or '').split()[0] if leader.name else '', sec)
+                continue
+            for member in self._members(sec).sorted('name'):
+                first = (member.scout_name or member.name or '').split()[0] if member.name else ''
+                guardian = member.scout_guardian_id
+                phone = guardian.phone or member.scout_guardian_phone_alt or (member.phone if not guardian else '')
+                if not scout_whatsapp_phone(phone):
+                    missing.append(member.name)
+                    continue
+                add(guardian or member, phone, _('familia de %s', first), first, sec)
+        return recipients, missing
+
+    @api.model
+    def group_routes(self):
+        """[(sección, rutas abiertas ordenadas por urgencia)] de todas las secciones."""
+        result = []
+        for sec in self._group_sections():
+            routes = self.routes(sec)
+            result.append((sec, routes))
+        return result
+
+    @api.model
+    def group_progress(self):
+        """Por sección: miembros con su termómetro de adelantos, siguiente paso, especialidades y ruta."""
+        result = []
+        for sec in self._group_sections():
+            rows = self.achievements(sec, [])
+            if not rows:
+                continue
+            routes = {r.member_id.id: r for r in self.env['scout.route'].sudo().search([
+                ('member_id', 'in', [r['member'].id for r in rows]), ('is_open', '=', True),
+                ('section_id', '=', sec.id)])}
+            for row in rows:
+                row['route'] = routes.get(row['member'].id)
+            rows.sort(key=lambda r: (-r['pct'], r['member'].name or ''))
+            total = len(rows)
+            result.append({
+                'section': sec, 'rows': rows, 'members': total,
+                'avg': round(sum(r['pct'] for r in rows) / total) if total else 0,
+                'specialties': sum(r['specialties'] for r in rows),
+                'no_progress': len([r for r in rows if not r['done']]),
+                'red': len([r for r in rows if r['route'] and r['route'].alert == 'red']),
+                'yellow': len([r for r in rows if r['route'] and r['route'].alert == 'yellow']),
+                'path_total': rows[0]['total'] if rows else 0,
+            })
+        return result
 
     # ------------------------------------------------------------------ rutas de enlace y permanencia
     @api.model
@@ -1090,9 +1416,9 @@ class ScoutLeaderPortal(models.AbstractModel):
     @api.model
     def start_route(self, section, route_id, day=None):
         route = self.env['scout.route'].sudo().browse(int(route_id or 0)).exists()
-        if not route or route.section_id != section:
+        if not self._route_allowed(section, route):
             raise AccessError(_('Esa ruta no es de tu sección.'))
-        self._member(route.member_id.id, section)
+        self._member(route.member_id.id, route.section_id)
         route.action_start_route(day)
         self._note(route.member_id, _('Inicio de ruta de enlace registrado'))
         return route
@@ -1238,9 +1564,9 @@ class ScoutLeaderPortal(models.AbstractModel):
     def give_pass(self, section, route_id, destination_id=None, day=None):
         """El jefe de la sección da el pase: el beneficiario pasa a la sección siguiente (sin patrulla)."""
         route = self.env['scout.route'].sudo().browse(int(route_id or 0)).exists()
-        if not route or route.section_id != section or route.kind != 'transfer' or not route.is_open:
+        if not self._route_allowed(section, route) or route.kind != 'transfer' or not route.is_open:
             raise AccessError(_('Ese beneficiario no está en tu sección.'))
-        self._member(route.member_id.id, section)
+        self._member(route.member_id.id, route.section_id)
         if not self.can_give_pass(route):
             raise UserError(_('%s todavía no tiene edad para el pase de sección.', route.member_id.name))
         _default, options = self.pass_options(route)
