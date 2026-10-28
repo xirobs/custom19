@@ -1,0 +1,181 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Lista de consejos -->
+    <template id="council_list" name="Consejo de grupo: lista">
+        <t t-call="scout_management.leader_layout">
+            <div class="o_sl_title_row">
+                <h5 class="o_sl_h mb-0">Consejo de grupo</h5>
+            </div>
+            <p class="text-muted small">Reloj para los turnos de palabra, firma de asistencia al entrar a la videollamada,
+                transcripción y acta.</p>
+            <h6 class="o_sl_h">Próximos consejos</h6>
+            <p t-if="not upcoming" class="text-muted">No hay consejos en el calendario. Agrégalos en Calendario del grupo
+                (tipo "Consejo de grupo / junta").</p>
+            <a t-foreach="upcoming" t-as="e" class="o_sl_row" t-att-href="'/scouts/consejo/evento/%s' % e.id">
+                <div class="o_sl_date"><b t-out="local_dt(e.start).strftime('%d')"/><small t-out="['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'][local_dt(e.start).month - 1]"/></div>
+                <div>
+                    <div class="fw-bold" t-out="e.name"/>
+                    <small class="text-muted"><t t-out="local_dt(e.start).strftime('%H:%M')"/> h
+                        <t t-if="by_event.get(e.id)"> · Orden del día listo (<t t-out="len(by_event[e.id].agenda_line_ids)"/> puntos)</t>
+                        <t t-else=""> · Sin preparar</t>
+                        <t t-if="e.videocall_location"> · <i class="fa fa-video-camera"/> en línea</t></small>
+                </div>
+                <i class="fa fa-chevron-right ms-auto text-muted"/>
+            </a>
+            <h6 t-if="meetings" class="o_sl_h">Actas recientes</h6>
+            <a t-foreach="meetings" t-as="m" class="o_sl_row" t-att-href="'/scouts/consejo/%s' % m.id">
+                <div class="o_sl_date"><b t-out="local_dt(m.date).strftime('%d')"/><small t-out="['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'][local_dt(m.date).month - 1]"/></div>
+                <div>
+                    <div class="fw-bold" t-out="m.title"/>
+                    <small class="text-muted"><t t-out="m.name"/> · <t t-out="dict(m._fields['state'].selection).get(m.state)"/>
+                        <t t-if="m.checkin_ids"> · <t t-out="len(m.checkin_ids)"/> firmas</t></small>
+                </div>
+                <i class="fa fa-chevron-right ms-auto text-muted"/>
+            </a>
+            <form t-if="can_create" action="/scouts/consejo/nuevo" method="post" class="o_sl_box mt-3">
+                <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
+                <label class="form-label fw-bold">Reunión sin evento en el calendario</label>
+                <div class="d-flex gap-2">
+                    <input name="title" class="form-control" placeholder="Consejo de Grupo extraordinario"/>
+                    <button class="btn o_sl_btn">Crear</button>
+                </div>
+            </form>
+        </t>
+    </template>
+
+    <!-- Consejo en vivo -->
+    <template id="council_live" name="Consejo de grupo: en vivo">
+        <t t-call="scout_management.leader_layout">
+            <div class="o_scc" t-att-data-meeting-id="meeting.id" t-att-data-moderate="'1' if can_moderate else '0'"
+                 t-att-data-ai-audio="'1' if ai_audio else '0'" t-att-data-ai="'1' if ai_ready else '0'">
+                <div class="o_sl_title_row">
+                    <div>
+                        <h5 class="o_sl_h mb-0" t-out="meeting.title"/>
+                        <small class="text-muted"><t t-out="local_dt(meeting.date).strftime('%d/%m/%Y %H:%M')"/> h · <t t-out="meeting.name"/></small>
+                    </div>
+                    <a t-if="backend_url" class="btn btn-sm o_sl_btn_outline" t-att-href="backend_url">Acta</a>
+                </div>
+
+                <!-- Videollamada y firma -->
+                <div class="o_scc_top">
+                    <a t-if="meeting.videocall_url" class="btn o_sl_btn o_scc_join" t-att-href="meeting.videocall_url" target="_blank">
+                        <i class="fa fa-video-camera"/> Entrar a la videollamada</a>
+                    <button t-elif="can_moderate" type="button" class="btn o_sl_btn o_scc_join" data-scc="videocall">
+                        <i class="fa fa-video-camera"/> Crear videollamada de Odoo</button>
+                    <div class="o_scc_sign" data-scc-sign="">
+                        <button type="button" class="btn o_sl_btn_outline" data-scc="sign"><i class="fa fa-pencil"/> Firmar mi asistencia</button>
+                    </div>
+                </div>
+                <p class="small text-muted mb-2">Al entrar a la videollamada de Odoo tu asistencia se firma sola. Dentro de la
+                    llamada verás el reloj de quien tiene la palabra.</p>
+
+                <!-- Reloj del turno de palabra -->
+                <div class="o_scc_clock o_scc_idle" data-scc-clock="">
+                    <div class="o_scc_ring">
+                        <svg viewBox="0 0 120 120"><circle class="o_scc_ring_bg" cx="60" cy="60" r="52"/>
+                            <circle class="o_scc_ring_fg" cx="60" cy="60" r="52" data-scc-ring=""/></svg>
+                        <div class="o_scc_ring_txt">
+                            <div class="o_scc_time" data-scc-time="">--:--</div>
+                            <div class="o_scc_phase" data-scc-phase="">Esperando inicio</div>
+                        </div>
+                    </div>
+                    <div class="o_scc_who">
+                        <small>Tiene la palabra</small>
+                        <div class="o_scc_speaker" data-scc-speaker="">—</div>
+                        <div class="o_scc_point" data-scc-point=""/>
+                        <div class="o_scc_next" data-scc-next=""/>
+                        <div class="o_scc_total" data-scc-total=""/>
+                    </div>
+                    <button type="button" class="o_scc_full" data-scc="fullscreen" title="Pantalla completa"><i class="fa fa-expand"/></button>
+                </div>
+                <div class="o_scc_legend"><span class="g">Verde: inicia</span><span class="y">Amarillo: mitad del tiempo</span><span class="r">Rojo: último minuto</span></div>
+
+                <!-- Controles de quien modera -->
+                <div t-if="can_moderate" class="o_sl_box o_scc_ctrl">
+                    <div class="o_scc_ctrl_row" data-scc-ctrl="">
+                        <button type="button" class="btn btn-success" data-scc-op="start"><i class="fa fa-play"/> Iniciar</button>
+                        <button type="button" class="btn btn-light" data-scc-op="pause"><i class="fa fa-pause"/> Pausa</button>
+                        <button type="button" class="btn btn-light" data-scc-op="add">+1 min</button>
+                        <button type="button" class="btn btn-warning" data-scc-op="end_turn">Terminó su turno</button>
+                        <button type="button" class="btn btn-light" data-scc-op="prev"><i class="fa fa-step-backward"/></button>
+                        <button type="button" class="btn btn-primary" data-scc-op="next">Siguiente punto <i class="fa fa-step-forward"/></button>
+                    </div>
+                    <label class="form-label fw-bold mt-2 mb-1">Dar la palabra a…
+                        <select class="form-select form-select-sm d-inline-block w-auto ms-2" data-scc-minutes="">
+                            <option value="1">1 min</option><option value="2">2 min</option><option value="3" selected="selected">3 min</option>
+                            <option value="5">5 min</option><option value="7">7 min</option><option value="10">10 min</option>
+                            <option value="point">lo del punto</option>
+                        </select>
+                    </label>
+                    <input type="search" class="form-control form-control-sm mb-1" placeholder="Buscar o escribir otro nombre y Enter" data-scc-floor-search=""/>
+                    <div class="o_scc_people" data-scc-people="">
+                        <button t-foreach="roster" t-as="p" type="button" class="btn btn-sm o_scc_person"
+                                t-att-data-partner="p.id" t-att-data-name="p.name" t-att-data-signed="'1' if signed.get(p.id) else '0'">
+                            <i t-if="signed.get(p.id)" class="fa fa-check-circle"/> <t t-out="p.scout_name or p.name"/>
+                        </button>
+                    </div>
+                    <div class="d-flex gap-2 mt-2 flex-wrap">
+                        <button type="button" class="btn btn-sm o_sl_btn_outline" data-scc-op="finish">Terminar reunión</button>
+                        <button type="button" class="btn btn-sm btn-link text-danger" data-scc-op="reset">Reiniciar reloj</button>
+                    </div>
+                </div>
+
+                <!-- Orden del día -->
+                <div class="o_sl_box">
+                    <div class="d-flex align-items-center mb-1">
+                        <b>Orden del día</b>
+                        <small class="ms-2 text-muted" data-scc-plan=""/>
+                        <button t-if="can_moderate" type="button" class="btn btn-sm o_sl_btn_outline ms-auto" data-scc="edit-agenda"><i class="fa fa-pencil"/> Editar</button>
+                    </div>
+                    <ol class="o_scc_agenda" data-scc-agenda=""/>
+                    <div t-if="can_moderate" class="o_scc_editor d-none" data-scc-editor="">
+                        <p class="small text-muted mb-1">Un punto por renglón: <code>Informe de Castores | 7 | Akela</code>
+                            (nombre | minutos | quién expone). También acepta "9:40 – 9:47 Informe de Castores".</p>
+                        <textarea class="form-control" rows="8" data-scc-agenda-text=""/>
+                        <div class="d-flex gap-2 mt-2 flex-wrap">
+                            <button type="button" class="btn btn-sm o_sl_btn" data-scc="save-agenda">Guardar</button>
+                            <label class="btn btn-sm o_sl_btn_outline mb-0"><i class="fa fa-image"/> Desde imagen o PDF
+                                <input type="file" accept="image/*,application/pdf,.txt" class="d-none" data-scc-agenda-file=""/></label>
+                            <button type="button" class="btn btn-sm o_sl_btn_outline" data-scc="template">Orden habitual del consejo</button>
+                            <button type="button" class="btn btn-sm btn-link" data-scc="cancel-agenda">Cancelar</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Turnos de palabra -->
+                <div class="o_sl_box">
+                    <b>Tiempo de cada participante</b>
+                    <div class="o_scc_speakers" data-scc-speakers=""><small class="text-muted">Aún no hay turnos.</small></div>
+                </div>
+
+                <!-- Transcripción y acta -->
+                <div t-if="can_moderate" class="o_sl_box">
+                    <b>Transcripción y acta</b>
+                    <p class="small text-muted mb-2">Lo mejor: dentro de la videollamada de Odoo toca <b>"Transcribir la llamada"</b>
+                        (graba a todos los participantes). Si la reunión es presencial usa el micrófono de este equipo.</p>
+                    <div class="d-flex gap-2 flex-wrap mb-2">
+                        <button t-if="ai_audio" type="button" class="btn btn-sm o_sl_btn_outline" data-scc="mic"><i class="fa fa-microphone"/> Grabar con este equipo</button>
+                        <button type="button" class="btn btn-sm o_sl_btn_outline" data-scc="dictation"><i class="fa fa-commenting-o"/> Dictado del navegador</button>
+                        <label t-if="ai_audio" class="btn btn-sm o_sl_btn_outline mb-0"><i class="fa fa-upload"/> Subir audio
+                            <input type="file" accept="audio/*,video/mp4" class="d-none" data-scc-audio-file=""/></label>
+                        <button type="button" class="btn btn-sm o_sl_btn_outline" data-scc="paste"><i class="fa fa-clipboard"/> Pegar texto</button>
+                    </div>
+                    <div class="o_scc_rec_status small" data-scc-rec=""/>
+                    <div class="d-none" data-scc-paste-box="">
+                        <textarea class="form-control" rows="4" placeholder="Pega aquí la transcripción o tus notas" data-scc-paste-text=""/>
+                        <button type="button" class="btn btn-sm o_sl_btn mt-1" data-scc="paste-save">Agregar a la transcripción</button>
+                    </div>
+                    <div class="o_scc_texts" data-scc-texts=""/>
+                    <div class="d-flex align-items-center gap-2 mt-2">
+                        <button type="button" class="btn o_sl_btn" data-scc="minutes"><i class="fa fa-magic"/> Generar acta</button>
+                        <small class="text-muted" data-scc-tcount=""/>
+                    </div>
+                    <div class="o_scc_minutes d-none" data-scc-minutes-out=""/>
+                    <p t-if="not ai_ready" class="small text-warning mt-2 mb-0">Sin IA configurada: el acta se llena con la transcripción
+                        tal cual, sin resumen ni acuerdos automáticos.</p>
+                </div>
+                <div class="o_scc_err alert alert-danger d-none" data-scc-err=""/>
+            </div>
+        </t>
+    </template>
+</odoo>

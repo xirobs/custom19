@@ -803,3 +803,11 @@ html.o_scout_standalone #wrapwrap { overscroll-behavior-y: none; }
     .o_sl_spec_count b { color: #c98a00; } .o_sl_spec_count .o_sl_count_ok { color: #2e9e5b; }
     .o_sl_spec_aidcell { min-width: 3rem; }
 }
+
+// Revisión de la identificación del tutor
+.o_scout_id_ok { color: #2e7d4f; font-weight: 700; }
+.o_scout_id_warn { color: #8a6d00; }
+.o_scout_id_error { color: #c0392b; font-weight: 700; }
+.o_scout_id_wait { color: #5c6b7a; }
+.o_scout_leader .o_sl_spec_board .o_sl_spec_path { font-size: 0.68rem; white-space: normal; min-width: 4.2rem; vertical-align: bottom; border-left: 1px solid rgba(255,255,255,0.15); }
+.o_scout_leader .o_sl_spec_board .o_sl_spec_cat:first-of-type { border-left: 2px solid #fff; }

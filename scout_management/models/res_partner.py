@@ -221,9 +221,18 @@ class ResPartner(models.Model):
                 and m.payment_state in ('not_paid', 'partial'))
             partner.scout_amount_due = sum(invoices.mapped('amount_residual'))
 
-    def _scout_attendance_stats(self, date_from=None, date_to=None):
-        """{partner_id: (asistencias, sesiones_contables)} usando las listas cerradas del calendario."""
+    def _scout_attendance_stats(self, date_from=None, date_to=None, include_open=False):
+        """{partner_id: (asistencias, sesiones_contables)} usando las listas cerradas del calendario.
+        include_open: también las listas de días ya pasados (o de hoy) donde ya se marcó asistencia aunque
+        no se hayan cerrado (para que los informes no salgan vacíos)."""
         domain = Domain([('member_id', 'in', self.ids), ('event_id.scout_attendance_closed', '=', True)])
+        if include_open:
+            today = fields.Date.context_today(self)
+            taken = self.env['scout.attendance.line'].sudo().search([
+                ('member_id', 'in', self.ids), ('date', '<=', today), ('status', '!=', 'absent'),
+                ('event_id.scout_attendance_closed', '=', False)]).event_id
+            domain = Domain([('member_id', 'in', self.ids)]) & (
+                Domain('event_id.scout_attendance_closed', '=', True) | Domain('event_id', 'in', taken.ids))
         if date_from:
             domain &= Domain('date', '>=', date_from)
         if date_to:

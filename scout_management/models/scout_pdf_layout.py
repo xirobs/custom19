@@ -249,3 +249,24 @@ def merge_consecutive(events):
             continue
         merged.append({'date': ev['date'], 'date_end': ev['date'], 'title': ev['title'], 'notes': ev['notes']})
     return sorted(merged, key=lambda e: (e['date'], e['title']))
+
+
+def label_values(items, key_of, stop=None):
+    """Pares etiqueta → valor en el mismo renglón (ej. "OBJETIVO  Trabajo en equipo") antes de la tabla.
+    key_of(texto) regresa la clave de la etiqueta o None."""
+    info = {}
+    for item in items:
+        key = key_of(item['text'])
+        if not key or key in info:
+            continue
+        same = sorted((i for i in items if i['page'] == item['page'] and abs(i['y'] - item['y']) <= 2.5
+                       and i['x'] > item['x'] + 1), key=lambda i: i['x'])
+        words = []
+        for other in same:
+            if key_of(other['text']) or (stop and stop(other['text'])):
+                break
+            words.append(other['text'])
+        if words:
+            info[key] = ' '.join(words).strip()
+    return info
+

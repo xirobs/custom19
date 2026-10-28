@@ -82,7 +82,10 @@ class ResPartnerLeaderPortal(models.Model):
             if company not in user.company_ids:
                 # El dirigente queda también en la empresa del grupo (multiempresa)
                 user.write({'company_ids': [fields.Command.link(company.id)]})
-            if not user.share and not user.has_group('scout_management.group_scout_officer'):
+            if partner._scout_admin_group():
+                # Jefe de grupo, secretaría y tesorería: acceso completo a la parte administrativa del sistema.
+                partner._scout_apply_admin_access()
+            elif not user.share and not user.has_group('scout_management.group_scout_officer'):
                 # Jefe de sección que era usuario interno: pasa a portal (solo ve /dirigentes, sin licencia).
                 user.sudo().write({'group_ids': [fields.Command.set([self.env.ref('base.group_portal').id])]})
                 partner.message_post(body=_('El usuario %s pasó de usuario interno a usuario de portal.', user.login))
@@ -91,6 +94,34 @@ class ResPartnerLeaderPortal(models.Model):
         # Sin depender del correo: liga para crear contraseña (WhatsApp / QR) o contraseña asignada aquí.
         wizard = self.env['scout.leader.access.wizard'].create({'partner_id': self[:1].id})
         return wizard._open()
+
+    ADMIN_GROUPS = {'group_chief': 'scout_management.group_scout_manager',
+                    'treasurer': 'scout_management.group_scout_treasurer',
+                    'secretary': 'scout_management.group_scout_officer'}
+
+    def _scout_admin_group(self):
+        """Grupo de acceso administrativo que corresponde al cargo (jefe de grupo, tesorería, secretaría)."""
+        self.ensure_one()
+        xmlid = self.ADMIN_GROUPS.get(self.sudo().scout_position_id.kind)
+        return self.env.ref(xmlid, raise_if_not_found=False) if xmlid else self.env['res.groups']
+
+    def _scout_apply_admin_access(self):
+        """Usuario interno con el acceso administrativo de su cargo. El jefe de grupo ve y modifica todo
+        (secretaría, tesorería, tienda, aprobaciones). Nunca quita accesos que ya tenga."""
+        for partner in self.sudo():
+            group = partner._scout_admin_group()
+            user = partner.with_context(active_test=False).user_ids[:1]
+            if not group or not user or not user.active:
+                continue
+            if user.share:
+                internal = self.env.ref('base.group_user')
+                user.write({'group_ids': [fields.Command.set([internal.id, group.id])]})
+                partner.message_post(body=_('%(user)s ahora es usuario del sistema con acceso de %(group)s.',
+                                            user=user.login, group=group.name))
+            elif not user.has_group(group.get_external_id()[group.id]):
+                user.write({'group_ids': [fields.Command.link(group.id)]})
+                partner.message_post(body=_('%(user)s recibió el acceso de %(group)s.', user=user.login,
+                                            group=group.name))
 
     def _scout_sync_leader_sections(self):
         """Mantiene "Dirigentes con acceso" de cada sección igual a las "Secciones a cargo" del contacto."""
@@ -113,6 +144,9 @@ class ResPartnerLeaderPortal(models.Model):
         res = super().write(vals)
         if 'scout_leading_section_ids' in vals or 'scout_section_id' in vals:
             self.filtered(lambda p: p.is_scout and p.scout_type == 'leader' and p.user_ids)._scout_sync_leader_sections()
+        if 'scout_position_id' in vals:
+            # Al nombrarlo jefe de grupo, secretaría o tesorería recibe el acceso administrativo
+            self.filtered(lambda p: p.is_scout and p.sudo().user_ids)._scout_apply_admin_access()
         return res
 
 
@@ -797,7 +831,8 @@ class ScoutLeaderPortal(models.AbstractModel):
             next((k for k, _l in Stage.TROPA_TECHNICAL if s == self.env.ref(f'scout_management.stage_tropa_tec_{k}',
                                                                             raise_if_not_found=False)), 'campismo')))
         mandatory = specialties.filtered(lambda s: aid_cat and s.category_id == aid_cat)
-        columns = [s for b in basic for s in b['levels'] if s] + list(technical) + list(mandatory)
+        path = self.path_stages(section)
+        columns = list(path) + [s for b in basic for s in b['levels'] if s] + list(technical) + list(mandatory)
         rows = self.achievements(section, columns)
         need = (tech_cat.required_count or 2) if tech_cat else 2
         for row in rows:
@@ -812,7 +847,7 @@ class ScoutLeaderPortal(models.AbstractModel):
                         top = lv
                 row['basic_levels'][b['category'].id] = top
         return {'basic': basic, 'technical': technical, 'tech_need': need, 'tech_label': tech_cat.name if tech_cat else '',
-                'mandatory': mandatory, 'rows': rows}
+                'mandatory': mandatory, 'rows': rows, 'path': path}
 
     # ------------------------------------------------------------------ cuadro de logros
     @api.model
@@ -989,7 +1024,9 @@ class ScoutLeaderPortal(models.AbstractModel):
         ine_front = self._file_from_post(post.get('ine_front_data') or post.get('ine_front'))
         ine_back = self._file_from_post(post.get('ine_back_data') or post.get('ine_back'))
         if not ine_front and not (reg_existing and reg_existing.guardian_id_front):
-            raise UserError(_('Adjunta la foto de la INE del tutor (frente).'))
+            raise UserError(_('Adjunta la foto de la identificación del tutor (INE, FM3 o pasaporte).'))
+        id_type, id_check = self.env['scout.registration']._scout_verify_id_uploads(
+            post.get('guardian_id_type'), [(ine_front, 'front'), (ine_back, 'back')])
         signed_by = (post.get('guardian_signed_by') or '').strip() or member.scout_guardian_id.name
         if not signed_by:
             raise UserError(_('Escribe el nombre de quien firma.'))
@@ -1013,6 +1050,9 @@ class ScoutLeaderPortal(models.AbstractModel):
             'guardian_signed_by': signed_by, 'guardian_signature': signature.split(',', 1)[1],
             'signed_date': self._today(), 'leader_user_id': self.env.uid,
         }
+        vals.update(guardian_id_type=id_type)
+        if id_check:
+            vals['guardian_id_check'] = id_check
         if ine_front:
             vals.update(guardian_id_front=ine_front[0], guardian_id_front_name=ine_front[1])
         if ine_back:

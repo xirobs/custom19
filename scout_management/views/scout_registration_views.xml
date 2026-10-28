@@ -137,7 +137,9 @@
                                 <field name="consent_update"/>
                                 <field name="consent_complete" invisible="1"/>
                             </group>
-                            <group string="INE del tutor (la firma debe ser igual)">
+                            <group string="Identificación del tutor (la firma debe ser igual)">
+                                <field name="guardian_id_type"/>
+                                <field name="guardian_id_check" readonly="1" invisible="not guardian_id_check"/>
                                 <field name="guardian_id_front" widget="image" filename="guardian_id_front_name" options="{'size': [0, 180]}"/>
                                 <field name="guardian_id_back" widget="image" filename="guardian_id_back_name" options="{'size': [0, 180]}"/>
                                 <field name="guardian_id_front_name" invisible="1"/>

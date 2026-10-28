@@ -1,0 +1,64 @@
+// Consejo en vivo (portal de dirigentes)
+.o_scc {
+    --scc-color: #6c7a89;
+    .o_scc_top { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; margin: 8px 0 4px; }
+    .o_scc_signed { color: #1c7c4f; font-weight: 600; small { font-weight: 400; color: #6c757d; } }
+    .o_scc_clock {
+        position: relative; display: flex; gap: 16px; align-items: center; padding: 16px; border-radius: 18px;
+        background: #10233b; color: #fff; border: 4px solid var(--scc-color); margin: 8px 0 4px;
+        transition: border-color .4s;
+        &.o_scc_idle { --scc-color: #6c7a89; }
+        &.o_scc_green { --scc-color: #22a06b; }
+        &.o_scc_yellow { --scc-color: #f5b301; }
+        &.o_scc_red { --scc-color: #e5383b; }
+        &.o_scc_over { --scc-color: #e5383b; animation: o_scc_blink 1s infinite; }
+        &.o_scc_paused .o_scc_time { opacity: .6; }
+        &:fullscreen, &.o_scc_big {
+            flex-direction: column; justify-content: center; border-width: 14px; border-radius: 0;
+            .o_scc_ring { width: #{"min(70vh, 80vw)"}; height: #{"min(70vh, 80vw)"}; }
+            .o_scc_time { font-size: #{"min(14vh, 16vw)"}; }
+            .o_scc_phase { font-size: 3vh; }
+            .o_scc_who { text-align: center; .o_scc_speaker { font-size: 5vh; } }
+        }
+        &.o_scc_big { position: fixed; inset: 0; z-index: 2000; margin: 0; }
+    }
+    .o_scc_ring {
+        position: relative; width: 150px; height: 150px; flex: none;
+        svg { width: 100%; height: 100%; transform: rotate(-90deg); }
+        circle { fill: none; stroke-width: 10; }
+        .o_scc_ring_bg { stroke: rgba(255, 255, 255, .12); }
+        .o_scc_ring_fg { stroke: var(--scc-color); stroke-linecap: round; transition: stroke-dashoffset .25s linear, stroke .4s; }
+    }
+    .o_scc_ring_txt { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+    .o_scc_time { font-size: 38px; font-weight: 800; font-variant-numeric: tabular-nums; line-height: 1; }
+    .o_scc_phase { font-size: 12px; color: var(--scc-color); font-weight: 700; text-align: center; margin-top: 4px; }
+    .o_scc_who { min-width: 0;
+        small { opacity: .7; text-transform: uppercase; letter-spacing: .05em; font-size: 11px; }
+        .o_scc_speaker { font-size: 22px; font-weight: 800; line-height: 1.15; word-break: break-word; }
+        .o_scc_point { margin-top: 4px; opacity: .9; }
+        .o_scc_next, .o_scc_total { font-size: 13px; opacity: .7; margin-top: 2px; } }
+    .o_scc_full { position: absolute; top: 8px; right: 8px; background: none; border: 0; color: rgba(255, 255, 255, .7); }
+    .o_scc_legend { display: flex; gap: 10px; flex-wrap: wrap; font-size: 12px; margin-bottom: 8px;
+        span::before { content: ''; display: inline-block; width: 10px; height: 10px; border-radius: 50%; margin-right: 4px; vertical-align: middle; }
+        .g::before { background: #22a06b; } .y::before { background: #f5b301; } .r::before { background: #e5383b; } }
+    .o_scc_ctrl_row { display: flex; flex-wrap: wrap; gap: 6px; }
+    .o_scc_people { display: flex; flex-wrap: wrap; gap: 6px; max-height: 220px; overflow-y: auto;
+        .o_scc_person { border: 1px solid #c9d3df; border-radius: 999px; background: #fff;
+            .fa-check-circle { color: #22a06b; }
+            &.o_holder { background: #10233b; color: #fff; border-color: #10233b; } } }
+    .o_scc_agenda { padding-left: 0; list-style: none; margin: 0;
+        li { display: flex; gap: 8px; align-items: baseline; padding: 6px 4px; border-bottom: 1px solid #eef1f4; }
+        .o_scc_ag_start { width: 42px; color: #6c757d; font-variant-numeric: tabular-nums; flex: none; }
+        .o_scc_ag_name { flex: 1; min-width: 0; }
+        .o_scc_ag_min { white-space: nowrap; font-size: 13px; color: #6c757d; }
+        .o_scc_ag_current { background: #fff8e1; font-weight: 700; border-radius: 6px; }
+        .o_scc_ag_done { opacity: .6; } }
+    .o_scc_level { display: inline-block; width: 100px; height: 6px; background: #e9ecef; border-radius: 3px; vertical-align: middle;
+        span { display: block; height: 100%; background: #22a06b; } }
+    .o_scc_texts { max-height: 180px; overflow-y: auto; margin-top: 6px; .o_scc_tline { font-size: 13px; padding: 3px 0; border-bottom: 1px dashed #e3e7eb; } }
+    .o_scc_minutes { margin-top: 10px; padding: 10px; background: #f6f8fa; border-radius: 10px; h6 { margin-top: 8px; } }
+}
+@keyframes o_scc_blink { 50% { border-color: transparent; } }
+@media (max-width: 480px) {
+    .o_scc .o_scc_clock:not(:fullscreen):not(.o_scc_big) { flex-direction: column; text-align: center; }
+}

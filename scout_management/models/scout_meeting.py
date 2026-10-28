@@ -76,6 +76,14 @@ class ScoutMeeting(models.Model):
             raise UserError(_('El acta ya está aprobada; no se puede modificar.'))
         return super().write(vals)
 
+    def action_reopen(self):
+        """El jefe de grupo puede reabrir un acta aprobada para corregirla."""
+        self.env['scout.approval.mixin']._scout_check_manager(_('reabrir un acta aprobada'))
+        for meeting in self.filtered(lambda m: m.state == 'approved'):
+            meeting.with_context(scout_meeting_force=True).write({'state': 'draft'})
+            meeting.message_post(body=_('Acta reabierta para correcciones por %s.', self.env.user.name))
+        return True
+
     def action_submit(self):
         for meeting in self.filtered(lambda m: m.state == 'draft'):
             if not meeting.minutes and not meeting.agreement_ids:

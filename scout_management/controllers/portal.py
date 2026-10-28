@@ -4,7 +4,7 @@ import json
 import logging
 
 from odoo import _, fields, http
-from odoo.exceptions import AccessError, MissingError, ValidationError
+from odoo.exceptions import AccessError, MissingError, UserError, ValidationError
 from odoo.http import request
 from odoo.tools import consteq
 
@@ -300,16 +300,17 @@ def scout_save_registration(post, member, guardian=None):
         return None, _('La fecha de nacimiento no es válida.')
     gender = post.get('gender') if post.get('gender') in ('m', 'f') else False
     Section = env['scout.section'].sudo()
-    section = Section.browse(int(post['section_id'])).exists() if str(post.get('section_id') or '').isdigit() \
-        else Section
-    if not section:
-        section = Section._scout_suggest(birthdate, gender)
-    if not section:
-        return None, _('No encontramos una sección para esa edad; contacta a la jefatura.')
     if not member:
         # Reinscripción con la liga general: si ya es (o fue) miembro, se actualiza su expediente, no se duplica.
         member = env['res.partner'].sudo()._scout_find_existing(
             post.get('first_name'), post.get('last_name'), post.get('last_name2'), birthdate)
+    # La sección no la elige quien llena la ficha: un miembro conserva la suya (los pases los registran los
+    # jefes) y uno nuevo va a la que le corresponde por edad y sexo.
+    section = member.scout_section_id if member and member.scout_section_id \
+        and not member.scout_section_id.is_leadership else Section._scout_suggest(birthdate, gender)
+    if not section:
+        return None, _('No hay una sección del grupo para esa edad; revisa la fecha de nacimiento o contacta a '
+                       'la jefatura.')
     Registration = env['scout.registration'].sudo()
     existing = Registration.search([('member_id', '=', member.id), ('cycle_id', '=', cycle.id),
                                     ('state', '!=', 'cancel')], limit=1) if member else Registration
@@ -344,14 +345,24 @@ def scout_save_registration(post, member, guardian=None):
         'member_signed_by': post.get('member_signed_by'), 'member_signature': _signature('member_signature'),
         'signed_date': fields.Date.context_today(request.env.user),
     }
-    for key, field in (('ine_front', 'guardian_id_front'), ('ine_back', 'guardian_id_back')):
+    id_uploads = []
+    for key, field, side in (('ine_front', 'guardian_id_front', 'front'), ('ine_back', 'guardian_id_back', 'back')):
         upload = post.get(key)
         if upload and hasattr(upload, 'read'):
             content = upload.read()
-            if len(content) > MAX_PROOF_SIZE * 2:
-                return None, _('La INE no debe superar 10 MB.')
+            if len(content) > MAX_PROOF_SIZE * 3:
+                return None, _('La foto de la identificación no debe superar 15 MB.')
             if content:
-                vals.update({field: base64.b64encode(content), f'{field}_name': upload.filename})
+                encoded = base64.b64encode(content)
+                vals.update({field: encoded, f'{field}_name': upload.filename})
+                id_uploads.append(((encoded, upload.filename), side))
+    try:
+        vals['guardian_id_type'], check = env['scout.registration'].sudo()._scout_verify_id_uploads(
+            post.get('guardian_id_type'), id_uploads)
+        if check:
+            vals['guardian_id_check'] = check
+    except UserError as e:
+        return None, str(e.args[0] if e.args else e)
     if not vals.get('guardian_id_front'):
         previous = Registration.search([('member_id', '=', member.id), ('guardian_id_front', '!=', False)],
                                        order='id desc', limit=1) if member else Registration
@@ -359,7 +370,7 @@ def scout_save_registration(post, member, guardian=None):
             vals.update(guardian_id_front=previous.guardian_id_front,
                         guardian_id_front_name=previous.guardian_id_front_name)
         elif not (existing and existing.guardian_id_front):
-            return None, _('Adjunta la INE del padre, madre o tutor (frente).')
+            return None, _('Adjunta la identificación del padre, madre o tutor (INE, FM3 o pasaporte).')
     if member:
         vals['kind'] = 'return' if member.scout_state == 'inactive' else 'renewal'
     proof = post.get('payment_proof')
@@ -496,3 +507,18 @@ class ScoutReceiptController(http.Controller):
         headers = [('Content-Type', 'application/pdf'), ('Content-Length', len(pdf)),
                    ('Content-Disposition', f'inline; filename="Recibo {sale.name}.pdf"')]
         return request.make_response(pdf, headers=headers)
+
+
+class ScoutIdCheck(http.Controller):
+
+    @http.route(['/scouts/identificacion/validar'], type='jsonrpc', auth='public', website=True)
+    def scout_id_validate(self, data=None, doc_type='ine', side='front', **kw):
+        """Revisa al momento la foto de la identificación del tutor (INE, FM3 o pasaporte)."""
+        count = request.session.get('scout_id_checks', 0)
+        if count >= 25:
+            return {'level': 'warn', 'message': _('Foto recibida; se revisará al enviar la ficha.')}
+        request.session['scout_id_checks'] = count + 1
+        Registration = request.env['scout.registration'].sudo()
+        content, mimetype = Registration._scout_decode_upload(data or '')
+        return Registration._scout_check_id_document(content, mimetype, doc_type, side)
+

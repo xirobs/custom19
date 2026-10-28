@@ -1,0 +1,53 @@
+// Recuadro del consejo dentro de la videollamada de Odoo
+.o_scout_ccall {
+    position: fixed;
+    left: 12px;
+    bottom: 84px;
+    z-index: 1100;
+    width: 300px;
+    max-width: calc(100vw - 24px);
+    border-radius: 14px;
+    background: #10233b;
+    color: #fff;
+    box-shadow: 0 8px 28px rgba(0, 0, 0, .35);
+    border: 3px solid var(--ccall-color, #22a06b);
+    font-size: 13px;
+    overflow: hidden;
+    --ccall-color: #22a06b;
+    &.o_scout_ccall_idle { --ccall-color: #6c7a89; }
+    &.o_scout_ccall_green { --ccall-color: #22a06b; }
+    &.o_scout_ccall_yellow { --ccall-color: #f5b301; }
+    &.o_scout_ccall_red { --ccall-color: #e5383b; }
+    &.o_scout_ccall_over { --ccall-color: #e5383b; animation: o_scout_ccall_blink 1s infinite; }
+    .o_scout_ccall_head {
+        display: flex; align-items: center; gap: 8px; padding: 8px 10px; cursor: pointer;
+        background: var(--ccall-color); color: #10233b;
+    }
+    &.o_scout_ccall_red .o_scout_ccall_head, &.o_scout_ccall_over .o_scout_ccall_head,
+    &.o_scout_ccall_green .o_scout_ccall_head, &.o_scout_ccall_idle .o_scout_ccall_head { color: #fff; }
+    .o_scout_ccall_dot { width: 10px; height: 10px; border-radius: 50%; background: currentColor; flex: none; }
+    .o_scout_ccall_clock { font-size: 22px; font-weight: 800; font-variant-numeric: tabular-nums; line-height: 1; }
+    .o_scout_ccall_title { font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
+    .o_scout_ccall_body { padding: 8px 10px 10px; display: flex; flex-direction: column; gap: 6px; }
+    .o_scout_ccall_bar { height: 6px; border-radius: 3px; background: rgba(255, 255, 255, .15); overflow: hidden;
+        span { display: block; height: 100%; background: var(--ccall-color); transition: width 1s linear; } }
+    .o_scout_ccall_meta, .o_scout_ccall_next { opacity: .85; }
+    .o_scout_ccall_sign { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; .fa-check-circle { color: #5ddf9b; } }
+    .o_scout_ccall_rec { color: #ff8a8a; .fa { font-size: 9px; animation: o_scout_ccall_blink 1.2s infinite; } }
+    .o_scout_ccall_ctrl, .o_scout_ccall_rec_row { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; }
+    .o_scout_ccall_level { flex: 1; height: 6px; background: rgba(255, 255, 255, .15); border-radius: 3px; overflow: hidden;
+        span { display: block; height: 100%; background: #5ddf9b; } }
+    .o_scout_ccall_text { font-style: italic; opacity: .8; max-height: 54px; overflow: hidden; }
+    .o_scout_ccall_err { color: #ffb4b4; }
+    .o_scout_ccall_link { color: #9fd0ff; font-size: 12px; }
+    .o_scout_ccall_label { display: flex; align-items: center; justify-content: space-between; font-weight: 600; }
+    .o_scout_ccall_min { background: #1d3654; color: #fff; border: 1px solid rgba(255, 255, 255, .25); border-radius: 6px;
+        font-size: 12px; padding: 1px 4px; }
+    .o_scout_ccall_people { display: flex; flex-wrap: wrap; gap: 4px; max-height: 110px; overflow-y: auto;
+        .btn { background: rgba(255, 255, 255, .1); color: #fff; border: 1px solid rgba(255, 255, 255, .2);
+            padding: 2px 8px; border-radius: 999px; font-size: 12px; }
+        .btn.o_talking { border-color: #5ddf9b; color: #5ddf9b; }
+        .btn.o_holder { background: var(--ccall-color); color: #10233b; border-color: transparent; font-weight: 700; } }
+    &.o_collapsed { width: auto; max-width: 70vw; }
+}
+@keyframes o_scout_ccall_blink { 50% { opacity: .55; } }

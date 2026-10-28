@@ -28,6 +28,7 @@ function setupPlan(root) {
     const confirmWrap = root.querySelector(".o_sl_confirm_wrap");
     let dirty = false;
     let dictationLog = "";
+    let pendingLocation = "";
 
     const showMessages = (messages, warnings, error) => {
         const parts = [];
@@ -167,6 +168,9 @@ function setupPlan(root) {
         return true;
     };
 
+    root.querySelectorAll(".o_sl_plan_theme, .o_sl_plan_objective").forEach((el) =>
+        el.addEventListener("input", () => markDirty())
+    );
     listEl.addEventListener("input", (ev) => {
         const el = ev.target.closest("[data-k]");
         if (!el) {
@@ -303,6 +307,16 @@ function setupPlan(root) {
                     return;
                 }
                 if (replaceAll(result.lines, "las del archivo")) {
+                    const fileInfo = result.info || {};
+                    const themeEl = root.querySelector(".o_sl_plan_theme");
+                    const objectiveEl = root.querySelector(".o_sl_plan_objective");
+                    if (fileInfo.theme && themeEl) {
+                        themeEl.value = fileInfo.theme;
+                    }
+                    if (fileInfo.objective && objectiveEl) {
+                        objectiveEl.value = fileInfo.objective;
+                    }
+                    pendingLocation = fileInfo.location || "";
                     showMessages(result.messages, result.warnings);
                     root.querySelector(".o_sl_plan_lines").scrollIntoView({ behavior: "smooth", block: "start" });
                 }
@@ -359,9 +373,21 @@ function setupPlan(root) {
             saveBtn.disabled = true;
             try {
                 const confirmBox = root.querySelector(".o_sl_confirm_approved");
+                const themeEl = root.querySelector(".o_sl_plan_theme");
+                const objectiveEl = root.querySelector(".o_sl_plan_objective");
+                const info = {};
+                if (themeEl) {
+                    info.theme = themeEl.value;
+                }
+                if (objectiveEl) {
+                    info.objective = objectiveEl.value;
+                }
+                if (pendingLocation) {
+                    info.location = pendingLocation;
+                }
                 const result = await rpc("/dirigentes/api/plan/guardar", {
                     section_id: data.section_id, event_id: data.event_id, lines, dictation: dictationLog,
-                    confirm_approved: Boolean(confirmBox && confirmBox.checked),
+                    confirm_approved: Boolean(confirmBox && confirmBox.checked), info,
                 });
                 if (!result.ok) {
                     if (confirmWrap) {

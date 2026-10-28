@@ -28,8 +28,17 @@
                     <button name="action_reject" type="object" string="Regresar para correcciones"
                             invisible="state != 'to_approve'" groups="scout_management.group_scout_manager"/>
                     <button name="%(scout_management.action_report_meeting)d" type="action" string="Imprimir acta"/>
+                    <button name="action_scout_open_live" type="object" string="Consejo en vivo" icon="fa-clock-o"
+                            invisible="state in ('approved', 'cancel')"/>
+                    <button name="action_scout_videocall" type="object" string="Videollamada" icon="fa-video-camera"
+                            invisible="state in ('approved', 'cancel')"/>
+                    <button name="action_scout_generate_minutes" type="object" string="Generar acta de la transcripción"
+                            icon="fa-magic" invisible="state != 'draft' or not transcript_ids"
+                            confirm="Se llenará el desarrollo por punto, el resumen y los acuerdos a partir de la transcripción. ¿Continuar?"/>
                     <button name="action_cancel" type="object" string="Cancelar" invisible="state in ('approved', 'cancel')"/>
                     <button name="action_draft" type="object" string="Regresar a borrador" invisible="state != 'cancel'"/>
+                    <button name="action_reopen" type="object" string="Reabrir para corregir" invisible="state != 'approved'"
+                            groups="scout_management.group_scout_manager" confirm="¿Reabrir el acta aprobada para corregirla? Tendrá que aprobarse de nuevo."/>
                     <field name="state" widget="statusbar" statusbar_visible="draft,to_approve,approved"/>
                 </header>
                 <sheet>
@@ -61,12 +70,63 @@
                                 <field name="attendee_ids" widget="many2many_tags_avatar" readonly="state == 'approved'"/>
                                 <field name="absent_ids" widget="many2many_tags_avatar"/>
                             </group>
+                            <separator string="Firmas de asistencia (al entrar a la videollamada o en la pantalla del consejo)"/>
+                            <field name="checkin_ids" readonly="1">
+                                <list>
+                                    <field name="name"/>
+                                    <field name="time_in"/>
+                                    <field name="time_out"/>
+                                    <field name="minutes"/>
+                                    <field name="source"/>
+                                    <field name="signature"/>
+                                </list>
+                            </field>
                         </page>
                         <page string="Orden del día" name="agenda">
-                            <field name="agenda" readonly="state == 'approved'" placeholder="1. Lista de asistencia y quórum&#10;2. Lectura del acta anterior&#10;3. Informes de sección&#10;4. Informe de tesorería&#10;5. Asuntos generales"/>
+                            <div class="mb-2" invisible="state == 'approved'">
+                                <button name="action_scout_load_template" type="object" string="Cargar orden del día del consejo"
+                                        class="btn-secondary btn-sm" confirm="Se reemplazarán los puntos actuales. ¿Continuar?"/>
+                                <span class="text-muted ms-2">Duración: <field name="agenda_minutes" class="d-inline"/> min · El reloj y la carga desde imagen están en "Consejo en vivo".</span>
+                            </div>
+                            <field name="agenda_line_ids" readonly="state == 'approved'">
+                                <list editable="bottom">
+                                    <field name="sequence" widget="handle"/>
+                                    <field name="name"/>
+                                    <field name="responsible"/>
+                                    <field name="duration"/>
+                                    <field name="extra_minutes" optional="hide"/>
+                                    <field name="spent_display" string="Usado"/>
+                                    <field name="summary" optional="hide"/>
+                                </list>
+                            </field>
+                            <field name="agenda" readonly="state == 'approved'" invisible="agenda_line_ids" placeholder="1. Lista de asistencia y quórum&#10;2. Lectura del acta anterior&#10;3. Informes de sección&#10;4. Informe de tesorería&#10;5. Asuntos generales"/>
                         </page>
                         <page string="Desarrollo" name="minutes">
+                            <field name="ai_summary" readonly="state == 'approved'" invisible="not ai_summary"/>
                             <field name="minutes" readonly="state == 'approved'"/>
+                        </page>
+                        <page string="Turnos de palabra" name="turns">
+                            <field name="turn_ids" readonly="1">
+                                <list decoration-danger="over">
+                                    <field name="start"/>
+                                    <field name="speaker_name"/>
+                                    <field name="agenda_line_id"/>
+                                    <field name="planned_display"/>
+                                    <field name="used_display"/>
+                                    <field name="over" column_invisible="1"/>
+                                </list>
+                            </field>
+                        </page>
+                        <page string="Transcripción" name="transcript">
+                            <field name="transcript_ids">
+                                <list editable="bottom">
+                                    <field name="time"/>
+                                    <field name="agenda_line_id" domain="[('meeting_id', '=', parent.id)]"/>
+                                    <field name="speakers" optional="show"/>
+                                    <field name="text"/>
+                                    <field name="source" optional="hide"/>
+                                </list>
+                            </field>
                         </page>
                         <page string="Acuerdos" name="agreements">
                             <field name="agreement_ids">

@@ -55,7 +55,7 @@
                 <nav t-if="section" class="o_sl_nav">
                     <a t-att-href="'/dirigentes/%s' % section.id" t-attf-class="#{'active' if leader_page in ('home', 'list') else ''}"><i class="fa fa-home"/><span>Inicio</span></a>
                     <a t-att-href="'/dirigentes/%s/plan' % section.id" t-attf-class="#{'active' if leader_page in ('plan', 'activities') else ''}"><i class="fa fa-calendar"/><span>Planificación</span></a>
-                    <a t-att-href="'/dirigentes/%s/adelantos' % section.id" t-attf-class="#{'active' if leader_page == 'progress' else ''}"><i class="fa fa-star"/><span>Adelantos</span></a>
+                    <a t-att-href="'/dirigentes/%s/logros' % section.id" t-attf-class="#{'active' if leader_page == 'progress' else ''}"><i class="fa fa-star"/><span>Adelantos</span></a>
                     <a t-att-href="'/dirigentes/%s/informe' % section.id" t-attf-class="#{'active' if leader_page == 'report' else ''}"><i class="fa fa-file-text-o"/><span>Informes</span></a>
                     <a t-att-href="'/dirigentes/%s/miembros' % section.id" t-attf-class="#{'active' if leader_page in ('members', 'messages') else ''}"><i class="fa fa-users"/><span>Miembros</span></a>
                 </nav>
@@ -157,8 +157,9 @@
                     <b t-if="enroll['renew']['none'] or enroll['renew']['unpaid']" class="o_sl_badge" t-out="len(enroll['renew']['none']) + len(enroll['renew']['unpaid'])"/></a>
                 <a class="o_sl_tile" t-att-href="'/dirigentes/%s/equipos' % section.id"><i class="fa fa-th-large"/><span t-out="'%ss y cargos' % (section.patrol_label or 'Equipo')"/><small>Mover miembros y cambiar guía</small></a>
                 <a class="o_sl_tile" t-att-href="'/dirigentes/%s/rutas' % section.id"><i class="fa fa-road"/><span>Rutas de enlace y permanencia</span><small>Tiempo restante de cada scout</small></a>
-                <a class="o_sl_tile" t-att-href="'/dirigentes/%s/logros' % section.id"><i class="fa fa-trophy"/><span>Cuadro de logros</span><small>Adelantos, especialidades y correas</small></a>
+                <a class="o_sl_tile" t-att-href="'/dirigentes/%s/logros' % section.id"><i class="fa fa-trophy"/><span>Cuadro de adelantos</span><small>Adelantos, especialidades y correas</small></a>
                 <a class="o_sl_tile" t-att-href="'/dirigentes/%s/calendario' % section.id"><i class="fa fa-calendar-check-o"/><span>Calendario del grupo</span><small>Todas las secciones por colores</small></a>
+                <a class="o_sl_tile o_sl_tile_council" href="/scouts/consejo"><i class="fa fa-clock-o"/><span>Consejo de grupo</span><small>Reloj de turnos, firma de asistencia y acta</small></a>
                 <a class="o_sl_tile" t-att-href="'/dirigentes/%s/plan' % section.id"><i class="fa fa-calendar"/><span>Planificación trimestral</span>
                     <small t-out="'%s actividades planeadas' % dash['planned_count']"/></a>
                 <a class="o_sl_tile" t-att-href="'/dirigentes/%s/plan?tipo=anual' % section.id"><i class="fa fa-calendar-o"/><span>Planificación anual</span><small>Campamentos, salidas y eventos del ciclo</small></a>
@@ -169,13 +170,15 @@
                     <small t-if="dash['annual_report']" t-out="dict(dash['annual_report']._fields['state'].selection).get(dash['annual_report'].state)"/>
                     <small t-else="">Por hacer</small></a>
                 <a class="o_sl_tile" t-att-href="'/dirigentes/%s/asistencia' % section.id"><i class="fa fa-check-square-o"/><span>Control de asistencia</span><small>Cantidad y % por miembro</small></a>
-                <a class="o_sl_tile" t-att-href="'/dirigentes/%s/adelantos' % section.id"><i class="fa fa-star"/><span>Adelantos e insignias</span></a>
                 <t t-set="res_count" t-value="len(request.env['scout.resource']._scout_for_section(section))"/>
                 <a class="o_sl_tile o_sl_tile_res" t-att-href="'/dirigentes/%s/recursos' % section.id"><i class="fa fa-book"/><span>Recursos para dirigentes</span>
                     <small t-out="'%s manuales, PDF y videos' % res_count if res_count else 'Manuales, PDF y videos'"/></a>
                 <a class="o_sl_tile" t-att-href="'/dirigentes/%s/miembros' % section.id"><i class="fa fa-users"/><span>Miembros y fichas</span><small t-out="'Todas las secciones' if section.is_leadership else '%s activos' % len(dash['members'])"/></a>
                 <a class="o_sl_tile" t-att-href="'/dirigentes/%s/mensajes' % section.id"><i class="fa fa-comments"/><span>Mensajes de familias</span>
                     <b t-if="dash['messages_pending']" class="o_sl_badge" t-out="dash['messages_pending']"/></a>
+                <a t-if="not request.env.user.share and request.env.user.has_group('scout_management.group_scout_officer')" class="o_sl_tile o_sl_tile_admin"
+                   t-att-href="'/odoo?menu_id=%s' % request.env.ref('scout_management.menu_scout_root').id"><i class="fa fa-briefcase"/><span>Administración del grupo</span>
+                    <small>Secretaría, tesorería, tienda y aprobaciones</small></a>
                 <a t-if="dash.get('insurance')" class="o_sl_tile o_sl_tile_insurance" href="/seguro"><i class="fa fa-shield"/><span>Seguro Scout</span>
                     <small>Altas, relaciones, pagos y siniestros</small></a>
             </div>
@@ -191,7 +194,7 @@
             <h6 t-if="dash['next_events']" class="o_sl_h">Próximas actividades</h6>
             <a t-foreach="dash['next_events']" t-as="e" class="o_sl_row" t-att-href="'/dirigentes/%s/actividad/%s' % (section.id, e.id)">
                 <div class="o_sl_date"><b t-out="local_dt(e.start).strftime('%d')"/><small t-out="['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'][local_dt(e.start).month - 1]"/></div>
-                <div><div class="fw-bold" t-out="e.name"/><small class="text-muted" t-out="e.scout_theme or e.scout_section_names"/></div>
+                <div><div class="fw-bold" t-out="e.scout_theme or e.name"/><small class="text-muted" t-out="e.name if e.scout_theme else e.scout_section_names"/></div>
                 <i class="fa fa-chevron-right ms-auto text-muted"/>
             </a>
         </t>
@@ -600,15 +603,16 @@
                             <a t-if="d[0].weekday() == 5 and d[0] &gt;= svc._today()" class="o_sl_weekend" t-att-href="'/dirigentes/%s/actividad/nueva?date=%s&amp;date_end=%s&amp;tipo=camp&amp;time_from=17:00&amp;time_to=13:00' % (section.id, d[0] - relativedelta(days=1), d[0] + relativedelta(days=1))"><i class="fa fa-plus"/> Vie–Dom</a>
                         </div>
                         <a t-foreach="d[1]" t-as="e" class="o_sl_plan_event" t-att-href="'/dirigentes/%s/actividad/%s/programa' % (section.id, e.id)" t-att-style="'border-left-color:%s' % svc.category_hex(e)">
-                            <b t-out="e.name"/>
+                            <b t-out="e.scout_theme or e.name"/>
                             <i t-if="e.scout_done" class="fa fa-check-circle text-success" title="Realizada"/>
                             <span t-if="e.scout_scope == 'group'" class="o_sl_badge o_sl_badge_soft">Grupo</span>
                             <span t-if="e.scout_scope == 'section'" t-attf-class="o_sl_pstate o_sl_pstate_#{e.scout_plan_state or 'draft'}" t-out="plan_states.get(e.scout_plan_state)"/>
                             <small class="d-block text-muted">
                                 <t t-if="e.scout_date_end and e.scout_date_end != e.scout_date" t-out="'%s %s – %s %s · ' % (wd[e.scout_date.weekday()], e.scout_date.day, wd[e.scout_date_end.weekday()], e.scout_date_end.day)"/>
                                 <t t-out="local_dt(e.start).strftime('%H:%M')"/>
-                                <t t-if="e.scout_theme"> · <t t-out="e.scout_theme"/></t>
-                                <t t-if="not e.scout_theme and not e.scout_objective"> · <span class="text-danger">sin temática ni objetivos</span></t>
+                                <t t-if="e.scout_theme"> · <t t-out="e.name"/></t>
+                                <t t-if="not e.scout_theme and not e.scout_objective"> · <span class="text-danger">sin tema ni objetivo</span></t>
+                                <span t-if="e.scout_objective" class="d-block text-truncate" style="max-width: 32rem">Objetivo: <t t-out="e.scout_objective"/></span>
                                 <t t-if="e.scout_plan_line_ids"> · <i class="fa fa-list-ol"/> <t t-out="len(e.scout_plan_line_ids)"/> act.</t>
                             </small>
                         </a>
@@ -643,7 +647,7 @@
         <t t-call="scout_management.leader_layout">
             <div class="o_sl_title_row">
                 <h5 class="o_sl_h mb-0">Adelantos e insignias</h5>
-                <a class="btn btn-sm o_sl_btn_outline" t-att-href="'/dirigentes/%s/logros' % section.id"><i class="fa fa-trophy"/> Cuadro de logros</a>
+                <a class="btn btn-sm o_sl_btn_outline" t-att-href="'/dirigentes/%s/logros' % section.id"><i class="fa fa-trophy"/> Cuadro de adelantos</a>
             </div>
             <form method="get" class="mb-3" data-sl-autosubmit="1">
                 <label class="form-label">1. ¿Qué vas a registrar?</label>
@@ -795,7 +799,7 @@
                 <h5 class="o_sl_h mb-0">Miembros</h5>
                 <div class="d-flex gap-2">
                     <a class="btn btn-sm o_sl_btn_outline" t-att-href="'/dirigentes/%s/asistencia' % section.id" title="Control de asistencia"><i class="fa fa-check-square-o"/></a>
-                    <a class="btn btn-sm o_sl_btn_outline" t-att-href="'/dirigentes/%s/adelantos' % section.id"><i class="fa fa-star"/></a>
+                    <a class="btn btn-sm o_sl_btn_outline" t-att-href="'/dirigentes/%s/logros' % section.id" title="Cuadro de adelantos"><i class="fa fa-star"/></a>
                     <a class="btn btn-sm o_sl_btn_outline" t-att-href="'/dirigentes/%s/mensajes' % section.id"><i class="fa fa-comments"/></a>
                     <a class="btn btn-sm o_sl_btn_outline" t-att-href="'/dirigentes/%s/informe' % section.id"><i class="fa fa-file-text-o"/></a>
                 </div>
@@ -1026,23 +1030,25 @@
         </t>
     </template>
 
-    <!-- Cuadro de logros: nombre a la izquierda, termómetro y casillas a la derecha -->
+    <!-- Cuadro de adelantos: nombre a la izquierda, termómetro y casillas a la derecha -->
     <!-- Especialidades de Tropa: básicas por niveles, técnicas (2) y primeros auxilios -->
     <template id="leader_specialty_board" name="Dirigentes: especialidades por niveles">
         <t t-call="scout_management.leader_layout">
             <t t-set="mark" t-value="{'achieved': '✓', 'in_progress': '½'}"/>
             <div class="o_sl_title_row">
-                <h5 class="o_sl_h mb-0">Especialidades</h5>
-                <a class="btn btn-sm o_sl_btn_outline" t-att-href="'/dirigentes/%s/logros' % section.id"><i class="fa fa-road"/> Adelantos</a>
+                <h5 class="o_sl_h mb-0">Cuadro de adelantos</h5>
             </div>
             <form method="get" data-sl-autosubmit="1" class="mb-2">
                 <select name="ver" class="form-select">
-                    <option value="adelantos">Adelantos (Promesa → insignia terminal)</option>
-                    <option value="tropa" selected="selected">Especialidades: básicas, técnicas y primeros auxilios</option>
+                    <option value="adelantos" selected="selected">Adelantos y especialidades (amarillo · verde · rojo)</option>
                     <option value="colores">Especialidades por colores (resumen)</option>
+                    <optgroup label="Especialidades e insignias">
+                        <option t-foreach="categories" t-as="c" t-att-value="'cat%s' % (c[0].id or 0)" t-out="'%s (%s)' % (c[0].name or 'Otras', len(c[1]))"/>
+                    </optgroup>
                 </select>
             </form>
             <p class="o_sl_hint">Toca una casilla: <b>½</b> en curso → <b class="text-success">✓</b> logrado → vacío.
+                <b>Adelantos:</b> el termómetro muestra el avance de la Promesa a la insignia terminal.
                 <b>Básicas:</b> cada una tiene nivel <span class="o_sl_lvl" style="background:#f2c200">A</span> amarillo,
                 <span class="o_sl_lvl" style="background:#2e9e44">V</span> verde y <span class="o_sl_lvl" style="background:#d7262f">R</span> rojo.
                 <b>Técnicas:</b> se piden <t t-out="board['tech_need']"/> de la lista.
@@ -1052,6 +1058,8 @@
                     <thead>
                         <tr>
                             <th class="o_sl_mx_name" rowspan="2">Scout</th>
+                            <th class="o_sl_achv_thermo" rowspan="2">Avance</th>
+                            <th t-foreach="board['path']" t-as="c" class="o_sl_achv_col o_sl_spec_path" rowspan="2" t-att-title="c.name"><span t-out="svc.stage_label(c, section)"/></th>
                             <th t-foreach="board['basic']" t-as="b" colspan="3" class="o_sl_spec_cat" t-att-style="'border-bottom: 4px solid %s' % (b['category'].color or '#0f3049')"><span t-out="b['category'].name"/></th>
                             <th t-if="board['technical']" t-att-colspan="len(board['technical']) + 1" class="o_sl_spec_cat o_sl_spec_tech"><span t-out="'Técnicas (%s)' % board['tech_need']"/></th>
                             <th t-foreach="board['mandatory']" t-as="m" class="o_sl_spec_cat o_sl_spec_aid" rowspan="2"><span><i class="fa fa-plus-square"/> <t t-out="m.name"/></span></th>
@@ -1068,6 +1076,16 @@
                         <tr t-foreach="board['rows']" t-as="row" t-att-data-member="row['member'].id">
                             <td class="o_sl_mx_name"><a class="o_sl_mlink" t-att-href="'/dirigentes/%s/miembro/%s' % (section.id, row['member'].id)" t-out="row['member'].scout_name or row['member'].name"/>
                                 <small class="d-block text-muted" t-out="row['member'].scout_patrol_id.name or ''"/></td>
+                            <td class="o_sl_achv_thermo">
+                                <div class="o_sl_thermo"><div class="o_sl_thermo_fill" t-attf-style="width:#{row['pct']}%"/></div>
+                                <small class="o_sl_thermo_txt" t-out="'%s/%s' % (row['done'], row['total'])"/>
+                                <small t-if="row['next']" class="d-block text-muted text-truncate" style="max-width: 7rem" t-out="svc.stage_label(row['next'], section)"/>
+                            </td>
+                            <t t-foreach="board['path']" t-as="c">
+                                <t t-set="cell" t-value="row['by_stage'].get(c.id)"/>
+                                <td class="o_sl_achv_cell" t-att-data-stage="c.id" t-att-data-state="cell.state if cell else 'none'"
+                                    t-out="mark.get(cell.state, '') if cell else ''"/>
+                            </t>
                             <t t-foreach="board['basic']" t-as="b">
                                 <t t-foreach="zip(('1', '2', '3'), b['levels'])" t-as="lv">
                                     <t t-set="cell" t-value="row['by_stage'].get(lv[1].id) if lv[1] else None"/>
@@ -1096,16 +1114,15 @@
         </t>
     </template>
 
-    <template id="leader_achievements" name="Dirigentes: cuadro de logros">
+    <template id="leader_achievements" name="Dirigentes: cuadro de adelantos">
         <t t-call="scout_management.leader_layout">
             <div class="o_sl_title_row">
-                <h5 class="o_sl_h mb-0">Cuadro de logros</h5>
-                <a class="btn btn-sm o_sl_btn_outline" t-att-href="'/dirigentes/%s/adelantos' % section.id"><i class="fa fa-star"/> Registrar a varios</a>
+                <h5 class="o_sl_h mb-0">Cuadro de adelantos</h5>
             </div>
             <form method="get" data-sl-autosubmit="1" class="mb-2">
                 <select name="ver" class="form-select">
                     <option value="adelantos" t-att-selected="ver == 'adelantos' or None">Adelantos (Promesa → insignia terminal)</option>
-                    <option t-if="has_board" value="tropa" t-att-selected="ver == 'tropa' or None">Especialidades: básicas, técnicas y primeros auxilios</option>
+
                     <option value="colores" t-att-selected="ver == 'colores' or None">Especialidades por colores y técnicas</option>
                     <optgroup label="Especialidades e insignias">
                         <option t-foreach="categories" t-as="c" t-att-value="'cat%s' % (c[0].id or 0)" t-att-selected="ver == 'cat%s' % (c[0].id or 0) or None" t-out="'%s (%s)' % (c[0].name or 'Otras', len(c[1]))"/>
@@ -1226,6 +1243,11 @@
                     Tutor: <t t-out="member.scout_guardian_id.name or '—'"/> <t t-out="member.scout_guardian_id.phone or ''"/>.
                 </div>
                 <h6 class="o_sl_sub">Identificación del tutor</h6>
+                <select name="guardian_id_type" class="form-select mb-2 o_scout_id_type">
+                    <option value="ine" t-att-selected="(registration and registration.guardian_id_type == 'ine') or None">INE (credencial para votar)</option>
+                    <option value="fm3" t-att-selected="(registration and registration.guardian_id_type == 'fm3') or None">FM3 / Tarjeta de residente</option>
+                    <option value="passport" t-att-selected="(registration and registration.guardian_id_type == 'passport') or None">Pasaporte</option>
+                </select>
                 <div class="o_sl_ine_box">
                     <input type="hidden" name="ine_front_data"/>
                     <input type="hidden" name="ine_back_data"/>
@@ -1233,21 +1255,23 @@
                         <div class="col-6">
                             <label class="o_sl_ine_pick">
                                 <img class="o_sl_ine_front_prev d-none" alt=""/>
-                                <span><i class="fa fa-id-card-o"/> INE frente *</span>
-                                <input type="file" accept="image/*,application/pdf" capture="environment" class="d-none" data-sl-photo="1"
+                                <span><i class="fa fa-id-card-o"/> <span class="o_scout_id_front_label">Identificación (frente)</span> *</span>
+                                <input type="file" accept="image/*,application/pdf" capture="environment" class="d-none" data-sl-photo="1" data-id-doc="front"
                                        data-sl-target="ine_front_data" data-sl-preview=".o_sl_ine_front_prev" data-sl-max="1600"/>
                             </label>
+                            <div class="o_scout_id_result small mt-1"/>
                         </div>
                         <div class="col-6">
                             <label class="o_sl_ine_pick">
                                 <img class="o_sl_ine_back_prev d-none" alt=""/>
-                                <span><i class="fa fa-id-card-o"/> INE reverso</span>
-                                <input type="file" accept="image/*,application/pdf" capture="environment" class="d-none" data-sl-photo="1"
+                                <span><i class="fa fa-id-card-o"/> Identificación (reverso)</span>
+                                <input type="file" accept="image/*,application/pdf" capture="environment" class="d-none" data-sl-photo="1" data-id-doc="back"
                                        data-sl-target="ine_back_data" data-sl-preview=".o_sl_ine_back_prev" data-sl-max="1600"/>
                             </label>
+                            <div class="o_scout_id_result small mt-1"/>
                         </div>
                     </div>
-                    <small t-if="registration and registration.guardian_id_front" class="text-success d-block mt-1"><i class="fa fa-check"/> Ya se tiene la INE del tutor; solo vuelve a tomarla si cambió.</small>
+                    <small t-if="registration and registration.guardian_id_front" class="text-success d-block mt-1"><i class="fa fa-check"/> Ya se tiene la identificación del tutor; solo vuelve a tomarla si cambió.</small>
                 </div>
                 <h6 class="o_sl_sub mt-3">El padre, madre o tutor autoriza:</h6>
                 <label class="o_sl_check"><input type="checkbox" name="consent_participation" value="1" required="1"/> La participación en las actividades del grupo.</label>
@@ -1861,15 +1885,15 @@
         <t t-call="scout_management.leader_layout">
             <h5 class="o_sl_h">Logros y avances · todo el grupo</h5>
             <div class="o_sl_seg o_sl_tabs o_sl_tabs_sm o_sl_tabs_scroll mb-2">
-                <a t-att-href="'/dirigentes/%s/adelantos' % section.id" t-attf-class="#{'active' if not selected else ''}">Resumen</a>
-                <a t-foreach="groups" t-as="g" t-att-href="'/dirigentes/%s/adelantos?seccion=%s' % (section.id, g['section'].id)"
+                <a t-att-href="'/dirigentes/%s/logros' % section.id" t-attf-class="#{'active' if not selected else ''}">Resumen</a>
+                <a t-foreach="groups" t-as="g" t-att-href="'/dirigentes/%s/logros?seccion=%s' % (section.id, g['section'].id)"
                    t-attf-class="#{'active' if selected == g['section'].id else ''}" t-out="g['section'].name"/>
             </div>
             <div t-if="not groups" class="text-muted">Todavía no hay miembros en las secciones.</div>
             <t t-if="not selected">
                 <p class="o_sl_hint">Avance promedio en el camino de adelantos de cada sección (de la Promesa a la insignia terminal), especialidades logradas y rutas con alerta. Toca una sección para ver a cada miembro.</p>
                 <div class="o_sl_group_cards">
-                    <a t-foreach="groups" t-as="g" class="o_sl_group_card" t-att-href="'/dirigentes/%s/adelantos?seccion=%s' % (section.id, g['section'].id)">
+                    <a t-foreach="groups" t-as="g" class="o_sl_group_card" t-att-href="'/dirigentes/%s/logros?seccion=%s' % (section.id, g['section'].id)">
                         <div class="o_sl_group_card_head">
                             <b t-out="g['section'].name"/>
                             <span t-out="'%s miembros' % g['members']"/>
@@ -2009,6 +2033,14 @@
                     </div>
                 </details>
                 <div class="o_sl_plan_msgs"/>
+                <div class="o_sl_plan_info o_sl_card_box">
+                    <label class="fw-bold small mb-1" for="o_sl_plan_theme">Tema de la junta</label>
+                    <input id="o_sl_plan_theme" class="form-control mb-2 o_sl_plan_theme" placeholder="Ej. La selva invasora"
+                           t-att-value="event.scout_theme or ''" t-att-readonly="None if sl_can_edit else 'readonly'"/>
+                    <label class="fw-bold small mb-1" for="o_sl_plan_objective">Objetivo</label>
+                    <textarea id="o_sl_plan_objective" class="form-control o_sl_plan_objective" rows="2" placeholder="¿Qué queremos lograr en esta junta?"
+                              t-att-readonly="None if sl_can_edit else 'readonly'"><t t-out="event.scout_objective or ''"/></textarea>
+                </div>
                 <div class="o_sl_plan_lines"/>
                 <t t-if="sl_can_edit">
                     <div class="o_sl_quick_add_box">

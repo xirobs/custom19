@@ -94,7 +94,7 @@
                                 ('fa-check-square-o', 'Pase de lista en segundos', 'Juntas semanales creadas solas, lista con miembros y jefes, porcentaje de asistencia y alertas.'),
                                 ('fa-credit-card', 'Pagos en línea y transferencia', 'Liga de pago con Mercado Pago, QR y WhatsApp; datos de transferencia en cada ficha y recibo.'),
                                 ('fa-list-ol', 'Programa de cada junta', 'Programa base, copiar otra junta, dictado por voz o subir el Excel, PDF o foto y se llena solo.'),
-                                ('fa-star', 'Adelantos y especialidades', 'Cuadro de logros por patrulla, especialidades por colores y avance de cada scout.'),
+                                ('fa-star', 'Adelantos y especialidades', 'Cuadro de adelantos por patrulla, especialidades por colores y avance de cada scout.'),
                                 ('fa-road', 'Rutas de enlace y pase de sección', 'Edades oficiales por sección, alertas amarilla y roja, y pase a la sección que corresponde (niños y niñas).'),
                                 ('fa-graduation-cap', 'Aula virtual para familias', 'Recursos por sección que se abren conforme el scout avanza en su recorrido.'),
                                 ('fa-qrcode', 'Credencial con QR', 'Credencial electrónica e impresa por ambos lados, válida mientras el registro esté pagado.'),

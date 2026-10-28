@@ -56,7 +56,8 @@
                                 <td class="lbl">LUGAR</td><td t-out="doc.location or ''"/></tr>
                             <tr><td class="lbl">ACTIVIDAD</td><td t-out="doc.name"/>
                                 <td class="lbl">ENCARGADOS</td><td t-out="', '.join(doc.scout_responsible_ids.mapped(lambda p: p.scout_name or p.name))"/></tr>
-                            <tr><td class="lbl">OBJETIVO</td><td colspan="3" t-out="doc.scout_objective or ''"/></tr>
+                            <tr><td class="lbl">TEMA</td><td colspan="3" t-out="doc.scout_theme or ''"/></tr>
+                            <tr><td class="lbl">OBJETIVO</td><td colspan="3" style="white-space: pre-line;" t-out="doc.scout_objective or ''"/></tr>
                         </table>
                         <table class="sp-tab">
                             <colgroup>

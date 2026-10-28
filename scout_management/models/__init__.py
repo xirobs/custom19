@@ -23,8 +23,10 @@ from . import scout_route
 from . import scout_event_plan
 from . import scout_plan_import
 from . import scout_calendar_import
+from . import scout_id_check
 from . import scout_member_tools
 from . import scout_resource
 from . import scout_session_auto
 from . import scout_leader_portal
 from . import scout_promo
+from . import scout_council_live

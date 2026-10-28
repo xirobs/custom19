@@ -238,16 +238,29 @@
                                     <option value="f" t-att-selected="member.scout_gender == 'f' or None">Femenino</option>
                                     <option value="m" t-att-selected="member.scout_gender == 'm' or None">Masculino</option>
                                 </select></div>
-                            <div class="col-md-5"><label class="form-label">Sección <small class="text-muted">(se propone por edad y sexo)</small></label>
-                                <select name="section_id" class="form-select o_scout_section_auto" t-att-data-rules="section_rules_json">
-                                    <option value="">Según su edad…</option>
+                            <div class="col-md-5"><label class="form-label">Sección <small class="text-muted">(automática)</small></label>
+                                <t t-set="locked_section" t-value="member.scout_section_id if member and member.scout_section_id else False"/>
+                                <select class="form-select o_scout_section_auto" disabled="disabled" aria-readonly="true"
+                                        t-att-data-rules="section_rules_json" t-att-data-locked="locked_section.id if locked_section else None"
+                                        title="La sección se asigna sola por la edad y el sexo">
+                                    <option value="">Elige fecha de nacimiento y sexo…</option>
                                     <t t-foreach="sections" t-as="section">
-                                        <option t-att-value="section.id" t-att-selected="section == preset_section or None" t-out="section.display_name"/>
+                                        <option t-att-value="section.id" t-att-selected="section == (locked_section or preset_section) or None" t-out="section.display_name"/>
                                     </t>
-                                </select></div>
+                                </select>
+                                <input type="hidden" name="section_id" t-att-value="locked_section.id if locked_section else ''"/>
+                            </div>
+                            <div class="col-12">
+                                <div class="alert alert-info py-2 px-3 mb-0 small o_scout_section_hint" role="status">
+                                    <i class="fa fa-info-circle"/>
+                                    <t t-if="locked_section">Sección actual: <b t-out="locked_section.display_name"/>. Los cambios de sección
+                                        (pase por edad) los registran los jefes, por eso aquí no se puede cambiar.</t>
+                                    <t t-else="">La <b>sección se asigna automáticamente</b> según la <b>edad</b> y el <b>sexo</b> del scout
+                                        (no se puede cambiar). Captura la fecha de nacimiento y el sexo para verla.</t>
+                                </div>
+                            </div>
                             <div class="col-12"><label class="form-label">Domicilio</label>
                                 <input name="street" class="form-control" t-att-value="member.street"/></div>
-                            <div class="col-12 small text-muted o_scout_section_hint"/>
                             <div class="col-12">
                                 <label class="form-label">Foto del scout <small class="text-muted">(de frente, para su credencial; la puede tomar el scout o su tutor)</small></label>
                                 <input type="hidden" name="photo_data"/>
@@ -337,13 +350,25 @@
                             <label class="form-check-label" for="c6">Me comprometo a mantener actualizada la información y a informar cualquier cambio. *</label></div>
 
                         <div class="row g-3 mb-3">
-                            <div class="col-md-6"><label class="form-label">INE del tutor (frente) *</label>
-                                <input type="file" name="ine_front" class="form-control" accept="image/*,application/pdf" t-att-required="(not (previous and previous.guardian_id_front)) or None"/>
-                                <small t-if="previous and previous.guardian_id_front" class="text-muted">Si no adjuntas otra, se usa la INE de la ficha anterior.</small></div>
-                            <div class="col-md-6"><label class="form-label">INE del tutor (reverso)</label>
-                                <input type="file" name="ine_back" class="form-control" accept="image/*,application/pdf"/></div>
+                            <div class="col-12">
+                                <label class="form-label">Identificación oficial del tutor *</label>
+                                <select name="guardian_id_type" class="form-select o_scout_id_type" required="1">
+                                    <option value="ine" t-att-selected="(previous and previous.guardian_id_type == 'ine') or None">INE (credencial para votar)</option>
+                                    <option value="fm3" t-att-selected="(previous and previous.guardian_id_type == 'fm3') or None">FM3 / Tarjeta de residente</option>
+                                    <option value="passport" t-att-selected="(previous and previous.guardian_id_type == 'passport') or None">Pasaporte</option>
+                                </select>
+                                <small class="text-muted">Solo se acepta foto de la INE, FM3 o pasaporte; cualquier otra foto se rechaza.</small>
+                            </div>
+                            <div class="col-md-6"><label class="form-label"><span class="o_scout_id_front_label">Identificación (frente)</span> *</label>
+                                <input type="file" name="ine_front" class="form-control" accept="image/*,application/pdf" data-id-doc="front"
+                                       t-att-required="(not (previous and previous.guardian_id_front)) or None"/>
+                                <div class="o_scout_id_result small mt-1"/>
+                                <small t-if="previous and previous.guardian_id_front" class="text-muted">Si no adjuntas otra, se usa la de la ficha anterior.</small></div>
+                            <div class="col-md-6 o_scout_id_back_col"><label class="form-label">Identificación (reverso)</label>
+                                <input type="file" name="ine_back" class="form-control" accept="image/*,application/pdf" data-id-doc="back"/>
+                                <div class="o_scout_id_result small mt-1"/></div>
                         </div>
-                        <div class="alert alert-warning py-2"><b>La firma debe ser igual a la de la INE del tutor.</b></div>
+                        <div class="alert alert-warning py-2"><b>La firma debe ser igual a la de la identificación del tutor.</b></div>
                         <div class="row g-3">
                             <div class="col-md-6">
                                 <label class="form-label">Firma del padre, madre o tutor *</label>

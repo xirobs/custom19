@@ -83,10 +83,12 @@ function setupSectionSuggestion(form) {
     } catch {
         rules = {};
     }
-    let touched = false;
-    select.addEventListener("change", () => (touched = true));
+    if (select.dataset.locked) {
+        return; // ya es miembro: conserva su sección (los pases los registran los jefes)
+    }
+    const hidden = form.querySelector('input[type="hidden"][name="section_id"]');
     const suggest = () => {
-        if (!birth.value || touched) {
+        if (!birth.value) {
             return;
         }
         const [y, m, d] = birth.value.split("-").map(Number);
@@ -99,18 +101,38 @@ function setupSectionSuggestion(form) {
         const options = Object.entries(rules)
             .filter(([, r]) => r.upper && months < r.upper && (!g || !r.gender || r.gender === g))
             .sort((a, b) => a[1].upper - b[1].upper);
-        if (options.length) {
+        const age = `${Math.floor(months / 12)} años ${months % 12} meses`;
+        if (options.length && months >= 0) {
             select.value = options[0][0];
+            if (hidden) {
+                hidden.value = options[0][0];
+            }
+            const label = select.options[select.selectedIndex].textContent;
             if (hint) {
-                const label = select.options[select.selectedIndex].textContent;
-                hint.textContent = `Por su edad (${Math.floor(months / 12)} años ${months % 12} meses) le corresponde: ${label}.`;
+                hint.className = "alert alert-success py-2 px-3 mb-0 small o_scout_section_hint";
+                hint.innerHTML = `<i class="fa fa-check-circle"></i> Por su edad (${age})` +
+                    (g ? " y sexo" : "") + ` le corresponde <b>${label}</b>. ` +
+                    (g ? "" : "Elige también el sexo para confirmar la sección. ") +
+                    "La sección se asigna automáticamente y no se puede cambiar.";
+            }
+        } else {
+            select.value = "";
+            if (hidden) {
+                hidden.value = "";
+            }
+            if (hint) {
+                hint.className = "alert alert-warning py-2 px-3 mb-0 small o_scout_section_hint";
+                hint.innerHTML = `<i class="fa fa-exclamation-triangle"></i> Con ${age} no hay una sección del grupo para su edad. ` +
+                    "Revisa la fecha de nacimiento o contacta a la jefatura.";
             }
         }
     };
     birth.addEventListener("change", suggest);
+    birth.addEventListener("input", suggest);
     if (gender) {
         gender.addEventListener("change", suggest);
     }
+    suggest();
 }
 
 function init() {

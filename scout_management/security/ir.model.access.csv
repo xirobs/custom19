@@ -67,3 +67,10 @@ access_scout_promo_banner_manager,scout.promo.banner manager,model_scout_promo_b
 access_scout_promo_banner_user,scout.promo.banner user,model_scout_promo_banner,base.group_user,1,0,0,0
 access_scout_calendar_import_wizard,scout.calendar.import.wizard officer,model_scout_calendar_import_wizard,group_scout_officer,1,1,1,1
 access_scout_calendar_import_wizard_line,scout.calendar.import.wizard.line officer,model_scout_calendar_import_wizard_line,group_scout_officer,1,1,1,1
+access_scout_agenda_line_user,scout.meeting.agenda.line user,model_scout_meeting_agenda_line,group_scout_leader,1,0,0,0
+access_scout_agenda_line_officer,scout.meeting.agenda.line officer,model_scout_meeting_agenda_line,group_scout_officer,1,1,1,1
+access_scout_transcript_officer,scout.meeting.transcript officer,model_scout_meeting_transcript,group_scout_officer,1,1,1,1
+access_scout_checkin_user,scout.meeting.checkin user,model_scout_meeting_checkin,group_scout_leader,1,0,0,0
+access_scout_checkin_officer,scout.meeting.checkin officer,model_scout_meeting_checkin,group_scout_officer,1,1,1,1
+access_scout_turn_user,scout.meeting.turn user,model_scout_meeting_turn,group_scout_leader,1,0,0,0
+access_scout_turn_officer,scout.meeting.turn officer,model_scout_meeting_turn,group_scout_officer,1,1,1,1

@@ -177,7 +177,7 @@ class CalendarEventPlan(models.Model):
                                   ref_start=ref, location=location, leaders=leaders)
         return result
 
-    def scout_plan_save(self, lines, dictation=None, confirm_approved=False):
+    def scout_plan_save(self, lines, dictation=None, confirm_approved=False, info=None):
         """Guarda el programa tal como lo dejó el jefe (reemplaza las actividades anteriores)."""
         self.ensure_one()
         if self.scout_plan_state == 'approved' and self.scout_plan_line_ids and not confirm_approved:
@@ -205,6 +205,13 @@ class CalendarEventPlan(models.Model):
                 vals[fname] = bool(flags.get(key))
             commands.append(fields.Command.create(vals))
         vals = {'scout_plan_line_ids': commands, 'scout_plan_saved_by_id': self.env.uid}
+        info = info or {}
+        if 'theme' in info:
+            vals['scout_theme'] = (info.get('theme') or '').strip()[:200] or False
+        if 'objective' in info:
+            vals['scout_objective'] = (info.get('objective') or '').strip() or False
+        if (info.get('location') or '').strip():
+            vals['location'] = info['location'].strip()[:200]
         if dictation:
             vals['scout_plan_dictation'] = dictation
         self.with_context(scout_plan_approving=True).write(vals)
@@ -243,13 +250,14 @@ class CalendarEventPlan(models.Model):
             ('%02d DE %s DE %s %s HRS' % (start.day, months[start.month - 1], start.year, start.strftime('%H:%M')))
             if start else '')
         ws.merge_cells('A3:Q3')
-        ws['A3'] = 'ACTIVIDAD: %s\nOBJETIVO: %s\nLUGAR: %s\nENCARGADOS: %s' % (
-            (self.name or '').upper(), (self.scout_objective or '').upper(), (self.location or '').upper(),
+        ws['A3'] = 'ACTIVIDAD: %s\nTEMA: %s\nOBJETIVO: %s\nLUGAR: %s\nENCARGADOS: %s' % (
+            (self.name or '').upper(), (self.scout_theme or '').upper(), (self.scout_objective or '').upper(),
+            (self.location or '').upper(),
             ', '.join(self.scout_responsible_ids.mapped(lambda p: p.scout_name or p.name)).upper())
         for ref in ('A2', 'A3'):
             ws[ref].font = Font(name='Arial', bold=True, size=10, color=navy)
             ws[ref].alignment = Alignment(vertical='center', wrap_text=True)
-        ws.row_dimensions[3].height = 60
+        ws.row_dimensions[3].height = 75
         ws.merge_cells('J4:L4')
         ws.merge_cells('M4:Q4')
         ws['J4'], ws['M4'] = 'PROGRAMA', 'MÉTODO'

@@ -544,8 +544,8 @@ class ScoutRoute(models.Model):
     @api.model
     def _cron_refresh(self):
         members = self.env['res.partner'].sudo().search([
-            ('is_scout', '=', True), ('scout_type', '=', 'youth'), ('scout_state', 'in', ('trial', 'active')),
-            ('scout_section_id', '!=', False)])
+            ('is_scout', '=', True), ('scout_state', 'in', ('trial', 'active')),
+            '|', ('scout_section_id', '!=', False), ('scout_route_ids.is_open', '=', True)])
         members._scout_ensure_route()
         self.sudo().search([('is_open', '=', True), ('member_state', 'in', ('trial', 'active'))])._scout_refresh_status()
         return True
@@ -619,11 +619,24 @@ class ResPartnerRoute(models.Model):
             partner.scout_time_left = route.time_left if route else False
             partner.scout_route_destination_id = route.destination_id if route else False
 
+    def _scout_route_applies(self):
+        """La ruta de enlace es solo para miembros de sección: no para jefes, subjefes, scouters ni dirigentes
+        (aunque estén registrados como miembros de una sección, p. ej. un rover que ya es subjefe)."""
+        from .scout_position import LEADER_KINDS
+        self.ensure_one()
+        return bool(self.is_scout and self.scout_type == 'youth' and self.scout_section_id
+                    and not self.scout_section_id.is_leadership
+                    and self.scout_position_id.kind not in LEADER_KINDS)
+
     def _scout_ensure_route(self):
         """Cada beneficiario activo tiene abierto el registro de su sección actual."""
         Route = self.env['scout.route'].sudo()
-        for partner in self.sudo().filtered(lambda p: p.is_scout and p.scout_type == 'youth' and p.scout_section_id
-                                            and not p.scout_section_id.is_leadership):
+        # A quien no le aplica (tiene cargo de jefe, subjefe o dirigente) se le quitan las rutas abiertas
+        not_applicable = self.sudo().filtered(lambda p: p.is_scout and not p._scout_route_applies())
+        stale = not_applicable.scout_route_ids.filtered(lambda r: r.is_open)
+        if stale:
+            stale.with_context(scout_route_system=True).unlink()
+        for partner in self.sudo().filtered(lambda p: p._scout_route_applies()):
             section = partner.scout_section_id
             open_routes = partner.scout_route_ids.filtered('is_open')
             current = open_routes.filtered(lambda r: r.section_id == section)
@@ -660,7 +673,8 @@ class ResPartnerRoute(models.Model):
 
     def write(self, vals):
         res = super().write(vals)
-        if {'scout_section_id', 'scout_birthdate', 'scout_gender', 'is_scout', 'scout_type', 'scout_state'} & set(vals) \
+        if {'scout_section_id', 'scout_birthdate', 'scout_gender', 'is_scout', 'scout_type', 'scout_state',
+                'scout_position_id'} & set(vals) \
                 and not self.env.context.get('scout_route_closing'):
             self._scout_ensure_route()
             self.sudo().scout_route_ids.filtered('is_open')._scout_refresh_status()

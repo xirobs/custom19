@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 {
     'name': 'Gestión de Grupo Scout',
-    'version': '19.0.4.20.0',
+    'version': '19.0.4.23.0',
     'summary': 'Grupo scout sobre Contactos, Calendario, Contabilidad y Conversaciones: miembros, actividades, asistencia, adelantos, actas, tesorería y portal para padres',
     'description': """
 Gestión de Grupo Scout
@@ -78,12 +78,21 @@ Ver static/description/index.html para la ficha completa y doc/ para el manual d
         'views/portal_templates.xml',
         'views/portal_classroom_templates.xml',
         'views/leader_portal_templates.xml',
+        'views/council_templates.xml',
         'views/scout_promo_templates.xml',
     ],
     'assets': {
         'web.assets_backend': [
             'scout_management/static/src/scss/scout_backend.scss',
             'scout_management/static/src/js/scout_calendar.js',
+            'scout_management/static/src/js/scout_council_core.js',
+            'scout_management/static/src/js/scout_council_call.js',
+            'scout_management/static/src/scss/scout_council_call.scss',
+        ],
+        'mail.assets_public': [
+            'scout_management/static/src/js/scout_council_core.js',
+            'scout_management/static/src/js/scout_council_call.js',
+            'scout_management/static/src/scss/scout_council_call.scss',
         ],
         'web.assets_frontend': [
             'scout_management/static/src/js/scout_signature.js',
@@ -92,6 +101,9 @@ Ver static/description/index.html para la ficha completa y doc/ para el manual d
             'scout_management/static/src/js/scout_app_install.js',
             'scout_management/static/src/scss/scout_portal.scss',
             'scout_management/static/src/scss/scout_promo.scss',
+            'scout_management/static/src/js/scout_council_core.js',
+            'scout_management/static/src/js/scout_council.js',
+            'scout_management/static/src/scss/scout_council.scss',
         ],
     },
     'images': ['static/description/1.png'],

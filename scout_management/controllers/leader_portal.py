@@ -235,9 +235,10 @@ class ScoutLeaderPortal(http.Controller):
         section, redirect = self._section_or_redirect(section_id)
         if redirect:
             return redirect
+        # La sección "Adelantos e insignias" se quitó: todo se anota en el Cuadro de adelantos
+        return request.redirect(f'/dirigentes/{section.id}/logros'
+                                + (f"?seccion={kw['seccion']}" if kw.get('seccion') else ''))
         svc = self._svc()
-        if section.is_leadership:
-            return self._group_progress_page(section, kw.get('seccion'))
         stages = svc.stages(section)
         stage = stages.filtered(lambda s: s.id == int(stage_id or 0) if str(stage_id or '').isdigit() else False)
         path = svc.path_stages(section)
@@ -399,6 +400,8 @@ class ScoutLeaderPortal(http.Controller):
         offset = int(kw.get('mes')) if str(kw.get('mes') or '').lstrip('-').isdigit() else 0
         report = self._svc().current_report(section, period=self._report_period(tipo),
                                             offset=offset if tipo == 'mensual' else 0)
+        if report.state == 'draft':
+            report.action_refresh()  # siempre con la asistencia, programas y avances más recientes
         blocks = []
         labels = dict(ITEM_TYPES)
         if report.period_type == 'annual':
@@ -446,6 +449,8 @@ class ScoutLeaderPortal(http.Controller):
         offset = int(kw.get('mes')) if str(kw.get('mes') or '').lstrip('-').isdigit() else 0
         report = self._svc().current_report(section, period=self._report_period(tipo),
                                             offset=offset if tipo == 'mensual' else 0)
+        if report.state == 'draft':
+            report.action_refresh()
         pdf, _type = request.env['ir.actions.report'].sudo()._render_qweb_pdf(
             'scout_management.action_report_section_report', report.ids)
         headers = [('Content-Type', 'application/pdf'), ('Content-Length', len(pdf)),
@@ -637,13 +642,15 @@ class ScoutLeaderPortal(http.Controller):
         return request.make_json_response(payload)
 
     @http.route(['/dirigentes/api/plan/guardar'], type='jsonrpc', auth='user')
-    def leader_api_plan_save(self, section_id, event_id, lines, dictation=None, confirm_approved=False, **kw):
+    def leader_api_plan_save(self, section_id, event_id, lines, dictation=None, confirm_approved=False, info=None,
+                             **kw):
         try:
             section = self._svc()._section(section_id)
             event, editable = self._plan_event(section, event_id)
             if not editable:
                 raise AccessError(_('Esta actividad la edita la jefatura.'))
-            saved = event.scout_plan_save(lines, dictation, bool(confirm_approved))
+            saved = event.scout_plan_save(lines, dictation, bool(confirm_approved),
+                                          info if isinstance(info, dict) else None)
             self._svc()._note(event, _('Programa de la sesión guardado (%s actividades)', len(saved)))
             return {'ok': True, 'count': len(saved), 'lines': event._scout_plan_lines_dicts()}
         except (UserError, AccessError, ValidationError) as e:
@@ -943,7 +950,7 @@ class ScoutLeaderPortal(http.Controller):
                                 spec_rows=spec_rows, level_colors=svc.LEVEL_COLORS,
                                 has_board=bool(svc.specialty_board(section)))
         board = svc.specialty_board(section)
-        if ver == 'tropa' and board:
+        if ver in ('tropa', 'adelantos', None, '') and board:
             return self._render('scout_management.leader_specialty_board', section, 'progress', board=board,
                                 categories=categories, ver='tropa')
         if ver and ver.startswith('cat'):

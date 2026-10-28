@@ -169,17 +169,35 @@ class ScoutSectionReport(models.Model):
                 items.append((item_type, _('%(n)s %(verb)s %(stage)s: %(names)s.', n=len(who), verb=verb,
                                            stage=stage.name,
                                            names=_join_names([self._short_name(m) for m in who]))))
-        # Actividades del calendario (excepto sesiones sin nombre propio y consejos)
+        # Actividades del calendario: las juntas cuentan si ya tienen tema, programa o lista de asistencia
         seen = set()
-        for event in self._get_events().filtered(
-                lambda e: e.scout_activity_type not in ('none', 'council', 'training')
-                and not (e.scout_activity_type == 'regular' and (e.name or '').startswith(_('Sesión')))):
-            text = event.name + (f' ({event.scout_theme})' if event.scout_theme else '')
-            if event.scout_done:
+        today = fields.Date.context_today(self)
+        for event in self._get_events().filtered(lambda e: e.scout_activity_type not in ('none', 'council', 'training')):
+            if event.scout_activity_type == 'regular' and not (
+                    event.scout_theme or event.scout_plan_line_ids or event.scout_done
+                    or (event.scout_attendance_line_ids and event.scout_date <= today)):
+                continue
+            day = event.scout_date.strftime('%d/%m') if event.scout_date else ''
+            if event.scout_activity_type == 'regular':
+                text = '%s %s' % (day, event.scout_theme or event.name)
+                if event.scout_plan_line_ids:
+                    text += _(' (%s actividades: %s)', len(event.scout_plan_line_ids),
+                              ', '.join(event.scout_plan_line_ids[:4].mapped('name'))
+                              + ('…' if len(event.scout_plan_line_ids) > 4 else ''))
+            else:
+                text = '%s %s' % (day, event.name) + (f' ({event.scout_theme})' if event.scout_theme else '')
+            if event.scout_done or event.scout_attendance_closed:
                 text += _(' ✓')
             if text not in seen:
                 seen.add(text)
                 items.append(('activity', text))
+        # Objetivos: los de cada junta / actividad del periodo
+        seen_obj = set()
+        for event in self._get_events().filtered('scout_objective'):
+            for objective in [o.strip(' -•') for o in event.scout_objective.splitlines() if o.strip(' -•')]:
+                if objective.lower() not in seen_obj:
+                    seen_obj.add(objective.lower())
+                    items.append(('objective', objective))
         # Rescate
         risk = [m for m in members if lines_by_member[m.id]['class'] == 'risk']
         if risk:
@@ -196,7 +214,7 @@ class ScoutSectionReport(models.Model):
                                      ('scout_state', 'in', ('trial', 'active'))])
             youth = members.filtered(lambda m: m.scout_type == 'youth')
             date_from, date_to = report._attendance_window()
-            stats = youth._scout_attendance_stats(date_from, date_to)
+            stats = youth._scout_attendance_stats(date_from, date_to, include_open=True)
             cycle = self.env['scout.cycle']._get_current(report.company_id)
 
             lines_by_member, member_cmds = {}, [fields.Command.clear()]

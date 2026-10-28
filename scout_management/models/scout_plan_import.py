@@ -59,7 +59,7 @@ STAGE_WORDS = [('opening', ('apertura', 'inicio', 'entrada', 'formacion')), ('fi
 AI_PROMPT = """Eres asistente de un grupo scout de México. El archivo adjunto es el programa de UNA junta scout \
 (sesión) del día {day}, que empieza a las {start} y termina a las {end}. Lee TODAS las actividades en orden y \
 devuelve SOLO un JSON con esta forma, sin texto adicional:
-{{"activities": [{{"start": "HH:MM", "end": "HH:MM", "minutes": 15, "stage": "opening|first|second|closing", \
+{{"theme": "tema o mística de la junta", "objective": "objetivo general de la junta", "location": "lugar", "activities": [{{"start": "HH:MM", "end": "HH:MM", "minutes": 15, "stage": "opening|first|second|closing", \
 "kind": "Ceremonia|Desfogue|Calentamiento|Mediano|Técnica|Reflexión|Marco simbólico|Avisos", "name": "...", \
 "objective": "...", "material": "...", "responsible": "...", "description": "...", \
 "flags": {{"structure": false, "symbolic": false, "progress": false, "promise": false, "groups": false, \
@@ -170,6 +170,68 @@ def _header_map(row):
     return mapping if 'name' in mapping and len(mapping) >= 2 else None
 
 
+# Datos generales de la junta que vienen arriba de la tabla (tema, objetivo, lugar)
+INFO_LABELS = [
+    ('theme', ('tematica', 'tema', 'mistica', 'mistica / tematica', 'nombre de la actividad', 'titulo')),
+    ('activity', ('actividad', 'actividad del dia', 'actividad principal')),
+    ('objective', ('objetivo', 'objetivos', 'objetivo general')),
+    ('location', ('lugar', 'sede', 'ubicacion')),
+]
+
+
+def _info_key(label):
+    text = _norm(label).strip(' :.-')
+    for key, words in INFO_LABELS:
+        if text in words:
+            return key
+    return None
+
+
+def _info_from_texts(chunks):
+    """chunks: lista de textos (celdas o renglones). Entiende "TEMA: X" y la etiqueta en una celda con el valor
+    en la siguiente."""
+    info, pending = {}, None
+    for chunk in chunks:
+        for raw in str(chunk or '').splitlines():
+            line = raw.strip()
+            if not line:
+                continue
+            m = re.match(r'^([^:]{2,30}):\s*(.*)$', line)
+            if m and _info_key(m.group(1)):
+                key, value = _info_key(m.group(1)), m.group(2).strip()
+                if value:
+                    info.setdefault(key, value)
+                    pending = None
+                else:
+                    pending = key
+                continue
+            if _info_key(line):
+                pending = _info_key(line)
+                continue
+            if pending:
+                info.setdefault(pending, line)
+                pending = None
+    return info
+
+
+def _clean_info(info, event):
+    """{'theme', 'objective', 'location'} listo para guardar en la junta."""
+    out = {}
+    theme = (info.get('theme') or '').strip()
+    activity = (info.get('activity') or '').strip()
+    generic = ('sesion', 'junta', 'sesion sabatina')
+    if not theme and activity and _norm(activity) != _norm(event.name) \
+            and not any(_norm(activity).startswith(g) for g in generic):
+        theme = activity
+    if theme:
+        out['theme'] = theme[:200]
+    if (info.get('objective') or '').strip():
+        out['objective'] = info['objective'].strip()[:2000]
+    if (info.get('location') or '').strip():
+        out['location'] = info['location'].strip()[:200]
+    return out
+
+
 class CalendarEventPlanImport(models.Model):
     _inherit = 'calendar.event'
 
@@ -199,6 +261,12 @@ class CalendarEventPlanImport(models.Model):
             raise UserError(_('Sube el programa en Excel (.xlsx), PDF o imagen (JPG, PNG).'))
         if not result['lines']:
             raise UserError(_('No encontré actividades en el archivo. Revisa que sea el programa de la junta.'))
+        result['info'] = _clean_info(result.get('info') or {}, self)
+        if result['info']:
+            found = [label for key, label in (('theme', _('tema')), ('objective', _('objetivo')),
+                                              ('location', _('lugar'))) if result['info'].get(key)]
+            result['messages'] = (result.get('messages') or []) + [
+                _('También tomé del archivo: %s.', ', '.join(found))]
         return result
 
     # ------------------------------------------------------------------ Excel / CSV
@@ -253,6 +321,7 @@ class CalendarEventPlanImport(models.Model):
             if self._scout_ai_ready():
                 return self._scout_plan_ai(text=text, source=source)
             return self._scout_plan_from_text(text, what)
+        info = _info_from_texts([_cell_text(c) for row in rows[:header_idx] for c in row])
         lines = []
         for row in rows[header_idx + 1:]:
             get = lambda key: row[mapping[key]] if key in mapping and mapping[key] < len(row) else None  # noqa: E731
@@ -277,7 +346,9 @@ class CalendarEventPlanImport(models.Model):
             else:
                 parser._reclassify(line, location, leaders)
             lines.append(line)
-        return self._scout_plan_finish(lines, source)
+        result = self._scout_plan_finish(lines, source)
+        result['info'] = info
+        return result
 
     # ------------------------------------------------------------------ PDF e imagen
     def _scout_plan_from_pdf(self, content):
@@ -288,6 +359,11 @@ class CalendarEventPlanImport(models.Model):
             try:
                 result = self._scout_plan_from_rows(rows, _('el PDF'), _('el PDF'))
                 if result['lines']:
+                    stop_words = {'hora', 'etapa', 'etapas', 'tipo', 'tiempo', 'material', 'responsable',
+                                  'observaciones', 'encargados', 'fecha'}
+                    result['info'] = {**layout.label_values(items, _info_key,
+                                                            stop=lambda t: _norm(t) in stop_words),
+                                      **(result.get('info') or {})}
                     return result
             except UserError:
                 pass
@@ -347,6 +423,7 @@ class CalendarEventPlanImport(models.Model):
         clean = '\n'.join(l.strip() for l in text.splitlines() if l.strip())
         clean = re.sub(r'(?<![.;:])\n', '. ', clean)
         result = parser.interpret(clean, [], ref_start=ref, location=location, leaders=leaders)
+        result['info'] = _info_from_texts(text.splitlines())
         result['lines'] = [l for l in result['lines'] if len(re.sub(r'[^a-zA-ZáéíóúñÁÉÍÓÚÑ]', '', l['name'])) >= 4]
         if not result['lines'] or (not self._scout_ai_ready() and len(result['lines']) < 2):
             raise UserError(_('No pude distinguir las actividades en %s. Súbelo en Excel, o pide a la jefatura que '
@@ -408,6 +485,14 @@ class CalendarEventPlanImport(models.Model):
             _logger.exception('Error con la IA (%s)', provider)
             raise UserError(_('No se pudo leer el archivo con la inteligencia artificial: %s', e)) from e
         activities = self._scout_ai_parse(raw)
+        ai_info = {}
+        try:
+            data = json.loads(re.search(r'\{.*\}', re.sub(r'^```(?:json)?\s*|\s*```$', '', (raw or '').strip()),
+                                        re.S).group(0))
+            if isinstance(data, dict):
+                ai_info = {k: str(data.get(k) or '') for k in ('theme', 'objective', 'location') if data.get(k)}
+        except (ValueError, AttributeError, TypeError):
+            pass
         ref, location, leaders = self._scout_plan_context()
         lines = []
         for item in activities:
@@ -433,6 +518,7 @@ class CalendarEventPlanImport(models.Model):
             line['connector'] = start is None
             lines.append(line)
         result = self._scout_plan_finish(lines, _('%s (leído con IA)', source))
+        result['info'] = ai_info
         return result
 
     @api.model
@@ -503,7 +589,7 @@ class CalendarEventPlanImport(models.Model):
         response = requests.post(
             'https://api.anthropic.com/v1/messages', timeout=AI_TIMEOUT,
             headers={'x-api-key': key, 'anthropic-version': '2023-06-01', 'Content-Type': 'application/json'},
-            json={'model': model, 'max_tokens': 4096, 'messages': [{'role': 'user', 'content': parts}]})
+            json={'model': model, 'max_tokens': self.env.context.get('scout_ai_max_tokens') or 4096, 'messages': [{'role': 'user', 'content': parts}]})
         data = self._scout_ai_check(response)
         return ''.join(b.get('text', '') for b in data.get('content') or [] if b.get('type') == 'text')
 

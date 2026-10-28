@@ -370,6 +370,10 @@ function start() {
             }
         })
     );
+    // Navegación de la app, banners e identificación del tutor: en todos los portales
+    setupAppNavigation();
+    document.querySelectorAll("input[data-id-doc]").forEach(setupIdCheck);
+    document.querySelectorAll("select.o_scout_id_type").forEach(setupIdType);
     if (!document.querySelector(".o_scout_leader")) {
         return;
     }
@@ -379,7 +383,7 @@ function start() {
     document.querySelectorAll("input[data-sl-photo]:not(.o_scout_photo_pick input)").forEach(setupPhoto);
     document.querySelectorAll("form[data-sl-require-ine]").forEach(setupRequireIne);
     document.querySelectorAll("[data-sl-copy]").forEach(setupCopy);
-    setupAppNavigation();
+
     // Aviso por WhatsApp: marca a quién ya se le abrió el chat
     document.querySelectorAll(".o_sl_wa_send").forEach((link) =>
         link.addEventListener("click", () => {
@@ -475,5 +479,102 @@ function setupAppNavigation() {
         btn.addEventListener("click", () => goBack("/scouts/app"));
         document.body.appendChild(btn);
     }
+}
+
+// ---------------------------------------------------------------- identificación del tutor: solo INE, FM3 o pasaporte
+function idFrontLabel(kind) {
+    return { ine: "INE (frente)", fm3: "FM3 / residente (frente)", passport: "Pasaporte (hoja de datos)" }[kind] || "Identificación";
+}
+
+function setupIdType(select) {
+    const form = select.closest("form");
+    const apply = () => {
+        form.querySelectorAll(".o_scout_id_front_label").forEach((el) => (el.textContent = idFrontLabel(select.value)));
+        const back = form.querySelector('input[data-id-doc="back"]');
+        const col = back && (back.closest(".o_scout_id_back_col") || back.closest(".col-6"));
+        if (col) {
+            col.classList.toggle("d-none", select.value === "passport");
+        }
+    };
+    select.addEventListener("change", () => {
+        apply();
+        // Si ya se tomó la foto, se vuelve a revisar con el nuevo tipo
+        form.querySelectorAll("input[data-id-doc]").forEach((input) => {
+            if (input.files && input.files[0]) {
+                input.dispatchEvent(new Event("change"));
+            }
+        });
+    });
+    apply();
+}
+
+function shrinkForCheck(file) {
+    return new Promise((resolve) => {
+        const reader = new FileReader();
+        reader.onload = () => {
+            if (file.type === "application/pdf") {
+                resolve(reader.result);
+                return;
+            }
+            const img = new Image();
+            img.onload = () => {
+                const ratio = Math.min(1, 1600 / Math.max(img.width, img.height));
+                const canvas = document.createElement("canvas");
+                canvas.width = Math.round(img.width * ratio);
+                canvas.height = Math.round(img.height * ratio);
+                canvas.getContext("2d").drawImage(img, 0, 0, canvas.width, canvas.height);
+                resolve(canvas.toDataURL("image/jpeg", 0.85));
+            };
+            img.onerror = () => resolve(reader.result);
+            img.src = reader.result;
+        };
+        reader.readAsDataURL(file);
+    });
+}
+
+function setupIdCheck(input) {
+    const form = input.closest("form");
+    const box = (input.closest(".col-6, .col-md-6") || input.parentElement).querySelector(".o_scout_id_result");
+    const show = (level, html) => {
+        if (box) {
+            box.className = `o_scout_id_result small mt-1 o_scout_id_${level}`;
+            box.innerHTML = html;
+        }
+    };
+    input.addEventListener("change", async () => {
+        const file = input.files && input.files[0];
+        if (!file) {
+            return;
+        }
+        const typeSel = form.querySelector("select.o_scout_id_type");
+        show("wait", '<i class="fa fa-spinner fa-spin"></i> Revisando que sea la identificación…');
+        const submit = form.querySelector('button[type="submit"]');
+        submit && (submit.disabled = true);
+        try {
+            const data = await shrinkForCheck(file);
+            const result = await rpc("/scouts/identificacion/validar", {
+                data, doc_type: typeSel ? typeSel.value : "ine", side: input.dataset.idDoc,
+            });
+            const icon = { ok: "fa-check-circle", warn: "fa-info-circle", error: "fa-times-circle" }[result.level] || "fa-info-circle";
+            show(result.level, `<i class="fa ${icon}"></i> ${result.message}`);
+            if (result.level === "error") {
+                input.value = "";
+                const target = input.dataset.slTarget && form.querySelector(`input[name="${input.dataset.slTarget}"]`);
+                if (target) {
+                    target.value = "";
+                }
+                const preview = input.dataset.slPreview && form.querySelector(input.dataset.slPreview);
+                if (preview) {
+                    preview.classList.add("d-none");
+                    preview.removeAttribute("src");
+                }
+                toast(result.message);
+            }
+        } catch (error) {
+            show("warn", '<i class="fa fa-info-circle"></i> No se pudo revisar ahora; se revisará al enviar la ficha.');
+        } finally {
+            submit && (submit.disabled = false);
+        }
+    });
 }
 
