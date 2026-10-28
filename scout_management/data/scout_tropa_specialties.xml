@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Especialidades de Tropa: básicas por niveles, técnicas (2 de 6) y Primeros auxilios. Crea solo lo que falta. -->
+    <function model="scout.progression.stage" name="_scout_tropa_specialties_setup"/>
+</odoo>

@@ -31,6 +31,8 @@
             <div class="o_scout_leader">
                 <div class="o_scout_greca"/>
                 <header class="o_sl_head">
+                    <a t-if="leader_page not in ('home', 'choose', 'none')" class="o_sl_back" href="#" aria-label="Regresar"
+                       t-att-data-sl-back="'/dirigentes/%s' % section.id if section else '/dirigentes'"><i class="fa fa-chevron-left"/></a>
                     <a t-att-href="'/dirigentes/%s' % section.id if section else '/dirigentes'" class="o_sl_head_title">
                         <img src="/scout_management/static/description/icon.png" alt=""/>
                         <div>
@@ -160,7 +162,7 @@
                 <a class="o_sl_tile" t-att-href="'/dirigentes/%s/plan' % section.id"><i class="fa fa-calendar"/><span>Planificación trimestral</span>
                     <small t-out="'%s actividades planeadas' % dash['planned_count']"/></a>
                 <a class="o_sl_tile" t-att-href="'/dirigentes/%s/plan?tipo=anual' % section.id"><i class="fa fa-calendar-o"/><span>Planificación anual</span><small>Campamentos, salidas y eventos del ciclo</small></a>
-                <a class="o_sl_tile" t-att-href="'/dirigentes/%s/informe' % section.id"><i class="fa fa-file-text-o"/><span>Informe trimestral</span>
+                <a class="o_sl_tile" t-att-href="'/dirigentes/%s/informe' % section.id"><i class="fa fa-file-text-o"/><span>Informe mensual y trimestral</span>
                     <small t-if="dash['report']" t-out="dict(dash['report']._fields['state'].selection).get(dash['report'].state)"/>
                     <small t-else="">Por hacer</small></a>
                 <a class="o_sl_tile" t-att-href="'/dirigentes/%s/informe?tipo=anual' % section.id"><i class="fa fa-book"/><span>Informe anual</span>
@@ -171,11 +173,21 @@
                 <t t-set="res_count" t-value="len(request.env['scout.resource']._scout_for_section(section))"/>
                 <a class="o_sl_tile o_sl_tile_res" t-att-href="'/dirigentes/%s/recursos' % section.id"><i class="fa fa-book"/><span>Recursos para dirigentes</span>
                     <small t-out="'%s manuales, PDF y videos' % res_count if res_count else 'Manuales, PDF y videos'"/></a>
-                <a class="o_sl_tile" t-att-href="'/dirigentes/%s/miembros' % section.id"><i class="fa fa-users"/><span>Miembros y fichas</span><small t-out="'%s activos' % len(dash['members'])"/></a>
+                <a class="o_sl_tile" t-att-href="'/dirigentes/%s/miembros' % section.id"><i class="fa fa-users"/><span>Miembros y fichas</span><small t-out="'Todas las secciones' if section.is_leadership else '%s activos' % len(dash['members'])"/></a>
                 <a class="o_sl_tile" t-att-href="'/dirigentes/%s/mensajes' % section.id"><i class="fa fa-comments"/><span>Mensajes de familias</span>
                     <b t-if="dash['messages_pending']" class="o_sl_badge" t-out="dash['messages_pending']"/></a>
+                <a t-if="dash.get('insurance')" class="o_sl_tile o_sl_tile_insurance" href="/seguro"><i class="fa fa-shield"/><span>Seguro Scout</span>
+                    <small>Altas, relaciones, pagos y siniestros</small></a>
             </div>
 
+            <t t-if="dash.get('group_events')">
+                <h6 class="o_sl_h">Actividades del grupo</h6>
+                <a t-foreach="dash['group_events']" t-as="e" class="o_sl_row o_sl_row_group" t-att-href="'/dirigentes/%s/calendario?mes=%s#ev%s' % (section.id, e.scout_date.strftime('%Y-%m'), e.id)">
+                    <div class="o_sl_date o_sl_date_group"><b t-out="e.scout_date.strftime('%d')"/><small t-out="['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'][e.scout_date.month - 1]"/></div>
+                    <div><div class="fw-bold" t-out="e.name"/><small class="text-muted"><t t-out="'Todo el grupo' if e.scout_scope == 'group' else e.scout_section_names"/><t t-if="e.scout_date_end and e.scout_date_end != e.scout_date"> · hasta el <t t-out="e.scout_date_end.strftime('%d/%m')"/></t></small></div>
+                    <i class="fa fa-chevron-right ms-auto text-muted"/>
+                </a>
+            </t>
             <h6 t-if="dash['next_events']" class="o_sl_h">Próximas actividades</h6>
             <a t-foreach="dash['next_events']" t-as="e" class="o_sl_row" t-att-href="'/dirigentes/%s/actividad/%s' % (section.id, e.id)">
                 <div class="o_sl_date"><b t-out="local_dt(e.start).strftime('%d')"/><small t-out="['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'][local_dt(e.start).month - 1]"/></div>
@@ -226,7 +238,7 @@
                 <t t-foreach="lines" t-as="line">
                     <t t-set="person" t-value="line.member_id"/>
                     <div t-if="line.member_type == 'leader' and (line_index == 0 or lines[line_index - 1].member_type != 'leader')"
-                         class="o_sl_grid_head"><i class="fa fa-star"/> Jefes y dirigentes</div>
+                         class="o_sl_grid_head"><i class="fa fa-star"/> Scouters y dirigentes</div>
                     <div t-attf-class="o_sl_card o_sl_st_#{status_labels.get(line.status, ('', 'na'))[1]} #{'o_sl_card_leader' if line.member_type == 'leader' else ''}" t-att-data-line="line.id" t-att-data-status="line.status">
                         <button type="button" class="o_sl_card_tap" t-att-disabled="event.scout_attendance_closed or None">
                             <t t-call="scout_management.leader_avatar"/>
@@ -356,7 +368,7 @@
                                 <t t-set="last_sec" t-value="r['section']"/>
                                 <tr>
                                     <td class="o_sl_mx_name"><b t-out="r['member'].scout_name or r['member'].name"/>
-                                        <small class="d-block text-muted" t-out="r['member'].scout_position_id.name or 'Dirigente'"/></td>
+                                        <small class="d-block text-muted" t-out="r['member'].scout_position_id.name or svc.leader_title(r['member'])"/></td>
                                     <td><t t-call="scout_management.leader_pct_badge"><t t-set="value" t-value="r['pct']"/></t>
                                         <small class="d-block text-muted" t-out="'%s/%s' % (r['total']['attended'], r['total']['counted'])"/></td>
                                     <td t-foreach="data['type_labels']" t-as="tl"><small t-out="'%s/%s' % r['type_pct'][tl[0]] if r['type_pct'][tl[0]][1] else ''"/></td>
@@ -398,7 +410,7 @@
                     <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
                     <button class="btn o_sl_btn o_sl_btn_big" type="submit"><i class="fa fa-check-square-o"/> Pasar lista de hoy</button>
                 </form>
-                <a class="btn o_sl_btn_outline" t-att-href="'/dirigentes/%s/asistencia/pdf?tipo=%s&amp;q=%s' % (section.id, tipo, offset)" target="_blank"><i class="fa fa-file-pdf-o"/> Descargar en PDF</a>
+                <a class="btn o_sl_btn_outline" t-att-href="'/dirigentes/%s/asistencia/pdf?tipo=%s&amp;q=%s' % (section.id, tipo, offset)" target="_blank" data-sl-pdf="1"><i class="fa fa-file-pdf-o"/> Descargar en PDF</a>
             </div>
             <t>
                 <p t-if="not matrix['sessions']" class="o_sl_hint">Estos son los miembros de tu sección. Aún no hay listas cerradas en este periodo: toca <b>Pasar lista de hoy</b>, marca a cada uno y al terminar cierra la lista; aquí verás su cantidad y porcentaje.</p>
@@ -416,7 +428,7 @@
                         <tbody>
                             <tr t-foreach="matrix['rows']" t-as="row" t-attf-class="#{'o_sl_mx_leader' if row['member'].scout_type == 'leader' else ''}">
                                 <td class="o_sl_mx_name"><a class="o_sl_mlink" t-att-href="'/dirigentes/%s/miembro/%s' % (section.id, row['member'].id)" t-out="row['member'].scout_name or row['member'].name"/>
-                                    <small class="d-block text-muted" t-out="'Dirigente' if row['member'].scout_type == 'leader' else (row['member'].scout_patrol_id.name or '')"/></td>
+                                    <small class="d-block text-muted" t-out="svc.leader_title(row['member']) if row['member'].scout_type == 'leader' else (row['member'].scout_patrol_id.name or '')"/></td>
                                 <td class="o_sl_mx_sum"><t t-out="row['attended']"/>/<t t-out="row['counted']"/></td>
                                 <td t-attf-class="o_sl_mx_sum o_sl_mx_pct #{'o_sl_pct_ok' if row['pct'] is not None and row['pct'] &gt;= 75 else ('o_sl_pct_mid' if row['pct'] is not None and row['pct'] &gt;= 40 else ('o_sl_pct_low' if row['pct'] is not None else ''))}"
                                     t-out="row['pct'] if row['pct'] is not None else '—'"/>
@@ -563,7 +575,7 @@
             </div>
             <form t-if="summary['draft'] + summary['changes']" t-att-action="'/dirigentes/%s/plan/enviar' % section.id" method="post" class="mb-3">
                 <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
-                <input type="hidden" name="tipo" t-att-value="tipo"/>
+                <input type="hidden" name="tipo" t-att-value="tipo"/><input type="hidden" name="mes" t-att-value="mes or 0"/>
                 <input type="hidden" name="q" t-att-value="str(offset)"/>
                 <button class="btn o_sl_btn w-100" type="submit"><i class="fa fa-paper-plane"/> Enviar el programa al consejo</button>
             </form>
@@ -687,15 +699,20 @@
         <t t-call="scout_management.leader_layout">
             <t t-set="draft" t-value="report.state == 'draft'"/>
             <div class="o_sl_seg o_sl_tabs mt-2">
+                <a t-att-href="'/dirigentes/%s/informe?tipo=mensual' % section.id" t-attf-class="#{'active' if tipo == 'mensual' else ''}">Mensual</a>
                 <a t-att-href="'/dirigentes/%s/informe' % section.id" t-attf-class="#{'active' if tipo == 'trimestral' else ''}">Trimestral</a>
                 <a t-att-href="'/dirigentes/%s/informe?tipo=anual' % section.id" t-attf-class="#{'active' if tipo == 'anual' else ''}">Anual</a>
             </div>
+            <div t-if="tipo == 'mensual'" class="o_sl_title_row">
+                <a class="btn btn-sm o_sl_btn_outline" t-att-href="'/dirigentes/%s/informe?tipo=mensual&amp;mes=%s' % (section.id, mes - 1)" aria-label="Mes anterior"><i class="fa fa-chevron-left"/> Mes anterior</a>
+                <a t-if="mes &lt; 0" class="btn btn-sm o_sl_btn_outline" t-att-href="'/dirigentes/%s/informe?tipo=mensual&amp;mes=%s' % (section.id, mes + 1)">Mes siguiente <i class="fa fa-chevron-right"/></a>
+            </div>
             <div class="o_sl_title_row">
                 <div>
-                    <h5 class="o_sl_h mb-0" t-out="'Informe anual' if tipo == 'anual' else 'Informe trimestral'"/>
+                    <h5 class="o_sl_h mb-0" t-out="{'anual': 'Informe anual', 'mensual': 'Informe mensual'}.get(tipo, 'Informe trimestral')"/>
                     <small class="text-muted"><t t-out="report.period_label"/> · <t t-out="dict(report._fields['state'].selection).get(report.state)"/></small>
                 </div>
-                <a class="btn btn-sm o_sl_btn_outline" t-att-href="'/dirigentes/%s/informe/pdf?tipo=%s' % (section.id, tipo)" target="_blank"><i class="fa fa-file-pdf-o"/> PDF</a>
+                <a class="btn btn-sm o_sl_btn_outline" t-att-href="'/dirigentes/%s/informe/pdf?tipo=%s&amp;mes=%s' % (section.id, tipo, mes or 0)" target="_blank" data-sl-pdf="1"><i class="fa fa-file-pdf-o"/> PDF</a>
             </div>
             <div class="o_sl_stats">
                 <div><b t-out="report.registered_count"/><small>Registrados</small></div>
@@ -707,13 +724,13 @@
             </div>
             <form t-if="draft" t-att-action="'/dirigentes/%s/informe' % section.id" method="post" class="mb-3">
                 <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
-                <input type="hidden" name="tipo" t-att-value="tipo"/>
+                <input type="hidden" name="tipo" t-att-value="tipo"/><input type="hidden" name="mes" t-att-value="mes or 0"/>
                 <button class="btn o_sl_btn_outline w-100" type="submit" name="op" value="refresh"><i class="fa fa-refresh"/> Actualizar con asistencia y adelantos</button>
             </form>
             <div t-else="" class="alert alert-info o_sl_alert">Ya se presentó al Consejo; solo lectura.</div>
             <form t-att-action="'/dirigentes/%s/informe' % section.id" method="post" class="o_sl_form">
                 <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
-                <input type="hidden" name="tipo" t-att-value="tipo"/>
+                <input type="hidden" name="tipo" t-att-value="tipo"/><input type="hidden" name="mes" t-att-value="mes or 0"/>
                 <fieldset t-att-disabled="not draft or None">
                     <label class="form-label fw-bold" t-out="'Resumen del ciclo de la sección' if tipo == 'anual' else 'Situación actual de la sección'"/>
                     <textarea name="situation" class="form-control" rows="3" t-out="report.situation or ''"/>
@@ -807,7 +824,7 @@
                 <div class="flex-grow-1">
                     <div class="fw-bold"><t t-out="person.name"/> <small t-if="person.scout_name" class="text-muted" t-out="'(%s)' % person.scout_name"/></div>
                     <small class="text-muted">
-                        <t t-if="person.scout_type == 'leader'">Dirigente<t t-if="person.scout_position_id"> · <t t-out="person.scout_position_id.name"/></t></t>
+                        <t t-if="person.scout_type == 'leader'"><t t-out="svc.leader_title(person)"/><t t-if="person.scout_position_id"> · <t t-out="person.scout_position_id.name"/></t></t>
                         <t t-else=""><t t-out="person.scout_patrol_id.name or 'Sin equipo'"/><t t-set="rl" t-value="svc.role_label(section, person)"/><t t-if="rl"> · <b t-out="rl"/></t> · <t t-out="person.scout_age"/> años</t>
                     </small>
                     <small t-if="person.scout_needs_registration" class="d-block o_sl_txt_red"><i class="fa fa-id-card-o"/> <t t-out="'%s asistencias: ya debe registrarse' % person.scout_trial_attendance"/></small>
@@ -1010,6 +1027,75 @@
     </template>
 
     <!-- Cuadro de logros: nombre a la izquierda, termómetro y casillas a la derecha -->
+    <!-- Especialidades de Tropa: básicas por niveles, técnicas (2) y primeros auxilios -->
+    <template id="leader_specialty_board" name="Dirigentes: especialidades por niveles">
+        <t t-call="scout_management.leader_layout">
+            <t t-set="mark" t-value="{'achieved': '✓', 'in_progress': '½'}"/>
+            <div class="o_sl_title_row">
+                <h5 class="o_sl_h mb-0">Especialidades</h5>
+                <a class="btn btn-sm o_sl_btn_outline" t-att-href="'/dirigentes/%s/logros' % section.id"><i class="fa fa-road"/> Adelantos</a>
+            </div>
+            <form method="get" data-sl-autosubmit="1" class="mb-2">
+                <select name="ver" class="form-select">
+                    <option value="adelantos">Adelantos (Promesa → insignia terminal)</option>
+                    <option value="tropa" selected="selected">Especialidades: básicas, técnicas y primeros auxilios</option>
+                    <option value="colores">Especialidades por colores (resumen)</option>
+                </select>
+            </form>
+            <p class="o_sl_hint">Toca una casilla: <b>½</b> en curso → <b class="text-success">✓</b> logrado → vacío.
+                <b>Básicas:</b> cada una tiene nivel <span class="o_sl_lvl" style="background:#f2c200">A</span> amarillo,
+                <span class="o_sl_lvl" style="background:#2e9e44">V</span> verde y <span class="o_sl_lvl" style="background:#d7262f">R</span> rojo.
+                <b>Técnicas:</b> se piden <t t-out="board['tech_need']"/> de la lista.
+                <b>Primeros auxilios:</b> obligatoria a partir de Primera clase.</p>
+            <div class="o_sl_matrix_wrap">
+                <table class="o_sl_matrix o_sl_achv o_sl_spec_board" t-att-data-section="section.id" data-sl-achievements="1">
+                    <thead>
+                        <tr>
+                            <th class="o_sl_mx_name" rowspan="2">Scout</th>
+                            <th t-foreach="board['basic']" t-as="b" colspan="3" class="o_sl_spec_cat" t-att-style="'border-bottom: 4px solid %s' % (b['category'].color or '#0f3049')"><span t-out="b['category'].name"/></th>
+                            <th t-if="board['technical']" t-att-colspan="len(board['technical']) + 1" class="o_sl_spec_cat o_sl_spec_tech"><span t-out="'Técnicas (%s)' % board['tech_need']"/></th>
+                            <th t-foreach="board['mandatory']" t-as="m" class="o_sl_spec_cat o_sl_spec_aid" rowspan="2"><span><i class="fa fa-plus-square"/> <t t-out="m.name"/></span></th>
+                        </tr>
+                        <tr>
+                            <t t-foreach="board['basic']" t-as="b">
+                                <th t-foreach="zip(('A', 'V', 'R'), ('1', '2', '3'), b['levels'])" t-as="lv" t-attf-class="o_sl_spec_lvl o_sl_spec_lvl_#{lv[1]}" t-att-title="lv[2].name if lv[2] else ''" t-out="lv[0]"/>
+                            </t>
+                            <th t-foreach="board['technical']" t-as="t" class="o_sl_spec_techcol" t-att-title="t.name"><span t-out="t.name.replace('Técnica: ', '')"/></th>
+                            <th t-if="board['technical']" class="o_sl_spec_techcol">Lleva</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr t-foreach="board['rows']" t-as="row" t-att-data-member="row['member'].id">
+                            <td class="o_sl_mx_name"><a class="o_sl_mlink" t-att-href="'/dirigentes/%s/miembro/%s' % (section.id, row['member'].id)" t-out="row['member'].scout_name or row['member'].name"/>
+                                <small class="d-block text-muted" t-out="row['member'].scout_patrol_id.name or ''"/></td>
+                            <t t-foreach="board['basic']" t-as="b">
+                                <t t-foreach="zip(('1', '2', '3'), b['levels'])" t-as="lv">
+                                    <t t-set="cell" t-value="row['by_stage'].get(lv[1].id) if lv[1] else None"/>
+                                    <td t-if="lv[1]" t-attf-class="o_sl_achv_cell o_sl_spec_cell o_sl_spec_lvl_#{lv[0]}" t-att-data-stage="lv[1].id"
+                                        t-att-data-state="cell.state if cell else 'none'" t-att-title="lv[1].name" t-out="mark.get(cell.state, '') if cell else ''"/>
+                                    <td t-else=""/>
+                                </t>
+                            </t>
+                            <t t-foreach="board['technical']" t-as="t">
+                                <t t-set="cell" t-value="row['by_stage'].get(t.id)"/>
+                                <td class="o_sl_achv_cell o_sl_spec_cell" data-group="tech" t-att-data-stage="t.id" t-att-title="t.name"
+                                    t-att-data-state="cell.state if cell else 'none'" t-out="mark.get(cell.state, '') if cell else ''"/>
+                            </t>
+                            <td t-if="board['technical']" class="o_sl_spec_count"><b data-count="tech" t-att-data-need="board['tech_need']"
+                                t-attf-class="#{'o_sl_count_ok' if row['tech_done'] &gt;= board['tech_need'] else ''}" t-out="'%s/%s' % (row['tech_done'], board['tech_need'])"/></td>
+                            <t t-foreach="board['mandatory']" t-as="m">
+                                <t t-set="cell" t-value="row['by_stage'].get(m.id)"/>
+                                <td class="o_sl_achv_cell o_sl_spec_cell o_sl_spec_aidcell" t-att-data-stage="m.id" t-att-title="m.name"
+                                    t-att-data-state="cell.state if cell else 'none'" t-out="mark.get(cell.state, '') if cell else ''"/>
+                            </t>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+            <div t-if="not board['rows']" class="text-muted mt-2">No hay miembros en la sección.</div>
+        </t>
+    </template>
+
     <template id="leader_achievements" name="Dirigentes: cuadro de logros">
         <t t-call="scout_management.leader_layout">
             <div class="o_sl_title_row">
@@ -1019,6 +1105,7 @@
             <form method="get" data-sl-autosubmit="1" class="mb-2">
                 <select name="ver" class="form-select">
                     <option value="adelantos" t-att-selected="ver == 'adelantos' or None">Adelantos (Promesa → insignia terminal)</option>
+                    <option t-if="has_board" value="tropa" t-att-selected="ver == 'tropa' or None">Especialidades: básicas, técnicas y primeros auxilios</option>
                     <option value="colores" t-att-selected="ver == 'colores' or None">Especialidades por colores y técnicas</option>
                     <optgroup label="Especialidades e insignias">
                         <option t-foreach="categories" t-as="c" t-att-value="'cat%s' % (c[0].id or 0)" t-att-selected="ver == 'cat%s' % (c[0].id or 0) or None" t-out="'%s (%s)' % (c[0].name or 'Otras', len(c[1]))"/>
@@ -1269,7 +1356,7 @@
                 <div t-if="not member.scout_emergency_ids and member.scout_guardian_id.phone">Tutor: <a t-att-href="'tel:%s' % member.scout_guardian_id.phone" t-out="member.scout_guardian_id.phone"/></div>
             </div>
             <div class="d-grid gap-2 mt-2">
-                <a class="btn o_sl_btn" t-att-href="'/dirigentes/%s/miembro/%s/credencial.pdf' % (section.id, member.id)" target="_blank"><i class="fa fa-file-pdf-o"/> Descargar credencial en PDF</a>
+                <a class="btn o_sl_btn" t-att-href="'/dirigentes/%s/miembro/%s/credencial.pdf' % (section.id, member.id)" target="_blank" data-sl-pdf="1"><i class="fa fa-file-pdf-o"/> Descargar credencial en PDF</a>
                 <a t-if="member.scout_guardian_id.phone" class="btn o_sl_btn_wa" target="_blank"
                    t-att-href="'https://wa.me/%s?text=%s' % (''.join(c for c in member.scout_guardian_id.phone if c.isdigit()), url_quote('Credencial scout de %s: %s' % (member.name, member._scout_card_url())))"><i class="fa fa-whatsapp"/> Enviar a la familia</a>
             </div>
@@ -1305,8 +1392,25 @@
                 <a t-att-href="'%s?mes=%s-%02d&amp;ver=grupo' % (base_url, cal['start'].year, cal['start'].month)" t-attf-class="#{'active' if ver == 'grupo' else ''}">Consejos y eventos</a>
                 <a t-att-href="'%s?mes=%s-%02d&amp;ver=juntas' % (base_url, cal['start'].year, cal['start'].month)" t-attf-class="#{'active' if ver == 'juntas' else ''}">Juntas</a>
             </div>
-            <a t-if="can_import and section" class="btn btn-sm o_sl_btn_outline w-100 mb-2" t-att-href="'/dirigentes/%s/calendario/subir' % section.id">
-                <i class="fa fa-upload"/> Subir calendario del grupo (PDF, Excel o foto)</a>
+            <div t-if="can_import and section" class="d-flex gap-2 mb-2">
+                <a class="btn btn-sm o_sl_btn_outline flex-fill" t-att-href="'/dirigentes/%s/calendario/subir' % section.id">
+                    <i class="fa fa-upload"/> Subir calendario</a>
+                <button type="button" class="btn btn-sm o_sl_btn flex-fill" data-bs-toggle="collapse" data-bs-target="#o_sl_cal_new"><i class="fa fa-plus"/> Agregar actividad</button>
+            </div>
+            <form t-if="can_import and section" id="o_sl_cal_new" class="collapse o_sl_card_box mb-2" method="post" t-att-action="'/dirigentes/%s/calendario/nuevo' % section.id">
+                <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
+                <label class="fw-bold small mb-1">Actividad de todo el grupo</label>
+                <input type="text" name="title" class="form-control mb-2" placeholder="Ej. Consejo de grupo en línea" required="required"/>
+                <div class="d-flex gap-2 mb-2">
+                    <label class="flex-fill small">Desde<input type="date" name="date" class="form-control" required="required"/></label>
+                    <label class="flex-fill small">Hasta<input type="date" name="date_end" class="form-control"/></label>
+                </div>
+                <select name="type" class="form-select mb-2">
+                    <option t-foreach="type_options" t-as="t" t-att-value="t[0]" t-att-selected="t[0] == 'council' or None" t-out="t[1]"/>
+                </select>
+                <input type="text" name="notes" class="form-control mb-2" placeholder="Notas (opcional): en línea, lugar, acta…"/>
+                <button class="btn o_sl_btn w-100" type="submit"><i class="fa fa-calendar-plus-o"/> Agregar al calendario</button>
+            </form>
             <div class="o_sl_legend small mb-1">
                 <span><i class="o_sl_dot" style="background:#d7262f"/> Todo el grupo</span>
                 <span><i class="o_sl_dot" style="background:#f2b705"/> Salida de sección</span>
@@ -1469,7 +1573,7 @@
         <a class="o_sl_org_person" t-att-href="'/dirigentes/%s/miembro/%s' % (link_section.id, p.id) if link_section else None">
             <t t-set="person" t-value="p"/>
             <t t-call="scout_management.leader_avatar"/>
-            <span><b t-out="p.scout_name or p.name"/><small t-out="p.scout_position_id.name or 'Dirigente'"/></span>
+            <span><b t-out="p.scout_name or p.name"/><small t-out="p.scout_position_id.name or svc.leader_title(p)"/></span>
         </a>
     </template>
 
@@ -1477,50 +1581,83 @@
         <t t-call="scout_management.leader_layout">
             <div class="o_sl_title_row">
                 <h5 class="o_sl_h mb-0">Organigrama del grupo</h5>
-                <small class="text-muted" t-out="'%s dirigentes' % org['leaders']"/>
+                <small class="text-muted" t-out="'%s adultos' % org['leaders']"/>
             </div>
-            <p class="o_sl_hint">Jefatura de grupo arriba y cada sección con sus jefes, subjefes y equipos. Toca una persona para ver su ficha o una sección para administrar sus equipos.</p>
-            <div class="o_sl_org">
-                <div class="o_sl_org_level o_sl_org_top">
-                    <div class="o_sl_org_box o_sl_org_box_top">
-                        <div class="o_sl_org_title"><i class="fa fa-shield"/> Jefatura de grupo</div>
-                        <div class="o_sl_org_people">
-                            <t t-foreach="org['top']" t-as="p"><t t-set="link_section" t-value="section"/><t t-call="scout_management.leader_org_person"/></t>
-                            <div t-if="not org['top']" class="text-muted small">Sin jefe de grupo asignado (cargo "Jefe de grupo").</div>
+            <div class="o_sl_org2">
+                <div class="o_sl_org2_council">
+                    <i class="fa fa-users"/>
+                    <div><b>Consejo de Grupo</b><span>Autoridad principal</span>
+                        <small>Define la visión, los lineamientos y las decisiones del grupo.</small></div>
+                </div>
+                <div class="o_sl_org2_cols">
+                    <!-- Administración -->
+                    <div class="o_sl_org2_col o_sl_org2_admin">
+                        <div class="o_sl_org2_colhead"><i class="fa fa-file-text-o"/><div><b>Administración</b><small>Gestión del grupo y apoyo operativo</small></div></div>
+                        <div t-foreach="org['admin']" t-as="a" t-attf-class="o_sl_org2_card o_sl_org2_#{a[0]}">
+                            <i t-attf-class="fa #{a[2]} o_sl_org2_ico"/>
+                            <div class="min-w-0"><b t-out="a[1]"/>
+                                <t t-if="a[3]"><a t-foreach="a[3]" t-as="p" class="o_sl_org2_name" t-att-href="'/dirigentes/%s/miembro/%s' % (section.id, p.id)" t-out="p.name"/></t>
+                                <span t-else="" class="o_sl_org2_vacant">Por designar</span></div>
                         </div>
                     </div>
-                </div>
-                <div t-if="org['group_level']" class="o_sl_org_level">
-                    <div class="o_sl_org_box o_sl_org_box_staff">
-                        <div class="o_sl_org_title"><i class="fa fa-users"/> Subjefatura, secretaría y tesorería</div>
-                        <div class="o_sl_org_people">
-                            <t t-foreach="org['group_level']" t-as="p"><t t-set="link_section" t-value="section"/><t t-call="scout_management.leader_org_person"/></t>
-                        </div>
-                    </div>
-                </div>
-                <div class="o_sl_org_sections">
-                    <div t-foreach="org['sections']" t-as="g" class="o_sl_org_box o_sl_org_sec" t-att-style="'border-top-color:%s' % (g['section'].report_color or '#0f3049')">
-                        <a class="o_sl_org_title" t-att-href="'/dirigentes/%s/equipos' % g['section'].id">
-                            <span><t t-out="g['section'].name"/> <small t-out="'%s miembros' % g['youth']"/></span><i class="fa fa-chevron-right"/></a>
-                        <div class="o_sl_org_people">
-                            <t t-foreach="g['chiefs']" t-as="p"><t t-set="link_section" t-value="g['section']"/><t t-call="scout_management.leader_org_person"/></t>
-                            <t t-foreach="g['others']" t-as="p"><t t-set="link_section" t-value="g['section']"/><t t-call="scout_management.leader_org_person"/></t>
-                            <div t-if="not g['chiefs'] and not g['others']" class="text-muted small">Sin jefes asignados.</div>
-                        </div>
-                        <div t-if="g['patrols']" class="o_sl_org_patrols">
-                            <div t-foreach="g['patrols']" t-as="t" class="o_sl_org_patrol">
-                                <i class="o_sl_dot" t-att-style="'background:%s' % svc.patrol_color(t['patrol'])"/>
-                                <b t-out="t['patrol'].name"/> <small t-out="t['count']"/>
-                                <small class="d-block text-muted" t-if="t['guide'] or t['subguide']">
-                                    <t t-if="t['guide']">Guía: <t t-out="t['guide'].scout_name or t['guide'].name"/></t>
-                                    <t t-if="t['subguide']"> · Sub: <t t-out="t['subguide'].scout_name or t['subguide'].name"/></t>
-                                </small>
+                    <!-- Jefatura de Grupo -->
+                    <div class="o_sl_org2_col o_sl_org2_center">
+                        <div class="o_sl_org2_chief">
+                            <img src="/scout_management/static/img/flor_de_lis.png" alt=""/>
+                            <b>Jefatura de Grupo</b>
+                            <t t-if="org['chief']"><a t-foreach="org['chief']" t-as="p" class="o_sl_org2_name" t-att-href="'/dirigentes/%s/miembro/%s' % (section.id, p.id)" t-out="p.name"/></t>
+                            <span t-else="" class="o_sl_org2_vacant">Por designar</span>
+                            <small>Coordina, orienta y da seguimiento a la administración y a la operación.</small>
+                            <div class="o_sl_org2_sub"><i class="fa fa-user"/>
+                                <div><b>Subjefatura de Grupo</b>
+                                    <t t-if="org['sub_group']"><a t-foreach="org['sub_group']" t-as="p" class="o_sl_org2_name" t-att-href="'/dirigentes/%s/miembro/%s' % (section.id, p.id)" t-out="p.name"/></t>
+                                    <span t-else="" class="o_sl_org2_vacant">Por designar</span></div>
                             </div>
-                            <div t-if="g['no_patrol']" class="o_sl_org_patrol text-muted"><small t-out="'%s sin equipo' % g['no_patrol']"/></div>
+                            <div t-if="org['other_group']" class="o_sl_org2_sub"><i class="fa fa-user-plus"/>
+                                <div><b>Apoyo de la jefatura</b>
+                                    <a t-foreach="org['other_group']" t-as="p" class="o_sl_org2_name" t-att-href="'/dirigentes/%s/miembro/%s' % (section.id, p.id)"><t t-out="p.name"/> <small t-out="p.scout_position_id.name or ''"/></a></div>
+                            </div>
                         </div>
+                    </div>
+                    <!-- Operación -->
+                    <div class="o_sl_org2_col o_sl_org2_ops">
+                        <div class="o_sl_org2_colhead"><i class="fa fa-users"/><div><b>Operación (secciones)</b><small>Formación, actividades y vida de grupo</small></div></div>
+                        <details t-foreach="org['sections']" t-as="g" class="o_sl_org2_sec" t-att-style="'--sec:%s' % (g['section'].report_color or '#0f3049')">
+                            <summary>
+                                <span class="o_sl_org2_secicon" t-out="(g['section'].name or '?')[:1]"/>
+                                <div class="min-w-0 flex-grow-1">
+                                    <b t-out="g['section'].name"/>
+                                    <t t-if="g['chiefs'] or g['interim']">
+                                        <span t-foreach="g['chiefs']" t-as="p" class="o_sl_org2_name" t-out="p.name"/>
+                                        <span t-foreach="g['interim']" t-as="p" class="o_sl_org2_name"><t t-out="p.name"/> (interino)</span>
+                                    </t>
+                                    <span t-else="" class="o_sl_org2_vacant">Por designar</span>
+                                    <small>Jefe de sección · <t t-out="g['youth']"/> miembros</small>
+                                </div>
+                                <i class="fa fa-chevron-down"/>
+                            </summary>
+                            <div class="o_sl_org2_secbody">
+                                <div t-if="g['others']" class="o_sl_org_people mb-2">
+                                    <t t-foreach="g['others']" t-as="p"><t t-set="link_section" t-value="g['section']"/><t t-call="scout_management.leader_org_person"/></t>
+                                </div>
+                                <div t-if="g['patrols']" class="o_sl_org_patrols">
+                                    <div t-foreach="g['patrols']" t-as="t" class="o_sl_org_patrol">
+                                        <i class="o_sl_dot" t-att-style="'background:%s' % svc.patrol_color(t['patrol'])"/>
+                                        <b t-out="t['patrol'].name"/> <small t-out="t['count']"/>
+                                        <small class="d-block text-muted" t-if="t['guide'] or t['subguide']">
+                                            <t t-if="t['guide']">Guía: <t t-out="t['guide'].scout_name or t['guide'].name"/></t>
+                                            <t t-if="t['subguide']"> · Sub: <t t-out="t['subguide'].scout_name or t['subguide'].name"/></t>
+                                        </small>
+                                    </div>
+                                    <div t-if="g['no_patrol']" class="o_sl_org_patrol text-muted"><small t-out="'%s sin equipo' % g['no_patrol']"/></div>
+                                </div>
+                                <a class="btn btn-sm o_sl_btn_outline mt-2" t-att-href="'/dirigentes/%s/equipos' % g['section'].id"><i class="fa fa-th-large"/> Equipos de la sección</a>
+                            </div>
+                        </details>
                     </div>
                 </div>
             </div>
+            <small class="text-muted d-block mt-2">Los cargos salen del campo "Rol" de cada ficha. Un cargo sin persona aparece como "Por designar".</small>
         </t>
     </template>
 
@@ -1540,8 +1677,8 @@
                      t-att-style="'border-left-color:%s' % (g['section'].report_color or '#0f3049')">
                 <summary>
                     <span><b t-out="g['section'].name"/>
-                        <small t-out="'%s miembros · %s jefes' % (len(g['youth']), len(g['leaders']))"/></span>
-                    <span t-if="g['alerts']" class="o_sl_badge o_sl_badge_red" t-out="g['alerts']"/>
+                        <small t-out="'%s miembros · %s scouters' % (len(g['youth']), len(g['leaders']))"/></span>
+                    <span t-if="g['alerts']" class="o_sl_badge o_sl_badge_red" title="Miembros con registro pendiente de pago o aviso por edad (ruta de enlace)" t-out="'%s %s' % (g['alerts'], 'aviso' if g['alerts'] == 1 else 'avisos')"/>
                     <i class="fa fa-chevron-down"/>
                 </summary>
                 <div class="o_sl_gm_list">
@@ -1551,7 +1688,7 @@
                             <t t-call="scout_management.leader_avatar"/>
                             <div class="flex-grow-1 min-w-0">
                                 <div class="fw-bold text-truncate" t-out="m.name"/>
-                                <small class="text-muted"><t t-out="'Dirigente' if m.scout_type == 'leader' else (m.scout_patrol_id.name or 'Sin equipo')"/>
+                                <small class="text-muted"><t t-out="svc.leader_title(m) if m.scout_type == 'leader' else (m.scout_patrol_id.name or 'Sin equipo')"/>
                                     <t t-if="m.scout_position_id"> · <t t-out="m.scout_position_id.name"/></t>
                                     <t t-if="m.scout_type == 'youth' and m.scout_age"> · <t t-out="m.scout_age"/> años</t></small>
                             </div>
@@ -1838,7 +1975,7 @@
                 </form>
             </details>
             <div class="d-flex gap-2 mb-2">
-                <a class="btn btn-sm o_sl_btn_outline flex-fill" t-att-href="'/dirigentes/%s/actividad/%s/programa.pdf' % (section.id, event.id)" target="_blank"><i class="fa fa-file-pdf-o"/> PDF</a>
+                <a class="btn btn-sm o_sl_btn_outline flex-fill" t-att-href="'/dirigentes/%s/actividad/%s/programa.pdf' % (section.id, event.id)" target="_blank" data-sl-pdf="1"><i class="fa fa-file-pdf-o"/> PDF</a>
                 <a class="btn btn-sm o_sl_btn_outline flex-fill" t-att-href="'/dirigentes/%s/actividad/%s/programa.xlsx' % (section.id, event.id)"><i class="fa fa-file-excel-o"/> Excel</a>
             </div>
             <div t-if="not sl_can_edit" class="alert alert-info o_sl_alert">Esta actividad es de todo el grupo; la edita la jefatura. Aquí solo puedes verla.</div>
@@ -2008,7 +2145,7 @@
             </div>
             <form method="get" class="o_sl_res_search mb-2">
                 <input type="hidden" name="categoria" t-att-value="category.id or ''"/>
-                <input type="hidden" name="tipo" t-att-value="tipo"/>
+                <input type="hidden" name="tipo" t-att-value="tipo"/><input type="hidden" name="mes" t-att-value="mes or 0"/>
                 <div class="input-group">
                     <input type="search" name="q" class="form-control" placeholder="Buscar manual, juego, video…" t-att-value="q"/>
                     <button class="btn o_sl_btn" type="submit" aria-label="Buscar"><i class="fa fa-search"/></button>
@@ -2078,7 +2215,7 @@
             </div>
 
             <div class="d-grid gap-2 mb-3">
-                <a t-if="resource.file and resource._scout_inline()" class="btn o_sl_btn o_sl_btn_big" t-att-href="file_url" target="_blank">
+                <a t-if="resource.file and resource._scout_inline()" class="btn o_sl_btn o_sl_btn_big" t-att-href="file_url" target="_blank" t-att-data-sl-pdf="'1' if resource.kind == 'pdf' else None">
                     <i class="fa fa-external-link"/> Abrir</a>
                 <a t-if="resource.file" class="btn o_sl_btn_outline" t-att-href="file_url + '?descargar=1'">
                     <i class="fa fa-download"/> Descargar <small t-if="resource.file_name" class="text-muted" t-out="resource.file_name"/></a>

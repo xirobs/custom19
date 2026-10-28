@@ -236,6 +236,15 @@ function setupAchievements(table) {
             }
             cell.dataset.state = result.state;
             cell.textContent = PROGRESS_MARK[result.state];
+            const group = cell.dataset.group;
+            if (group) {
+                const out = row.querySelector(`[data-count="${group}"]`);
+                if (out) {
+                    const done = row.querySelectorAll(`td[data-group="${group}"][data-state="achieved"]`).length;
+                    out.textContent = `${done}/${out.dataset.need}`;
+                    out.classList.toggle("o_sl_count_ok", done >= Number(out.dataset.need));
+                }
+            }
             const bar = row.querySelector(".o_sl_thermo_fill");
             if (bar) {
                 bar.style.width = `${result.pct}%`;
@@ -370,6 +379,7 @@ function start() {
     document.querySelectorAll("input[data-sl-photo]:not(.o_scout_photo_pick input)").forEach(setupPhoto);
     document.querySelectorAll("form[data-sl-require-ine]").forEach(setupRequireIne);
     document.querySelectorAll("[data-sl-copy]").forEach(setupCopy);
+    setupAppNavigation();
     // Aviso por WhatsApp: marca a quién ya se le abrió el chat
     document.querySelectorAll(".o_sl_wa_send").forEach((link) =>
         link.addEventListener("click", () => {
@@ -386,3 +396,84 @@ if (document.readyState === "loading") {
 } else {
     start();
 }
+
+// ---------------------------------------------------------------- navegación dentro de la app instalada
+function isStandaloneApp() {
+    return window.matchMedia("(display-mode: standalone)").matches || window.navigator.standalone === true;
+}
+
+function goBack(fallback) {
+    const sameOrigin = document.referrer && document.referrer.startsWith(window.location.origin);
+    if (window.history.length > 1 && sameOrigin) {
+        window.history.back();
+    } else {
+        window.location.href = fallback || "/scouts/app";
+    }
+}
+
+function isPdfLink(a) {
+    if (a.dataset.slPdf) {
+        return true;
+    }
+    const href = a.getAttribute("href") || "";
+    return /^\/(?!\/)/.test(href) && /(\.pdf|\/pdf)(\?|#|$)/i.test(href);
+}
+
+function setupAppNavigation() {
+    // Botón "regresar" del encabezado del portal de dirigentes
+    document.querySelectorAll("[data-sl-back]").forEach((btn) =>
+        btn.addEventListener("click", (ev) => {
+            ev.preventDefault();
+            goBack(btn.dataset.slBack);
+        })
+    );
+    // Banners publicitarios: se pueden ocultar 7 días
+    document.querySelectorAll(".o_scout_banner[data-banner]").forEach((banner) => {
+        const key = "scout_banner_hidden_" + banner.dataset.banner;
+        try {
+            if (Number(window.localStorage.getItem(key) || 0) > Date.now()) {
+                banner.remove();
+                return;
+            }
+        } catch {
+            // sin almacenamiento
+        }
+        const close = banner.querySelector(".o_scout_banner_close");
+        close && close.addEventListener("click", () => {
+            try {
+                window.localStorage.setItem(key, String(Date.now() + 7 * 86400000));
+            } catch {
+                // sin almacenamiento: solo se oculta ahora
+            }
+            banner.remove();
+        });
+    });
+    if (!isStandaloneApp()) {
+        return;
+    }
+    document.documentElement.classList.add("o_scout_standalone");
+    // Los PDF se abren en un visor con botón para regresar (sin él, la app se quedaba atorada en el PDF)
+    document.addEventListener("click", (ev) => {
+        const a = ev.target.closest("a[href]");
+        if (!a || !isPdfLink(a) || a.hasAttribute("download")) {
+            return;
+        }
+        ev.preventDefault();
+        const back = window.location.pathname + window.location.search;
+        window.location.href = "/scouts/pdf?u=" + encodeURIComponent(a.getAttribute("href")) +
+            "&back=" + encodeURIComponent(back);
+    }, true);
+    // Páginas fuera del portal de dirigentes (familias, chat, aula): botón flotante para regresar
+    const roots = ["/", "/scouts/app", "/dirigentes", "/my", "/my/home", "/my/scouts", "/web/login", "/odoo"];
+    const path = window.location.pathname.replace(/\/$/, "") || "/";
+    if (!document.querySelector(".o_sl_head") && !roots.includes(path) && !/^\/dirigentes\/\d+$/.test(path)) {
+        const btn = document.createElement("button");
+        btn.type = "button";
+        btn.className = "o_scout_fab_back";
+        btn.setAttribute("aria-label", "Regresar");
+        btn.innerHTML = '<i class="fa fa-chevron-left"></i> Regresar';
+        btn.addEventListener("click", () => goBack("/scouts/app"));
+        document.body.appendChild(btn);
+    }
+}
+

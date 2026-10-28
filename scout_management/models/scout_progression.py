@@ -24,6 +24,8 @@ class ScoutProgressionCategory(models.Model):
     sequence = fields.Integer(default=10)
     color = fields.Char(string='Color', default='#0f3049', help='Color hexadecimal de la insignia del grupo.')
     stage_ids = fields.One2many('scout.progression.stage', 'category_id', string='Especialidades')
+    required_count = fields.Integer(string='Requeridas',
+                                    help='Cuántas de esta categoría se piden (ej. 2 especialidades técnicas en Tropa).')
     active = fields.Boolean(default=True)
 
 
@@ -43,6 +45,8 @@ class ScoutProgressionStage(models.Model):
                                    help='Vacío = aplica a todas las secciones.')
     description = fields.Text(string='Requisitos / descripción')
     image_128 = fields.Image(string='Insignia', max_width=128, max_height=128)
+    level = fields.Selection([('1', 'Amarillo'), ('2', 'Verde'), ('3', 'Rojo')], string='Nivel',
+                             help='Especialidades básicas por niveles (Tropa): cada categoría tiene amarillo, verde y rojo.')
     active = fields.Boolean(default=True)
 
     # ------------------------------------------------------------------ categorías
@@ -76,6 +80,83 @@ class ScoutProgressionStage(models.Model):
             if category:
                 stage.category_id = category
         return stages
+
+    # ------------------------------------------------------------------ especialidades de Tropa
+    TROPA_BASIC = [  # (xmlid de la categoría, clave, nombre)
+        ('stage_cat_expresion', 'expresion', 'Expresión y comunicación'),
+        ('stage_cat_deportes', 'deportes', 'Deportes'),
+        ('stage_cat_tecnologia', 'ciencia', 'Ciencia y tecnología'),
+        ('stage_cat_humanidades', 'humanidades', 'Humanidades'),
+        ('stage_cat_seguridad', 'seguridad', 'Seguridad y rescate'),
+        ('stage_cat_ecologia', 'ecologia', 'Ecología'),
+    ]
+    TROPA_TECHNICAL = [('campismo', 'Campismo'), ('supervivencia', 'Supervivencia'), ('observacion', 'Observación'),
+                       ('senalacion', 'Señalación'), ('pionerismo', 'Pionerismo'), ('navegacion', 'Navegación')]
+    LEVEL_NAMES = [('1', 'Amarillo'), ('2', 'Verde'), ('3', 'Rojo')]
+
+    @api.model
+    def _scout_tropa_specialties_setup(self):
+        """Especialidades de Tropa (femenina y masculina): 6 básicas con nivel amarillo, verde y rojo; 6 técnicas
+        (se piden 2) y Primeros auxilios o Protección civil (obligatoria a partir de Primera clase).
+        Se crea solo lo que falta, así que se puede correr en cada actualización."""
+        import unicodedata
+
+        def norm(text):
+            return unicodedata.normalize('NFKD', text or '').encode('ascii', 'ignore').decode().lower()
+        ref = lambda xid: self.env.ref(f'scout_management.{xid}', raise_if_not_found=False)  # noqa: E731
+        tropas = (ref('section_tropa_atlas') or self.env['scout.section']) | (ref('section_tropa_hydra')
+                                                                             or self.env['scout.section'])
+        if not tropas:
+            return
+        Data = self.env['ir.model.data'].sudo()
+        Category = self.env['scout.progression.category'].sudo()
+
+        def ensure(xid, model, vals, search=None):
+            record = ref(xid)
+            if record:
+                return record
+            record = search() if search else self.env[model].browse()
+            if not record:
+                record = self.env[model].sudo().create(vals)
+            Data.create({'module': 'scout_management', 'name': xid, 'model': model, 'res_id': record.id,
+                         'noupdate': True})
+            return record
+        tech_cat = ref('stage_cat_tecnicas')
+        if tech_cat and not tech_cat.required_count:
+            tech_cat.write({'name': 'Especialidades técnicas' if tech_cat.name == 'Técnicas de Tropa' else tech_cat.name,
+                            'required_count': 2})
+        aid_cat = ensure('stage_cat_primeros_auxilios', 'scout.progression.category',
+                         {'name': 'Primeros auxilios o Protección civil', 'sequence': 85, 'color': '#d7262f',
+                          'required_count': 1})
+        tecnologia = ref('stage_cat_tecnologia')
+        if tecnologia and tecnologia.name == 'Tecnología y ciencia':
+            tecnologia.name = 'Ciencia y tecnología'
+        seq = 200
+        for cat_xid, key, label in self.TROPA_BASIC:
+            category = ref(cat_xid)
+            if not category:
+                continue
+            for level, level_name in self.LEVEL_NAMES:
+                seq += 1
+                ensure(f'stage_tropa_{key}_{level}', 'scout.progression.stage', {
+                    'name': f'{label} · {level_name}', 'stage_type': 'specialty', 'level': level, 'sequence': seq,
+                    'category_id': category.id, 'section_ids': [fields.Command.set(tropas.ids)],
+                    'description': f'Especialidad básica de {label}, nivel {level_name.lower()}.'})
+        if tech_cat:
+            existing = self.with_context(active_test=False).search([('category_id', '=', tech_cat.id)])
+            for key, label in self.TROPA_TECHNICAL:
+                seq += 1
+                ensure(f'stage_tropa_tec_{key}', 'scout.progression.stage', {
+                    'name': label, 'stage_type': 'specialty', 'sequence': seq, 'category_id': tech_cat.id,
+                    'section_ids': [fields.Command.set(tropas.ids)],
+                    'description': 'Especialidad técnica (de la lista se piden dos).'},
+                    search=lambda key=key: existing.filtered(lambda s: key in norm(s.name)
+                                                             and (not s.section_ids or s.section_ids & tropas))[:1])
+        ensure('stage_tropa_primeros_auxilios', 'scout.progression.stage', {
+            'name': 'Primeros auxilios o Protección civil', 'stage_type': 'specialty', 'sequence': seq + 1,
+            'category_id': aid_cat.id, 'section_ids': [fields.Command.set(tropas.ids)],
+            'description': 'Especialidad técnica obligatoria e independiente para todos los adelantos a partir de '
+                           'Primera clase.'})
 
     @api.model
     def _scout_v4_migrate(self):

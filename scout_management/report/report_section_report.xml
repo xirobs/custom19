@@ -54,7 +54,7 @@
                                 <td>
                                     <div class="rp-banner" t-attf-style="background: #{accent};">
                                         <div style="font-size: 20px; font-weight: 900;" t-out="(doc.section_id.display_name or '').upper()"/>
-                                        <div style="font-size: 14px; font-weight: 800;" t-out="'REPORTE ANUAL' if doc.period_type == 'annual' else 'REPORTE TRIMESTRAL'"/>
+                                        <div style="font-size: 14px; font-weight: 800;" t-out="{'annual': 'REPORTE ANUAL', 'monthly': 'REPORTE MENSUAL'}.get(doc.period_type, 'REPORTE TRIMESTRAL')"/>
                                         <div style="font-size: 11px;">
                                             <t t-out="(doc.presented_to or '').upper()"/> · <t t-out="(doc.period_label or '').upper()"/>
                                             · <t t-out="(doc.company_id.name or '').upper()"/>
@@ -105,7 +105,7 @@
                                 <td>
                                     <t t-call="scout_management.section_report_card">
                                         <t t-set="num" t-value="3"/>
-                                        <t t-set="title" t-value="'SITUACIÓN AL INICIAR EL CICLO' if doc.period_type == 'annual' else 'AVANCES DEL TRIMESTRE ANTERIOR'"/>
+                                        <t t-set="title" t-value="{'annual': 'SITUACIÓN AL INICIAR EL CICLO', 'monthly': 'AVANCES DEL MES ANTERIOR'}.get(doc.period_type, 'AVANCES DEL TRIMESTRE ANTERIOR')"/>
                                         <t t-set="items" t-value="doc._items('previous')"/>
                                         <t t-set="has_body" t-value="False"/>
                                     </t>
@@ -215,7 +215,7 @@
                                 <td>
                                     <t t-call="scout_management.section_report_card">
                                         <t t-set="num" t-value="5"/>
-                                        <t t-set="title" t-value="'ACTIVIDADES DEL CICLO' if doc.period_type == 'annual' else 'ACTIVIDADES DEL TRIMESTRE'"/>
+                                        <t t-set="title" t-value="{'annual': 'ACTIVIDADES DEL CICLO', 'monthly': 'ACTIVIDADES DEL MES'}.get(doc.period_type, 'ACTIVIDADES DEL TRIMESTRE')"/>
                                         <t t-set="items" t-value="doc._items('activity')"/>
                                         <t t-set="has_body" t-value="False"/>
                                     </t>
@@ -241,7 +241,7 @@
                                 <td>
                                     <t t-call="scout_management.section_report_card">
                                         <t t-set="num" t-value="8"/>
-                                        <t t-set="title" t-value="'AVANCES DEL CICLO' if doc.period_type == 'annual' else 'AVANCES DEL TRIMESTRE'"/>
+                                        <t t-set="title" t-value="{'annual': 'AVANCES DEL CICLO', 'monthly': 'AVANCES DEL MES'}.get(doc.period_type, 'AVANCES DEL TRIMESTRE')"/>
                                         <t t-set="items" t-value="doc._items('progress')"/>
                                         <t t-set="has_body" t-value="False"/>
                                     </t>

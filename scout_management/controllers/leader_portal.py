@@ -389,26 +389,32 @@ class ScoutLeaderPortal(http.Controller):
     # ------------------------------------------------------------------ informes trimestral y anual
     @staticmethod
     def _report_period(tipo):
-        return 'annual' if tipo == 'anual' else 'quarter'
+        return {'anual': 'annual', 'mensual': 'monthly'}.get(tipo, 'quarter')
 
     @http.route(['/dirigentes/<int:section_id>/informe'], type='http', auth='user', website=True, methods=['GET'])
     def leader_report(self, section_id, tipo='trimestral', **kw):
         section, redirect = self._section_or_redirect(section_id)
         if redirect:
             return redirect
-        report = self._svc().current_report(section, period=self._report_period(tipo))
+        offset = int(kw.get('mes')) if str(kw.get('mes') or '').lstrip('-').isdigit() else 0
+        report = self._svc().current_report(section, period=self._report_period(tipo),
+                                            offset=offset if tipo == 'mensual' else 0)
         blocks = []
         labels = dict(ITEM_TYPES)
         if report.period_type == 'annual':
             labels.update({'objective': _('Objetivos del ciclo'), 'activity': _('Actividades del ciclo'),
                            'progress': _('Avances del ciclo'), 'previous': _('Situación al iniciar el ciclo')})
+        elif report.period_type == 'monthly':
+            labels.update({'objective': _('Objetivos del mes'), 'activity': _('Actividades del mes'),
+                           'progress': _('Avances del mes'), 'previous': _('Avances del mes anterior')})
         for item_type in LEADER_ITEM_TYPES:
             items = report.item_ids.filtered(lambda i: i.item_type == item_type)
             blocks.append({'key': item_type, 'label': labels[item_type],
                            'auto': items.filtered('is_auto'),
                            'manual': '\n'.join(items.filtered(lambda i: not i.is_auto).mapped('name'))})
         return self._render('scout_management.leader_report', section, 'report', report=report, blocks=blocks,
-                            tipo='anual' if report.period_type == 'annual' else 'trimestral')
+                            tipo={'annual': 'anual', 'monthly': 'mensual'}.get(report.period_type, 'trimestral'),
+                            mes=offset)
 
     @http.route(['/dirigentes/<int:section_id>/informe'], type='http', auth='user', website=True, methods=['POST'])
     def leader_report_save(self, section_id, tipo='trimestral', **post):
@@ -416,9 +422,11 @@ class ScoutLeaderPortal(http.Controller):
         if redirect:
             return redirect
         svc = self._svc()
-        tipo = 'anual' if tipo == 'anual' else 'trimestral'
-        url = f'/dirigentes/{section.id}/informe?tipo={tipo}'
-        report = svc.current_report(section, period=self._report_period(tipo))
+        tipo = tipo if tipo in ('anual', 'mensual') else 'trimestral'
+        offset = int(post.get('mes')) if str(post.get('mes') or '').lstrip('-').isdigit() else 0
+        url = f'/dirigentes/{section.id}/informe?tipo={tipo}&mes={offset}'
+        report = svc.current_report(section, period=self._report_period(tipo),
+                                    offset=offset if tipo == 'mensual' else 0)
         try:
             if post.get('op') == 'refresh':
                 if report.state != 'draft':
@@ -435,7 +443,9 @@ class ScoutLeaderPortal(http.Controller):
         section, redirect = self._section_or_redirect(section_id)
         if redirect:
             return redirect
-        report = self._svc().current_report(section, period=self._report_period(tipo))
+        offset = int(kw.get('mes')) if str(kw.get('mes') or '').lstrip('-').isdigit() else 0
+        report = self._svc().current_report(section, period=self._report_period(tipo),
+                                            offset=offset if tipo == 'mensual' else 0)
         pdf, _type = request.env['ir.actions.report'].sudo()._render_qweb_pdf(
             'scout_management.action_report_section_report', report.ids)
         headers = [('Content-Type', 'application/pdf'), ('Content-Length', len(pdf)),
@@ -930,7 +940,12 @@ class ScoutLeaderPortal(http.Controller):
             return self._render('scout_management.leader_achievements', section, 'progress', columns=columns,
                                 title=_('Especialidades por colores y técnicas'), ver='colores',
                                 categories=categories, rows=[], spec_categories=spec_categories,
-                                spec_rows=spec_rows, level_colors=svc.LEVEL_COLORS)
+                                spec_rows=spec_rows, level_colors=svc.LEVEL_COLORS,
+                                has_board=bool(svc.specialty_board(section)))
+        board = svc.specialty_board(section)
+        if ver == 'tropa' and board:
+            return self._render('scout_management.leader_specialty_board', section, 'progress', board=board,
+                                categories=categories, ver='tropa')
         if ver and ver.startswith('cat'):
             key = ver[3:]
             for category, stages in categories:
@@ -940,7 +955,7 @@ class ScoutLeaderPortal(http.Controller):
         return self._render('scout_management.leader_achievements', section, 'progress', columns=columns,
                             title=title, ver=current, categories=categories,
                             rows=svc.achievements(section, columns), spec_categories=[], spec_rows=[],
-                            level_colors=svc.LEVEL_COLORS)
+                            level_colors=svc.LEVEL_COLORS, has_board=bool(board))
 
     @http.route(['/dirigentes/api/logro'], type='jsonrpc', auth='user')
     def leader_api_achievement(self, section_id, member_id, stage_id, **kw):
@@ -1094,6 +1109,7 @@ class ScoutLeaderPortal(http.Controller):
                             prev_mes=prev_start.strftime('%Y-%m'), next_mes=next_start.strftime('%Y-%m'),
                             all_sections=all_sections, today=svc._today(), ver=ver,
                             can_import=svc._is_group_manager(), type_labels=dict(ACTIVITY_TYPES),
+                            type_options=[t for t in ACTIVITY_TYPES if t[0] != 'regular'],
                             base_url=f'/dirigentes/{section.id}/calendario' if section else '/dirigentes/calendario')
 
     # ------------------------------------------------------------------ jefatura: subir el calendario del grupo
@@ -1115,6 +1131,29 @@ class ScoutLeaderPortal(http.Controller):
             except (UserError, ValidationError) as e:
                 values['error'] = str(e.args[0] if e.args else e)
         return self._render('scout_management.leader_calendar_upload', section, 'plan', **values)
+
+    @http.route(['/dirigentes/<int:section_id>/calendario/nuevo'], type='http', auth='user', website=True,
+                methods=['POST'])
+    def leader_calendar_new(self, section_id, **post):
+        """La jefatura agrega a mano una actividad de todo el grupo (consejo, evento, campamento...)."""
+        section, redirect = self._section_or_redirect(section_id)
+        if redirect:
+            return redirect
+        svc = self._svc()
+        if not svc._is_group_manager():
+            return request.redirect(f'/dirigentes/{section.id}/calendario')
+        title = (post.get('title') or '').strip()
+        day = post.get('date')
+        if not title or not day:
+            return self._back(f'/dirigentes/{section.id}/calendario', error=_('Escribe el nombre y la fecha.'))
+        created = request.env['calendar.event']._scout_calendar_create([{
+            'title': title, 'date': day, 'date_end': post.get('date_end') or day,
+            'type': post.get('type') or 'group', 'notes': post.get('notes') or ''}])
+        month = (day or '')[:7]
+        if not created:
+            return self._back(f'/dirigentes/{section.id}/calendario?mes={month}',
+                              error=_('Ya existe "%s" ese día en el calendario.', title))
+        return self._back(f'/dirigentes/{section.id}/calendario?mes={month}', ok=_('"%s" se agregó al calendario.', title))
 
     @http.route(['/dirigentes/<int:section_id>/calendario/agregar'], type='http', auth='user', website=True,
                 methods=['POST'])

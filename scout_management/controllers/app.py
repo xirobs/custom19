@@ -165,3 +165,28 @@ padding:12px 26px;font-weight:800;font-size:1rem}}</style></head><body><div clas
 <h1>Sin conexión</h1><p>Revisa tu internet y vuelve a intentar. Siempre listos ⚜</p>
 <button onclick="location.reload()">Reintentar</button></div></body></html>"""
         return request.make_response(html, [('Content-Type', 'text/html; charset=utf-8')])
+
+    @http.route('/scouts/pdf', type='http', auth='user', methods=['GET'], sitemap=False)
+    def scout_app_pdf(self, u='', back='', **kw):
+        """Visor de PDF dentro de la app (con botón para regresar): en el celular instalado como app el PDF
+        se abría sin barra y no había cómo volver."""
+        from html import escape
+        from urllib.parse import quote
+        path = u if u.startswith('/') and not u.startswith('//') else '/'
+        back_url = back if back.startswith('/') and not back.startswith('//') else '/scouts/app'
+        viewer = '/web/static/lib/pdfjs/web/viewer.html?file=' + quote(path, safe='')
+        html = f"""<!DOCTYPE html><html lang="es"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"><title>PDF</title>
+<meta name="theme-color" content="{NAVY}">
+<style>html,body{{margin:0;height:100%;background:#525659;overscroll-behavior:none}}
+.bar{{position:fixed;top:0;left:0;right:0;z-index:2;display:flex;align-items:center;gap:10px;background:{NAVY};
+color:#fff;padding:calc(8px + env(safe-area-inset-top)) 12px 8px;border-bottom:3px solid #f36f45;font-family:system-ui,sans-serif}}
+.bar a{{color:#fff;text-decoration:none;font-weight:800;border:1px solid rgba(255,255,255,.45);border-radius:99px;
+padding:6px 14px;font-size:15px}}.bar a.dl{{margin-left:auto;background:#f36f45;border-color:#f36f45}}
+iframe{{position:fixed;left:0;right:0;bottom:0;top:calc(52px + env(safe-area-inset-top));width:100%;
+height:calc(100% - 52px - env(safe-area-inset-top));border:0;background:#525659}}</style></head><body>
+<div class="bar"><a href="{escape(back_url)}" onclick="if(history.length>1){{history.back();return false;}}">&#8249; Regresar</a>
+<a class="dl" href="{escape(path)}" download>Descargar</a></div>
+<iframe src="{escape(viewer)}" title="PDF"></iframe></body></html>"""
+        return request.make_response(html, [('Content-Type', 'text/html; charset=utf-8')])
+

@@ -716,3 +716,90 @@ $aula-green: #2e9e5b;
     .o_sl_wa_done { opacity: 0.55; }
 }
 .o_scout_leader .o_sl_radio_tabs label:has(input:checked) { background: $scout-navy; color: #fff; border-radius: 10px; }
+
+// Organigrama transversal (Consejo arriba; administración · jefatura · operación al mismo nivel)
+.o_scout_leader {
+    .o_sl_org2 { position: relative; }
+    .o_sl_org2_council { display: flex; gap: 0.8rem; align-items: center; background: $scout-navy; color: #fff;
+        border-radius: 16px; padding: 0.9rem 1.1rem; border-bottom: 4px solid #f2b705; max-width: 40rem; margin: 0 auto 1.4rem;
+        position: relative;
+        > i { font-size: 2rem; color: #f2b705; }
+        b { display: block; font-size: 1.2rem; } span { display: block; color: #f2b705; font-weight: 700; font-size: 0.85rem; }
+        small { color: #c9d4de; }
+        &::after { content: ""; position: absolute; left: 50%; bottom: -1.4rem; height: 1.4rem; border-left: 2px solid $scout-navy; } }
+    .o_sl_org2_cols { display: grid; grid-template-columns: 1fr 1fr 1.25fr; gap: 1rem; align-items: start;
+        border-top: 2px solid $scout-navy; padding-top: 1rem; }
+    .o_sl_org2_col { border-radius: 16px; padding: 0.8rem; }
+    .o_sl_org2_admin { background: #eef6fd; border: 1px solid #bcdcf5; }
+    .o_sl_org2_ops { background: #eef8f1; border: 1px solid #bfe3c9; }
+    .o_sl_org2_center { background: #fffaf0; border: 2px solid #f2b705; }
+    .o_sl_org2_colhead { display: flex; gap: 0.6rem; align-items: center; margin-bottom: 0.7rem;
+        > i { width: 2.6rem; height: 2.6rem; border-radius: 50%; display: grid; place-items: center; color: #fff; font-size: 1.2rem;
+              background: #1f6fb5; flex: 0 0 auto; }
+        b { display: block; color: $scout-navy; font-size: 1.05rem; } small { color: #5c6b7a; } }
+    .o_sl_org2_ops .o_sl_org2_colhead > i { background: #2e7d4f; }
+    .o_sl_org2_card { display: flex; gap: 0.6rem; align-items: center; background: #fff; border-radius: 12px; padding: 0.6rem 0.7rem;
+        margin-bottom: 0.5rem; border: 1px solid #dfe6ee; b { color: $scout-navy; display: block; } }
+    .o_sl_org2_ico { width: 2.4rem; height: 2.4rem; border-radius: 50%; display: grid; place-items: center; color: #fff; flex: 0 0 auto; }
+    .o_sl_org2_treasurer .o_sl_org2_ico { background: #7b3f98; }
+    .o_sl_org2_secretary .o_sl_org2_ico { background: #2e7d4f; }
+    .o_sl_org2_vocal .o_sl_org2_ico { background: #e0a100; }
+    .o_sl_org2_name { display: block; color: $scout-navy; font-weight: 600; font-size: 0.9rem; text-decoration: none; line-height: 1.25; }
+    .o_sl_org2_vacant { display: inline-block; background: #e8edf2; color: #5c6b7a; border-radius: 99px; padding: 0.05rem 0.55rem;
+        font-size: 0.78rem; font-weight: 700; }
+    .o_sl_org2_chief { text-align: center; display: flex; flex-direction: column; align-items: center; gap: 0.25rem;
+        img { width: 4.2rem; height: 4.2rem; border-radius: 50%; background: $scout-navy; padding: 0.4rem; }
+        > b { color: $scout-navy; font-size: 1.15rem; } > small { color: #5c6b7a; border-top: 2px solid #f2b705; padding-top: 0.4rem; margin-top: 0.2rem; } }
+    .o_sl_org2_sub { display: flex; gap: 0.6rem; align-items: center; text-align: left; background: #fff; border: 1px solid #e3e8ee;
+        border-radius: 12px; padding: 0.55rem 0.7rem; width: 100%; margin-top: 0.4rem;
+        > i { width: 2.2rem; height: 2.2rem; border-radius: 50%; background: $scout-navy; color: #fff; display: grid; place-items: center; flex: 0 0 auto; }
+        b { color: $scout-navy; display: block; } }
+    .o_sl_org2_sec { background: #fff; border: 1px solid #dfe6ee; border-left: 6px solid var(--sec); border-radius: 12px; margin-bottom: 0.45rem;
+        > summary { list-style: none; display: flex; gap: 0.6rem; align-items: center; padding: 0.55rem 0.7rem; cursor: pointer;
+            b { display: block; color: $scout-navy; } small { display: block; color: #6b7a88; font-size: 0.75rem; }
+            .fa-chevron-down { color: #9aa5b1; } }
+        > summary::-webkit-details-marker { display: none; }
+        &[open] > summary .fa-chevron-down { transform: rotate(180deg); } }
+    .o_sl_org2_secicon { width: 2.3rem; height: 2.3rem; border-radius: 50%; background: var(--sec); color: #fff; display: grid;
+        place-items: center; font-weight: 900; flex: 0 0 auto; }
+    .o_sl_org2_secbody { padding: 0 0.7rem 0.7rem; }
+    @media (max-width: 991px) {
+        .o_sl_org2_cols { grid-template-columns: 1fr; border-top: 0; padding-top: 0; }
+        .o_sl_org2_center { order: -1; }
+    }
+}
+
+// Navegación de la app instalada: regresar, sin rebote de la pantalla, banner que se puede ocultar
+html:has(.o_scout_leader), html:has(.o_scout_leader) body, html.o_scout_standalone, html.o_scout_standalone body {
+    overscroll-behavior-y: none;
+}
+html.o_scout_standalone #wrapwrap { overscroll-behavior-y: none; }
+.o_scout_leader {
+    .o_sl_head { position: relative; }
+    .o_sl_back { flex: 0 0 auto; width: 2.3rem; height: 2.3rem; border-radius: 50%; display: grid; place-items: center;
+        color: #fff; border: 1px solid rgba(255, 255, 255, 0.45); text-decoration: none; margin-right: -0.2rem;
+        &:hover, &:focus { color: #fff; background: rgba(255, 255, 255, 0.12); } }
+}
+.o_scout_fab_back { position: fixed; left: 12px; top: calc(10px + env(safe-area-inset-top)); z-index: 1040; border: 0;
+    background: #0f3049; color: #fff; border-radius: 999px; padding: 0.45rem 0.9rem; font-weight: 800;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25); border-bottom: 2px solid #f36f45; }
+.o_scout_banner_close { position: absolute; top: 0.35rem; right: 0.45rem; z-index: 2; border: 0; background: rgba(255, 255, 255, 0.18);
+    color: inherit; width: 1.6rem; height: 1.6rem; border-radius: 50%; line-height: 1; font-size: 1.1rem; padding: 0; }
+.o_scout_banner { padding-right: 2.2rem; }
+
+// Tablero de especialidades (Tropa)
+.o_scout_leader .o_sl_spec_board {
+    th, td { text-align: center; }
+    .o_sl_spec_cat { font-size: 0.72rem; line-height: 1.15; white-space: normal; min-width: 4.8rem; vertical-align: bottom; }
+    .o_sl_spec_tech { border-bottom: 4px solid #0f3049; }
+    .o_sl_spec_aid { border-bottom: 4px solid #d7262f; min-width: 5.5rem; i { color: #ff8a80; } }
+    .o_sl_spec_lvl { font-size: 0.7rem; padding: 0.15rem 0; width: 1.8rem; color: #fff; }
+    .o_sl_spec_lvl_1 { --lvl: #f2c200; } .o_sl_spec_lvl_2 { --lvl: #2e9e44; } .o_sl_spec_lvl_3 { --lvl: #d7262f; }
+    th.o_sl_spec_lvl { background: var(--lvl) !important; }
+    .o_sl_spec_techcol { font-size: 0.66rem; writing-mode: vertical-rl; transform: rotate(180deg); white-space: nowrap; padding: 0.3rem 0.1rem; height: 6rem; }
+    .o_sl_spec_cell { min-width: 1.8rem; padding: 0.35rem 0.1rem; }
+    td.o_sl_spec_lvl_1, td.o_sl_spec_lvl_2, td.o_sl_spec_lvl_3 { border-bottom: 3px solid var(--lvl);
+        &[data-state="achieved"] { background: var(--lvl); color: #fff; } }
+    .o_sl_spec_count b { color: #c98a00; } .o_sl_spec_count .o_sl_count_ok { color: #2e9e5b; }
+    .o_sl_spec_aidcell { min-width: 3rem; }
+}

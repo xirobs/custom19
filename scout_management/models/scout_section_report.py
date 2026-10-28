@@ -38,7 +38,8 @@ class ScoutSectionReport(models.Model):
     period_label = fields.Char(compute='_compute_name', store=True, string='Periodo')
     event_ids = fields.Many2many('calendar.event', compute='_compute_event_ids',
                                  string='Actividades del trimestre (calendario)')
-    period_type = fields.Selection([('quarter', 'Trimestral'), ('annual', 'Anual')], string='Tipo de informe',
+    period_type = fields.Selection([('monthly', 'Mensual'), ('quarter', 'Trimestral'), ('annual', 'Anual')],
+                                   string='Tipo de informe',
                                    default='quarter', required=True, tracking=True)
     presented_to = fields.Char(string='Presentado en', default='Consejo de Grupo')
     state = fields.Selection([('draft', 'Borrador'), ('presented', 'Presentado')], default='draft',
@@ -75,8 +76,11 @@ class ScoutSectionReport(models.Model):
     def _compute_name(self):
         for report in self:
             label = quarter_label(report.date_from, report.date_to) if report.date_from and report.date_to else ''
+            if report.period_type == 'monthly' and report.date_from:
+                label = '%s %s' % (MONTHS[report.date_from.month - 1].capitalize(), report.date_from.year)
             report.period_label = label
-            kind = _('Informe anual') if report.period_type == 'annual' else _('Informe trimestral')
+            kind = {'annual': _('Informe anual'), 'monthly': _('Informe mensual')}.get(
+                report.period_type, _('Informe trimestral'))
             report.name = _('%(kind)s %(unit)s %(period)s', kind=kind,
                             unit=report.section_id.display_name or '', period=label)
 
@@ -119,6 +123,8 @@ class ScoutSectionReport(models.Model):
         (así un informe a mitad de trimestre no se basa en una o dos sesiones)."""
         self.ensure_one()
         end = min(self.date_to, fields.Date.context_today(self))
+        if self.period_type == 'monthly':
+            return self.date_from, max(end, self.date_from)
         start = min(self.date_from, end - relativedelta(months=3))
         return start, end
 
@@ -139,7 +145,7 @@ class ScoutSectionReport(models.Model):
         """Textos sugeridos a partir de los datos; se pueden editar o borrar."""
         self.ensure_one()
         items = []
-        prev_from = self.date_from - relativedelta(months=3)
+        prev_from = self.date_from - relativedelta(months=1 if self.period_type == 'monthly' else 3)
         prev_to = self.date_from - relativedelta(days=1)
 
         # Ruta de enlace

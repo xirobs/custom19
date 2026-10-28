@@ -558,6 +558,9 @@ class ScoutLeaderPortal(models.AbstractModel):
     def current_report(self, section, create=True, period='quarter', offset=0):
         if period == 'annual':
             start, end, _label = self.cycle_period(section)
+        elif period == 'monthly':
+            start = self._today().replace(day=1) + relativedelta(months=int(offset or 0))
+            end = start + relativedelta(months=1, days=-1)
         else:
             period = 'quarter'
             start, end = self.quarter_period(offset)
@@ -641,6 +644,13 @@ class ScoutLeaderPortal(models.AbstractModel):
         return {
             'today_event': today_event,
             'next_events': self.events(section, upcoming=True, limit=3) - today_event,
+            'group_events': self.env['calendar.event'].sudo().search([
+                ('is_scout_event', '=', True), ('scout_date', '>=', self._today()),
+                ('scout_date', '<=', self._today() + timedelta(days=120)),
+                '|', ('scout_scope', '=', 'group'), ('scout_activity_type', 'not in', ('regular', 'none'))],
+                order='start', limit=4).filtered(lambda e: e.scout_scope == 'group' or section in e.scout_section_ids
+                                                  or section.is_leadership),
+            'insurance': self._insurance_installed() and (section.is_leadership or self._is_group_manager()),
             'members': self._members(section),
             'planned_count': len(planned),
             'messages_pending': sum(1 for c in self.conversations(section) if c['needs_reply']),
@@ -756,6 +766,53 @@ class ScoutLeaderPortal(models.AbstractModel):
         if loose:
             result.append((self.env['scout.progression.category'].sudo(), loose))
         return result
+
+    # ------------------------------------------------------------------ especialidades de Tropa
+    @api.model
+    def specialty_board(self, section):
+        """Tablero de especialidades por niveles (Tropa): básicas con amarillo/verde/rojo, técnicas (se piden N)
+        y obligatorias de una sola especialidad. None si la sección no tiene especialidades por niveles."""
+        Stage = self.env['scout.progression.stage']
+        specialties = self.stages(section).filtered(lambda s: s.stage_type == 'specialty')
+        leveled = specialties.filtered('level')
+        if not leveled:
+            return None
+        order = {xid: k for k, (xid, _key, _label) in enumerate(Stage.TROPA_BASIC)}
+        ref_ids = {}
+        for xid, _key, _label in Stage.TROPA_BASIC:
+            cat = self.env.ref(f'scout_management.{xid}', raise_if_not_found=False)
+            if cat:
+                ref_ids[cat.id] = order[xid]
+        basic = []
+        for cat in leveled.category_id.sorted(lambda c: (ref_ids.get(c.id, 99), c.sequence)):
+            levels = {s.level: s for s in leveled.filtered(lambda s, c=cat: s.category_id == c)}
+            basic.append({'category': cat, 'levels': [levels.get(lv) for lv in ('1', '2', '3')]})
+        tech_cat = self.env.ref('scout_management.stage_cat_tecnicas', raise_if_not_found=False)
+        aid_cat = self.env.ref('scout_management.stage_cat_primeros_auxilios', raise_if_not_found=False)
+        official = self.env['scout.progression.stage']
+        for key, _label in Stage.TROPA_TECHNICAL:
+            official |= self.env.ref(f'scout_management.stage_tropa_tec_{key}', raise_if_not_found=False) or Stage
+        technical = specialties & official
+        technical = technical.sorted(lambda s: [k for k, _l in Stage.TROPA_TECHNICAL].index(
+            next((k for k, _l in Stage.TROPA_TECHNICAL if s == self.env.ref(f'scout_management.stage_tropa_tec_{k}',
+                                                                            raise_if_not_found=False)), 'campismo')))
+        mandatory = specialties.filtered(lambda s: aid_cat and s.category_id == aid_cat)
+        columns = [s for b in basic for s in b['levels'] if s] + list(technical) + list(mandatory)
+        rows = self.achievements(section, columns)
+        need = (tech_cat.required_count or 2) if tech_cat else 2
+        for row in rows:
+            cells = dict(zip([c.id for c in columns], row['cells']))
+            row['by_stage'] = cells
+            row['tech_done'] = len([s for s in technical if cells.get(s.id) and cells[s.id].state == 'achieved'])
+            row['basic_levels'] = {}
+            for b in basic:
+                top = 0
+                for lv, st in zip((1, 2, 3), b['levels']):
+                    if st and cells.get(st.id) and cells[st.id].state == 'achieved':
+                        top = lv
+                row['basic_levels'][b['category'].id] = top
+        return {'basic': basic, 'technical': technical, 'tech_need': need, 'tech_label': tech_cat.name if tech_cat else '',
+                'mandatory': mandatory, 'rows': rows}
 
     # ------------------------------------------------------------------ cuadro de logros
     @api.model
@@ -1248,42 +1305,64 @@ class ScoutLeaderPortal(models.AbstractModel):
         return out.getvalue()
 
     @api.model
+    def _insurance_installed(self):
+        return bool(self.env['ir.module.module'].sudo().search_count(
+            [('name', '=', 'red_seguro_scout'), ('state', '=', 'installed')]))
+
+    LEADERSHIP_KINDS = ('group_chief', 'secretary', 'treasurer')
+
+    @api.model
+    def leader_title(self, partner):
+        """Dirigentes son solo jefe de grupo, tesorería y secretaría; los demás adultos son scouters."""
+        kind = partner.sudo().scout_position_id.kind
+        return _('Dirigente') if kind in self.LEADERSHIP_KINDS else _('Scouter')
+
+    @api.model
     def org_chart(self):
-        """Organigrama: jefatura de grupo arriba (jefe, subjefes y staff) y cada sección con sus jefes y
-        subjefes, sus equipos con guía y cuántos miembros tiene."""
+        """Organigrama transversal: Consejo de Grupo arriba; al centro la Jefatura de Grupo, a un lado la
+        administración (tesorería, secretaría, vocal) y al otro la operación (secciones con sus scouters)."""
         Partner = self.env['res.partner'].sudo()
         leaders = Partner.search([('is_scout', '=', True), ('scout_type', '=', 'leader'),
                                   ('scout_state', 'in', ('trial', 'active'))])
-        rank = {'group_chief': 0, 'chief': 1, 'assistant': 2, 'secretary': 3, 'treasurer': 4, 'scouter': 5,
-                'candidate': 6}
+        rank = {'chief': 1, 'assistant': 2, 'scouter': 3, 'candidate': 4}
 
         def key(p):
             return (rank.get(p.scout_position_id.kind, 9), p.name or '')
-        top = leaders.filtered(lambda p: p.scout_position_id.kind == 'group_chief').sorted(key)
-        group_level = leaders.filtered(lambda p: p.scout_position_id.kind in ('secretary', 'treasurer')
-                                       or not self._leader_home_section(p)
-                                       or self._leader_home_section(p).is_leadership) - top
+
+        def by_kind(kind):
+            return leaders.filtered(lambda p: p.scout_position_id.kind == kind).sorted(key)
+
+        def is_group_level(p):
+            home = self._leader_home_section(p)
+            return not home or home.is_leadership
+        vocal = leaders.filtered(lambda p: 'vocal' in (p.scout_position_id.name or '').lower()).sorted(key)
+        sub_group = leaders.filtered(lambda p: p.scout_position_id.kind == 'assistant' and is_group_level(p)
+                                     or 'subjefe de grupo' in (p.scout_position_id.name or '').lower()).sorted(key)
+        group_people = by_kind('group_chief') | by_kind('treasurer') | by_kind('secretary') | vocal | sub_group
+        other_group = leaders.filtered(lambda p: is_group_level(p)) - group_people
         sections = []
         for sec in self._group_sections():
             sec_leaders = leaders.filtered(lambda p, sec=sec: sec in p.scout_leading_section_ids
-                                           or p.scout_section_id == sec) - top - group_level
+                                           or p.scout_section_id == sec) - group_people
             youth = Partner.search([('is_scout', '=', True), ('scout_type', '=', 'youth'),
                                     ('scout_state', 'in', ('trial', 'active')), ('scout_section_id', '=', sec.id)])
             patrols = []
             for patrol in youth.scout_patrol_id.sorted(lambda t: (t.sequence, t.name or '')):
                 members = youth.filtered(lambda m, t=patrol: m.scout_patrol_id == t)
-                guide = members.filtered(lambda m: m.scout_position_id.kind == 'guide')[:1]
-                sub = members.filtered(lambda m: m.scout_position_id.kind == 'subguide')[:1]
-                patrols.append({'patrol': patrol, 'count': len(members), 'guide': guide, 'subguide': sub})
-            sections.append({
-                'section': sec,
-                'chiefs': sec_leaders.filtered(lambda p: p.scout_position_id.kind == 'chief').sorted(key),
-                'others': sec_leaders.filtered(lambda p: p.scout_position_id.kind != 'chief').sorted(key),
-                'youth': len(youth), 'patrols': patrols,
-                'no_patrol': len(youth.filtered(lambda m: not m.scout_patrol_id)),
-            })
-        return {'top': top, 'group_level': group_level.sorted(key), 'sections': sections,
-                'leaders': len(leaders)}
+                patrols.append({'patrol': patrol, 'count': len(members),
+                                'guide': members.filtered(lambda m: m.scout_position_id.kind == 'guide')[:1],
+                                'subguide': members.filtered(lambda m: m.scout_position_id.kind == 'subguide')[:1]})
+            chiefs = sec_leaders.filtered(lambda p: p.scout_position_id.kind == 'chief').sorted(key)
+            # Un jefe de grupo que además lleva una sección aparece ahí como interino
+            interim = leaders.filtered(lambda p, sec=sec: p in group_people and sec in p.scout_leading_section_ids)
+            sections.append({'section': sec, 'chiefs': chiefs, 'interim': interim,
+                             'others': (sec_leaders - chiefs).sorted(key), 'youth': len(youth),
+                             'patrols': patrols, 'no_patrol': len(youth.filtered(lambda m: not m.scout_patrol_id))})
+        return {'chief': by_kind('group_chief'), 'sub_group': sub_group,
+                'admin': [('treasurer', _('Tesorería'), 'fa-database', by_kind('treasurer')),
+                          ('secretary', _('Secretaría'), 'fa-file-text', by_kind('secretary')),
+                          ('vocal', _('Vocal'), 'fa-users', vocal)],
+                'other_group': other_group.sorted(key), 'sections': sections, 'leaders': len(leaders)}
 
     @api.model
     def group_members(self):
@@ -1607,8 +1686,12 @@ class ScoutLeaderPortal(models.AbstractModel):
             cells = []
             for category in categories:
                 done = mine.filtered(lambda p: p.stage_id.category_id == category)
+                leveled = done.filtered(lambda p: p.stage_id.level)
+                done = done - leveled
                 individual = done.filtered(lambda p: not (p.stage_id.name or '').lower().startswith('insignia'))
                 level = min(len(individual), 3)
+                for p in leveled:
+                    level = max(level, int(p.stage_id.level))
                 for p in done - individual:
                     name = (p.stage_id.name or '').lower()
                     level = max(level, 3 if 'rojo' in name else 2 if 'verde' in name else 1)

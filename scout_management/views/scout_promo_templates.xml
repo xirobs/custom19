@@ -241,13 +241,14 @@
     <!-- ============================================================ Banner publicitario -->
     <template id="scout_promo_banner" name="Scouts: banner publicitario">
         <t t-set="banner" t-value="request.env['scout.promo.banner'].sudo()._scout_pick(banner_where or 'leader')"/>
-        <div t-if="banner" t-attf-class="o_scout_banner o_scout_banner_#{banner.style} #{'o_scout_banner_img' if banner.image else ''}">
+        <div t-if="banner" t-att-data-banner="banner.id" t-attf-class="o_scout_banner o_scout_banner_#{banner.style} #{'o_scout_banner_img' if banner.image else ''}">
             <img t-if="banner.image" t-att-src="image_data_uri(banner.image)" t-att-alt="banner.name"/>
             <div class="o_scout_banner_body">
                 <small t-if="banner.sponsor" class="o_scout_banner_sponsor">Patrocinado por <t t-out="banner.sponsor"/></small>
                 <b t-out="banner.name"/>
                 <span t-if="banner.text" t-out="banner.text"/>
             </div>
+            <button type="button" class="o_scout_banner_close" aria-label="Ocultar" t-att-data-banner="banner.id">×</button>
             <a t-if="banner.url" class="o_scout_banner_cta" t-att-href="banner.url"
                t-att-target="'_blank' if banner.url.startswith('http') else None" rel="noopener" t-out="banner.cta_label or 'Conoce más'"/>
         </div>
