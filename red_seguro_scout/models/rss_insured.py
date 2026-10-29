@@ -53,7 +53,8 @@ class RssInsured(models.Model):
         ('tutor', 'Tutor(a) legal'),
         ('other', 'Otro'),
     ], string='Parentesco')
-    tutor_phone = fields.Char('Teléfono del tutor', tracking=True)
+    tutor_phone = fields.Char('Teléfono de emergencia', tracking=True,
+                              help='Teléfono o WhatsApp del padre, madre o tutor para emergencias.')
     tutor_email = fields.Char('Correo del tutor', tracking=True)
 
     # Cobertura -----------------------------------------------------------

@@ -11,6 +11,10 @@
               action="rss_scout_group_action" sequence="20"/>
     <menuitem id="menu_rss_clusters" name="Agrupaciones" parent="menu_rss_members"
               action="rss_group_cluster_action" sequence="30"/>
+    <menuitem id="menu_rss_group_members" name="Representantes de grupo" parent="menu_rss_members"
+              action="rss_group_member_action" sequence="40"/>
+    <menuitem id="menu_rss_import_batches" name="Cargas de los grupos" parent="menu_rss_members"
+              action="rss_import_batch_action" sequence="50"/>
 
     <menuitem id="menu_rss_insurance" name="Seguro" parent="menu_rss_root" sequence="20"/>
     <menuitem id="menu_rss_reports_monthly" name="Relaciones mensuales" parent="menu_rss_insurance"
@@ -19,6 +23,10 @@
               action="rss_payment_action" sequence="20"/>
     <menuitem id="menu_rss_claims" name="Siniestros" parent="menu_rss_insurance"
               action="rss_claim_action" sequence="30"/>
+    <menuitem id="menu_rss_certificates" name="Certificados de póliza" parent="menu_rss_insurance"
+              action="rss_certificate_batch_action" sequence="40"/>
+    <menuitem id="menu_rss_to_validate" name="Pagos por validar" parent="menu_rss_insurance"
+              action="rss_import_batch_action_to_validate" sequence="15"/>
 
     <menuitem id="menu_rss_analysis" name="Reportes" parent="menu_rss_root" sequence="30"/>
     <menuitem id="menu_rss_analysis_period" name="Asegurados por periodo" parent="menu_rss_analysis"

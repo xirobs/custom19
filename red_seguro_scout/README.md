@@ -79,3 +79,28 @@ En `/seguro` (o desde *Mi cuenta*) ve: inicio con indicadores, asegurados con b�
 relaciones mensuales con Excel/PDF y registro de acuse, pagos con recibo PDF, y siniestros donde
 actualiza estatus, número de siniestro, montos, notas y documentos. Todo queda en el historial del
 siniestro a su nombre. No ve nada fuera de sus grupos.
+
+## Portal del grupo (`/mi-grupo`) · versión 19.0.1.2.0
+
+**Representantes** (*Asegurados › Representantes de grupo*, o pestaña en la ficha del grupo):
+jefe de grupo, secretario(a) y tesorero(a); **uno por cargo**, cada cuenta ligada a **un solo grupo**, usuarios
+de portal (sin licencia). Solo uno es el **capturista**; el cambio lo hace la administración central con
+«Hacer capturista del grupo».
+
+**Qué ven:** solo su grupo: asegurados (con su certificado para descargar), carga de listas y siniestros.
+
+**Carga de asegurados (Excel o PDF):** no exige un formato fijo. Busca las columnas por su encabezado
+(nombre, apellidos, fecha de nacimiento, sexo, padre o tutor, teléfono de emergencia, correo), muestra la
+lista para corregirla en pantalla, marca errores y **repetidos** (mismo nombre completo y fecha de
+nacimiento, en cualquier grupo o dentro del mismo archivo) y guarda en **pre-registro**. Un PDF escaneado
+no tiene texto que leer: para esos, Excel. Las correcciones posteriores las hace la administración central.
+
+**Certificados de póliza** (*Seguro › Certificados de póliza*): sube el PDF único de la aseguradora →
+«Leer certificados» identifica a cada asegurado por su nombre (cualquier orden, sin acentos; homónimos
+por fecha de nacimiento) y lee el folio → revisa los «Sin identificar» o «Varios posibles» → «Anexar a cada
+asegurado»: cada quien recibe solo sus páginas, visibles para su grupo en el portal.
+
+**Aviso de privacidad:** se edita en la póliza (pestaña *Portal de los grupos*), está siempre visible al
+pie de los portales y en `/aviso-de-privacidad-seguro`, y se acepta en cada carga.
+
+**Calendario de captura (opcional):** en la póliza, limitar la carga del portal a ciertos días (p. ej. 1 al 10).

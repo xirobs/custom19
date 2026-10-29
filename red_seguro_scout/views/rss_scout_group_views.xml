@@ -29,6 +29,7 @@
                 <field name="color"/>
                 <field name="paid_current_year"/>
                 <field name="brand_style"/>
+                <field name="number"/>
                 <field name="logo"/>
                 <field name="id"/>
                 <templates>
@@ -38,7 +39,7 @@
                                 <div class="d-flex align-items-center gap-2">
                                     <img t-if="record.logo.raw_value" class="o_rss_group_logo"
                                          t-att-src="'/web/image/rss.scout.group/' + record.id.raw_value + '/logo/128x128'" alt="Logo"/>
-                                    <span t-else="" class="o_rss_group_initial" t-out="(record.name.value or '?')[0]"/>
+                                    <span t-else="" class="o_rss_group_initial" t-out="record.number.raw_value or (record.name.value or '?')[0]"/>
                                     <div>
                                         <field name="name" class="fw-bold fs-5 d-block"/>
                                         <field name="motto" class="small fst-italic text-muted"/>

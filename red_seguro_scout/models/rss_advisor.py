@@ -2,6 +2,8 @@
 from odoo import api, fields, models, _
 from odoo.exceptions import UserError
 
+from .rss_portal_access import grant_portal_user
+
 
 class RssAdvisor(models.Model):
     """Asesor de seguros con acceso al portal /seguro (usuario de portal, sin licencia).
@@ -63,27 +65,7 @@ class RssAdvisor(models.Model):
     def action_grant_portal(self):
         """Crea (o reactiva) su usuario de portal y le envía la invitación."""
         for advisor in self:
-            partner = advisor.partner_id.sudo()
-            if not partner.email:
-                raise UserError(_('%s necesita un correo para recibir su acceso.', partner.name))
-            user = partner.with_context(active_test=False).user_ids[:1]
-            if user and not user.share:
-                raise UserError(_('%s ya es usuario interno; el portal es para usuarios externos.',
-                                  partner.name))
-            if not user:
-                same_login = self.env['res.users'].sudo().with_context(active_test=False).search(
-                    [('login', '=ilike', partner.email.strip())], limit=1)
-                if same_login:
-                    raise UserError(_('El correo %(email)s ya lo usa el usuario %(user)s.',
-                                      email=partner.email, user=same_login.name))
-                wizard = self.env['portal.wizard'].sudo().with_context(
-                    active_model='res.partner', active_ids=partner.ids).create({})
-                wizard.user_ids.action_grant_access()
-                user = partner.with_context(active_test=False).user_ids[:1]
-            elif not user.active:
-                user.active = True
-            if advisor.company_id not in user.company_ids:
-                user.write({'company_ids': [fields.Command.link(advisor.company_id.id)]})
+            user = grant_portal_user(self.env, advisor.partner_id, advisor.company_id)
             advisor._compute_user()
             advisor.message_post(body=_('Acceso al portal del asesor otorgado (%s).', user.login))
         return True

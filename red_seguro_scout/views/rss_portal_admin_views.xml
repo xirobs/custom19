@@ -1,0 +1,459 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- ===================== Representantes de grupo ===================== -->
+    <record id="rss_group_member_view_list" model="ir.ui.view">
+        <field name="name">rss.group.member.list</field>
+        <field name="model">rss.group.member</field>
+        <field name="arch" type="xml">
+            <list string="Representantes de grupo" class="o_rss" decoration-muted="not has_portal">
+                <field name="group_id"/>
+                <field name="role"/>
+                <field name="name"/>
+                <field name="email"/>
+                <field name="phone" optional="show"/>
+                <field name="is_capturer" widget="boolean_toggle" readonly="1"/>
+                <field name="has_portal" widget="boolean_toggle" readonly="1"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="rss_group_member_view_search" model="ir.ui.view">
+        <field name="name">rss.group.member.search</field>
+        <field name="model">rss.group.member</field>
+        <field name="arch" type="xml">
+            <search>
+                <field name="name"/>
+                <field name="group_id"/>
+                <filter name="capturers" string="Capturistas" domain="[('is_capturer', '=', True)]"/>
+                <filter name="no_portal" string="Sin acceso al portal" domain="[('has_portal', '=', False)]"/>
+                <group><filter name="by_group" string="Grupo" context="{'group_by': 'group_id'}"/></group>
+            </search>
+        </field>
+    </record>
+
+    <record id="rss_group_member_view_form" model="ir.ui.view">
+        <field name="name">rss.group.member.form</field>
+        <field name="model">rss.group.member</field>
+        <field name="arch" type="xml">
+            <form string="Representante de grupo" class="o_rss">
+                <header>
+                    <button name="action_grant_portal" type="object" string="Dar acceso al portal" class="btn-primary" invisible="has_portal"/>
+                    <button name="action_grant_portal" type="object" string="Reenviar acceso" invisible="not has_portal"/>
+                    <button name="action_make_capturer" type="object" string="Hacer capturista del grupo" invisible="is_capturer"
+                            groups="red_seguro_scout.group_rss_manager"
+                            confirm="Esta persona será la única que puede cargar asegurados del grupo; el capturista anterior deja de serlo. ¿Continuar?"/>
+                    <button name="action_open_portal" type="object" string="Ver portal" icon="fa-external-link" invisible="not has_portal"/>
+                    <button name="action_revoke_portal" type="object" string="Quitar acceso" invisible="not has_portal"
+                            confirm="Ya no podrá entrar al portal del grupo. ¿Continuar?"/>
+                </header>
+                <sheet>
+                    <widget name="web_ribbon" title="Capturista" bg_color="text-bg-warning" invisible="not is_capturer"/>
+                    <field name="has_portal" invisible="1"/>
+                    <field name="active" invisible="1"/>
+                    <div class="oe_title">
+                        <label for="partner_id" string="Persona"/>
+                        <h1><field name="partner_id" placeholder="Nombre del representante"/></h1>
+                    </div>
+                    <group>
+                        <group>
+                            <field name="group_id"/>
+                            <field name="role"/>
+                            <field name="is_capturer" readonly="1"/>
+                        </group>
+                        <group>
+                            <field name="email" widget="email" required="1"/>
+                            <field name="phone" widget="phone"/>
+                            <field name="user_id" readonly="1" invisible="not user_id"/>
+                        </group>
+                    </group>
+                </sheet>
+                <chatter/>
+            </form>
+        </field>
+    </record>
+
+    <record id="rss_group_member_action" model="ir.actions.act_window">
+        <field name="name">Representantes de grupo</field>
+        <field name="res_model">rss.group.member</field>
+        <field name="view_mode">list,form</field>
+        <field name="context">{'search_default_by_group': 1}</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">Registra al jefe de grupo, secretario(a) y tesorero(a)</p>
+            <p>Entran por el portal (sin licencia) a /mi-grupo y solo ven su grupo. Uno de ellos es el capturista.</p>
+        </field>
+    </record>
+
+    <!-- Representantes dentro de la ficha del grupo -->
+    <record id="rss_scout_group_view_form_members" model="ir.ui.view">
+        <field name="name">rss.scout.group.form.members</field>
+        <field name="model">rss.scout.group</field>
+        <field name="inherit_id" ref="red_seguro_scout.rss_scout_group_view_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//page[@name='members']" position="before">
+                <page string="Representantes del portal" name="portal_members">
+                    <div class="o_rss_hint">
+                        Jefe de grupo, secretario(a) y tesorero(a): uno por cargo, cada cuenta ligada solo a este grupo.
+                        Solo el <b>capturista</b> puede cargar asegurados; el cambio de capturista lo hace la administración central.
+                    </div>
+                    <field name="portal_member_ids" context="{'default_group_id': id}">
+                        <list>
+                            <field name="role"/>
+                            <field name="name"/>
+                            <field name="email"/>
+                            <field name="phone"/>
+                            <field name="is_capturer" widget="boolean_toggle" readonly="1"/>
+                            <field name="has_portal" widget="boolean_toggle" readonly="1"/>
+                        </list>
+                    </field>
+                </page>
+            </xpath>
+        </field>
+    </record>
+
+    <!-- ===================== Cargas de los grupos ===================== -->
+    <record id="rss_import_batch_view_list" model="ir.ui.view">
+        <field name="name">rss.import.batch.list</field>
+        <field name="model">rss.import.batch</field>
+        <field name="arch" type="xml">
+            <list string="Cargas de asegurados" class="o_rss" create="0">
+                <field name="create_date" string="Fecha"/>
+                <field name="group_id"/>
+                <field name="member_id"/>
+                <field name="filename"/>
+                <field name="source"/>
+                <field name="line_count"/>
+                <field name="created_count"/>
+                <field name="duplicate_count" optional="hide"/>
+                <field name="error_count" optional="hide"/>
+                <field name="reference" optional="show"/>
+                <field name="amount_total" sum="Total" optional="show"/>
+                <field name="payment_method" optional="show"/>
+                <field name="currency_id" column_invisible="1"/>
+                <field name="state" widget="badge" decoration-success="state == 'done'" decoration-info="state == 'review'"
+                       decoration-warning="state in ('payment', 'verifying')" decoration-danger="state == 'expired'"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="rss_import_batch_view_form" model="ir.ui.view">
+        <field name="name">rss.import.batch.form</field>
+        <field name="model">rss.import.batch</field>
+        <field name="arch" type="xml">
+            <form string="Carga de asegurados" class="o_rss" create="0">
+                <header>
+                    <button name="action_validate" type="object" string="Revisar de nuevo" invisible="state != 'review'"/>
+                    <button name="action_request_payment" type="object" string="Calcular pago" class="btn-primary" invisible="state != 'review'"/>
+                    <button name="action_validate_transfer" type="object" string="Validar pago: sí llegó" class="btn-primary"
+                            invisible="state != 'verifying'" groups="red_seguro_scout.group_rss_manager"
+                            confirm="Se crean y activan los asegurados y se emite el recibo. ¿El depósito sí está en la cuenta?"/>
+                    <button name="action_reject_transfer" type="object" string="Rechazar: no se vio reflejado"
+                            invisible="state != 'verifying'" groups="red_seguro_scout.group_rss_manager"
+                            confirm="Se avisa al grupo que tiene solo hoy para pagar. ¿Continuar?"/>
+                    <button name="action_cancel" type="object" string="Cancelar" invisible="state not in ('review', 'payment')"/>
+                    <field name="state" widget="statusbar" statusbar_visible="review,payment,verifying,done"/>
+                </header>
+                <sheet>
+                    <div class="oe_title"><h1><field name="name" readonly="1"/></h1></div>
+                    <group>
+                        <group>
+                            <field name="group_id" readonly="1"/>
+                            <field name="member_id" readonly="1"/>
+                            <field name="user_id" readonly="1"/>
+                            <field name="privacy_accepted"/>
+                        </group>
+                        <group>
+                            <field name="source" readonly="1"/>
+                            <field name="attachment_id" readonly="1"/>
+                            <field name="ok_count"/>
+                            <field name="duplicate_count"/>
+                            <field name="error_count"/>
+                            <field name="created_count"/>
+                        </group>
+                    </group>
+                    <group string="Pago" invisible="state == 'review'">
+                        <group>
+                            <field name="reference"/>
+                            <field name="tariff_name"/>
+                            <field name="quantity"/>
+                            <field name="unit_amount"/>
+                            <field name="amount_total"/>
+                            <field name="mp_commission"/>
+                            <field name="amount_mp_total"/>
+                            <field name="currency_id" invisible="1"/>
+                        </group>
+                        <group>
+                            <field name="payment_deadline"/>
+                            <field name="payment_method"/>
+                            <field name="transfer_reference" invisible="payment_method != 'transfer'"/>
+                            <field name="transfer_date" invisible="payment_method != 'transfer'"/>
+                            <field name="proof_attachment_ids" widget="many2many_binary" invisible="payment_method != 'transfer'"/>
+                            <field name="transaction_ref" invisible="payment_method != 'mercadopago'"/>
+                            <field name="rejection_reason" readonly="state != 'verifying'"
+                                   placeholder="Motivo (opcional) antes de rechazar"/>
+                            <field name="rss_payment_id"/>
+                            <field name="paid_date"/>
+                        </group>
+                    </group>
+                    <field name="line_ids" readonly="state != 'review'">
+                        <list editable="bottom" decoration-danger="status == 'error'" decoration-warning="status == 'duplicate'" create="0">
+                            <field name="sequence" readonly="1"/>
+                            <field name="include"/>
+                            <field name="first_name"/>
+                            <field name="second_name" optional="show"/>
+                            <field name="last_name_father"/>
+                            <field name="last_name_mother"/>
+                            <field name="birthdate"/>
+                            <field name="age"/>
+                            <field name="sex"/>
+                            <field name="tutor_name"/>
+                            <field name="tutor_phone"/>
+                            <field name="tutor_email" optional="show"/>
+                            <field name="status" readonly="1"/>
+                            <field name="message" readonly="1"/>
+                            <field name="duplicate_insured_id" readonly="1" optional="show"/>
+                            <field name="insured_id" readonly="1" optional="hide"/>
+                        </list>
+                    </field>
+                </sheet>
+                <chatter/>
+            </form>
+        </field>
+    </record>
+
+    <record id="rss_import_batch_view_search" model="ir.ui.view">
+        <field name="name">rss.import.batch.search</field>
+        <field name="model">rss.import.batch</field>
+        <field name="arch" type="xml">
+            <search>
+                <field name="reference"/>
+                <field name="group_id"/>
+                <field name="transfer_reference"/>
+                <filter name="to_validate" string="Pagos por validar" domain="[('state', '=', 'verifying')]"/>
+                <filter name="to_pay" string="Por pagar" domain="[('state', '=', 'payment')]"/>
+                <filter name="paid" string="Pagadas" domain="[('state', '=', 'done')]"/>
+                <filter name="expired" string="Vencidas" domain="[('state', '=', 'expired')]"/>
+                <group>
+                    <filter name="by_group" string="Grupo" context="{'group_by': 'group_id'}"/>
+                    <filter name="by_state" string="Estatus" context="{'group_by': 'state'}"/>
+                    <filter name="by_method" string="Forma de pago" context="{'group_by': 'payment_method'}"/>
+                </group>
+            </search>
+        </field>
+    </record>
+
+    <record id="rss_import_batch_action_to_validate" model="ir.actions.act_window">
+        <field name="name">Pagos por validar</field>
+        <field name="res_model">rss.import.batch</field>
+        <field name="view_mode">list,form</field>
+        <field name="search_view_id" ref="rss_import_batch_view_search"/>
+        <field name="context">{'search_default_to_validate': 1}</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">No hay transferencias por validar</p>
+            <p>Cuando un grupo sube su comprobante aparece aquí. Revisa el depósito en la cuenta y valida o rechaza.</p>
+        </field>
+    </record>
+
+    <record id="rss_import_batch_action" model="ir.actions.act_window">
+        <field name="name">Cargas de los grupos</field>
+        <field name="res_model">rss.import.batch</field>
+        <field name="view_mode">list,form</field>
+        <field name="search_view_id" ref="rss_import_batch_view_search"/>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">Aquí aparecen las listas que suben los grupos</p>
+            <p>Cada carga muestra quién la subió, el archivo original, lo que se guardó y lo que quedó repetido o con error.</p>
+        </field>
+    </record>
+
+    <!-- ===================== Certificados de póliza ===================== -->
+    <record id="rss_certificate_batch_view_list" model="ir.ui.view">
+        <field name="name">rss.certificate.batch.list</field>
+        <field name="model">rss.certificate.batch</field>
+        <field name="arch" type="xml">
+            <list string="Certificados" class="o_rss">
+                <field name="name"/>
+                <field name="create_date" string="Fecha"/>
+                <field name="page_count"/>
+                <field name="matched_count"/>
+                <field name="pending_count"/>
+                <field name="attached_count"/>
+                <field name="state" widget="badge" decoration-success="state == 'done'" decoration-info="state == 'review'"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="rss_certificate_batch_view_form" model="ir.ui.view">
+        <field name="name">rss.certificate.batch.form</field>
+        <field name="model">rss.certificate.batch</field>
+        <field name="arch" type="xml">
+            <form string="Certificados de póliza" class="o_rss">
+                <header>
+                    <button name="action_read" type="object" string="Leer certificados" class="btn-primary" invisible="state != 'draft'"/>
+                    <button name="action_read" type="object" string="Volver a leer" invisible="state != 'review'"
+                            confirm="Se vuelven a leer los PDF; las asignaciones manuales aún no anexadas se pierden. ¿Continuar?"/>
+                    <button name="action_attach" type="object" string="Anexar a cada asegurado" class="btn-primary" invisible="state != 'review'"/>
+                    <field name="state" widget="statusbar"/>
+                </header>
+                <sheet>
+                    <div class="oe_title">
+                        <label for="name"/>
+                        <h1><field name="name"/></h1>
+                    </div>
+                    <div class="o_rss_hint">
+                        Sube el PDF que mandó la aseguradora con todos los certificados. El sistema lee el nombre de cada
+                        página, identifica al asegurado y, al anexar, le deja <b>solo su certificado</b> en su ficha
+                        (lo ve su grupo en el portal). Revisa los que digan «Varios posibles» o «Sin identificar».
+                    </div>
+                    <group>
+                        <group>
+                            <field name="file_ids" widget="many2many_binary" readonly="state == 'done'"/>
+                            <field name="policy_id"/>
+                        </group>
+                        <group>
+                            <field name="group_ids" widget="many2many_tags"/>
+                            <field name="page_count"/>
+                            <field name="matched_count"/>
+                            <field name="pending_count"/>
+                            <field name="attached_count"/>
+                            <field name="company_id" groups="base.group_multi_company"/>
+                        </group>
+                    </group>
+                    <field name="line_ids" invisible="state == 'draft'">
+                        <list editable="bottom" create="0" decoration-success="attached" decoration-warning="status == 'ambiguous'"
+                              decoration-danger="status == 'unmatched' and not skip" decoration-muted="skip">
+                            <field name="attachment_id" optional="hide" readonly="1"/>
+                            <field name="pages" readonly="1"/>
+                            <field name="name_read" readonly="1"/>
+                            <field name="certificate_number"/>
+                            <field name="candidate_ids" widget="many2many_tags" readonly="1" optional="show"/>
+                            <field name="insured_id" readonly="attached" options="{'no_create': True}"/>
+                            <field name="group_id"/>
+                            <field name="status" readonly="1"/>
+                            <field name="no_text" optional="hide" readonly="1"/>
+                            <field name="skip" readonly="attached"/>
+                            <field name="attached" readonly="1"/>
+                            <button name="action_preview" type="object" icon="fa-eye" title="Ver página"/>
+                        </list>
+                    </field>
+                </sheet>
+                <chatter/>
+            </form>
+        </field>
+    </record>
+
+    <record id="rss_certificate_batch_action" model="ir.actions.act_window">
+        <field name="name">Certificados de póliza</field>
+        <field name="res_model">rss.certificate.batch</field>
+        <field name="view_mode">list,form</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">Sube el PDF de certificados de la aseguradora</p>
+            <p>Se separa por persona y cada asegurado recibe solo su certificado.</p>
+        </field>
+    </record>
+
+    <!-- ===================== Ficha del asegurado: certificado y origen ===================== -->
+    <record id="rss_insured_view_form_certificate" model="ir.ui.view">
+        <field name="name">rss.insured.form.certificate</field>
+        <field name="model">rss.insured</field>
+        <field name="inherit_id" ref="red_seguro_scout.rss_insured_view_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//header" position="inside">
+                <button name="action_download_certificate" type="object" string="Certificado" icon="fa-file-pdf-o"
+                        invisible="not certificate_attachment_id"/>
+            </xpath>
+            <xpath expr="//page[@name='claims']" position="before">
+                <page string="Certificado y captura" name="certificate">
+                    <group>
+                        <group string="Certificado de la póliza">
+                            <field name="certificate_number"/>
+                            <field name="certificate_attachment_id" options="{'no_create': True}"/>
+                            <field name="certificate_date"/>
+                        </group>
+                        <group string="Captura">
+                            <field name="capture_source"/>
+                            <field name="captured_by_id"/>
+                            <field name="import_batch_id"/>
+                        </group>
+                    </group>
+                </page>
+            </xpath>
+        </field>
+    </record>
+
+    <record id="rss_insured_view_list_certificate" model="ir.ui.view">
+        <field name="name">rss.insured.list.certificate</field>
+        <field name="model">rss.insured</field>
+        <field name="inherit_id" ref="red_seguro_scout.rss_insured_view_list"/>
+        <field name="arch" type="xml">
+            <field name="state" position="before">
+                <field name="has_certificate" optional="show" widget="boolean"/>
+                <field name="capture_source" optional="hide"/>
+            </field>
+        </field>
+    </record>
+
+    <record id="rss_insured_view_search_certificate" model="ir.ui.view">
+        <field name="name">rss.insured.search.certificate</field>
+        <field name="model">rss.insured</field>
+        <field name="inherit_id" ref="red_seguro_scout.rss_insured_view_search"/>
+        <field name="arch" type="xml">
+            <filter name="inactive" position="after">
+                <separator/>
+                <filter name="with_certificate" string="Con certificado" domain="[('has_certificate', '=', True)]"/>
+                <filter name="without_certificate" string="Sin certificado" domain="[('has_certificate', '=', False), ('state', '=', 'active')]"/>
+            </filter>
+        </field>
+    </record>
+
+    <!-- ===================== Póliza: calendario de captura y aviso ===================== -->
+    <record id="rss_policy_view_form_capture" model="ir.ui.view">
+        <field name="name">rss.policy.form.capture</field>
+        <field name="model">rss.policy</field>
+        <field name="inherit_id" ref="red_seguro_scout.rss_policy_view_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//notebook" position="inside">
+                <page string="Tarifas y cobro" name="billing">
+                    <field name="tariff_ids">
+                        <list editable="bottom">
+                            <field name="name"/>
+                            <field name="date_from"/>
+                            <field name="date_to"/>
+                            <field name="amount"/>
+                            <field name="currency_id" column_invisible="1"/>
+                        </list>
+                    </field>
+                    <group>
+                        <group string="Cuenta para transferencias">
+                            <field name="bank_beneficiary"/>
+                            <field name="bank_name"/>
+                            <field name="bank_clabe"/>
+                            <field name="bank_account"/>
+                            <field name="bank_card"/>
+                            <field name="bank_notes" placeholder="Indicaciones que verá el grupo"/>
+                        </group>
+                        <group string="Mercado Pago">
+                            <field name="mp_pass_fee"/>
+                            <field name="mp_fee_percent" invisible="not mp_pass_fee"/>
+                            <field name="mp_fee_fixed" invisible="not mp_pass_fee"/>
+                            <field name="mp_fee_vat" invisible="not mp_pass_fee"/>
+                            <div colspan="2" class="text-muted small" invisible="not mp_pass_fee">
+                                Se cobra al grupo de modo que, descontada la comisión con IVA, llegue completo el importe del seguro.
+                                Revisa la comisión vigente en el panel de Mercado Pago de la cuenta.
+                            </div>
+                        </group>
+                    </group>
+                </page>
+                <page string="Portal de los grupos" name="portal">
+                    <group>
+                        <group string="Calendario de captura">
+                            <field name="capture_window_enforced"/>
+                            <field name="capture_day_from" invisible="not capture_window_enforced"/>
+                            <field name="capture_day_to" invisible="not capture_window_enforced"/>
+                        </group>
+                    </group>
+                    <separator string="Aviso de privacidad (visible en los portales)"/>
+                    <field name="privacy_notice"/>
+                </page>
+            </xpath>
+        </field>
+    </record>
+</odoo>

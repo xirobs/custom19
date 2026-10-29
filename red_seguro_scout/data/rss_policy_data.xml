@@ -49,5 +49,34 @@ comunitario y traslados a la actividad.</p>
             <field name="name">Gastos médicos por accidente</field>
             <field name="injury_type">medical</field>
         </record>
+        <!-- Tarifas por trimestre de alta (vigencia de todos: hasta el 18 de agosto de 2027) -->
+        <record id="tariff_q1_2026" model="rss.policy.tariff">
+            <field name="policy_id" ref="policy_accidentes_personales"/>
+            <field name="name">1er trimestre (19 ago – 18 nov 2026)</field>
+            <field name="date_from">2026-08-19</field>
+            <field name="date_to">2026-11-18</field>
+            <field name="amount">100</field>
+        </record>
+        <record id="tariff_q2_2026" model="rss.policy.tariff">
+            <field name="policy_id" ref="policy_accidentes_personales"/>
+            <field name="name">2o trimestre (19 nov 2026 – 18 feb 2027)</field>
+            <field name="date_from">2026-11-19</field>
+            <field name="date_to">2027-02-18</field>
+            <field name="amount">75</field>
+        </record>
+        <record id="tariff_q3_2027" model="rss.policy.tariff">
+            <field name="policy_id" ref="policy_accidentes_personales"/>
+            <field name="name">3er trimestre (19 feb – 18 may 2027)</field>
+            <field name="date_from">2027-02-19</field>
+            <field name="date_to">2027-05-18</field>
+            <field name="amount">50</field>
+        </record>
+        <record id="tariff_q4_2027" model="rss.policy.tariff">
+            <field name="policy_id" ref="policy_accidentes_personales"/>
+            <field name="name">4o trimestre (19 may – 18 ago 2027)</field>
+            <field name="date_from">2027-05-19</field>
+            <field name="date_to">2027-08-18</field>
+            <field name="amount">35</field>
+        </record>
     </data>
 </odoo>

@@ -1,0 +1,458 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- ===================== Portal del grupo (/mi-grupo) ===================== -->
+
+    <template id="portal_my_home_rss_group" name="Portal: mi grupo (seguro)" inherit_id="portal.portal_my_home" priority="43">
+        <div id="portal_client_category" position="before">
+            <t t-set="rss_member" t-value="request.env['rss.group.member']._for_user(request.env.user)"/>
+            <div t-if="rss_member" class="my-3">
+                <a href="/mi-grupo" class="o_rssp_entry">
+                    <img src="/red_seguro_scout/static/description/icon.png" alt=""/>
+                    <div>
+                        <div class="o_rssp_entry_title">Red Seguro Scout · <t t-out="rss_member.group_id.sudo().name"/></div>
+                        <div class="o_rssp_entry_text">Asegurados, certificados, carga de listas y siniestros de tu grupo</div>
+                    </div>
+                    <i class="fa fa-chevron-right ms-auto"/>
+                </a>
+            </div>
+        </div>
+    </template>
+
+    <!-- Aviso de privacidad siempre visible al pie de los portales -->
+    <template id="rss_privacy_footer" name="Red Seguro Scout: aviso de privacidad">
+        <footer class="o_rssp_privacy">
+            <i class="fa fa-shield"/>
+            Tus datos y los de los asegurados se usan solo para administrar el seguro.
+            <a href="/aviso-de-privacidad-seguro" target="_blank">Consulta el aviso de privacidad</a>.
+        </footer>
+    </template>
+
+    <template id="advisor_layout_privacy" inherit_id="red_seguro_scout.advisor_layout" name="Asesor: aviso de privacidad">
+        <xpath expr="//main[hasclass('o_rssp_main')]" position="after">
+            <t t-call="red_seguro_scout.rss_privacy_footer"/>
+        </xpath>
+    </template>
+
+    <template id="privacy_notice_page" name="Aviso de privacidad (Red Seguro Scout)">
+        <t t-call="portal.portal_layout">
+            <t t-set="no_breadcrumbs" t-value="True"/>
+            <div class="o_rssp">
+                <header class="o_rssp_head">
+                    <a href="/my" class="o_rssp_brand">
+                        <img src="/red_seguro_scout/static/description/icon.png" alt=""/>
+                        <div>
+                            <div class="o_rssp_kicker">Red Seguro Scout · <i>Rumbo Seguro</i></div>
+                            <div class="o_rssp_title">Aviso de privacidad</div>
+                        </div>
+                    </a>
+                </header>
+                <section class="o_rssp_card o_rssp_notice" t-out="company.rss_privacy_notice"/>
+            </div>
+        </t>
+    </template>
+
+    <template id="group_layout" name="Grupo: base">
+        <t t-call="portal.portal_layout">
+            <t t-set="no_breadcrumbs" t-value="True"/>
+            <div t-attf-class="o_rssp #{'o_rssp_wide' if group_page == 'import' else ''}">
+                <header class="o_rssp_head">
+                    <a href="/mi-grupo" class="o_rssp_brand">
+                        <img t-if="group and group.logo" t-att-src="'/web/image/rss.scout.group/%s/logo/96x96' % group.id" alt=""/>
+                        <img t-else="" src="/red_seguro_scout/static/description/icon.png" alt=""/>
+                        <div>
+                            <div class="o_rssp_kicker">Red Seguro Scout · <i>Rumbo Seguro</i></div>
+                            <div class="o_rssp_title" t-out="group.name if group else 'Mi grupo'"/>
+                        </div>
+                    </a>
+                    <div class="o_rssp_who" t-if="member">
+                        <span t-out="member.name"/>
+                        <small><t t-out="labels('rss.group.member', 'role').get(member.role)"/><t t-if="member.is_capturer"> · Capturista</t></small>
+                    </div>
+                </header>
+                <div t-if="error" class="alert alert-danger o_rssp_alert" role="alert"><i class="fa fa-exclamation-circle"/> <t t-out="error"/></div>
+                <div t-if="ok" class="alert alert-success o_rssp_alert" role="status"><i class="fa fa-check-circle"/> <t t-out="ok"/></div>
+                <main class="o_rssp_main"><t t-out="0"/></main>
+                <t t-call="red_seguro_scout.rss_privacy_footer"/>
+                <nav t-if="member" class="o_rssp_nav">
+                    <a href="/mi-grupo" t-attf-class="#{'active' if group_page == 'home' else ''}"><i class="fa fa-home"/><span>Inicio</span></a>
+                    <a href="/mi-grupo/asegurados" t-attf-class="#{'active' if group_page == 'insured' else ''}"><i class="fa fa-users"/><span>Asegurados</span></a>
+                    <a href="/mi-grupo/importar" t-attf-class="#{'active' if group_page == 'import' else ''}"><i class="fa fa-upload"/><span>Cargar lista</span></a>
+                    <a href="/mi-grupo/siniestros" t-attf-class="#{'active' if group_page == 'claims' else ''}"><i class="fa fa-medkit"/><span>Siniestros</span></a>
+                </nav>
+            </div>
+        </t>
+    </template>
+
+    <template id="group_no_access" name="Grupo: sin acceso">
+        <t t-call="portal.portal_layout">
+            <t t-set="no_breadcrumbs" t-value="True"/>
+            <div class="o_rssp">
+                <div class="o_rssp_empty">
+                    <i class="fa fa-lock fa-3x"/>
+                    <h4>Tu cuenta no está ligada a un grupo</h4>
+                    <p>El acceso es para el jefe de grupo, secretario(a) o tesorero(a) registrados por la administración central de Red Seguro Scout.</p>
+                    <a href="/my" class="btn o_rssp_btn">Volver a mi cuenta</a>
+                </div>
+                <t t-call="red_seguro_scout.rss_privacy_footer"/>
+            </div>
+        </t>
+    </template>
+
+    <!-- Inicio -->
+    <template id="group_home" name="Grupo: inicio">
+        <t t-call="red_seguro_scout.group_layout">
+            <div class="o_rssp_kpis">
+                <a href="/mi-grupo/asegurados?estatus=active" class="o_rssp_kpi o_rssp_kpi_main"><b t-out="stats['active']"/><span>Asegurados</span></a>
+                <a href="/mi-grupo/asegurados?estatus=draft" class="o_rssp_kpi"><b t-out="stats['draft']"/><span>En pre-registro</span></a>
+                <a href="/mi-grupo/asegurados?estatus=certificate" class="o_rssp_kpi"><b t-out="stats['certificates']"/><span>Con certificado</span></a>
+                <a href="/mi-grupo/siniestros" class="o_rssp_kpi"><b t-out="stats['claims']"/><span>Siniestros abiertos</span></a>
+            </div>
+            <section class="o_rssp_card">
+                <h5>Mi grupo</h5>
+                <div class="o_rssp_row">
+                    <div class="o_rssp_muted">
+                        <t t-out="stats['male']"/> hombres · <t t-out="stats['female']"/> mujeres asegurados
+                        <t t-if="group.city"> · <t t-out="group.city"/></t>
+                    </div>
+                </div>
+                <div class="o_rssp_team">
+                    <div t-foreach="team" t-as="t" class="o_rssp_team_item">
+                        <b t-out="t.name"/>
+                        <span class="o_rssp_muted"><t t-out="labels('rss.group.member', 'role').get(t.role)"/><t t-if="t.is_capturer"> · Capturista</t></span>
+                    </div>
+                </div>
+            </section>
+            <section class="o_rssp_card">
+                <h5>Cargar asegurados</h5>
+                <p class="o_rssp_muted mb-2" t-if="member.is_capturer">Sube la lista de tu grupo en Excel o PDF; la revisas antes de guardarla. <t t-out="capture_msg"/></p>
+                <p class="o_rssp_muted mb-2" t-else="">La carga la hace el capturista de tu grupo. Tú puedes consultar los asegurados, certificados y siniestros.</p>
+                <a t-if="member.is_capturer" href="/mi-grupo/importar" class="btn o_rssp_btn"><i class="fa fa-upload"/> Cargar lista</a>
+            </section>
+            <section class="o_rssp_card" t-if="batches">
+                <h5>Últimas cargas</h5>
+                <a t-foreach="batches" t-as="b" class="o_rssp_list_item" t-attf-href="/mi-grupo/importar/#{b.id}">
+                    <div>
+                        <b t-out="b.filename or 'Captura'"/>
+                        <div class="o_rssp_muted"><t t-out="fmt_date(b.create_date)"/> · <t t-out="b.line_count"/> filas<t t-if="b.state == 'done'"> · <t t-out="b.created_count"/> guardados</t></div>
+                    </div>
+                    <span t-attf-class="o_rssp_pill o_rssp_pill_imp_#{b.state}" t-out="labels('rss.import.batch', 'state').get(b.state)"/>
+                </a>
+            </section>
+        </t>
+    </template>
+
+    <!-- Asegurados -->
+    <template id="group_insured" name="Grupo: asegurados">
+        <t t-call="red_seguro_scout.group_layout">
+            <form class="o_rssp_filters" method="get" action="/mi-grupo/asegurados">
+                <input type="search" name="q" t-att-value="q" class="form-control" placeholder="Nombre o tutor"/>
+                <select name="estatus" class="form-select">
+                    <option value="all" t-att-selected="estatus == 'all'">Todos</option>
+                    <option value="active" t-att-selected="estatus == 'active'">Asegurados</option>
+                    <option value="draft" t-att-selected="estatus == 'draft'">Pre-registro</option>
+                    <option value="certificate" t-att-selected="estatus == 'certificate'">Con certificado</option>
+                    <option value="no_certificate" t-att-selected="estatus == 'no_certificate'">Sin certificado</option>
+                </select>
+                <button type="submit" class="btn o_rssp_btn"><i class="fa fa-search"/> Buscar</button>
+            </form>
+            <p class="o_rssp_muted"><t t-out="total"/> personas</p>
+            <div class="o_rssp_table_wrap">
+                <table class="table o_rssp_table">
+                    <thead><tr>
+                        <th>Nombre</th><th>Nacimiento</th><th class="text-center">Edad</th><th>Sexo</th>
+                        <th>Padre o tutor</th><th>Emergencia</th><th>Estatus</th><th>Certificado</th>
+                    </tr></thead>
+                    <tbody>
+                        <tr t-foreach="insured" t-as="i">
+                            <td><b t-out="i.name"/><div class="o_rssp_muted" t-if="i.tutor_email" t-out="i.tutor_email"/></td>
+                            <td t-out="fmt_date(i.birthdate)"/>
+                            <td class="text-center" t-out="i.age"/>
+                            <td t-out="labels('rss.insured', 'sex').get(i.sex)"/>
+                            <td t-out="i.tutor_name or ''"/>
+                            <td><a t-if="i.tutor_phone" t-attf-href="tel:#{i.tutor_phone}" t-out="i.tutor_phone"/></td>
+                            <td><span t-attf-class="o_rssp_pill o_rssp_pill_#{i.state}" t-out="labels('rss.insured', 'state').get(i.state)"/></td>
+                            <td>
+                                <a t-if="i.certificate_attachment_id" class="btn btn-sm o_rssp_btn_ghost" t-attf-href="/mi-grupo/asegurados/#{i.id}/certificado">
+                                    <i class="fa fa-file-pdf-o"/> <t t-out="i.certificate_number or 'Descargar'"/>
+                                </a>
+                                <span t-else="" class="o_rssp_muted">Pendiente</span>
+                            </td>
+                        </tr>
+                        <tr t-if="not insured"><td colspan="8" class="o_rssp_muted text-center">Sin resultados.</td></tr>
+                    </tbody>
+                </table>
+            </div>
+            <div class="o_rssp_pager" t-if="total &gt; page_size">
+                <a t-if="page &gt; 1" class="btn o_rssp_btn_ghost" t-attf-href="/mi-grupo/asegurados?q=#{q}&amp;estatus=#{estatus}&amp;page=#{page - 1}">Anterior</a>
+                <span>Página <t t-out="page"/></span>
+                <a t-if="page * page_size &lt; total" class="btn o_rssp_btn_ghost" t-attf-href="/mi-grupo/asegurados?q=#{q}&amp;estatus=#{estatus}&amp;page=#{page + 1}">Siguiente</a>
+            </div>
+            <p class="o_rssp_muted">¿Algún dato está mal? Las correcciones las hace la administración central de Red Seguro Scout.</p>
+        </t>
+    </template>
+
+    <!-- Cargar lista -->
+    <template id="group_import" name="Grupo: cargar lista">
+        <t t-call="red_seguro_scout.group_layout">
+            <section class="o_rssp_card" t-if="member.is_capturer">
+                <h5>Cargar lista de asegurados</h5>
+                <p class="o_rssp_muted">Sube un <b>Excel</b> o un <b>PDF</b>. No tiene que ser un formato especial: el sistema busca las columnas de
+                    nombre, apellido paterno, apellido materno, fecha de nacimiento, sexo, padre o tutor, teléfono de emergencia y correo.
+                    Antes de guardar verás la lista para corregirla.</p>
+                <div t-if="not capture_open" class="alert alert-warning"><t t-out="capture_msg"/></div>
+                <form method="post" enctype="multipart/form-data" class="o_rssp_form" action="/mi-grupo/importar">
+                    <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
+                    <label for="rssp_file">Archivo (Excel .xlsx o PDF)</label>
+                    <input id="rssp_file" type="file" name="file" class="form-control" required="required"
+                           accept=".xlsx,.xlsm,.pdf,application/pdf,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"/>
+                    <label class="o_rssp_check">
+                        <input type="checkbox" name="privacy" value="1" required="required"/>
+                        Confirmo que cuento con la autorización de los padres o tutores y acepto el
+                        <a href="/aviso-de-privacidad-seguro" target="_blank">aviso de privacidad</a>.
+                    </label>
+                    <button type="submit" class="btn o_rssp_btn mt-2" t-att-disabled="None if capture_open else 'disabled'"><i class="fa fa-search"/> Leer archivo</button>
+                </form>
+                <div class="o_rssp_actions">
+                    <a href="/mi-grupo/importar/plantilla.xlsx" class="btn o_rssp_btn_ghost"><i class="fa fa-file-excel-o"/> Descargar plantilla Excel</a>
+                </div>
+                <p class="o_rssp_muted mt-2"><i class="fa fa-info-circle"/> Un PDF escaneado o una foto no se pueden leer; en ese caso usa Excel.</p>
+            </section>
+            <section class="o_rssp_card" t-if="member.is_capturer">
+                <h5>Capturar a mano</h5>
+                <p class="o_rssp_muted">Para registrar a una o pocas personas sin archivo.</p>
+                <form method="post" class="o_rssp_form" action="/mi-grupo/capturar">
+                    <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
+                    <label for="rssp_rows">¿Cuántas personas?</label>
+                    <input id="rssp_rows" type="number" name="rows" min="1" max="30" value="1" class="form-control" style="max-width: 120px;"/>
+                    <label class="o_rssp_check">
+                        <input type="checkbox" name="privacy" value="1" required="required"/>
+                        Confirmo que cuento con la autorización de los padres o tutores y acepto el
+                        <a href="/aviso-de-privacidad-seguro" target="_blank">aviso de privacidad</a>.
+                    </label>
+                    <button type="submit" class="btn o_rssp_btn mt-2" t-att-disabled="None if capture_open else 'disabled'"><i class="fa fa-pencil"/> Capturar</button>
+                </form>
+            </section>
+            <section class="o_rssp_card o_rssp_paynote" t-if="member.is_capturer">
+                <i class="fa fa-credit-card"/>
+                <div><b>El pago es el mismo día.</b> Después de revisar la lista se abre la ventana de pago (Mercado Pago o transferencia).
+                    Las personas quedan aseguradas solo cuando el pago se confirma; si no se paga ese día, la carga vence.</div>
+            </section>
+            <section class="o_rssp_card" t-else="">
+                <h5>Cargar lista de asegurados</h5>
+                <p class="o_rssp_muted">Solo el capturista de tu grupo puede cargar asegurados. Si necesitan cambiar de capturista, pídelo a la administración central.</p>
+            </section>
+            <section class="o_rssp_card" t-if="batches">
+                <h5>Cargas anteriores</h5>
+                <a t-foreach="batches" t-as="b" class="o_rssp_list_item" t-attf-href="/mi-grupo/importar/#{b.id}">
+                    <div>
+                        <b t-out="b.filename or 'Captura'"/>
+                        <div class="o_rssp_muted"><t t-out="fmt_date(b.create_date)"/> · <t t-out="b.line_count"/> filas · <t t-out="b.member_id.name or b.user_id.name"/></div>
+                    </div>
+                    <span t-attf-class="o_rssp_pill o_rssp_pill_imp_#{b.state}" t-out="labels('rss.import.batch', 'state').get(b.state)"/>
+                </a>
+            </section>
+        </t>
+    </template>
+
+    <!-- Revisión de la carga (tabla editable) y cobro -->
+    <template id="group_import_review" name="Grupo: revisar carga">
+        <t t-call="red_seguro_scout.group_layout">
+            <t t-set="ro" t-value="batch.state != 'review' or not member.is_capturer"/>
+            <a href="/mi-grupo/importar" class="o_rssp_back"><i class="fa fa-arrow-left"/> Cargar lista</a>
+            <section class="o_rssp_card">
+                <div class="o_rssp_row">
+                    <div>
+                        <h4 class="o_rssp_h mb-0" t-out="batch.filename or 'Captura manual'"/>
+                        <div class="o_rssp_muted"><t t-out="labels('rss.import.batch', 'source').get(batch.source)"/> · <t t-out="batch.line_count"/> personas · Ref. <b t-out="batch.reference"/></div>
+                    </div>
+                    <span t-attf-class="o_rssp_pill o_rssp_pill_imp_#{batch.state}" t-out="labels('rss.import.batch', 'state').get(batch.state)"/>
+                </div>
+                <div class="o_rssp_summary">
+                    <span class="o_rssp_pill o_rssp_pill_ok"><t t-out="batch.ok_count"/> listas</span>
+                    <span class="o_rssp_pill o_rssp_pill_rejected"><t t-out="batch.error_count"/> con error</span>
+                    <span class="o_rssp_pill o_rssp_pill_warn"><t t-out="batch.duplicate_count"/> repetidas</span>
+                </div>
+                <p class="o_rssp_muted" t-if="batch.state == 'review'">Corrige lo marcado en rojo directamente en la tabla y presiona <b>Revisar de nuevo</b>.
+                    Las repetidas no se cobran ni se guardan. Las personas <b>quedan aseguradas solo cuando el pago se confirme</b>, y el pago debe hacerse hoy mismo.</p>
+                <div t-if="batch.state == 'done'" class="alert alert-success mb-0">
+                    <i class="fa fa-check-circle"/> Pagada: <b t-out="batch.created_count"/> personas aseguradas.
+                    <t t-if="batch.rss_payment_id">Recibo <b t-out="batch.rss_payment_id.name"/>.</t>
+                </div>
+                <div t-if="batch.state == 'expired'" class="alert alert-danger mb-0">
+                    <i class="fa fa-clock-o"/> Esta carga venció sin pago: estas personas <b>no</b> quedaron aseguradas. Captúralas de nuevo y paga el mismo día.
+                </div>
+                <div t-if="batch.state == 'cancel'" class="alert alert-secondary mb-0">Carga cancelada.</div>
+            </section>
+
+            <form method="post" t-attf-action="/mi-grupo/importar/#{batch.id}">
+                <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
+                <div class="o_rssp_table_wrap">
+                    <table class="table o_rssp_table o_rssp_edit">
+                        <thead><tr>
+                            <th>✓</th><th>#</th><th>Revisión</th><th>Nombre</th><th>Segundo nombre</th><th>Ap. paterno</th><th>Ap. materno</th>
+                            <th>Nacimiento</th><th>Edad</th><th>Sexo</th><th>Padre o tutor</th><th>Teléfono emergencia</th><th>Correo</th>
+                        </tr></thead>
+                        <tbody>
+                            <tr t-foreach="batch.line_ids" t-as="l" t-attf-class="o_rssp_line_#{l.status}">
+                                <td><input type="checkbox" t-attf-name="l#{l.id}_include" value="1" t-att-checked="l.include" t-att-disabled="ro or l.status == 'duplicate'"/></td>
+                                <td t-out="l.sequence"/>
+                                <td class="o_rssp_review_cell">
+                                    <t t-if="l.insured_id"><span class="o_rssp_pill o_rssp_pill_line_ok">Asegurado</span></t>
+                                    <t t-else="">
+                                        <span t-attf-class="o_rssp_pill o_rssp_pill_line_#{l.status}" t-out="labels('rss.import.line', 'status').get(l.status)"/>
+                                        <div t-if="l.message" class="o_rssp_muted" t-out="l.message"/>
+                                    </t>
+                                </td>
+                                <td><input type="text" t-attf-name="l#{l.id}_first_name" t-att-value="l.first_name or ''" t-att-readonly="ro" placeholder="Nombre"/></td>
+                                <td><input type="text" t-attf-name="l#{l.id}_second_name" t-att-value="l.second_name or ''" t-att-readonly="ro"/></td>
+                                <td><input type="text" t-attf-name="l#{l.id}_last_name_father" t-att-value="l.last_name_father or ''" t-att-readonly="ro" placeholder="Paterno"/></td>
+                                <td><input type="text" t-attf-name="l#{l.id}_last_name_mother" t-att-value="l.last_name_mother or ''" t-att-readonly="ro" placeholder="Materno"/></td>
+                                <td><input type="text" class="o_rssp_date" placeholder="dd/mm/aaaa" t-attf-name="l#{l.id}_birthdate"
+                                           t-att-value="fmt_date(l.birthdate) if l.birthdate else (l.raw_birthdate or '')" t-att-readonly="ro"/></td>
+                                <td class="text-center" t-out="l.age if l.birthdate else ''"/>
+                                <td>
+                                    <select t-attf-name="l#{l.id}_sex" t-att-disabled="ro">
+                                        <option value="">—</option>
+                                        <option value="male" t-att-selected="l.sex == 'male'">Hombre</option>
+                                        <option value="female" t-att-selected="l.sex == 'female'">Mujer</option>
+                                    </select>
+                                </td>
+                                <td><input type="text" t-attf-name="l#{l.id}_tutor_name" t-att-value="l.tutor_name or ''" t-att-readonly="ro"/></td>
+                                <td><input type="text" t-attf-name="l#{l.id}_tutor_phone" t-att-value="l.tutor_phone or ''" t-att-readonly="ro"/></td>
+                                <td><input type="email" t-attf-name="l#{l.id}_tutor_email" t-att-value="l.tutor_email or ''" t-att-readonly="ro"/></td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+                <div id="fin" class="o_rssp_actions o_rssp_sticky_actions" t-if="batch.state == 'review' and member.is_capturer">
+                    <button type="submit" name="action" value="add_row" class="btn o_rssp_btn_ghost"><i class="fa fa-plus"/> Agregar persona</button>
+                    <button type="submit" name="action" value="validate" class="btn o_rssp_btn_ghost"><i class="fa fa-refresh"/> Revisar de nuevo</button>
+                    <button type="submit" name="action" value="confirm" class="btn o_rssp_btn">
+                        <i class="fa fa-credit-card"/> Continuar al pago · <t t-out="batch.ok_count"/> × <t t-out="money(unit_today)"/> = <t t-out="money(batch.ok_count * unit_today)"/>
+                    </button>
+                    <button type="submit" name="action" value="cancel" class="btn btn-link text-danger">Cancelar carga</button>
+                </div>
+            </form>
+
+            <!-- ===== Ventana de pago: bloquea la carga hasta pagar ===== -->
+            <div t-if="batch.state in ('payment', 'verifying')" class="o_rssp_modal" role="dialog" aria-modal="true" aria-labelledby="rssp_pay_title">
+                <div class="o_rssp_modal_box">
+                    <t t-if="batch.state == 'payment'">
+                        <div class="o_rssp_modal_head">
+                            <i class="fa fa-lock"/>
+                            <div>
+                                <h4 id="rssp_pay_title">Paga para asegurar a tu grupo</h4>
+                                <div>Tus asegurados quedan registrados <b>solo cuando el pago se confirme</b>.</div>
+                            </div>
+                        </div>
+                        <div t-if="batch.rejection_reason" class="alert alert-danger">
+                            <b>Tu pago anterior no se vio reflejado:</b> <t t-out="batch.rejection_reason"/>.
+                            Tienes <b>solo hoy</b> para pagar; si no, los asegurados no serán tomados en cuenta.
+                        </div>
+                        <div class="o_rssp_bill">
+                            <div><span><t t-out="batch.quantity"/> personas × <t t-out="money(batch.unit_amount)"/></span><b t-out="money(batch.amount_total)"/></div>
+                            <div class="o_rssp_muted"><t t-out="batch.tariff_name"/> · Ref. <b t-out="batch.reference"/></div>
+                            <div class="o_rssp_deadline"><i class="fa fa-clock-o"/> Paga a más tardar hoy <b t-out="batch._deadline_label()"/> (hora del centro de México). Si no, la carga vence.</div>
+                        </div>
+                        <div class="o_rssp_pay_options">
+                            <div class="o_rssp_pay_option">
+                                <h5><i class="fa fa-credit-card"/> Mercado Pago</h5>
+                                <p class="o_rssp_muted">Tarjeta de crédito o débito, saldo de Mercado Pago u otros medios. Se confirma al instante.</p>
+                                <div class="o_rssp_bill_line"><span>Seguro</span><span t-out="money(batch.amount_total)"/></div>
+                                <div class="o_rssp_bill_line"><span>Comisión Mercado Pago</span><span t-out="money(batch.mp_commission)"/></div>
+                                <div class="o_rssp_bill_line o_rssp_bill_total"><span>Total a pagar</span><span t-out="money(batch.amount_mp_total)"/></div>
+                                <a t-if="mp_available" class="btn o_rssp_btn w-100 mt-2" t-attf-href="/mi-grupo/importar/#{batch.id}/mercadopago">Pagar <t t-out="money(batch.amount_mp_total)"/> con Mercado Pago</a>
+                                <p t-else="" class="o_rssp_muted mt-2"><i class="fa fa-info-circle"/> Mercado Pago no está disponible por ahora; paga por transferencia.</p>
+                            </div>
+                            <div class="o_rssp_pay_option">
+                                <h5><i class="fa fa-university"/> Transferencia</h5>
+                                <p class="o_rssp_muted">Sin comisión. Transfiere el importe exacto y sube tu comprobante.</p>
+                                <dl class="o_rssp_dl o_rssp_bank">
+                                    <t t-if="policy.bank_beneficiary"><dt>Beneficiario</dt><dd t-out="policy.bank_beneficiary"/></t>
+                                    <t t-if="policy.bank_name"><dt>Banco</dt><dd t-out="policy.bank_name"/></t>
+                                    <t t-if="policy.bank_clabe"><dt>CLABE</dt><dd><b t-out="policy.bank_clabe"/></dd></t>
+                                    <t t-if="policy.bank_account"><dt>Cuenta</dt><dd t-out="policy.bank_account"/></t>
+                                    <t t-if="policy.bank_card"><dt>Tarjeta</dt><dd t-out="policy.bank_card"/></t>
+                                    <dt>Importe</dt><dd><b t-out="money(batch.amount_total)"/></dd>
+                                    <dt>Concepto</dt><dd><b t-out="batch.reference"/></dd>
+                                </dl>
+                                <p t-if="policy.bank_notes" class="o_rssp_muted" t-out="policy.bank_notes"/>
+                                <form method="post" enctype="multipart/form-data" class="o_rssp_form" t-attf-action="/mi-grupo/importar/#{batch.id}/transferencia">
+                                    <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
+                                    <label for="rssp_ref">Referencia o clave de rastreo</label>
+                                    <input id="rssp_ref" type="text" name="reference" class="form-control" required="required"/>
+                                    <label for="rssp_tdate">Fecha de la transferencia</label>
+                                    <input id="rssp_tdate" type="text" name="transfer_date" class="form-control" t-att-value="fmt_date(today)" placeholder="dd/mm/aaaa"/>
+                                    <label for="rssp_proof">Comprobante (PDF o foto)</label>
+                                    <input id="rssp_proof" type="file" name="proof" class="form-control" multiple="multiple" required="required" accept=".pdf,image/*"/>
+                                    <button type="submit" class="btn o_rssp_btn w-100 mt-2"><i class="fa fa-upload"/> Enviar comprobante</button>
+                                </form>
+                            </div>
+                        </div>
+                        <div class="o_rssp_modal_foot">
+                            <form method="post" t-attf-action="/mi-grupo/importar/#{batch.id}/regresar" class="d-inline">
+                                <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
+                                <button type="submit" class="btn btn-link">Regresar a corregir la lista</button>
+                            </form>
+                            <form method="post" t-attf-action="/mi-grupo/importar/#{batch.id}" class="d-inline">
+                                <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
+                                <button type="submit" name="action" value="cancel" class="btn btn-link text-danger">Cancelar carga</button>
+                            </form>
+                        </div>
+                    </t>
+                    <t t-else="">
+                        <div class="o_rssp_modal_head">
+                            <i class="fa fa-hourglass-half"/>
+                            <div>
+                                <h4 id="rssp_pay_title">Estamos revisando tu pago</h4>
+                                <div>Transferencia de <b t-out="money(batch.amount_total)"/> · ref. <b t-out="batch.transfer_reference"/></div>
+                            </div>
+                        </div>
+                        <p>La administración central confirmará el depósito. En cuanto se valide, tus <b t-out="batch.quantity"/> asegurados quedan activos
+                            y te llega el recibo. Si el pago no se ve reflejado te avisaremos y tendrás solo ese día para pagar.</p>
+                        <div class="o_rssp_modal_foot"><a href="/mi-grupo" class="btn o_rssp_btn">Entendido</a></div>
+                    </t>
+                </div>
+            </div>
+        </t>
+    </template>
+
+    <!-- Siniestros (solo consulta) -->
+    <template id="group_claims" name="Grupo: siniestros">
+        <t t-call="red_seguro_scout.group_layout">
+            <h4 class="o_rssp_h">Siniestros del grupo</h4>
+            <a t-foreach="claims" t-as="c" class="o_rssp_list_item o_rssp_card" t-attf-href="/mi-grupo/siniestros/#{c.id}">
+                <div>
+                    <b t-out="c.insured_id.name"/> <small class="o_rssp_muted" t-out="c.name"/>
+                    <div class="o_rssp_muted"><t t-out="labels('rss.claim', 'injury_type').get(c.injury_type)"/> · <t t-out="labels('rss.claim', 'activity_type').get(c.activity_type)"/> · <t t-out="fmt_date(c.date_accident)"/></div>
+                </div>
+                <span t-attf-class="o_rssp_pill o_rssp_pill_#{c.state}" t-out="labels('rss.claim', 'state').get(c.state)"/>
+            </a>
+            <div t-if="not claims" class="o_rssp_empty"><i class="fa fa-medkit fa-2x"/><p>Tu grupo no tiene siniestros registrados.</p></div>
+        </t>
+    </template>
+
+    <template id="group_claim" name="Grupo: siniestro">
+        <t t-call="red_seguro_scout.group_layout">
+            <a href="/mi-grupo/siniestros" class="o_rssp_back"><i class="fa fa-arrow-left"/> Siniestros</a>
+            <section class="o_rssp_card">
+                <div class="o_rssp_row">
+                    <div>
+                        <h4 class="o_rssp_h mb-0" t-out="claim.insured_id.name"/>
+                        <div class="o_rssp_muted" t-out="claim.name"/>
+                    </div>
+                    <span t-attf-class="o_rssp_pill o_rssp_pill_#{claim.state}" t-out="labels('rss.claim', 'state').get(claim.state)"/>
+                </div>
+                <dl class="o_rssp_dl">
+                    <dt>Fecha</dt><dd t-out="fmt_date(claim.date_accident)"/>
+                    <dt>Actividad</dt><dd t-out="labels('rss.claim', 'activity_type').get(claim.activity_type)"/>
+                    <dt>Lugar</dt><dd t-out="claim.place or '—'"/>
+                    <dt>Lesión</dt><dd><t t-out="labels('rss.claim', 'injury_type').get(claim.injury_type)"/><t t-if="claim.body_part"> · <t t-out="claim.body_part"/></t></dd>
+                    <dt>Atención</dt><dd t-out="claim.medical_center or '—'"/>
+                    <dt>Núm. de siniestro</dt><dd t-out="claim.insurer_claim_number or 'En trámite'"/>
+                </dl>
+                <p t-if="claim.description" class="o_rssp_desc" t-out="claim.description"/>
+            </section>
+        </t>
+    </template>
+</odoo>

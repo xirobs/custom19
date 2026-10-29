@@ -66,6 +66,9 @@ class RssPayment(models.Model):
     date_confirmed = fields.Datetime('Recibo emitido el', readonly=True, copy=False)
     date_remitted = fields.Date('Fecha de remisión', tracking=True, copy=False)
     insurer_folio = fields.Char('Folio / acuse de la aseguradora', tracking=True, copy=False)
+    import_batch_id = fields.Many2one('rss.import.batch', string='Carga del portal', readonly=True,
+                                      ondelete='set null')
+    mp_commission = fields.Monetary('Comisión Mercado Pago cobrada', readonly=True)
     attachment_ids = fields.Many2many('ir.attachment', 'rss_payment_attachment_rel',
                                       'payment_id', 'attachment_id', string='Comprobantes')
     notes = fields.Text('Notas')

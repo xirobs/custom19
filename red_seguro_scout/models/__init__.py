@@ -10,3 +10,11 @@ from . import rss_report
 from . import rss_claim
 from . import rss_bita
 from . import rss_advisor
+from . import rss_portal_access
+from . import rss_group_member
+from . import rss_insured_ext
+from . import rss_import
+from . import rss_certificate
+from . import rss_privacy
+from . import rss_policy_billing
+from . import rss_payment_tx

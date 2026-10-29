@@ -77,5 +77,20 @@
             <field name="model_id" ref="model_rss_advisor"/>
             <field name="domain_force">[('company_id', 'in', company_ids)]</field>
         </record>
+        <record id="rule_rss_group_member_company" model="ir.rule">
+            <field name="name">Red Seguro Scout: representantes por organización</field>
+            <field name="model_id" ref="model_rss_group_member"/>
+            <field name="domain_force">[('company_id', 'in', company_ids + [False])]</field>
+        </record>
+        <record id="rule_rss_import_batch_company" model="ir.rule">
+            <field name="name">Red Seguro Scout: cargas por organización</field>
+            <field name="model_id" ref="model_rss_import_batch"/>
+            <field name="domain_force">[('company_id', 'in', company_ids + [False])]</field>
+        </record>
+        <record id="rule_rss_certificate_batch_company" model="ir.rule">
+            <field name="name">Red Seguro Scout: certificados por organización</field>
+            <field name="model_id" ref="model_rss_certificate_batch"/>
+            <field name="domain_force">[('company_id', 'in', company_ids)]</field>
+        </record>
     </data>
 </odoo>

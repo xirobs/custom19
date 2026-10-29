@@ -1,21 +1,21 @@
 // Red Seguro Scout · «Rumbo Seguro»
-// Paleta del emblema: azul marino, oro y rojo. Solo afecta las vistas del módulo
+// Paleta del logo: guinda, oro y crema. Solo afecta las vistas del módulo
 // (clase .o_rss / .o_rss_kanban). Cada grupo pinta sus tarjetas con sus colores.
 //
 // Todos los colores son variables CSS: este archivo trae los valores del modo claro y
 // red_seguro_scout.dark.scss (paquete web.assets_web_dark) los cambia para el modo oscuro.
 
 :root {
-    --rss-accent: #0A2A5E;        // títulos, separadores, pestañas (azul marino)
-    --rss-btn: #0A2A5E;           // fondo de botones principales
-    --rss-btn-hover: #071F47;
-    --rss-gold: #D9A93A;          // oro del contorno del escudo
+    --rss-accent: #6E0B14;        // títulos, separadores, pestañas (guinda)
+    --rss-btn: #6E0B14;           // fondo de botones principales
+    --rss-btn-hover: #520810;
+    --rss-gold: #E9A825;          // oro del contorno del escudo
     --rss-red: #B00625;           // rojo de la flor de lis
-    --rss-tint: #EEF2F8;          // fondos suaves (indicadores, avisos, encabezados)
-    --rss-line: #D6DEEB;
+    --rss-tint: #F8F1E7;          // fondos suaves (indicadores, avisos, encabezados)
+    --rss-line: #E9DCCB;
     --rss-ink: #1A2233;
     --rss-muted: #4A5568;
-    --rss-main-bg: #0A2A5E;       // indicador principal
+    --rss-main-bg: #6E0B14;       // indicador principal
     --rss-main-ink: #FFFFFF;
     --rss-sheet-glow: rgba(238, 242, 248, .55);
     --rss-ok-bg: #D7F0DF;
@@ -152,7 +152,7 @@
 
 // Kanban de grupos: cada tarjeta con la personalidad de su grupo
 .o_rss_kanban {
-    .o_kanban_record {
+    .o_kanban_record:not(.o_kanban_ghost) {
         border-top: 4px solid var(--rss-group-primary, var(--rss-btn));
         border-radius: 8px;
         box-shadow: inset 0 -3px 0 var(--rss-group-secondary, var(--rss-gold));

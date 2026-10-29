@@ -11,12 +11,12 @@
             <field name="description">Se envía con el Excel y el PDF de la relación mensual de asegurados</field>
             <field name="body_html" type="html">
 <div style="font-family: Arial, sans-serif; font-size: 14px; color: #1A2233;">
-    <div style="background: #0A2A5E; border-bottom: 3px solid #D9A93A; color: #ffffff; padding: 14px 18px; border-radius: 8px 8px 0 0;">
+    <div style="background: #6E0B14; border-bottom: 3px solid #E9A825; color: #ffffff; padding: 14px 18px; border-radius: 8px 8px 0 0;">
         <strong style="font-size: 16px;">Red Seguro Scout</strong>
         <span style="opacity: .85;"> · Rumbo Seguro</span>
         <div style="opacity: .85; font-size: 13px;">Relación mensual de asegurados</div>
     </div>
-    <div style="border: 1px solid #D6DEEB; border-top: 0; padding: 18px; border-radius: 0 0 8px 8px;">
+    <div style="border: 1px solid #E9DCCB; border-top: 0; padding: 18px; border-radius: 0 0 8px 8px;">
         <p>Buen día,</p>
         <p>Adjuntamos la relación de asegurados correspondiente a
             <strong t-out="object.name or ''">Relación Octubre 2026</strong>

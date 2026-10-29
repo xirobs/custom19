@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 {
     'name': 'Red Seguro Scout',
-    'version': '19.0.1.1.0',
+    'version': '19.0.1.4.0',
     'category': 'Services',
     'summary': 'Rumbo Seguro · Altas y control del seguro de accidentes personales de grupos scouts, '
                'con la identidad de cada grupo',
@@ -17,13 +17,18 @@ que cubre a los miembros de los grupos scouts durante sus actividades.
 * Pagos del seguro por grupo con recibo imprimible y seguimiento del proceso.
 * Siniestros (accidentes) por asegurado.
 * Análisis en lista, pivote y gráfica: por día, mes, trimestre y año; comparativa de grupos.
+* Portal del grupo (/mi-grupo): jefe de grupo, secretario y tesorero; carga de asegurados por Excel o PDF con revisión y duplicados.
+* Certificados de póliza: se separa el PDF de la aseguradora y cada asegurado recibe el suyo.
+* Aviso de privacidad siempre visible.
+* Pago obligatorio el mismo día de la captura: Mercado Pago (con su comisión) o transferencia con comprobante.
+* Tarifas por trimestre de alta.
 * Portal del asesor de seguros (usuario de portal, sin licencia): asegurados, relaciones, pagos y siniestros.
 * Acceso solo para quien paga el seguro (Suscripciones BitaScout).
 * Personalidad del grupo: logo, colores y lema propios en recibos, relaciones y Excel.
     """,
     'author': 'Jhuliana · BitaScout / Red Seguro Scout',
     'license': 'LGPL-3',
-    'depends': ['base', 'mail', 'portal', 'bitascout_suscripciones'],
+    'depends': ['base', 'mail', 'portal', 'payment', 'bitascout_suscripciones'],
     'data': [
         'security/rss_security.xml',
         'security/ir.model.access.csv',
@@ -44,7 +49,9 @@ que cubre a los miembros de los grupos scouts durante sus actividades.
         'views/rss_report_views.xml',
         'views/rss_claim_views.xml',
         'views/rss_advisor_views.xml',
+        'views/rss_portal_admin_views.xml',
         'views/advisor_portal_templates.xml',
+        'views/group_portal_templates.xml',
         'views/rss_menus.xml',
     ],
     'demo': [

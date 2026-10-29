@@ -7,7 +7,7 @@ SU logo, SUS colores y SU lema; Red Seguro Scout queda como sello discreto.
 Orden de prioridad para un documento:
     1. Identidad del grupo (si tiene logo o colores capturados).
     2. Identidad de la organización (res.company: logo, color primario/secundario).
-    3. Identidad de Red Seguro Scout (azul marino, oro y rojo del emblema).
+    3. Identidad de Red Seguro Scout (guinda, oro y crema del logo).
 """
 import base64
 import re
@@ -18,8 +18,8 @@ from odoo import api, fields, models, _
 from odoo.exceptions import ValidationError
 from odoo.tools.misc import file_open
 
-RSS_NAVY = '#0A2A5E'
-RSS_GOLD = '#D9A93A'
+RSS_NAVY = '#6E0B14'
+RSS_GOLD = '#E9A825'
 RSS_RED = '#B00625'
 HEX_RE = re.compile(r'^#(?:[0-9a-fA-F]{3}){1,2}$')
 
@@ -182,7 +182,7 @@ table.rs-table tr.rs-subtotal td { font-weight: bold; color: %(primary)s; border
 .rs-tag-drop { background: #FBE3D6; color: #9A3B10; }
 .rs-foot { margin-top: 14px; font-size: 9px; color: #4A5568; border-top: 1px solid %(tint_strong)s; padding-top: 6px; }
 .rs-foot table { width: 100%%; }
-.rs-seal { text-align: right; white-space: nowrap; color: #0A2A5E; font-weight: bold; }
+.rs-seal { text-align: right; white-space: nowrap; color: #6E0B14; font-weight: bold; }
 .rs-seal img { height: 22px; vertical-align: middle; margin-left: 4px; }
 .rs-warn { background: #FFF4D6; border: 1px solid #E8C866; color: #6B5300; padding: 6px 10px; margin-bottom: 8px; border-radius: 4px; }
 .rs-h4 { color: %(primary)s; margin: 16px 0 6px 0; font-size: 12px; }

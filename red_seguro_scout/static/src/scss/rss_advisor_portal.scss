@@ -1,14 +1,14 @@
 // Portal del asesor de seguros (/seguro) · Red Seguro Scout
-// Azul marino y oro del emblema; pensado primero para celular.
+// Guinda, oro y crema del logo; pensado primero para celular.
 
-$rssp-navy: #0A2A5E;
-$rssp-navy-2: #12336B;
-$rssp-gold: #D9A93A;
+$rssp-navy: #6E0B14;
+$rssp-navy-2: #8A1220;
+$rssp-gold: #E9A825;
 $rssp-red: #B00625;
-$rssp-ink: #1A2233;
-$rssp-muted: #5A6478;
-$rssp-line: #DCE3EE;
-$rssp-tint: #F2F5FA;
+$rssp-ink: #2A1A1C;
+$rssp-muted: #6E5B57;
+$rssp-line: #E9DCCB;
+$rssp-tint: #FBF6EE;
 
 .o_rssp_entry {
     display: flex; align-items: center; gap: 12px; padding: 12px 14px; border-radius: 14px;
@@ -40,7 +40,7 @@ $rssp-tint: #F2F5FA;
 }
 
 .o_rssp_alert { border-radius: 12px; }
-.o_rssp_main { display: grid; gap: 12px; }
+.o_rssp_main { display: grid; grid-template-columns: minmax(0, 1fr); gap: 12px; > * { min-width: 0; } }
 .o_rssp_h { color: $rssp-navy; font-weight: 800; margin: 4px 0; }
 .o_rssp_muted { color: $rssp-muted; font-size: .85rem; }
 .o_rssp_warn_text { color: #9A5B00; font-size: .82rem; font-weight: 600; }
@@ -96,7 +96,7 @@ $rssp-tint: #F2F5FA;
     background: #FDEBD3; color: #8A4B0A;
 }
 .o_rssp_pill_in_process, .o_rssp_pill_approved, .o_rssp_pill_sent, .o_rssp_pill_confirmed {
-    background: #E1EAF8; color: $rssp-navy;
+    background: #F6E3E3; color: $rssp-navy;
 }
 .o_rssp_pill_rejected, .o_rssp_pill_inactive { background: #F6DADF; color: $rssp-red; }
 
@@ -154,6 +154,84 @@ $rssp-tint: #F2F5FA;
         display: flex; flex-direction: column; align-items: center; gap: 2px; font-size: .7rem;
         color: rgba(255, 255, 255, .75) !important; text-decoration: none !important; padding: 2px 8px;
         .fa { font-size: 1.15rem; }
-        &.active { color: #F1C866 !important; font-weight: 700; }
+        &.active { color: #F6C64E !important; font-weight: 700; }
     }
 }
+
+// ---------------- Portal del grupo y aviso de privacidad ----------------
+.o_rssp_privacy {
+    margin: 18px 0 6px; padding: 10px 14px; border-radius: 12px; background: $rssp-tint;
+    color: $rssp-muted; font-size: .82rem; text-align: center;
+    .fa { color: $rssp-gold; margin-right: 4px; }
+    a { color: $rssp-navy; font-weight: 700; }
+}
+.o_rssp_notice { line-height: 1.55; h3 { color: $rssp-navy; font-size: 1.2rem; } }
+.o_rssp_team { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
+.o_rssp_team_item {
+    display: flex; flex-direction: column; padding: 8px 12px; border-radius: 10px; background: $rssp-tint; min-width: 150px;
+}
+.o_rssp_check { display: flex; gap: 8px; align-items: flex-start; font-weight: 400 !important; color: $rssp-ink !important; margin-top: 10px;
+    input { margin-top: 4px; } a { color: $rssp-navy; font-weight: 700; } }
+.o_rssp_summary { display: flex; gap: 6px; flex-wrap: wrap; margin: 10px 0 6px; }
+.o_rssp_pill_imp_review { background: #F6E3E3; color: $rssp-navy; }
+.o_rssp_pill_imp_done { background: #D7F0DF; color: #1B5E3B; }
+.o_rssp_pill_imp_cancel { background: #EEE; color: $rssp-muted; }
+.o_rssp_pill_line_ok { background: #D7F0DF; color: #1B5E3B; }
+.o_rssp_pill_line_error { background: #F6DADF; color: $rssp-red; }
+.o_rssp_pill_line_duplicate { background: #FDEBD3; color: #8A4B0A; }
+.o_rssp_edit {
+    font-size: .82rem;
+    td { padding: 4px 6px; }
+    input[type=text], input[type=email], select {
+        width: 100%; min-width: 110px; border: 1px solid $rssp-line; border-radius: 6px; padding: 3px 6px; background: #fff;
+        &[readonly] { background: transparent; border-color: transparent; }
+    }
+    .o_rssp_date { min-width: 96px; }
+    .o_rssp_review_cell { min-width: 170px; }
+    tr.o_rssp_line_error td { background: #FFF5F6; }
+    tr.o_rssp_line_duplicate td { background: #FFF9EF; color: $rssp-muted; }
+}
+.o_rssp_sticky_actions {
+    position: sticky; bottom: 70px; z-index: 5; padding: 10px; border-radius: 14px; background: #fff;
+    box-shadow: 0 6px 20px rgba(10, 42, 94, .15);
+}
+
+.o_rssp.o_rssp_wide { max-width: 1400px; }
+
+// ---------------- Ventana de pago (bloquea la carga) ----------------
+.o_rssp_modal {
+    position: fixed; inset: 0; z-index: 1060; display: flex; align-items: flex-start; justify-content: center;
+    padding: calc(16px + env(safe-area-inset-top, 0px)) 12px calc(16px + env(safe-area-inset-bottom, 0px));
+    background: rgba(6, 18, 40, .62); overflow-y: auto;
+}
+.o_rssp_modal_box {
+    width: 100%; max-width: 860px; margin: auto; background: #fff; border-radius: 18px; padding: 18px;
+    box-shadow: 0 24px 60px rgba(0, 0, 0, .35); border-top: 6px solid $rssp-gold; color: $rssp-ink;
+}
+.o_rssp_modal_head {
+    display: flex; gap: 12px; align-items: flex-start; margin-bottom: 12px;
+    > .fa { font-size: 1.6rem; color: $rssp-gold; margin-top: 4px; }
+    h4 { color: $rssp-navy; font-weight: 800; margin: 0 0 2px; }
+}
+.o_rssp_bill {
+    background: $rssp-tint; border-radius: 12px; padding: 12px 14px; margin-bottom: 12px;
+    > div:first-child { display: flex; justify-content: space-between; align-items: baseline; font-size: 1.05rem;
+        b { font-size: 1.5rem; color: $rssp-navy; } }
+}
+.o_rssp_deadline { margin-top: 6px; color: #8A4B0A; font-size: .88rem; .fa { margin-right: 4px; } }
+.o_rssp_pay_options { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px;
+    @media (max-width: 700px) { grid-template-columns: minmax(0, 1fr); } }
+.o_rssp_pay_option {
+    border: 1.5px solid $rssp-line; border-radius: 14px; padding: 14px; min-width: 0;
+    h5 { color: $rssp-navy; font-weight: 800; font-size: 1.05rem; .fa { color: $rssp-gold; margin-right: 4px; } }
+}
+.o_rssp_bill_line { display: flex; justify-content: space-between; padding: 3px 0; font-size: .9rem; }
+.o_rssp_bill_total { border-top: 1px solid $rssp-line; margin-top: 4px; padding-top: 6px; font-weight: 800; color: $rssp-navy; font-size: 1rem; }
+.o_rssp_bank { margin-top: 4px; dd { word-break: break-all; } }
+.o_rssp_modal_foot { display: flex; flex-wrap: wrap; gap: 8px; justify-content: space-between; margin-top: 12px; }
+.o_rssp_paynote { display: flex; gap: 12px; align-items: flex-start; background: #FFF9EC; border-color: #F1D9A0;
+    > .fa { color: $rssp-gold; font-size: 1.4rem; margin-top: 2px; } }
+.o_rssp_pill_imp_payment { background: #FDEBD3; color: #8A4B0A; }
+.o_rssp_pill_imp_verifying { background: #F6E3E3; color: $rssp-navy; }
+.o_rssp_pill_imp_expired { background: #F6DADF; color: $rssp-red; }
+body:has(.o_rssp_modal) { overflow: hidden; }

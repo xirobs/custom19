@@ -41,11 +41,23 @@ class RssPolicy(models.Model):
     only_paid_groups = fields.Boolean(
         'Solo grupos con pago del año', default=False,
         help='Incluir en la relación únicamente a los grupos con pago confirmado del ejercicio.')
+    capture_window_enforced = fields.Boolean(
+        'Limitar captura a ciertos días', default=False, tracking=True,
+        help='Si se activa, los grupos solo pueden cargar asegurados en el portal entre los días indicados.')
+    capture_day_from = fields.Integer('Captura desde el día', default=1)
+    capture_day_to = fields.Integer('Captura hasta el día', default=10)
+    privacy_notice = fields.Html(related='company_id.rss_privacy_notice', readonly=False,
+                                 string='Aviso de privacidad')
     group_ids = fields.One2many('rss.scout.group', 'policy_id', string='Grupos')
     group_count = fields.Integer(compute='_compute_counts')
     member_count = fields.Integer('Asegurados activos', compute='_compute_counts')
     active = fields.Boolean(default=True)
 
+    _capture_days = models.Constraint(
+        'CHECK (capture_day_from BETWEEN 1 AND 28 AND capture_day_to BETWEEN 1 AND 28 '
+        'AND capture_day_from <= capture_day_to)',
+        'Los días de captura deben estar entre 1 y 28, y el inicial antes del final.',
+    )
     _report_day_range = models.Constraint(
         'CHECK (report_day BETWEEN 1 AND 28)',
         'El día límite de la relación debe estar entre 1 y 28.',

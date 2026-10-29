@@ -104,3 +104,21 @@ def check_pdf_attachments(attachments, owner_label):
             raise ValidationError(_(
                 'Solo se permiten archivos PDF en %(owner)s. "%(file)s" no es un PDF.',
                 owner=owner_label, file=att.name))
+
+
+def normalize_text(value):
+    """Mayúsculas, sin acentos ni signos y con espacios sencillos (para comparar nombres)."""
+    import unicodedata
+    if not value:
+        return ''
+    value = unicodedata.normalize('NFKD', str(value))
+    value = ''.join(c for c in value if not unicodedata.combining(c))
+    value = re.sub(r'[^A-Za-z0-9Ññ@.\s]', ' ', value).upper()
+    return ' '.join(value.split())
+
+
+def name_key(first_name, second_name, last_name_father, last_name_mother, birthdate):
+    """Llave para detectar duplicados: nombre completo normalizado + fecha de nacimiento."""
+    parts = [first_name, second_name, last_name_father, last_name_mother]
+    full = normalize_text(' '.join(p for p in parts if p))
+    return '%s|%s' % (full, birthdate.isoformat() if birthdate else '')

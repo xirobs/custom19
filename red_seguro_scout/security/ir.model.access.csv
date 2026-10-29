@@ -19,3 +19,13 @@ access_rss_claim_manager,rss.claim.manager,model_rss_claim,group_rss_manager,1,1
 access_rss_attach_pdf_wizard_user,rss.attach.pdf.wizard.user,model_rss_attach_pdf_wizard,group_rss_user,1,1,1,1
 access_rss_advisor_user,rss.advisor.user,model_rss_advisor,group_rss_user,1,0,0,0
 access_rss_advisor_manager,rss.advisor.manager,model_rss_advisor,group_rss_manager,1,1,1,1
+access_rss_group_member_user,rss.group.member.user,model_rss_group_member,group_rss_user,1,0,0,0
+access_rss_group_member_manager,rss.group.member.manager,model_rss_group_member,group_rss_manager,1,1,1,1
+access_rss_import_batch_user,rss.import.batch.user,model_rss_import_batch,group_rss_user,1,1,1,0
+access_rss_import_batch_manager,rss.import.batch.manager,model_rss_import_batch,group_rss_manager,1,1,1,1
+access_rss_import_line_user,rss.import.line.user,model_rss_import_line,group_rss_user,1,1,1,1
+access_rss_certificate_batch_user,rss.certificate.batch.user,model_rss_certificate_batch,group_rss_user,1,1,1,0
+access_rss_certificate_batch_manager,rss.certificate.batch.manager,model_rss_certificate_batch,group_rss_manager,1,1,1,1
+access_rss_certificate_line_user,rss.certificate.line.user,model_rss_certificate_line,group_rss_user,1,1,1,1
+access_rss_policy_tariff_user,rss.policy.tariff.user,model_rss_policy_tariff,group_rss_user,1,0,0,0
+access_rss_policy_tariff_manager,rss.policy.tariff.manager,model_rss_policy_tariff,group_rss_manager,1,1,1,1
