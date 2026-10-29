@@ -1381,6 +1381,7 @@
             </div>
             <div class="d-grid gap-2 mt-2">
                 <a class="btn o_sl_btn" t-att-href="'/dirigentes/%s/miembro/%s/credencial.pdf' % (section.id, member.id)" target="_blank" data-sl-pdf="1"><i class="fa fa-file-pdf-o"/> Descargar credencial en PDF</a>
+                <a class="btn o_sl_btn_outline" t-att-href="'/dirigentes/%s/miembro/%s/credencial.pdf?hoja=1' % (section.id, member.id)" target="_blank" data-sl-pdf="1"><i class="fa fa-print"/> Hoja carta (frente y reverso)</a>
                 <a t-if="member.scout_guardian_id.phone" class="btn o_sl_btn_wa" target="_blank"
                    t-att-href="'https://wa.me/%s?text=%s' % (''.join(c for c in member.scout_guardian_id.phone if c.isdigit()), url_quote('Credencial scout de %s: %s' % (member.name, member._scout_card_url())))"><i class="fa fa-whatsapp"/> Enviar a la familia</a>
             </div>

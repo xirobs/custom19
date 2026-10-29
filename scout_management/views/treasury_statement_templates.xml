@@ -1,0 +1,123 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Estado de caja y bancos: la MISMA plantilla en el portal y en la plataforma (y mismos números que el PDF) -->
+    <template id="treasury_statement_body" name="Caja y bancos: estado de cuenta">
+        <div class="o_ts">
+            <style>
+                .o_ts { font-size: 14px; color: #1d2733; }
+                .o_ts h6 { font-weight: 700; color: #0f3049; margin: 14px 0 6px; }
+                .o_ts .o_ts_cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); gap: 8px; }
+                .o_ts .o_ts_card { background: #0f3049; color: #fff; border-radius: 12px; padding: 10px 12px; }
+                .o_ts .o_ts_card small { display: block; opacity: .8; }
+                .o_ts .o_ts_card b { font-size: 20px; display: block; font-variant-numeric: tabular-nums; }
+                .o_ts .o_ts_card .o_ts_count { font-size: 11px; opacity: .85; }
+                .o_ts .o_ts_card.o_ts_total { background: #f36f45; }
+                .o_ts table { width: 100%; border-collapse: collapse; }
+                .o_ts th { font-size: 11px; text-transform: uppercase; color: #5c6b7a; border-bottom: 2px solid #0f3049; padding: 4px; }
+                .o_ts td { border-bottom: 1px solid #e6eaef; padding: 4px; vertical-align: top; }
+                .o_ts .num { text-align: right; white-space: nowrap; font-variant-numeric: tabular-nums; }
+                .o_ts tr.o_ts_tot td { font-weight: 700; border-top: 2px solid #0f3049; }
+                .o_ts .o_ts_ok { color: #1c7c4f; font-weight: 600; }
+                .o_ts .o_ts_bad { color: #b8202f; font-weight: 600; }
+                .o_ts .o_ts_in { color: #1c7c4f; } .o_ts .o_ts_out { color: #b8202f; }
+                .o_ts .o_ts_badge { display: inline-block; font-size: 10px; padding: 0 6px; border-radius: 999px; background: #eef2f6; color: #445; }
+                .o_ts details { border: 1px solid #e6eaef; border-radius: 8px; padding: 6px 8px; margin-bottom: 6px; }
+                .o_ts summary { cursor: pointer; display: flex; justify-content: space-between; gap: 8px; }
+                .o_ts .o_ts_scroll { overflow-x: auto; }
+                .o_ts .o_ts_small { font-size: 12px; color: #5c6b7a; }
+            </style>
+
+            <h6>Saldo actual (lo que hay hoy)</h6>
+            <div class="o_ts_cards">
+                <div t-foreach="balances" t-as="b" class="o_ts_card">
+                    <small><t t-out="b['journal'].name"/> · <t t-out="kind_labels.get(b['kind'])"/></small>
+                    <b t-out="money(b['balance'])"/>
+                    <span t-if="b['last_count']" class="o_ts_count">
+                        Arqueo <t t-out="fmt_date(b['last_count'].date)"/>:
+                        <t t-if="b['last_count'].state in ('done', 'adjusted')">cuadró</t>
+                        <t t-else="">diferencia <t t-out="money(b['last_count'].difference)"/></t>
+                    </span>
+                    <span t-else="" class="o_ts_count">Sin arqueo</span>
+                </div>
+                <div class="o_ts_card o_ts_total"><small>Total en cajas y bancos</small><b t-out="money(sum(b['balance'] for b in balances))"/></div>
+            </div>
+
+            <h6>Del <t t-out="fmt_date(date_from)"/> al <t t-out="fmt_date(date_to)"/></h6>
+            <div class="o_ts_scroll">
+                <table>
+                    <thead><tr><th>Cuenta</th><th class="num">Saldo inicial</th><th class="num">Ingresos</th><th class="num">Egresos</th><th class="num">Traspasos</th><th class="num">Saldo final</th></tr></thead>
+                    <tbody>
+                        <tr t-foreach="rows" t-as="r">
+                            <td><t t-out="r['journal'].name"/></td>
+                            <td class="num" t-out="money(r['opening'])"/>
+                            <td class="num o_ts_in" t-out="money(r['income'])"/>
+                            <td class="num o_ts_out" t-out="money(r['expense'])"/>
+                            <td class="num" t-out="money(r['transfer'])"/>
+                            <td class="num"><b t-out="money(r['closing'])"/></td>
+                        </tr>
+                        <tr class="o_ts_tot">
+                            <td>Total</td>
+                            <td class="num" t-out="money(opening_total)"/>
+                            <td class="num o_ts_in" t-out="money(total_income)"/>
+                            <td class="num o_ts_out" t-out="money(total_expense)"/>
+                            <td class="num" t-out="money(sum(r['transfer'] for r in rows))"/>
+                            <td class="num" t-out="money(closing_total)"/>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+            <div t-attf-class="o_ts_small mt-1 #{'o_ts_ok' if squared else 'o_ts_bad'}">
+                <t t-if="squared">✔ Cuadra: saldo inicial + ingresos − egresos ± traspasos = saldo final en cada cuenta.</t>
+                <t t-else="">⚠ Alguna cuenta no cuadra; revisa con tesorería.</t>
+            </div>
+
+            <h6>Ingresos por concepto <span class="o_ts_in" t-out="money(total_income)"/></h6>
+            <p t-if="not income_groups" class="o_ts_small">Sin ingresos en el periodo.</p>
+            <details t-foreach="income_groups" t-as="g">
+                <summary><span t-out="g['label']"/><b class="o_ts_in" t-out="money(g['total'])"/></summary>
+                <table class="mt-1">
+                    <tr t-foreach="g['moves']" t-as="e">
+                        <td class="o_ts_small" style="width:70px" t-out="fmt_date(e['date'])"/>
+                        <td><t t-out="e['label']"/><div class="o_ts_small"><t t-out="e['who']"/></div></td>
+                        <td class="o_ts_small"><span class="o_ts_badge" t-out="e['source']"/> <t t-out="e['journal'].name"/></td>
+                        <td class="num" t-out="money(e['amount'])"/>
+                    </tr>
+                </table>
+            </details>
+
+            <h6>Egresos <span class="o_ts_out" t-out="money(total_expense)"/></h6>
+            <p t-if="not expenses" class="o_ts_small">Sin egresos en el periodo.</p>
+            <div t-if="expenses" class="o_ts_scroll">
+                <table>
+                    <tr t-foreach="expenses" t-as="e">
+                        <td class="o_ts_small" style="width:70px" t-out="fmt_date(e['date'])"/>
+                        <td><t t-out="e['label']"/><div class="o_ts_small"><t t-out="e.get('category') or ''"/><t t-if="e['who']"> · <t t-out="e['who']"/></t></div></td>
+                        <td class="o_ts_small"><t t-out="e['journal'].name"/></td>
+                        <td class="num o_ts_out" t-out="money(e['amount'])"/>
+                    </tr>
+                </table>
+            </div>
+
+            <t t-if="transfers">
+                <h6>Traspasos entre cuentas</h6>
+                <table>
+                    <tr t-foreach="transfers" t-as="e">
+                        <td class="o_ts_small" style="width:70px" t-out="fmt_date(e['date'])"/>
+                        <td><t t-out="e['journal'].name"/> → <t t-out="e.get('dest') or ''"/><div class="o_ts_small" t-out="e['label']"/></td>
+                        <td class="num" t-out="money(e['amount'])"/>
+                    </tr>
+                </table>
+            </t>
+
+            <h6>Lo que todavía no es dinero</h6>
+            <table>
+                <tr><td>Por cobrar (<t t-out="pending['receivable_count']"/> cargos)</td><td class="num" t-out="money(pending['receivable'])"/></tr>
+                <tr><td>Por pagar a proveedores (<t t-out="pending['payable_count']"/>)</td><td class="num" t-out="money(pending['payable'])"/></tr>
+                <tr><td>Capturas sin registrar o por aprobar (<t t-out="len(pending['captures'])"/>)</td><td class="num" t-out="money(sum(pending['captures'].mapped('amount')))"/></tr>
+            </table>
+            <p class="o_ts_small mt-2">El saldo de cada cuenta suma todo: cobros de registros y cargos, ventas de la tienda, pagos con
+                Mercado Pago (ya sin su comisión), ingresos y egresos capturados, traspasos y pagos a proveedores. Es el mismo
+                cálculo en el portal, en la plataforma y en el PDF del Consejo.</p>
+        </div>
+    </template>
+</odoo>

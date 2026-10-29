@@ -67,61 +67,17 @@ class ReportScoutTreasury(models.AbstractModel):
             raise UserError(_('Vuelve a generar el reporte desde el asistente.'))
         company = self.env.company
         currency = company.currency_id
-        journals = self.env['account.journal'].sudo().search([
-            ('type', 'in', ('cash', 'bank')), ('company_id', '=', company.id)])
-        liquidity_accounts = journals.default_account_id
-        MoveLine = self.env['account.move.line'].sudo()
-        base = [('parent_state', '=', 'posted'), ('company_id', '=', company.id)]
+        # Mismo cálculo que el portal y la pantalla de la plataforma (scout.treasury.ledger)
+        st = self.env['scout.treasury.ledger'].statement(wizard.date_from, wizard.date_to, company)
 
-        def balance(account, domain):
-            return sum(MoveLine.search(base + [('account_id', '=', account.id)] + domain).mapped('balance'))
-
-        lines = MoveLine.search(base + [('account_id', 'in', liquidity_accounts.ids),
-                                        ('date', '>=', wizard.date_from), ('date', '<=', wizard.date_to)],
-                                order='date, id')
-        group_labels = dict(self.env['scout.treasury.category']._fields['report_group'].selection)
-        group_labels.update({'collections': _('Cobranza de cargos (registros, cuotas, campamentos)'),
-                             'other': _('Otros ingresos')})
-        income_groups, expenses, transfers = {}, [], []
-        totals = {j.id: {'income': 0.0, 'expense': 0.0, 'tin': 0.0, 'tout': 0.0} for j in journals}
-        for line in lines:
-            journal = journals.filtered(lambda j: j.default_account_id == line.account_id)[:1]
-            kind, group, label, who = self._classify_line(line, liquidity_accounts)
-            entry = {'date': line.date, 'label': label, 'who': who, 'journal': journal.name,
-                     'ref': (tm.reference or tm.name) if (tm := line.move_id.scout_treasury_move_id) else (line.move_id.name or ''),
-                     'amount': abs(line.balance)}
-            if kind == 'transfer':
-                key = 'tin' if line.balance > 0 else 'tout'
-                totals[journal.id][key] += abs(line.balance)
-                if line.balance < 0:
-                    entry['dest'] = ', '.join((line.move_id.line_ids - line).account_id.mapped('name'))
-                    transfers.append(entry)
-                continue
-            if line.balance > 0:
-                totals[journal.id]['income'] += line.balance
-                grp = income_groups.setdefault(group or 'other', {'label': group_labels.get(group or 'other'),
-                                                                  'moves': [], 'total': 0.0})
-                grp['moves'].append(entry)
-                grp['total'] += line.balance
-            else:
-                totals[journal.id]['expense'] += -line.balance
-                tmove = line.move_id.scout_treasury_move_id
-                entry['category'] = tmove.category_id.name if tmove else _('Pago a proveedor')
-                expenses.append(entry)
-
-        account_rows = []
-        for journal in journals:
-            acc = journal.default_account_id
-            if not acc:
-                continue
-            t = totals[journal.id]
-            account_rows.append({
-                'journal': journal,
-                'opening': balance(acc, [('date', '<', wizard.date_from)]),
-                'income': t['income'], 'expense': t['expense'],
-                'transfer': t['tin'] - t['tout'],
-                'closing': balance(acc, [('date', '<=', wizard.date_to)]),
-            })
+        def flat(entry):
+            return dict(entry, journal=entry['journal'].name, category=entry.get('category') or '',
+                        who=entry.get('who') or '', ref=entry.get('ref') or '')
+        account_rows = st['rows']
+        ordered_groups = [{'label': g['label'], 'total': g['total'], 'moves': [flat(e) for e in g['moves']]}
+                          for g in st['income_groups']]
+        expenses = [flat(e) for e in st['expenses']]
+        transfers = [flat(e) for e in st['transfers']]
 
         receivables, payables, to_approve = [], [], []
         if wizard.include_pending:
@@ -145,9 +101,8 @@ class ReportScoutTreasury(models.AbstractModel):
                                                                      ('state', '=', 'to_approve')]):
                 to_approve.append({'who': tm.partner_id.name or '', 'desc': tm.description, 'amount': tm.amount})
 
-        ordered_groups = [income_groups[k] for k in self.GROUP_ORDER if k in income_groups]
-        total_income = sum(g['total'] for g in ordered_groups)
-        total_expense = sum(e['amount'] for e in expenses)
+        total_income = st['total_income']
+        total_expense = st['total_expense']
         return {
             'doc_ids': wizard.ids,
             'doc_model': wizard._name,

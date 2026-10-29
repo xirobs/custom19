@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Aviso de la comisión en la ventana "Pagar" del portal de facturas -->
+    <template id="portal_invoice_payment_scout_fee" inherit_id="account_payment.portal_invoice_payment" name="Comisión del pago en línea (aviso)">
+        <xpath expr="//div[hasclass('modal-body')]" position="inside">
+            <t t-if="invoice and invoice.move_type == 'out_invoice'">
+                <t t-set="scout_fee" t-value="invoice.sudo().scout_online_fee or invoice.sudo()._scout_fee_preview()"/>
+                <div t-if="scout_fee" class="alert alert-info small mt-3 mb-0">
+                    Al pagar en línea (tarjeta, OXXO o Mercado Pago) se suma la comisión de
+                    <b t-out="scout_fee" t-options="{'widget': 'monetary', 'display_currency': invoice.currency_id}"/>.
+                    En efectivo o transferencia pagas
+                    <b t-out="invoice.sudo()._scout_fee_base()" t-options="{'widget': 'monetary', 'display_currency': invoice.currency_id}"/>.
+                </div>
+            </t>
+        </xpath>
+    </template>
+</odoo>

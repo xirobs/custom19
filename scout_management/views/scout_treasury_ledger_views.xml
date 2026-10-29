@@ -1,0 +1,95 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_scout_treasury_statement_wizard" model="ir.ui.view">
+        <field name="name">scout.treasury.statement.wizard.form</field>
+        <field name="model">scout.treasury.statement.wizard</field>
+        <field name="arch" type="xml">
+            <form string="Caja y bancos" create="false">
+                <header>
+                    <button name="action_print" type="object" string="PDF para el Consejo" class="btn-primary" icon="fa-file-pdf-o"/>
+                    <button name="action_mp_fees" type="object" string="Traer comisiones de Mercado Pago" icon="fa-download"
+                            groups="scout_management.group_scout_treasurer"/>
+                    <button name="action_count" type="object" string="Hacer arqueo / conciliar" icon="fa-calculator"
+                            groups="scout_management.group_scout_treasurer"/>
+                </header>
+                <sheet>
+                    <group>
+                        <group>
+                            <field name="date_from"/>
+                            <field name="date_to"/>
+                        </group>
+                        <group>
+                            <field name="journal_ids" widget="many2many_tags" options="{'no_create': True}"/>
+                        </group>
+                    </group>
+                    <field name="html" readonly="1" nolabel="1"/>
+                </sheet>
+            </form>
+        </field>
+    </record>
+    <record id="action_scout_treasury_statement" model="ir.actions.act_window">
+        <field name="name">Saldos y estado de cuenta</field>
+        <field name="res_model">scout.treasury.statement.wizard</field>
+        <field name="view_mode">form</field>
+        <field name="target">current</field>
+    </record>
+
+    <record id="view_scout_treasury_count_list" model="ir.ui.view">
+        <field name="name">scout.treasury.count.list</field>
+        <field name="model">scout.treasury.count</field>
+        <field name="arch" type="xml">
+            <list decoration-success="state in ('done', 'adjusted')" decoration-danger="state == 'diff'" decoration-muted="state == 'cancel'">
+                <field name="date"/>
+                <field name="journal_id"/>
+                <field name="system_amount" sum="Plataforma"/>
+                <field name="counted_amount" sum="Real"/>
+                <field name="difference" sum="Diferencia"/>
+                <field name="state" widget="badge"/>
+                <field name="user_id" optional="show"/>
+                <field name="currency_id" column_invisible="1"/>
+            </list>
+        </field>
+    </record>
+    <record id="view_scout_treasury_count_form" model="ir.ui.view">
+        <field name="name">scout.treasury.count.form</field>
+        <field name="model">scout.treasury.count</field>
+        <field name="arch" type="xml">
+            <form string="Arqueo / conciliación">
+                <header>
+                    <button name="action_adjust" type="object" string="Registrar ajuste para que cuadre" class="btn-primary"
+                            invisible="state != 'diff'" confirm="Se registrará la diferencia como sobrante (ingreso) o faltante (egreso, va a aprobación). ¿Continuar?"/>
+                    <button name="action_cancel" type="object" string="Cancelar" invisible="state in ('cancel', 'adjusted')"/>
+                    <field name="state" widget="statusbar" statusbar_visible="done,diff,adjusted"/>
+                </header>
+                <sheet>
+                    <group>
+                        <group>
+                            <field name="journal_id" options="{'no_create': True}" readonly="id"/>
+                            <field name="date" readonly="id"/>
+                            <field name="counted_amount" readonly="id"/>
+                        </group>
+                        <group>
+                            <field name="system_amount"/>
+                            <field name="difference"/>
+                            <field name="adjustment_id" invisible="not adjustment_id"/>
+                            <field name="user_id"/>
+                            <field name="currency_id" invisible="1"/>
+                        </group>
+                    </group>
+                    <field name="detail" placeholder="Conteo de billetes y monedas, o explicación de la diferencia"/>
+                </sheet>
+                <chatter/>
+            </form>
+        </field>
+    </record>
+    <record id="action_scout_treasury_count" model="ir.actions.act_window">
+        <field name="name">Arqueos y conciliaciones</field>
+        <field name="res_model">scout.treasury.count</field>
+        <field name="view_mode">list,form</field>
+    </record>
+
+    <menuitem id="menu_scout_treasury_statement" name="Saldos y estado de cuenta (cuadrado)" parent="menu_scout_treasury"
+              action="action_scout_treasury_statement" sequence="1"/>
+    <menuitem id="menu_scout_treasury_count" name="Arqueos y conciliaciones" parent="menu_scout_treasury"
+              action="action_scout_treasury_count" sequence="2"/>
+</odoo>

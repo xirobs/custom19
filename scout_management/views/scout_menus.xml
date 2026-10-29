@@ -64,7 +64,7 @@
     <menuitem id="menu_scout_treasury_income" name="Ingresos" parent="menu_scout_treasury" action="action_scout_treasury_income" sequence="5"/>
     <menuitem id="menu_scout_treasury_expense" name="Egresos" parent="menu_scout_treasury" action="action_scout_treasury_expense" sequence="6"/>
     <menuitem id="menu_scout_treasury_transfer" name="Traspasos" parent="menu_scout_treasury" action="action_scout_treasury_transfer" sequence="7"/>
-    <menuitem id="menu_scout_treasury_move" name="Todos los movimientos de caja y bancos" parent="menu_scout_treasury" action="action_scout_treasury_move" sequence="10"/>
+    <menuitem id="menu_scout_treasury_move" name="Capturas de ingresos, egresos y traspasos" parent="menu_scout_treasury" action="action_scout_treasury_move" sequence="10"/>
     <menuitem id="menu_scout_store" name="Tienda scout" parent="menu_scout_root" sequence="32" groups="group_scout_officer"/>
     <menuitem id="menu_scout_store_sale" name="Ventas (tienda, alimentos, eventos)" parent="menu_scout_store" action="action_scout_store_sale" sequence="10"/>
     <menuitem id="menu_scout_store_sale_line" name="Parte de ventas" parent="menu_scout_store" action="action_scout_store_sale_line" sequence="20"/>

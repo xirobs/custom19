@@ -83,6 +83,43 @@ function setupHtmlForm(form) {
     });
 }
 
+function setupCount(form) {
+    const total = form.querySelector("[data-ad-count-total]");
+    const diff = form.querySelector("[data-ad-count-diff]");
+    const detail = form.querySelector("[data-ad-count-detail]");
+    const system = Number(diff.dataset.system || 0);
+    const denoms = [...form.querySelectorAll("[data-denom]")];
+    const showDiff = () => {
+        if (total.value === "") {
+            diff.textContent = "";
+            return;
+        }
+        const d = Math.round((Number(total.value) - system) * 100) / 100;
+        diff.innerHTML = d === 0 ? '<b class="text-success">✔ Cuadra</b>'
+            : `<b class="${d > 0 ? "text-success" : "text-danger"}">${d > 0 ? "Sobran" : "Faltan"} ${money(Math.abs(d))}</b>`;
+    };
+    const fromDenoms = () => {
+        let sum = 0;
+        const parts = [];
+        for (const input of denoms) {
+            const n = Number(input.value) || 0;
+            if (n > 0) {
+                sum += n * Number(input.dataset.denom);
+                parts.push(`${n} × $${input.dataset.denom}`);
+            }
+        }
+        total.value = sum ? sum.toFixed(2) : "";
+        if (parts.length && (!detail.value || detail.dataset.auto === "1")) {
+            detail.value = "Conteo: " + parts.join(", ");
+            detail.dataset.auto = "1";
+        }
+        showDiff();
+    };
+    denoms.forEach((input) => input.addEventListener("input", fromDenoms));
+    total.addEventListener("input", showDiff);
+    detail.addEventListener("input", () => (detail.dataset.auto = "0"));
+}
+
 function boot() {
     document.addEventListener("click", (ev) => {
         const btn = ev.target.closest("[data-ad-confirm]");
@@ -91,6 +128,21 @@ function boot() {
             ev.stopPropagation();
         }
     }, true);
+    document.addEventListener("click", async (ev) => {
+        const btn = ev.target.closest("[data-ad-copy]");
+        if (!btn) {
+            return;
+        }
+        try {
+            await navigator.clipboard.writeText(btn.dataset.adCopy);
+            btn.innerHTML = '<i class="fa fa-check"></i> Liga copiada';
+        } catch {
+            window.prompt("Copia la liga:", btn.dataset.adCopy);
+        }
+    });
+    for (const form of document.querySelectorAll("[data-ad-count]")) {
+        setupCount(form);
+    }
     for (const form of document.querySelectorAll("[data-ad-pos]")) {
         setupPos(form);
     }

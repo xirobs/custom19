@@ -44,3 +44,14 @@
 .o_ad_total { font-size: 22px; }
 .o_ad_paymodes { display: flex; gap: 10px; flex-wrap: wrap; font-size: 13px; label { display: flex; gap: 4px; align-items: center; } }
 .o_ad_prod_row.o_ad_low { border-left: 4px solid #e5383b; }
+.o_ad_btn_mp { background: #009ee3; color: #fff; border-color: #009ee3; &:hover { background: #007eb5; color: #fff; } }
+.o_ad_mp_hint { background: #e6f6fd; border-radius: 8px; padding: 6px 8px; }
+.o_ad_origin { display: inline-block; font-size: 11px; padding: 1px 8px; border-radius: 999px; background: #e6f6fd; color: #035c86; font-weight: 600; margin-right: 4px; }
+.o_ad_origin_pick { display: flex; flex-wrap: wrap; gap: 6px;
+    label { border: 1px solid #cfd8e3; border-radius: 999px; padding: 4px 10px; font-size: 13px; display: flex; gap: 4px; align-items: center; } }
+.o_ad_qr { width: 220px; max-width: 70vw; margin: 10px auto; display: block; }
+.o_ad_tx_meta { display: flex; flex-wrap: wrap; gap: 4px 12px; font-size: 12px; color: #5b6672; margin-top: 4px; }
+.o_ad_sig_now { display: flex; align-items: center; gap: 10px; margin-bottom: 6px; img { max-height: 50px; background: #fff; border: 1px solid #e3e7eb; border-radius: 6px; } }
+.o_ad_denoms { display: grid; grid-template-columns: repeat(auto-fill, minmax(100px, 1fr)); gap: 6px; }
+.o_ad_denom { display: flex; align-items: center; gap: 6px; span { width: 48px; font-weight: 600; text-align: right; }
+    input { width: 100%; min-width: 0; border: 1px solid #cfd8e3; border-radius: 8px; height: 34px; text-align: center; } }

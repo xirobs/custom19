@@ -1092,7 +1092,8 @@ class ScoutLeaderPortal(http.Controller):
             member = self._svc()._member(member_id, section)
         except AccessError:
             return request.redirect(f'/dirigentes/{section.id}/miembros')
-        pdf, _type = request.env['ir.actions.report'].sudo()._render_qweb_pdf(
+        layout = 'sheet' if kw.get('hoja') else 'card'
+        pdf, _type = request.env['ir.actions.report'].sudo().with_context(scout_card_layout=layout)._render_qweb_pdf(
             'scout_management.action_report_member_card', member.ids)
         headers = [('Content-Type', 'application/pdf'), ('Content-Length', len(pdf)),
                    ('Content-Disposition', f'inline; filename="Credencial {member.name}.pdf"')]

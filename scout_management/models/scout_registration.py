@@ -475,6 +475,8 @@ class ScoutRegistration(models.Model):
                 'partner_id': payer.id,
                 'scout_member_id': reg.member_id.id,
                 'invoice_origin': reg.name,
+                'scout_charge_origin': 'registration',
+                'scout_charge_ref': reg.name,
                 'invoice_date': fields.Date.context_today(reg),
                 'invoice_line_ids': [fields.Command.create({
                     'product_id': product.id if product else False,

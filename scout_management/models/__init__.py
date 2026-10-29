@@ -30,3 +30,6 @@ from . import scout_session_auto
 from . import scout_leader_portal
 from . import scout_promo
 from . import scout_council_live
+from . import scout_payment_origin
+from . import scout_card_pdf
+from . import scout_treasury_ledger

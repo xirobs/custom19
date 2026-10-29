@@ -103,19 +103,9 @@ class ScoutAdminPortal(http.Controller):
             [('type', 'in', ('cash', 'bank')), ('company_id', '=', request.env.company.id)], order='type, sequence, id')
 
     @staticmethod
-    def _balances(journals):
-        """Saldo contable de cada caja / banco (asientos publicados)."""
-        Line = request.env['account.move.line'].sudo()
-        out = []
-        for journal in journals:
-            account = journal.default_account_id
-            balance = 0.0
-            if account:
-                data = Line._read_group([('account_id', '=', account.id), ('parent_state', '=', 'posted'),
-                                         ('company_id', '=', journal.company_id.id)], [], ['balance:sum'])
-                balance = data[0][0] or 0.0 if data else 0.0
-            out.append({'journal': journal, 'balance': balance})
-        return out
+    def _balances(journals=None):
+        """Saldos con el cálculo único (mismo que la plataforma y el PDF)."""
+        return request.env['scout.treasury.ledger'].balances(request.env.company)
 
     @staticmethod
     def _members():
@@ -139,14 +129,12 @@ class ScoutAdminPortal(http.Controller):
             stats['agreements'] = env['scout.meeting.agreement'].search_count(
                 [('state', '=', 'pending'), ('meeting_state', '!=', 'cancel')])
         if acc['treasury']:
-            stats['balances'] = self._balances(self._journals())
+            stats['balances'] = self._balances()
             stats['total'] = sum(b['balance'] for b in stats['balances'])
-            month = today.replace(day=1)
+            month_st = env['scout.treasury.ledger'].statement(today.replace(day=1), today, env.company)
+            stats['income'] = month_st['total_income']
+            stats['expense'] = month_st['total_expense']
             Move = env['scout.treasury.move']
-            stats['income'] = sum(Move.search([('state', '=', 'posted'), ('move_type', '=', 'income'),
-                                               ('date', '>=', month)]).mapped('amount'))
-            stats['expense'] = sum(Move.search([('state', '=', 'posted'), ('move_type', '=', 'expense'),
-                                                ('date', '>=', month)]).mapped('amount'))
             stats['moves_pending'] = Move.search_count([('state', 'in', ('draft', 'to_approve'))])
         if acc['store']:
             sales = env['scout.store.sale'].search([('state', '=', 'done'), ('date', '=', today)])
@@ -287,7 +275,9 @@ class ScoutAdminPortal(http.Controller):
 
     # ------------------------------------------------------------------ tesorería
     @http.route([BASE + '/tesoreria'], type='http', auth='user', website=True)
-    def admin_treasury(self, tipo='', estado='', mes='0', **kw):
+    def admin_treasury(self, ver='', caja='', mes='0', **kw):
+        """Caja y bancos: saldos, estado de cuenta del mes y todos los movimientos (de cualquier origen),
+        con el mismo cálculo que la plataforma y el PDF del Consejo."""
         acc, redirect = self._guard('treasury')
         if redirect:
             return redirect
@@ -296,23 +286,58 @@ class ScoutAdminPortal(http.Controller):
         offset = int(mes) if str(mes).lstrip('-').isdigit() else 0
         start = today.replace(day=1) + relativedelta(months=offset)
         end = start + relativedelta(months=1, days=-1)
-        domain = [('date', '>=', start), ('date', '<=', end)]
-        if tipo in ('income', 'expense', 'transfer'):
-            domain.append(('move_type', '=', tipo))
-        if estado in ('draft', 'to_approve', 'posted', 'cancel'):
-            domain.append(('state', '=', estado))
-        moves = request.env['scout.treasury.move'].search(domain, order='date desc, id desc', limit=200)
-        posted = moves.filtered(lambda m: m.state == 'posted')
-        totals = {'income': sum(posted.filtered(lambda m: m.move_type == 'income').mapped('amount')),
-                  'expense': sum(posted.filtered(lambda m: m.move_type == 'expense').mapped('amount'))}
-        pending = request.env['scout.treasury.move'].search([('state', 'in', ('draft', 'to_approve'))],
-                                                            order='date desc', limit=30)
+        journal_ids = [_int(caja)] if _int(caja) else None
+        values = request.env['scout.treasury.ledger']._statement_values(start, end, journal_ids=journal_ids)
+        movements = values['movements']
+        if ver in ('income', 'expense', 'transfer'):
+            movements = [m for m in movements if m['kind'] == ver]
         months = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio', 'agosto', 'septiembre',
                   'octubre', 'noviembre', 'diciembre']
-        return self._render('scout_management.admin_treasury', balances=self._balances(self._journals()),
-                            moves=moves, totals=totals, tipo=tipo, estado=estado, mes=offset, pending=pending,
+        values.pop('company', None)
+        return self._render('scout_management.admin_treasury', movements_shown=movements, ver=ver, **values,
+                            caja=_int(caja), mes=offset, journals=self._journals(),
                             period_label='%s %s' % (months[start.month - 1], start.year), start=start, end=end,
                             move_types=dict(MOVE_TYPES))
+
+    @http.route([BASE + '/tesoreria/arqueo'], type='http', auth='user', website=True, methods=['GET', 'POST'])
+    def admin_treasury_count(self, caja='', **post):
+        """Arqueo de caja (contar el efectivo) o conciliación con Mercado Pago / banco."""
+        acc, redirect = self._guard('treasury')
+        if redirect:
+            return redirect
+        Ledger = request.env['scout.treasury.ledger']
+        journals = self._journals()
+        journal = journals.filtered(lambda j: j.id == _int(caja))[:1] or journals[:1]
+        Count = request.env['scout.treasury.count']
+        if request.httprequest.method == 'POST':
+            url = '%s/tesoreria/arqueo?caja=%s' % (BASE, journal.id)
+            try:
+                if post.get('mp_fees'):
+                    res = Ledger._scout_mp_backfill()
+                    if res['count']:
+                        return self._back(url, ok=_('Se registraron las comisiones de %(n)s pago(s) por %(fee)s. '
+                                                    'Revisa de nuevo el saldo.', n=res['count'],
+                                                    fee='$ {:,.2f}'.format(res['fee'])))
+                    if res['errors']:
+                        return self._back(url, error=_('Mercado Pago no respondió: %s', res['errors'][0]))
+                    return self._back(url, ok=_('No hay comisiones pendientes de traer.'))
+                if post.get('adjust'):
+                    count = Count.browse(_int(post.get('adjust'))).exists()
+                    count.action_adjust()
+                    state = count.adjustment_id.state
+                    return self._back(url, ok=_('Ajuste registrado.') if state == 'posted' else
+                                      _('Ajuste enviado al jefe de grupo para aprobación.'))
+                count = Count.create({'journal_id': journal.id, 'counted_amount': _float(post.get('counted')),
+                                      'detail': (post.get('detail') or '').strip() or False})
+            except ERRORS as e:
+                return self._back(url, error=self._err(e))
+            msg = _('Cuadra perfecto.') if count.state == 'done' else _(
+                'Hay una diferencia de %s. Revisa o registra el ajuste.', '$ {:,.2f}'.format(count.difference))
+            return self._back(url, ok=msg)
+        history = Count.search([('journal_id', '=', journal.id)], limit=15)
+        kind = Ledger._journal_kind(journal) if journal else 'cash'
+        return self._render('scout_management.admin_treasury_count', journal=journal, journals=journals,
+                            balance=Ledger._balance(journal) if journal else 0.0, history=history, kind=kind)
 
     @http.route([BASE + '/tesoreria/nuevo'], type='http', auth='user', website=True, methods=['GET', 'POST'])
     def admin_treasury_new(self, tipo='income', **post):
@@ -407,7 +432,7 @@ class ScoutAdminPortal(http.Controller):
                                                     ('Content-Disposition', 'inline; filename="%s"' % quote(name))])
 
     @http.route([BASE + '/tesoreria/cuentas'], type='http', auth='user', website=True)
-    def admin_receivables(self, ver='cobrar', **kw):
+    def admin_receivables(self, ver='cobrar', origen='', **kw):
         acc, redirect = self._guard('treasury')
         if redirect:
             return redirect
@@ -420,8 +445,12 @@ class ScoutAdminPortal(http.Controller):
             invoices |= request.env['account.move'].search([
                 ('move_type', 'in', types), ('state', '=', 'draft'), ('scout_approval_state', '=', 'to_approve'),
                 ('company_id', '=', request.env.company.id)], limit=50)
+        from ..models.scout_payment_origin import CHARGE_ORIGINS
+        if ver == 'cobrar' and origen in dict(CHARGE_ORIGINS):
+            invoices = invoices.filtered(lambda i: (i.scout_charge_origin or i._scout_guess_origin()[0]) == origen)
         total = sum(invoices.mapped('amount_residual'))
         return self._render('scout_management.admin_receivables', invoices=invoices, ver=ver, total=total,
+                            origen=origen, origins=CHARGE_ORIGINS,
                             today=fields.Date.context_today(request.env.user))
 
     @http.route([BASE + '/tesoreria/balance.pdf'], type='http', auth='user', website=True)
@@ -434,6 +463,165 @@ class ScoutAdminPortal(http.Controller):
             'date_from': _date(desde, today.replace(day=1)), 'date_to': _date(hasta, today)})
         return self._pdf('scout_management.action_report_treasury', wizard, data={'wizard_id': wizard.id},
                          filename='Balance tesoreria %s a %s.pdf' % (wizard.date_from, wizard.date_to))
+
+    # ------------------------------------------------------------------ cobros en línea (Mercado Pago)
+    @staticmethod
+    def _mp_ready():
+        provider = request.env['payment.provider'].sudo().search(
+            [('code', '=', 'mercado_pago'), ('state', 'in', ('enabled', 'test')),
+             ('company_id', '=', request.env.company.id)], limit=1)
+        return provider
+
+    @http.route([BASE + '/cobro/nuevo'], type='http', auth='user', website=True, methods=['GET', 'POST'])
+    def admin_charge_new(self, **post):
+        """Cobro con Mercado Pago por cualquier ingreso: registro, cuota, campamento, uniforme, donativo…"""
+        acc, redirect = self._guard('treasury')
+        if redirect:
+            return redirect
+        from ..models.scout_payment_origin import CHARGE_ORIGINS
+        env = request.env
+        if request.httprequest.method == 'POST':
+            try:
+                member = env['res.partner'].sudo().browse(_int(post.get('member_id'))).exists()
+                payer_name = (post.get('payer') or '').strip()
+                phone = (post.get('phone') or '').strip()
+                if member:
+                    payer = member.scout_guardian_id or member
+                elif payer_name:
+                    payer = env['res.partner'].sudo().search([('name', '=ilike', payer_name)], limit=1) or \
+                        env['res.partner'].sudo().create({'name': payer_name, 'company_id': env.company.id})
+                else:
+                    raise UserError(_('Elige al miembro o escribe el nombre de quien paga.'))
+                if phone and not payer.phone:
+                    payer.sudo().phone = phone
+                origin = post.get('origin') if post.get('origin') in dict(CHARGE_ORIGINS) else 'other'
+                category = env['scout.treasury.category'].browse(_int(post.get('category_id'))).exists()
+                concept = (post.get('concept') or '').strip() or (category.name if category else '')
+                invoice = env['account.move']._scout_new_charge(
+                    payer, _float(post.get('amount')), concept, origin=origin, member=member or None,
+                    category=category or None, ref=(post.get('ref') or '').strip() or None)
+            except ERRORS as e:
+                return self._back(BASE + '/cobro/nuevo', error=self._err(e))
+            return self._back('%s/cobro/%s' % (BASE, invoice.id), ok=_('Cobro creado: compártelo para que paguen.'))
+        return self._render('scout_management.admin_charge_form', origins=CHARGE_ORIGINS, members=self._members(),
+                            categories=env['scout.treasury.category'].search([('category_type', '=', 'income')]),
+                            mp=self._mp_ready(), preset_member=_int(post.get('miembro')))
+
+    @http.route([BASE + '/cobro/<int:invoice_id>'], type='http', auth='user', website=True)
+    def admin_charge(self, invoice_id, **kw):
+        acc, redirect = self._guard('treasury')
+        if redirect:
+            return redirect
+        invoice = request.env['account.move'].browse(invoice_id).exists()
+        if not invoice or invoice.move_type != 'out_invoice':
+            return request.redirect(BASE + '/tesoreria/cuentas')
+        link = qr = message = wa = None
+        error = None
+        if invoice.scout_can_pay_online:
+            try:
+                from ..models.scout_online_payment import scout_qr_data_uri, scout_whatsapp_phone
+                link = invoice.sudo()._scout_payment_link()
+                qr = scout_qr_data_uri(link)
+                message = invoice.sudo()._scout_payment_message(link)
+                phone = scout_whatsapp_phone(invoice.partner_id.phone or invoice.scout_member_id.phone)
+                wa = 'https://wa.me/%s?text=%s' % (phone or '', quote(message))
+            except ERRORS as e:
+                error = self._err(e)
+            except Exception as e:  # noqa: BLE001 - pasarela sin configurar
+                _logger.exception('No se pudo generar la liga de pago')
+                error = _('No se pudo generar la liga de Mercado Pago: %s', e)
+        txs = request.env['payment.transaction'].sudo().search(
+            [('invoice_ids', 'in', invoice.ids)], order='create_date desc', limit=10)
+        return self._render('scout_management.admin_charge', invoice=invoice.sudo(), link=link, qr=qr,
+                            message=message, wa=wa, link_error=error, txs=txs, mp=self._mp_ready())
+
+    @http.route([BASE + '/tesoreria/en-linea'], type='http', auth='user', website=True)
+    def admin_online_payments(self, estado='pagados', origen='', **kw):
+        """Pagos con Mercado Pago: de quién (miembro y cuenta que pagó), de qué (origen y concepto) y cuánto."""
+        acc, redirect = self._guard('treasury')
+        if redirect:
+            return redirect
+        from ..models.scout_payment_origin import CHARGE_ORIGINS
+        domain = [('provider_code', '=', 'mercado_pago'), ('company_id', '=', request.env.company.id)]
+        if estado == 'pagados':
+            domain.append(('state', '=', 'done'))
+        elif estado == 'pendientes':
+            domain.append(('state', 'in', ('draft', 'pending', 'authorized')))
+        if origen in dict(CHARGE_ORIGINS):
+            domain.append(('scout_charge_origin', '=', origen))
+        txs = request.env['payment.transaction'].sudo().search(domain, order='create_date desc', limit=200)
+        done = txs.filtered(lambda t: t.state == 'done')
+        totals = {'amount': sum(done.mapped('amount')), 'fee': sum(done.mapped('scout_fee_amount')),
+                  'net': sum(t.scout_net_amount or t.amount for t in done)}
+        states = {'draft': 'Sin pagar', 'pending': 'Pendiente (OXXO / revisión)', 'authorized': 'Autorizado',
+                  'done': 'Pagado', 'cancel': 'Cancelado', 'error': 'Rechazado'}
+        return self._render('scout_management.admin_online_payments', txs=txs, totals=totals, estado=estado,
+                            origen=origen, origins=CHARGE_ORIGINS, states=states, local=request.env['scout.leader.portal']._local)
+
+    # ------------------------------------------------------------------ credenciales
+    @http.route([BASE + '/credenciales'], type='http', auth='user', website=True, methods=['GET', 'POST'])
+    def admin_cards(self, **post):
+        """Datos del reverso de la credencial (firma del jefe, emergencias, red) e impresión por sección."""
+        acc, redirect = self._guard('secretary')
+        if redirect:
+            return redirect
+        company = request.env.company.sudo()
+        if request.httprequest.method == 'POST':
+            if not acc.get('manager'):
+                return self._back(BASE + '/credenciales', error=_('Solo el jefe de grupo cambia estos datos.'))
+            vals = {
+                'scout_card_group_label': (post.get('group_label') or '').strip() or False,
+                'scout_card_emergency_phone': (post.get('emergency_phone') or '').strip() or False,
+                'scout_card_chief_name': (post.get('chief_name') or '').strip() or False,
+                'scout_card_network': (post.get('network') or '').strip() or False,
+            }
+            sig = post.get('signature') or ''
+            sig_file = request.httprequest.files.get('signature_file')
+            if sig_file and sig_file.filename:
+                data = sig_file.read()
+                if len(data) > 15 * 1024 * 1024:
+                    return self._back(BASE + '/credenciales', error=_('La imagen de la firma pesa más de 15 MB.'))
+                vals['scout_card_chief_signature'] = base64.b64encode(data)
+            elif sig.startswith('data:image/png;base64,'):
+                vals['scout_card_chief_signature'] = sig.split(',', 1)[1]
+            elif post.get('clear_signature'):
+                vals['scout_card_chief_signature'] = False
+            upload = request.httprequest.files.get('network_logo')
+            if upload and upload.filename:
+                vals['scout_card_network_logo'] = base64.b64encode(upload.read())
+            company.write(vals)
+            return self._back(BASE + '/credenciales', ok=_('Datos de la credencial guardados.'))
+        sections = request.env['scout.leader.portal']._group_sections()
+        sample = request.env['res.partner'].sudo().search([
+            ('is_scout', '=', True), ('scout_state', 'in', ('trial', 'active')), ('scout_type', '=', 'youth'),
+            ('company_id', 'in', [company.id, False])], limit=1)
+        return self._render('scout_management.admin_cards', company=company, sections=sections, sample=sample,
+                            chief=company._scout_card_chief())
+
+    @http.route([BASE + '/credenciales/<string:what>.pdf'], type='http', auth='user', website=True)
+    def admin_cards_pdf(self, what, seccion=None, **kw):
+        acc, redirect = self._guard('secretary')
+        if redirect:
+            return redirect
+        Partner = request.env['res.partner'].sudo()
+        domain = [('is_scout', '=', True), ('scout_state', 'in', ('trial', 'active')),
+                  ('company_id', 'in', [request.env.company.id, False])]
+        if what == 'muestra':
+            members = Partner.search(domain + [('scout_type', '=', 'youth')], limit=1)
+            layout = 'card'
+        else:
+            section = request.env['scout.section'].sudo().browse(_int(seccion)).exists()
+            if not section:
+                return request.redirect(BASE + '/credenciales')
+            members = Partner.search(domain + ['|', ('scout_section_id', '=', section.id),
+                                               ('scout_leading_section_ids', 'in', section.ids)], order='name')
+            layout = 'sheet'
+        if not members:
+            return self._back(BASE + '/credenciales', error=_('No hay miembros para imprimir.'))
+        pdf = request.env['scout.card.pdf']._render(members, layout=layout)
+        return request.make_response(pdf, headers=[
+            ('Content-Type', 'application/pdf'), ('Content-Length', len(pdf)),
+            ('Content-Disposition', 'inline; filename="Credenciales.pdf"')])
 
     # ------------------------------------------------------------------ tienda
     @staticmethod

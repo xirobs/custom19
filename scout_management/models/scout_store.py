@@ -286,6 +286,8 @@ class ScoutStoreSale(models.Model):
             'scout_member_id': self.member_id.id,
             'invoice_date': self.date,
             'invoice_origin': self.name,
+            'scout_charge_origin': {'food': 'food', 'event': 'event', 'donation': 'donation'}.get(self.sale_type, 'store'),
+            'scout_charge_ref': self.name,
             'invoice_line_ids': [fields.Command.create({
                 'product_id': line.product_id.id, 'name': line.product_id.display_name,
                 'quantity': line.quantity, 'price_unit': line.price_unit, 'tax_ids': [fields.Command.clear()],

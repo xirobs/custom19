@@ -20,8 +20,9 @@ class ResCompanyOnlineFee(models.Model):
     scout_online_fee_active = fields.Boolean(
         string='Cobrar al cliente la comisión del pago en línea', default=True,
         help='Se suma al cargo solo cuando la familia paga en línea (Mercado Pago).')
-    scout_online_fee_min = fields.Float(string='A partir de (monto)', default=100.0,
-                                        help='Cargos mayores a este monto llevan la comisión.')
+    scout_online_fee_min = fields.Float(string='A partir de (monto)', default=0.0,
+                                        help='Cargos mayores a este monto llevan la comisión (0 = siempre que se pague '
+                                             'en línea).')
     scout_online_fee_pct = fields.Float(string='Comisión (%)', default=3.49, digits=(5, 2))
     scout_online_fee_fixed = fields.Float(string='Cargo fijo por cobro', default=4.0, digits=(10, 2))
     scout_online_fee_vat = fields.Float(string='IVA sobre la comisión (%)', default=16.0, digits=(5, 2))
@@ -121,3 +122,43 @@ class AccountPaymentRegisterOnlineFee(models.TransientModel):
             moves = records if ctx['active_model'] == 'account.move' else records.move_id
             moves.filtered(lambda m: m.move_type == 'out_invoice')._scout_remove_online_fee()
         return super().default_get(fields_list)
+
+
+class PaymentTransactionOnlineFee(models.Model):
+    """La comisión se cobra en CUALQUIER pago en línea de un cargo (tienda, registro, evento, cuota…), aunque se
+    pague desde el botón "Pagar" del portal de facturas o con una liga generada desde la factura, no solo desde
+    las ligas del grupo."""
+    _inherit = 'payment.transaction'
+
+    @api.model_create_multi
+    def create(self, vals_list):
+        txs = super().create(vals_list)
+        for tx in txs:
+            try:
+                tx._scout_add_online_fee()
+            except Exception:  # noqa: BLE001 - nunca impedir el pago por la comisión
+                _logger.exception('No se pudo sumar la comisión en línea a %s', tx.reference)
+        return txs
+
+    def _scout_add_online_fee(self):
+        self.ensure_one()
+        if self.provider_code != 'mercado_pago' or self.operation not in ('online_redirect', 'online_direct',
+                                                                          'online_token'):
+            return
+        invoices = self.invoice_ids.filtered(lambda m: m.move_type == 'out_invoice')
+        if not invoices or len(invoices) > 1:
+            return
+        invoice = invoices.sudo()
+        rounding = invoice.currency_id.rounding or 0.01
+        base = invoice._scout_fee_base()
+        # Solo si se está pagando el saldo completo (sin comisión) y el cargo aún no la trae
+        if invoice.scout_online_fee or float_compare(self.amount, base, precision_rounding=rounding) != 0:
+            return
+        if not invoice._scout_fee_editable():
+            return
+        invoice._scout_apply_online_fee()
+        fee = invoice.scout_online_fee
+        if fee:
+            self.sudo().amount = base + fee
+            invoice.message_post(body=_('Se sumó la comisión por pago en línea (%(fee)s) al pagar con Mercado Pago.',
+                                        fee='$ {:,.2f}'.format(fee)))

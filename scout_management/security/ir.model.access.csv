@@ -74,3 +74,7 @@ access_scout_checkin_user,scout.meeting.checkin user,model_scout_meeting_checkin
 access_scout_checkin_officer,scout.meeting.checkin officer,model_scout_meeting_checkin,group_scout_officer,1,1,1,1
 access_scout_turn_user,scout.meeting.turn user,model_scout_meeting_turn,group_scout_leader,1,0,0,0
 access_scout_turn_officer,scout.meeting.turn officer,model_scout_meeting_turn,group_scout_officer,1,1,1,1
+access_scout_treasury_count_officer,scout.treasury.count officer,model_scout_treasury_count,group_scout_officer,1,0,0,0
+access_scout_treasury_count_treasurer,scout.treasury.count treasurer,model_scout_treasury_count,group_scout_treasurer,1,1,1,0
+access_scout_treasury_count_manager,scout.treasury.count manager,model_scout_treasury_count,group_scout_manager,1,1,1,1
+access_scout_treasury_statement_wizard,scout.treasury.statement.wizard officer,model_scout_treasury_statement_wizard,group_scout_officer,1,1,1,1

@@ -1,0 +1,98 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Origen del cobro en la lista de cargos y en el formulario -->
+    <record id="view_out_invoice_tree_scout_origin" model="ir.ui.view">
+        <field name="name">account.move.list.scout.origin</field>
+        <field name="model">account.move</field>
+        <field name="inherit_id" ref="account.view_invoice_tree"/>
+        <field name="arch" type="xml">
+            <xpath expr="//field[@name='invoice_partner_display_name'][last()]" position="after">
+                <field name="scout_member_id" optional="show" column_invisible="context.get('default_move_type') not in ('out_invoice', 'out_refund')"/>
+                <field name="scout_charge_origin" optional="show" column_invisible="context.get('default_move_type') not in ('out_invoice', 'out_refund')"/>
+                <field name="scout_charge_ref" optional="hide" column_invisible="context.get('default_move_type') not in ('out_invoice', 'out_refund')"/>
+            </xpath>
+        </field>
+    </record>
+    <record id="view_move_form_scout_origin" model="ir.ui.view">
+        <field name="name">account.move.form.scout.origin</field>
+        <field name="model">account.move</field>
+        <field name="inherit_id" ref="account.view_move_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//field[@name='partner_id']" position="after">
+                <field name="scout_charge_origin" invisible="move_type not in ('out_invoice', 'out_refund')"/>
+                <field name="scout_charge_ref" invisible="move_type not in ('out_invoice', 'out_refund') or not scout_charge_origin"/>
+            </xpath>
+        </field>
+    </record>
+
+    <!-- Pagos en línea: de quién y de qué -->
+    <record id="view_payment_transaction_list_scout" model="ir.ui.view">
+        <field name="name">payment.transaction.list.scout</field>
+        <field name="model">payment.transaction</field>
+        <field name="inherit_id" ref="payment.payment_transaction_list"/>
+        <field name="arch" type="xml">
+            <field name="partner_name" position="after">
+                <field name="scout_member_id" optional="show"/>
+                <field name="scout_section_id" optional="show"/>
+                <field name="scout_charge_origin" optional="show"/>
+                <field name="scout_label" optional="show"/>
+                <field name="scout_payer_name" optional="show"/>
+                <field name="scout_payer_email" optional="hide"/>
+                <field name="scout_method_detail" optional="hide"/>
+                <field name="provider_reference" optional="hide" string="Folio Mercado Pago"/>
+            </field>
+            <field name="amount" position="after">
+                <field name="scout_fee_amount" optional="show" sum="Comisión"/>
+                <field name="scout_net_amount" optional="show" sum="Neto"/>
+            </field>
+        </field>
+    </record>
+    <record id="view_payment_transaction_form_scout" model="ir.ui.view">
+        <field name="name">payment.transaction.form.scout</field>
+        <field name="model">payment.transaction</field>
+        <field name="inherit_id" ref="payment.payment_transaction_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//sheet" position="inside">
+                <group string="Identificación del pago (grupo scout)">
+                    <group>
+                        <field name="scout_charge_origin"/>
+                        <field name="scout_label"/>
+                        <field name="scout_member_id"/>
+                        <field name="scout_section_id"/>
+                    </group>
+                    <group>
+                        <field name="scout_payer_name"/>
+                        <field name="scout_payer_email"/>
+                        <field name="scout_method_detail"/>
+                        <field name="scout_fee_amount"/>
+                        <field name="scout_net_amount"/>
+                    </group>
+                </group>
+            </xpath>
+        </field>
+    </record>
+    <record id="view_payment_transaction_search_scout" model="ir.ui.view">
+        <field name="name">payment.transaction.search.scout</field>
+        <field name="model">payment.transaction</field>
+        <field name="inherit_id" ref="payment.payment_transaction_search"/>
+        <field name="arch" type="xml">
+            <xpath expr="//search" position="inside">
+                <field name="scout_member_id"/>
+                <field name="scout_payer_name"/>
+                <field name="scout_label"/>
+                <filter name="scout_done" string="Pagados" domain="[('state', '=', 'done')]"/>
+                <filter name="group_scout_origin" string="Origen" context="{'group_by': 'scout_charge_origin'}"/>
+                <filter name="group_scout_section" string="Sección" context="{'group_by': 'scout_section_id'}"/>
+            </xpath>
+        </field>
+    </record>
+    <record id="action_scout_online_payments" model="ir.actions.act_window">
+        <field name="name">Pagos en línea (Mercado Pago)</field>
+        <field name="res_model">payment.transaction</field>
+        <field name="view_mode">list,form</field>
+        <field name="domain">[('provider_code', '=', 'mercado_pago')]</field>
+        <field name="context">{'search_default_scout_done': 1}</field>
+    </record>
+    <menuitem id="menu_scout_online_payments" name="Pagos en línea (Mercado Pago)" parent="menu_scout_treasury"
+              action="action_scout_online_payments" sequence="25"/>
+</odoo>

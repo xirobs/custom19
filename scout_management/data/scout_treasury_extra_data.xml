@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo noupdate="1">
+    <record id="category_bank_fee" model="scout.treasury.category">
+        <field name="name">Comisiones bancarias y de Mercado Pago</field>
+        <field name="category_type">expense</field>
+        <field name="sequence">8</field>
+    </record>
+    <record id="category_adjust_in" model="scout.treasury.category">
+        <field name="name">Ajuste de arqueo (sobrante)</field>
+        <field name="category_type">income</field>
+        <field name="report_group">other</field>
+        <field name="sequence">20</field>
+    </record>
+    <record id="category_adjust_out" model="scout.treasury.category">
+        <field name="name">Ajuste de arqueo (faltante)</field>
+        <field name="category_type">expense</field>
+        <field name="sequence">20</field>
+    </record>
+</odoo>

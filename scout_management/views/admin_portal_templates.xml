@@ -40,6 +40,7 @@
                         <small t-out="'%s pendientes' % stats['agreements']"/>
                         <b t-if="stats['agreements']" class="o_sl_badge o_sl_badge_navy" t-out="stats['agreements']"/></a>
                     <a class="o_sl_tile" href="/scouts/consejo"><i class="fa fa-clock-o"/><span>Consejo en vivo</span><small>Reloj, firma de asistencia y acta</small></a>
+                    <a class="o_sl_tile" t-att-href="admin_base + '/credenciales'"><i class="fa fa-id-card-o"/><span>Credenciales</span><small>Firma del jefe, emergencias e impresión por sección</small></a>
                 </t>
                 <t t-if="acc.get('treasury')">
                     <a class="o_sl_tile" t-att-href="admin_base + '/tesoreria'"><i class="fa fa-university"/><span>Caja y bancos</span>
@@ -49,6 +50,8 @@
                     <a class="o_sl_tile" t-att-href="admin_base + '/tesoreria/nuevo?tipo=expense'"><i class="fa fa-arrow-up"/><span>Registrar egreso</span>
                         <small t-out="'Este mes %s' % fmt_money(stats['expense'])"/></a>
                     <a class="o_sl_tile" t-att-href="admin_base + '/tesoreria/cuentas'"><i class="fa fa-users"/><span>Por cobrar y por pagar</span><small>Cargos a miembros y proveedores</small></a>
+                    <a class="o_sl_tile" t-att-href="admin_base + '/cobro/nuevo'"><i class="fa fa-qrcode"/><span>Cobro con Mercado Pago</span><small>Registro, cuota, campamento o cualquier ingreso</small></a>
+                    <a class="o_sl_tile" t-att-href="admin_base + '/tesoreria/en-linea'"><i class="fa fa-credit-card"/><span>Pagos en línea recibidos</span><small>Quién pagó y de qué</small></a>
                 </t>
                 <t t-if="acc.get('store')">
                     <a class="o_sl_tile o_sl_tile_renew" t-att-href="admin_base + '/tienda'"><i class="fa fa-shopping-basket"/><span>Tiendita: vender</span>
@@ -59,7 +62,7 @@
                 </t>
             </div>
             <div t-if="acc.get('treasury') and stats.get('balances')" class="o_sl_box">
-                <b>Saldos</b>
+                <b>Saldos</b> <a class="small ms-2" t-att-href="admin_base + '/tesoreria/arqueo'">Hacer arqueo</a>
                 <div t-foreach="stats['balances']" t-as="b" class="o_ad_kv"><span t-out="b['journal'].name"/><b t-out="fmt_money(b['balance'])"/></div>
             </div>
             <p class="small text-muted mt-3">¿Algo que no está aquí? <a t-att-href="backend_url">Abrir la plataforma completa</a>.</p>
@@ -218,51 +221,108 @@
             <t t-set="tab" t-value="'tes'"/>
             <t t-call="scout_management.admin_tabs"/>
             <h5 class="o_sl_h">Caja y bancos</h5>
-            <div class="o_ad_balances">
-                <div t-foreach="balances" t-as="b" class="o_ad_balance">
-                    <small><i t-attf-class="fa #{'fa-money' if b['journal'].type == 'cash' else 'fa-university'}"/> <t t-out="b['journal'].name"/></small>
-                    <b t-out="fmt_money(b['balance'])"/>
-                </div>
-            </div>
             <div class="o_ad_actions">
                 <a class="btn btn-sm btn-success" t-att-href="admin_base + '/tesoreria/nuevo?tipo=income'"><i class="fa fa-arrow-down"/> Ingreso</a>
                 <a class="btn btn-sm btn-danger" t-att-href="admin_base + '/tesoreria/nuevo?tipo=expense'"><i class="fa fa-arrow-up"/> Egreso</a>
                 <a class="btn btn-sm o_sl_btn_outline" t-att-href="admin_base + '/tesoreria/nuevo?tipo=transfer'"><i class="fa fa-exchange"/> Traspaso</a>
+                <a class="btn btn-sm o_sl_btn" t-att-href="admin_base + '/tesoreria/arqueo'"><i class="fa fa-calculator"/> Arqueo / conciliar</a>
+                <a class="btn btn-sm o_ad_btn_mp" t-att-href="admin_base + '/cobro/nuevo'"><i class="fa fa-qrcode"/> Cobro con Mercado Pago</a>
+                <a class="btn btn-sm o_sl_btn_outline" t-att-href="admin_base + '/tesoreria/en-linea'"><i class="fa fa-credit-card"/> Pagos en línea</a>
                 <a class="btn btn-sm o_sl_btn_outline" t-att-href="admin_base + '/tesoreria/cuentas'"><i class="fa fa-users"/> Por cobrar / pagar</a>
             </div>
-            <div t-if="pending" class="o_sl_box o_ad_pending">
-                <b>Pendientes de registrar o aprobar</b>
-                <a t-foreach="pending" t-as="m" class="o_ad_move" t-att-href="'%s/tesoreria/%s' % (admin_base, m.id)">
+            <div class="o_sl_title_row mt-2">
+                <div class="d-flex align-items-center gap-2">
+                    <a class="btn btn-sm btn-light" t-att-href="'%s/tesoreria?mes=%s&amp;caja=%s' % (admin_base, mes - 1, caja or '')"><i class="fa fa-chevron-left"/></a>
+                    <b class="text-capitalize" t-out="period_label"/>
+                    <a class="btn btn-sm btn-light" t-att-href="'%s/tesoreria?mes=%s&amp;caja=%s' % (admin_base, mes + 1, caja or '')"><i class="fa fa-chevron-right"/></a>
+                </div>
+                <a class="btn btn-sm o_sl_btn_outline" target="_blank" data-sl-pdf="1" t-att-href="'%s/tesoreria/balance.pdf?desde=%s&amp;hasta=%s' % (admin_base, start, end)"><i class="fa fa-file-pdf-o"/> PDF para el Consejo</a>
+            </div>
+            <div class="o_ad_filters">
+                <a t-att-href="'%s/tesoreria?mes=%s' % (admin_base, mes)" t-attf-class="#{'active' if not caja else ''}">Todas las cuentas</a>
+                <a t-foreach="journals" t-as="j" t-att-href="'%s/tesoreria?mes=%s&amp;caja=%s' % (admin_base, mes, j.id)" t-attf-class="#{'active' if caja == j.id else ''}" t-out="j.name"/>
+            </div>
+            <div class="o_sl_box">
+                <t t-call="scout_management.treasury_statement_body"/>
+            </div>
+            <div t-if="pending['captures']" class="o_sl_box o_ad_pending">
+                <b>Capturas por registrar o aprobar (aún no afectan el saldo)</b>
+                <a t-foreach="pending['captures']" t-as="m" class="o_ad_move" t-att-href="'%s/tesoreria/%s' % (admin_base, m.id)">
                     <span t-attf-class="o_ad_dot o_ad_#{m.move_type}"/>
                     <span class="flex-grow-1 min-w-0 text-truncate" t-out="(m.description or '').splitlines()[0] if m.description else m.name"/>
                     <span t-attf-class="o_ad_state o_ad_state_#{m.state}" t-out="dict(m._fields['state'].selection).get(m.state)"/>
                     <b t-out="fmt_money(m.amount)"/>
                 </a>
             </div>
-            <div class="o_sl_title_row mt-2">
-                <div class="d-flex align-items-center gap-2">
-                    <a class="btn btn-sm btn-light" t-att-href="'%s/tesoreria?mes=%s&amp;tipo=%s&amp;estado=%s' % (admin_base, mes - 1, tipo, estado)"><i class="fa fa-chevron-left"/></a>
-                    <b class="text-capitalize" t-out="period_label"/>
-                    <a class="btn btn-sm btn-light" t-att-href="'%s/tesoreria?mes=%s&amp;tipo=%s&amp;estado=%s' % (admin_base, mes + 1, tipo, estado)"><i class="fa fa-chevron-right"/></a>
-                </div>
-                <a class="btn btn-sm o_sl_btn_outline" target="_blank" t-att-href="'%s/tesoreria/balance.pdf?desde=%s&amp;hasta=%s' % (admin_base, start, end)"><i class="fa fa-file-pdf-o"/> Balance para el Consejo</a>
-            </div>
-            <div class="o_ad_kv"><span>Ingresos registrados</span><b class="text-success" t-out="fmt_money(totals['income'])"/></div>
-            <div class="o_ad_kv"><span>Egresos registrados</span><b class="text-danger" t-out="fmt_money(totals['expense'])"/></div>
+            <h6 class="o_sl_h mt-3">Todos los movimientos del mes</h6>
             <div class="o_ad_filters">
                 <a t-foreach="[('', 'Todos'), ('income', 'Ingresos'), ('expense', 'Egresos'), ('transfer', 'Traspasos')]" t-as="f"
-                   t-att-href="'%s/tesoreria?mes=%s&amp;tipo=%s' % (admin_base, mes, f[0])" t-attf-class="#{'active' if tipo == f[0] else ''}" t-out="f[1]"/>
+                   t-att-href="'%s/tesoreria?mes=%s&amp;caja=%s&amp;ver=%s' % (admin_base, mes, caja or '', f[0])" t-attf-class="#{'active' if ver == f[0] else ''}" t-out="f[1]"/>
             </div>
-            <p t-if="not moves" class="text-muted">Sin movimientos en este mes.</p>
-            <a t-foreach="moves" t-as="m" class="o_ad_move" t-att-href="'%s/tesoreria/%s' % (admin_base, m.id)">
-                <span t-attf-class="o_ad_dot o_ad_#{m.move_type}"/>
+            <p t-if="not movements_shown" class="text-muted">Sin movimientos.</p>
+            <div t-foreach="movements_shown" t-as="m" class="o_ad_move">
+                <span t-attf-class="o_ad_dot o_ad_#{m['kind']}"/>
                 <span class="flex-grow-1 min-w-0">
-                    <span class="d-block text-truncate" t-out="(m.description or '').splitlines()[0] if m.description else m.name"/>
-                    <small class="text-muted"><t t-out="fmt_date(m.date)"/> · <t t-out="m.journal_id.name"/><t t-if="m.category_id"> · <t t-out="m.category_id.name"/></t></small>
+                    <span class="d-block text-truncate" t-out="m['label']"/>
+                    <small class="text-muted"><t t-out="fmt_date(m['date'])"/> · <span class="o_ad_origin" t-out="m['source']"/> <t t-out="m['journal'].name"/><t t-if="m['who']"> · <t t-out="m['who']"/></t><t t-if="m.get('dest')"> → <t t-out="m['dest']"/></t></small>
                 </span>
-                <span t-if="m.state != 'posted'" t-attf-class="o_ad_state o_ad_state_#{m.state}" t-out="dict(m._fields['state'].selection).get(m.state)"/>
-                <b t-attf-class="#{'text-success' if m.move_type == 'income' else ('text-danger' if m.move_type == 'expense' else '')}" t-out="('-' if m.move_type == 'expense' else '') + fmt_money(m.amount)"/>
-            </a>
+                <b t-attf-class="#{'text-success' if m['signed'] &gt; 0 and m['kind'] != 'transfer' else ('text-danger' if m['kind'] == 'expense' else '')}" t-out="('-' if m['signed'] &lt; 0 else '') + fmt_money(m['amount'])"/>
+            </div>
+        </t>
+    </template>
+
+    <template id="admin_treasury_count" name="Administración: arqueo">
+        <t t-call="scout_management.leader_layout">
+            <t t-set="tab" t-value="'tes'"/>
+            <t t-call="scout_management.admin_tabs"/>
+            <h5 class="o_sl_h">Arqueo y conciliación</h5>
+            <div class="o_ad_filters">
+                <a t-foreach="journals" t-as="j" t-att-href="'%s/tesoreria/arqueo?caja=%s' % (admin_base, j.id)" t-attf-class="#{'active' if journal == j else ''}" t-out="j.name"/>
+            </div>
+            <div class="o_sl_box">
+                <div class="o_ad_kv"><span>Saldo en la plataforma</span><b t-out="fmt_money(balance)"/></div>
+                <p class="small text-muted mt-1 mb-2">
+                    <t t-if="kind == 'cash'">Cuenta el efectivo que hay físicamente en la caja.</t>
+                    <t t-elif="kind == 'online'">Escribe el saldo que muestra la app o el panel de Mercado Pago (dinero disponible + por liberar).</t>
+                    <t t-else="">Escribe el saldo del estado de cuenta o la app del banco.</t>
+                </p>
+                <form t-if="kind == 'online'" method="post" class="mb-2">
+                    <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
+                    <button name="mp_fees" value="1" class="btn btn-sm o_ad_btn_mp"><i class="fa fa-download"/> Traer comisiones de Mercado Pago</button>
+                    <small class="text-muted d-block">Consulta en Mercado Pago la comisión de cada pago recibido y la registra. Hazlo antes de comparar el saldo.</small>
+                </form>
+                <form method="post" class="o_ad_form" data-ad-count="">
+                    <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
+                    <div t-if="kind == 'cash'" class="o_ad_denoms">
+                        <div t-foreach="[1000, 500, 200, 100, 50, 20, 10, 5, 2, 1, 0.5]" t-as="d" class="o_ad_denom">
+                            <span t-out="('$%g' % d)"/><input type="number" min="0" step="1" inputmode="numeric" t-att-data-denom="d" placeholder="0"/>
+                        </div>
+                    </div>
+                    <label class="form-label mt-2">Lo que hay realmente</label>
+                    <input name="counted" type="number" step="0.01" inputmode="decimal" class="form-control form-control-lg" required="required" data-ad-count-total=""/>
+                    <div class="small mt-1" data-ad-count-diff="" t-att-data-system="balance"/>
+                    <label class="form-label mt-2">Notas</label>
+                    <textarea name="detail" class="form-control" rows="2" data-ad-count-detail="" placeholder="Ej. falta un recibo de $200; Mercado Pago aún no libera $350…"/>
+                    <button class="btn o_sl_btn w-100 mt-2"><i class="fa fa-check"/> Guardar arqueo</button>
+                </form>
+            </div>
+            <h6 class="o_sl_h">Arqueos anteriores</h6>
+            <p t-if="not history" class="text-muted">Todavía no hay arqueos de esta cuenta.</p>
+            <div t-foreach="history" t-as="c" class="o_sl_box">
+                <div class="d-flex align-items-center gap-2">
+                    <b t-out="fmt_date(c.date)"/>
+                    <span t-attf-class="o_ad_state ms-auto o_ad_state_#{'posted' if c.state in ('done', 'adjusted') else ('cancel' if c.state == 'cancel' else 'to_approve')}" t-out="dict(c._fields['state'].selection).get(c.state)"/>
+                </div>
+                <div class="o_ad_kv"><span>Plataforma</span><b t-out="fmt_money(c.system_amount)"/></div>
+                <div class="o_ad_kv"><span>Real</span><b t-out="fmt_money(c.counted_amount)"/></div>
+                <div class="o_ad_kv"><span>Diferencia</span><b t-attf-class="#{'text-danger' if c.difference &lt; 0 else ('text-success' if c.difference &gt; 0 else '')}" t-out="fmt_money(c.difference)"/></div>
+                <small t-if="c.detail" class="text-muted d-block" t-out="c.detail"/>
+                <small class="text-muted d-block">Hizo: <t t-out="c.user_id.name"/><t t-if="c.adjustment_id"> · ajuste <a t-att-href="'%s/tesoreria/%s' % (admin_base, c.adjustment_id.id)" t-out="c.adjustment_id.name"/></t></small>
+                <form t-if="c.state == 'diff'" method="post" class="mt-1">
+                    <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
+                    <button name="adjust" t-att-value="c.id" class="btn btn-sm btn-warning" data-ad-confirm="Se registrará la diferencia como sobrante o faltante para que la cuenta cuadre con lo real. ¿Continuar?">Registrar ajuste para que cuadre</button>
+                </form>
+            </div>
         </t>
     </template>
 
@@ -276,6 +336,8 @@
             </div>
             <form method="post" t-att-action="'%s/tesoreria/nuevo?tipo=%s' % (admin_base, tipo)" enctype="multipart/form-data" class="o_sl_box o_ad_form">
                 <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
+                <p t-if="tipo == 'income'" class="small o_ad_mp_hint"><i class="fa fa-qrcode"/> ¿Te van a pagar con tarjeta, OXXO o Mercado Pago?
+                    <a t-att-href="admin_base + '/cobro/nuevo'">Genera un cobro en línea</a>; el ingreso se registra solo cuando paguen.</p>
                 <label class="form-label">Importe</label>
                 <input name="amount" type="number" step="0.01" min="0.01" inputmode="decimal" class="form-control form-control-lg" required="required" placeholder="0.00"/>
                 <label class="form-label mt-2" t-out="'Concepto de qué se trata' if tipo != 'transfer' else 'Motivo del traspaso'"/>
@@ -377,16 +439,28 @@
                 <a t-att-href="admin_base + '/tesoreria/cuentas?ver=cobrar'" t-attf-class="#{'active' if ver == 'cobrar' else ''}">Por cobrar (miembros)</a>
                 <a t-att-href="admin_base + '/tesoreria/cuentas?ver=pagar'" t-attf-class="#{'active' if ver == 'pagar' else ''}">Por pagar (proveedores)</a>
             </div>
+            <div t-if="ver == 'cobrar'" class="o_ad_filters">
+                <a t-att-href="admin_base + '/tesoreria/cuentas?ver=cobrar'" t-attf-class="#{'active' if not origen else ''}">Todo</a>
+                <a t-foreach="origins" t-as="o" t-att-href="'%s/tesoreria/cuentas?ver=cobrar&amp;origen=%s' % (admin_base, o[0])"
+                   t-attf-class="#{'active' if origen == o[0] else ''}" t-out="o[1]"/>
+            </div>
             <div class="o_ad_kv"><span>Total pendiente</span><b t-out="fmt_money(total)"/></div>
+            <a t-if="ver == 'cobrar'" class="btn btn-sm o_ad_btn_mp my-2" t-att-href="admin_base + '/cobro/nuevo'"><i class="fa fa-plus"/> Nuevo cobro con Mercado Pago</a>
             <p t-if="not invoices" class="text-muted">No hay pendientes.</p>
             <div t-foreach="invoices" t-as="inv" t-attf-class="o_ad_move #{'o_ad_late' if inv.invoice_date_due and inv.invoice_date_due &lt; today and inv.state == 'posted' else ''}">
                 <span class="flex-grow-1 min-w-0">
                     <span class="d-block text-truncate" t-out="inv.scout_member_id.name or inv.partner_id.name"/>
-                    <small class="text-muted"><t t-out="inv.name if inv.state == 'posted' else 'Borrador'"/> · <t t-out="(inv.invoice_line_ids[:1].name or inv.ref or '')[:50]"/>
+                    <small class="text-muted">
+                        <span t-if="ver == 'cobrar'" class="o_ad_origin" t-out="dict(origins).get(inv.scout_charge_origin or inv._scout_guess_origin()[0])"/>
+                        <t t-out="inv.name if inv.state == 'posted' else 'Borrador'"/> · <t t-out="(inv.invoice_line_ids[:1].name or inv.ref or '')[:50]"/>
+                        <t t-if="inv.scout_member_id and inv.partner_id != inv.scout_member_id"> · paga <t t-out="inv.partner_id.name"/></t>
                         <t t-if="inv.invoice_date_due"> · vence <t t-out="fmt_date(inv.invoice_date_due)"/></t></small>
                 </span>
                 <span t-if="inv.scout_approval_state == 'to_approve'" class="o_ad_state o_ad_state_to_approve">Por aprobar</span>
-                <b t-out="fmt_money(inv.amount_residual if inv.state == 'posted' else inv.amount_total)"/>
+                <span class="text-end">
+                    <b class="d-block" t-out="fmt_money(inv.amount_residual if inv.state == 'posted' else inv.amount_total)"/>
+                    <a t-if="ver == 'cobrar' and inv.scout_can_pay_online" class="btn btn-sm o_ad_btn_mp mt-1" t-att-href="'%s/cobro/%s' % (admin_base, inv.id)"><i class="fa fa-qrcode"/> Cobrar en línea</a>
+                </span>
             </div>
             <p class="small text-muted mt-2">Los cobros en efectivo a un miembro se registran desde su ficha (Miembros → Pagos) y los pagos en línea llegan solos.</p>
         </t>
@@ -499,6 +573,7 @@
             </div>
             <div class="o_ad_actions">
                 <a class="btn btn-sm o_sl_btn_outline" target="_blank" t-att-href="receipt_url"><i class="fa fa-file-pdf-o"/> Recibo</a>
+                <a t-if="sale.invoice_id and sale.invoice_id.scout_can_pay_online" class="btn btn-sm o_ad_btn_mp" t-att-href="'%s/cobro/%s' % (admin_base, sale.invoice_id.id)"><i class="fa fa-qrcode"/> Cobrar con Mercado Pago</a>
                 <form t-if="sale.state == 'done'" method="post" t-att-action="'%s/tienda/venta/%s/whatsapp' % (admin_base, sale.id)" class="d-inline" target="_blank">
                     <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
                     <button class="btn btn-sm btn-success"><i class="fa fa-whatsapp"/> Enviar por WhatsApp</button>
@@ -604,6 +679,184 @@
                     </div>
                 </div>
             </t>
+        </t>
+    </template>
+    <!-- ============================== COBROS EN LÍNEA ============================== -->
+    <template id="admin_charge_form" name="Administración: nuevo cobro en línea">
+        <t t-call="scout_management.leader_layout">
+            <t t-set="tab" t-value="'tes'"/>
+            <t t-call="scout_management.admin_tabs"/>
+            <h5 class="o_sl_h">Cobro con Mercado Pago</h5>
+            <div t-if="not mp" class="alert alert-warning small">Mercado Pago no está activo para el grupo. Actívalo en la plataforma:
+                Configuración → Pago en línea (Mercado Pago). El cobro se crea igual y se puede pagar en efectivo o transferencia.</div>
+            <form method="post" t-att-action="admin_base + '/cobro/nuevo'" class="o_sl_box o_ad_form">
+                <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
+                <label class="form-label">¿De qué es el cobro?</label>
+                <div class="o_ad_origin_pick">
+                    <label t-foreach="origins" t-as="o"><input type="radio" name="origin" t-att-value="o[0]" t-att-checked="o[0] == 'fee' or None"/> <span t-out="o[1]"/></label>
+                </div>
+                <label class="form-label mt-2">Concepto</label>
+                <input name="concept" class="form-control" placeholder="Ej. Campamento de invierno, cuota de noviembre, uniforme…" required="required"/>
+                <div class="row g-2 mt-1">
+                    <div class="col-6"><label class="form-label">Importe</label>
+                        <input name="amount" type="number" step="0.01" min="1" inputmode="decimal" class="form-control" required="required"/></div>
+                    <div class="col-6"><label class="form-label">Concepto contable</label>
+                        <select name="category_id" class="form-select">
+                            <option value="">Automático</option>
+                            <option t-foreach="categories" t-as="c" t-att-value="c.id" t-out="c.name"/>
+                        </select></div>
+                </div>
+                <label class="form-label mt-2">Miembro</label>
+                <select name="member_id" class="form-select">
+                    <option value="">— Persona externa —</option>
+                    <option t-foreach="members" t-as="m" t-att-value="m.id" t-att-selected="m.id == preset_member or None"
+                            t-out="'%s%s' % (m.name, ' · %s' % m.scout_section_id.name if m.scout_section_id else '')"/>
+                </select>
+                <small class="text-muted">El cobro sale a nombre del tutor del miembro.</small>
+                <div class="row g-2 mt-1">
+                    <div class="col-7"><label class="form-label">O quién paga</label><input name="payer" class="form-control" placeholder="Nombre (si no es miembro)"/></div>
+                    <div class="col-5"><label class="form-label">WhatsApp</label><input name="phone" type="tel" class="form-control" placeholder="10 dígitos"/></div>
+                </div>
+                <label class="form-label mt-2">Referencia (opcional)</label>
+                <input name="ref" class="form-control" placeholder="Folio de ficha, evento…"/>
+                <button class="btn o_sl_btn w-100 mt-3"><i class="fa fa-qrcode"/> Crear cobro y liga de pago</button>
+            </form>
+        </t>
+    </template>
+
+    <template id="admin_charge" name="Administración: cobro en línea">
+        <t t-call="scout_management.leader_layout">
+            <t t-set="tab" t-value="'tes'"/>
+            <t t-call="scout_management.admin_tabs"/>
+            <div class="o_sl_box">
+                <div class="d-flex align-items-center gap-2">
+                    <span class="o_ad_origin" t-out="dict(request.env['account.move']._fields['scout_charge_origin'].selection).get(invoice.scout_charge_origin or invoice._scout_guess_origin()[0])"/>
+                    <span t-attf-class="o_ad_state ms-auto o_ad_state_#{'posted' if invoice.payment_state in ('paid', 'in_payment') else 'to_approve'}"
+                          t-out="{'paid': 'Pagado', 'in_payment': 'Pagado (en proceso)', 'partial': 'Pago parcial', 'not_paid': 'Sin pagar', 'reversed': 'Cancelado'}.get(invoice.payment_state, invoice.payment_state)"/>
+                </div>
+                <div class="o_ad_big" t-out="fmt_money(invoice.amount_residual if invoice.payment_state not in ('paid', 'in_payment') else invoice.amount_total)"/>
+                <div class="fw-bold" t-out="invoice.invoice_line_ids[:1].name"/>
+                <div class="o_ad_kv"><span>Miembro</span><b t-out="('%s (%s)' % (invoice.scout_member_id.name, invoice.scout_member_id.scout_section_id.name or '')) if invoice.scout_member_id else '—'"/></div>
+                <div class="o_ad_kv"><span>A nombre de</span><b t-out="invoice.partner_id.name"/></div>
+                <div class="o_ad_kv"><span>Folio</span><b t-out="invoice.name"/></div>
+                <div t-if="invoice.scout_charge_ref" class="o_ad_kv"><span>Referencia</span><b t-out="invoice.scout_charge_ref"/></div>
+                <div t-if="invoice.scout_online_fee" class="o_ad_kv"><span>Incluye comisión en línea</span><b t-out="fmt_money(invoice.scout_online_fee)"/></div>
+            </div>
+            <div t-if="link" class="o_sl_box text-center">
+                <b>Que lo paguen con tarjeta, OXXO o Mercado Pago</b>
+                <img t-att-src="qr" class="o_ad_qr" alt="QR de pago"/>
+                <small class="d-block text-muted mb-2">Escanéalo desde otro celular o comparte la liga.</small>
+                <div class="d-flex gap-2 justify-content-center flex-wrap">
+                    <a class="btn btn-success" t-att-href="wa" target="_blank"><i class="fa fa-whatsapp"/> Enviar por WhatsApp</a>
+                    <button type="button" class="btn o_sl_btn_outline" t-att-data-ad-copy="link"><i class="fa fa-copy"/> Copiar liga</button>
+                    <a class="btn o_sl_btn_outline" t-att-href="link" target="_blank"><i class="fa fa-external-link"/> Abrir</a>
+                </div>
+            </div>
+            <div t-elif="link_error" class="alert alert-warning" t-out="link_error"/>
+            <div t-elif="invoice.payment_state in ('paid', 'in_payment')" class="alert alert-success"><i class="fa fa-check-circle"/> Este cobro ya está pagado.</div>
+            <div t-if="txs" class="o_sl_box">
+                <b>Intentos de pago en línea</b>
+                <div t-foreach="txs" t-as="t" class="o_ad_move">
+                    <span class="flex-grow-1 min-w-0"><span class="d-block" t-out="t.scout_payer_name or t.partner_name or 'Sin nombre'"/>
+                        <small class="text-muted"><t t-out="t.scout_method_detail or (t.payment_method_id.name or '')"/><t t-if="t.provider_reference"> · MP #<t t-out="t.provider_reference"/></t></small></span>
+                    <span t-attf-class="o_ad_state o_ad_state_#{'posted' if t.state == 'done' else ('cancel' if t.state in ('cancel', 'error') else 'to_approve')}" t-out="{'done': 'Pagado', 'pending': 'Pendiente', 'draft': 'Sin pagar', 'cancel': 'Cancelado', 'error': 'Rechazado', 'authorized': 'Autorizado'}.get(t.state, t.state)"/>
+                    <b t-out="fmt_money(t.amount)"/>
+                </div>
+            </div>
+            <div class="o_ad_actions">
+                <a class="btn btn-sm o_sl_btn_outline" t-att-href="admin_base + '/tesoreria/cuentas'">Por cobrar</a>
+                <a class="btn btn-sm o_sl_btn" t-att-href="admin_base + '/cobro/nuevo'"><i class="fa fa-plus"/> Otro cobro</a>
+            </div>
+        </t>
+    </template>
+
+    <template id="admin_online_payments" name="Administración: pagos en línea">
+        <t t-call="scout_management.leader_layout">
+            <t t-set="tab" t-value="'tes'"/>
+            <t t-call="scout_management.admin_tabs"/>
+            <h5 class="o_sl_h">Pagos en línea (Mercado Pago)</h5>
+            <div class="o_ad_filters">
+                <a t-foreach="[('pagados', 'Pagados'), ('pendientes', 'Pendientes'), ('todos', 'Todos')]" t-as="f"
+                   t-att-href="'%s/tesoreria/en-linea?estado=%s&amp;origen=%s' % (admin_base, f[0], origen)" t-attf-class="#{'active' if estado == f[0] else ''}" t-out="f[1]"/>
+            </div>
+            <div class="o_ad_filters">
+                <a t-att-href="'%s/tesoreria/en-linea?estado=%s' % (admin_base, estado)" t-attf-class="#{'active' if not origen else ''}">Todo</a>
+                <a t-foreach="origins" t-as="o" t-att-href="'%s/tesoreria/en-linea?estado=%s&amp;origen=%s' % (admin_base, estado, o[0])"
+                   t-attf-class="#{'active' if origen == o[0] else ''}" t-out="o[1]"/>
+            </div>
+            <div class="o_ad_kv"><span>Cobrado</span><b t-out="fmt_money(totals['amount'])"/></div>
+            <div class="o_ad_kv"><span>Comisión Mercado Pago</span><b class="text-danger" t-out="fmt_money(totals['fee'])"/></div>
+            <div class="o_ad_kv mb-2"><span>Neto que llega a la cuenta</span><b class="text-success" t-out="fmt_money(totals['net'])"/></div>
+            <p t-if="not txs" class="text-muted">No hay pagos en línea con estos filtros.</p>
+            <div t-foreach="txs" t-as="t" class="o_sl_box o_ad_tx">
+                <div class="d-flex align-items-center gap-2">
+                    <span class="o_ad_origin" t-out="dict(origins).get(t.scout_charge_origin) or 'Pago en línea'"/>
+                    <span t-attf-class="o_ad_state ms-auto o_ad_state_#{'posted' if t.state == 'done' else ('cancel' if t.state in ('cancel', 'error') else 'to_approve')}" t-out="states.get(t.state, t.state)"/>
+                    <b t-out="fmt_money(t.amount)"/>
+                </div>
+                <div class="fw-bold mt-1" t-out="t.scout_member_id.name or t.partner_name or t.partner_id.name"/>
+                <small class="d-block text-muted" t-out="t.scout_label or t.reference"/>
+                <div class="o_ad_tx_meta">
+                    <span t-if="t.scout_section_id"><i class="fa fa-flag"/> <t t-out="t.scout_section_id.name"/></span>
+                    <span><i class="fa fa-user"/> Pagó: <t t-out="t.scout_payer_name or t.partner_name or '—'"/><t t-if="t.scout_payer_email"> (<t t-out="t.scout_payer_email"/>)</t></span>
+                    <span t-if="t.scout_method_detail or t.payment_method_id"><i class="fa fa-credit-card"/> <t t-out="t.scout_method_detail or t.payment_method_id.name"/></span>
+                    <span t-if="t.provider_reference"><i class="fa fa-hashtag"/> MP <t t-out="t.provider_reference"/></span>
+                    <span><i class="fa fa-calendar"/> <t t-out="local(t.last_state_change or t.create_date).strftime('%d/%m/%Y %H:%M')"/></span>
+                    <span t-if="t.scout_fee_amount"><i class="fa fa-minus-circle"/> comisión <t t-out="fmt_money(t.scout_fee_amount)"/></span>
+                </div>
+                <div t-if="t.invoice_ids" class="mt-1">
+                    <a t-foreach="t.invoice_ids" t-as="inv" class="small me-2" t-att-href="'%s/cobro/%s' % (admin_base, inv.id)" t-out="inv.name"/>
+                </div>
+            </div>
+        </t>
+    </template>
+    <template id="admin_cards" name="Administración: credenciales">
+        <t t-call="scout_management.leader_layout">
+            <t t-set="tab" t-value="'sec'"/>
+            <t t-call="scout_management.admin_tabs"/>
+            <div class="o_sl_title_row">
+                <h5 class="o_sl_h mb-0">Credenciales</h5>
+                <a t-if="sample" class="btn btn-sm o_sl_btn_outline" t-att-href="admin_base + '/credenciales/muestra.pdf'" target="_blank" data-sl-pdf="1"><i class="fa fa-eye"/> Ver muestra</a>
+            </div>
+            <div class="o_sl_box">
+                <b>Imprimir por sección</b>
+                <p class="small text-muted mb-1">Hoja carta con 8 credenciales: frentes y reversos en espejo. Imprime a doble cara,
+                    volteando por el lado largo, en tamaño real (100 %).</p>
+                <div class="d-flex flex-wrap gap-2">
+                    <a t-foreach="sections" t-as="s" class="btn btn-sm o_sl_btn_outline" target="_blank" data-sl-pdf="1"
+                       t-att-href="'%s/credenciales/seccion.pdf?seccion=%s' % (admin_base, s.id)"><i class="fa fa-print"/> <t t-out="s.name"/></a>
+                </div>
+            </div>
+            <form method="post" enctype="multipart/form-data" class="o_sl_box o_ad_form o_scout_sig_form">
+                <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
+                <b>Reverso de la credencial</b>
+                <label class="form-label mt-2">Pertenece al</label>
+                <input name="group_label" class="form-control" t-att-value="company.scout_card_group_label or ''" t-att-placeholder="company.name"/>
+                <label class="form-label mt-2">Teléfono de emergencias del grupo</label>
+                <input name="emergency_phone" type="tel" class="form-control" t-att-value="company.scout_card_emergency_phone or ''" t-att-placeholder="company.phone or '10 dígitos'"/>
+                <label class="form-label mt-2">Red / asociación</label>
+                <input name="network" class="form-control" t-att-value="company.scout_card_network or ''"/>
+                <label class="form-label mt-2">Logo de la red (opcional)</label>
+                <input type="file" name="network_logo" accept="image/png,image/jpeg" class="form-control"/>
+                <label class="form-label mt-2">Jefe de grupo</label>
+                <input name="chief_name" class="form-control" t-att-value="company.scout_card_chief_name or ''" t-att-placeholder="chief or 'Nombre'"/>
+                <label class="form-label mt-2">Firma del jefe de grupo</label>
+                <div t-if="company.scout_card_chief_signature" class="o_ad_sig_now">
+                    <img t-att-src="image_data_uri(company.scout_card_chief_signature)" alt="Firma actual"/>
+                    <label class="small"><input type="checkbox" name="clear_signature"/> Quitar la firma</label>
+                </div>
+                <label class="btn btn-sm o_sl_btn_outline mb-2"><i class="fa fa-camera"/> Subir foto o imagen de la firma
+                    <input type="file" name="signature_file" accept="image/*" class="d-none" onchange="this.parentElement.querySelector('span').textContent = this.files[0] ? ' · ' + this.files[0].name : ''"/><span/></label>
+                <small class="text-muted d-block mb-1">Firma en una hoja blanca con pluma negra o azul y tómale foto: se le quita el fondo sola. O dibújala aquí:</small>
+                <div class="o_scout_signature" data-input="signature">
+                    <canvas class="border rounded w-100 bg-white" height="150"/>
+                    <button type="button" class="btn btn-sm btn-link o_scout_signature_clear">Borrar</button>
+                </div>
+                <input type="hidden" name="signature"/>
+                <small class="text-muted d-block">Si no subes ni dibujas nada se conserva la firma actual.</small>
+                <button t-if="acc.get('manager')" class="btn o_sl_btn w-100 mt-3"><i class="fa fa-save"/> Guardar</button>
+                <p t-else="" class="small text-muted mt-2">Solo el jefe de grupo puede cambiar estos datos.</p>
+            </form>
         </t>
     </template>
 </odoo>

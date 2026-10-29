@@ -136,6 +136,8 @@ function setupSectionSuggestion(form) {
 }
 
 function init() {
+    // Firma del jefe de grupo para las credenciales (portal de administración)
+    document.querySelectorAll(".o_scout_sig_form .o_scout_signature").forEach(setupSignature);
     const form = document.querySelector(".o_scout_register_form");
     if (!form) {
         return;
