@@ -177,7 +177,7 @@
                 <a class="o_sl_tile" t-att-href="'/dirigentes/%s/mensajes' % section.id"><i class="fa fa-comments"/><span>Mensajes de familias</span>
                     <b t-if="dash['messages_pending']" class="o_sl_badge" t-out="dash['messages_pending']"/></a>
                 <a t-if="not request.env.user.share and request.env.user.has_group('scout_management.group_scout_officer')" class="o_sl_tile o_sl_tile_admin"
-                   t-att-href="'/odoo?menu_id=%s' % request.env.ref('scout_management.menu_scout_root').id"><i class="fa fa-briefcase"/><span>Administración del grupo</span>
+                   href="/dirigentes/admin"><i class="fa fa-briefcase"/><span>Administración del grupo</span>
                     <small>Secretaría, tesorería, tienda y aprobaciones</small></a>
                 <a t-if="dash.get('insurance')" class="o_sl_tile o_sl_tile_insurance" href="/seguro"><i class="fa fa-shield"/><span>Seguro Scout</span>
                     <small>Altas, relaciones, pagos y siniestros</small></a>
@@ -1880,10 +1880,10 @@
         </t>
     </template>
 
-    <!-- Jefatura de grupo: logros y avances de todos los miembros -->
+    <!-- Jefatura de grupo: cuadro de adelantos de todos los miembros -->
     <template id="leader_group_progress" name="Dirigentes: avances de todo el grupo">
         <t t-call="scout_management.leader_layout">
-            <h5 class="o_sl_h">Logros y avances · todo el grupo</h5>
+            <h5 class="o_sl_h">Cuadro de adelantos · todo el grupo</h5>
             <div class="o_sl_seg o_sl_tabs o_sl_tabs_sm o_sl_tabs_scroll mb-2">
                 <a t-att-href="'/dirigentes/%s/logros' % section.id" t-attf-class="#{'active' if not selected else ''}">Resumen</a>
                 <a t-foreach="groups" t-as="g" t-att-href="'/dirigentes/%s/logros?seccion=%s' % (section.id, g['section'].id)"

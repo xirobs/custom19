@@ -1,5 +1,5 @@
 /** @odoo-module **/
-// Portal de dirigentes: pase de lista, equipos, cuadro de logros, foto y pequeños atajos para el celular.
+// Portal de dirigentes: pase de lista, equipos, cuadro de adelantos, foto y pequeños atajos para el celular.
 
 const LABELS = {
     present: ["Asistió", "ok"],
@@ -213,7 +213,7 @@ function setupTeams(root) {
     });
 }
 
-// ---------------------------------------------------------------- cuadro de logros
+// ---------------------------------------------------------------- cuadro de adelantos
 const PROGRESS_MARK = { none: "", in_progress: "½", achieved: "✓" };
 function setupAchievements(table) {
     const sectionId = Number(table.dataset.section);

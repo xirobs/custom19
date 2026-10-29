@@ -10,7 +10,7 @@ STAGE_TYPES = [
     ('link', 'Ruta de enlace'),
     ('specialty', 'Especialidad'),
 ]
-# Tipos que forman el camino de adelantos de la sección (termómetro del cuadro de logros).
+# Tipos que forman el camino de adelantos de la sección (termómetro del cuadro de adelantos).
 PATH_TYPES = ('promise', 'stage', 'link', 'terminal')
 
 
@@ -207,7 +207,7 @@ class ScoutMemberProgress(models.Model):
     state = fields.Selection([('in_progress', 'En curso'), ('achieved', 'Logrado')], string='Estado',
                              default='in_progress', required=True)
     date_start = fields.Date(string='Inicio', default=fields.Date.context_today)
-    date_achieved = fields.Date(string='Fecha de logro')
+    date_achieved = fields.Date(string='Fecha del adelanto')
     leader_id = fields.Many2one('res.partner', string='Dirigente que da seguimiento',
                                 domain="[('is_scout', '=', True), ('scout_type', '=', 'leader')]")
     note = fields.Char(string='Nota')

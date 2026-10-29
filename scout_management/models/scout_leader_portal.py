@@ -849,7 +849,7 @@ class ScoutLeaderPortal(models.AbstractModel):
         return {'basic': basic, 'technical': technical, 'tech_need': need, 'tech_label': tech_cat.name if tech_cat else '',
                 'mandatory': mandatory, 'rows': rows, 'path': path}
 
-    # ------------------------------------------------------------------ cuadro de logros
+    # ------------------------------------------------------------------ cuadro de adelantos
     @api.model
     def achievements(self, section, columns):
         """Filas por miembro: avance del camino de adelantos (termómetro) y celdas de las columnas pedidas."""

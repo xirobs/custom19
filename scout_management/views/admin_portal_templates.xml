@@ -1,0 +1,609 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Sub-menú de administración -->
+    <template id="admin_tabs" name="Administración: pestañas">
+        <div class="o_ad_tabs">
+            <a t-att-href="admin_base" t-attf-class="#{'active' if tab == 'home' else ''}"><i class="fa fa-th-large"/> Inicio</a>
+            <a t-if="acc.get('secretary')" t-att-href="admin_base + '/actas'" t-attf-class="#{'active' if tab == 'sec' else ''}"><i class="fa fa-file-text-o"/> Secretaría</a>
+            <a t-if="acc.get('treasury')" t-att-href="admin_base + '/tesoreria'" t-attf-class="#{'active' if tab == 'tes' else ''}"><i class="fa fa-money"/> Tesorería</a>
+            <a t-if="acc.get('store')" t-att-href="admin_base + '/tienda'" t-attf-class="#{'active' if tab == 'store' else ''}"><i class="fa fa-shopping-basket"/> Tienda</a>
+            <a t-if="acc.get('manager')" t-att-href="admin_base + '/aprobaciones'" t-attf-class="#{'active' if tab == 'appr' else ''}"><i class="fa fa-check-square-o"/> Aprobaciones</a>
+        </div>
+    </template>
+
+    <template id="admin_no_access" name="Administración: sin acceso">
+        <t t-call="scout_management.leader_layout">
+            <div class="o_sl_box text-center">
+                <i class="fa fa-lock fa-2x text-muted"/>
+                <h5 class="mt-2">Administración del grupo</h5>
+                <p class="text-muted">Esta área es para el jefe de grupo, la secretaría y la tesorería. Tu usuario todavía no tiene
+                    ese acceso; pide que te asignen el cargo en "Roles y cargos" (el acceso se activa solo).</p>
+                <a href="/dirigentes" class="btn o_sl_btn">Regresar</a>
+            </div>
+        </t>
+    </template>
+
+    <!-- Inicio -->
+    <template id="admin_home" name="Administración: inicio">
+        <t t-call="scout_management.leader_layout">
+            <t t-set="tab" t-value="'home'"/>
+            <t t-call="scout_management.admin_tabs"/>
+            <h5 class="o_sl_h">Administración del grupo</h5>
+            <div class="o_sl_tiles">
+                <a t-if="acc.get('manager')" class="o_sl_tile o_sl_tile_accent" t-att-href="admin_base + '/aprobaciones'"><i class="fa fa-check-square-o"/>
+                    <span>Aprobaciones</span><small t-out="'%s pendientes' % stats.get('approvals', 0) if stats.get('approvals') else 'Nada pendiente'"/>
+                    <b t-if="stats.get('approvals')" class="o_sl_badge" t-out="stats['approvals']"/></a>
+                <t t-if="acc.get('secretary')">
+                    <a class="o_sl_tile" t-att-href="admin_base + '/actas'"><i class="fa fa-file-text-o"/><span>Actas</span>
+                        <small t-out="'%s en borrador · %s por aprobar' % (stats['actas_draft'], stats['actas_to_approve'])"/></a>
+                    <a class="o_sl_tile" t-att-href="admin_base + '/acuerdos'"><i class="fa fa-list-ol"/><span>Seguimiento de acuerdos</span>
+                        <small t-out="'%s pendientes' % stats['agreements']"/>
+                        <b t-if="stats['agreements']" class="o_sl_badge o_sl_badge_navy" t-out="stats['agreements']"/></a>
+                    <a class="o_sl_tile" href="/scouts/consejo"><i class="fa fa-clock-o"/><span>Consejo en vivo</span><small>Reloj, firma de asistencia y acta</small></a>
+                </t>
+                <t t-if="acc.get('treasury')">
+                    <a class="o_sl_tile" t-att-href="admin_base + '/tesoreria'"><i class="fa fa-university"/><span>Caja y bancos</span>
+                        <small t-out="'Saldo %s' % fmt_money(stats['total'])"/></a>
+                    <a class="o_sl_tile" t-att-href="admin_base + '/tesoreria/nuevo?tipo=income'"><i class="fa fa-arrow-down"/><span>Registrar ingreso</span>
+                        <small t-out="'Este mes %s' % fmt_money(stats['income'])"/></a>
+                    <a class="o_sl_tile" t-att-href="admin_base + '/tesoreria/nuevo?tipo=expense'"><i class="fa fa-arrow-up"/><span>Registrar egreso</span>
+                        <small t-out="'Este mes %s' % fmt_money(stats['expense'])"/></a>
+                    <a class="o_sl_tile" t-att-href="admin_base + '/tesoreria/cuentas'"><i class="fa fa-users"/><span>Por cobrar y por pagar</span><small>Cargos a miembros y proveedores</small></a>
+                </t>
+                <t t-if="acc.get('store')">
+                    <a class="o_sl_tile o_sl_tile_renew" t-att-href="admin_base + '/tienda'"><i class="fa fa-shopping-basket"/><span>Tiendita: vender</span>
+                        <small t-out="'Hoy %s (%s ventas)' % (fmt_money(stats['sales_today']), stats['sales_count'])"/></a>
+                    <a class="o_sl_tile" t-att-href="admin_base + '/tienda/productos'"><i class="fa fa-cubes"/><span>Productos y existencias</span>
+                        <small t-out="'%s por agotarse' % stats['low_stock'] if stats['low_stock'] else 'Entradas de mercancía y precios'"/>
+                        <b t-if="stats['low_stock']" class="o_sl_badge" t-out="stats['low_stock']"/></a>
+                </t>
+            </div>
+            <div t-if="acc.get('treasury') and stats.get('balances')" class="o_sl_box">
+                <b>Saldos</b>
+                <div t-foreach="stats['balances']" t-as="b" class="o_ad_kv"><span t-out="b['journal'].name"/><b t-out="fmt_money(b['balance'])"/></div>
+            </div>
+            <p class="small text-muted mt-3">¿Algo que no está aquí? <a t-att-href="backend_url">Abrir la plataforma completa</a>.</p>
+        </t>
+    </template>
+
+    <!-- ============================== SECRETARÍA ============================== -->
+    <template id="admin_meetings" name="Administración: actas">
+        <t t-call="scout_management.leader_layout">
+            <t t-set="tab" t-value="'sec'"/>
+            <t t-call="scout_management.admin_tabs"/>
+            <div class="o_sl_title_row">
+                <h5 class="o_sl_h mb-0">Actas</h5>
+                <a class="btn btn-sm o_sl_btn" href="/scouts/consejo"><i class="fa fa-plus"/> Nueva / consejo</a>
+            </div>
+            <div class="o_ad_filters">
+                <a t-foreach="[('abiertas', 'Abiertas'), ('aprobadas', 'Aprobadas'), ('todas', 'Todas')]" t-as="f"
+                   t-att-href="'%s/actas?estado=%s' % (admin_base, f[0])" t-attf-class="#{'active' if estado == f[0] else ''}" t-out="f[1]"/>
+            </div>
+            <p t-if="not meetings" class="text-muted">No hay actas.</p>
+            <a t-foreach="meetings" t-as="m" class="o_sl_row" t-att-href="'%s/actas/%s' % (admin_base, m.id)">
+                <div class="o_sl_date"><b t-out="local_dt(m.date).strftime('%d')"/><small t-out="['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'][local_dt(m.date).month - 1]"/></div>
+                <div class="min-w-0">
+                    <div class="fw-bold" t-out="m.title"/>
+                    <small class="text-muted"><t t-out="m.name"/> · <t t-out="len(m.agreement_ids)"/> acuerdos</small>
+                </div>
+                <span t-attf-class="o_ad_state o_ad_state_#{m.state} ms-auto" t-out="dict(m._fields['state'].selection).get(m.state)"/>
+            </a>
+        </t>
+    </template>
+
+    <template id="admin_meeting" name="Administración: acta">
+        <t t-call="scout_management.leader_layout">
+            <t t-set="tab" t-value="'sec'"/>
+            <t t-call="scout_management.admin_tabs"/>
+            <t t-set="locked" t-value="meeting.state == 'approved'"/>
+            <div class="o_sl_title_row">
+                <div>
+                    <h5 class="o_sl_h mb-0" t-out="meeting.title"/>
+                    <small class="text-muted"><t t-out="meeting.name"/> · <span t-attf-class="o_ad_state o_ad_state_#{meeting.state}" t-out="dict(meeting._fields['state'].selection).get(meeting.state)"/></small>
+                </div>
+                <a class="btn btn-sm o_sl_btn_outline" t-att-href="'%s/actas/%s/pdf' % (admin_base, meeting.id)" target="_blank"><i class="fa fa-file-pdf-o"/> PDF</a>
+            </div>
+            <div class="o_ad_actions">
+                <a class="btn btn-sm o_sl_btn_outline" t-att-href="'/scouts/consejo/%s' % meeting.id"><i class="fa fa-clock-o"/> Consejo en vivo</a>
+                <form t-foreach="[('enviar', 'Enviar a aprobación', meeting.state == 'draft', 'o_sl_btn'),
+                                  ('aprobar', 'Aprobar', meeting.state == 'to_approve' and acc.get('manager'), 'btn-success'),
+                                  ('regresar', 'Regresar para correcciones', meeting.state == 'to_approve' and acc.get('manager'), 'btn-warning'),
+                                  ('reabrir', 'Reabrir para corregir', meeting.state == 'approved' and acc.get('manager'), 'btn-light'),
+                                  ('borrador', 'Regresar a borrador', meeting.state == 'cancel', 'btn-light')]" t-as="b"
+                      t-if="b[2]" method="post" t-att-action="'%s/actas/%s/%s' % (admin_base, meeting.id, b[0])" class="d-inline">
+                    <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
+                    <button t-attf-class="btn btn-sm #{b[3]}" t-out="b[1]"/>
+                </form>
+            </div>
+            <form method="post" t-att-action="'%s/actas/%s' % (admin_base, meeting.id)" class="o_ad_form" data-ad-html-form="">
+                <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
+                <div class="o_sl_box">
+                    <label class="form-label">Título</label>
+                    <input name="title" class="form-control" t-att-value="meeting.title" t-att-disabled="locked or None"/>
+                    <div class="row g-2 mt-1">
+                        <div class="col-7"><label class="form-label">Fecha y hora</label>
+                            <input type="datetime-local" name="date" class="form-control" t-att-value="local(meeting.date).strftime('%Y-%m-%dT%H:%M') if meeting.date else ''" t-att-disabled="locked or None"/></div>
+                        <div class="col-5"><label class="form-label">Modalidad</label>
+                            <select name="mode" class="form-select">
+                                <option t-foreach="[('onsite', 'Presencial'), ('online', 'En línea'), ('hybrid', 'Mixta')]" t-as="o" t-att-value="o[0]" t-att-selected="meeting.mode == o[0] or None" t-out="o[1]"/>
+                            </select></div>
+                    </div>
+                    <label class="form-label mt-2">Lugar / enlace</label>
+                    <input name="location" class="form-control" t-att-value="meeting.location or ''"/>
+                    <div class="form-check mt-2"><input type="checkbox" class="form-check-input" id="ad_quorum" name="quorum" t-att-checked="meeting.quorum or None"/>
+                        <label class="form-check-label" for="ad_quorum">Hubo quórum</label></div>
+                    <label class="form-label mt-2">Próxima reunión</label>
+                    <input type="datetime-local" name="next_meeting" class="form-control" t-att-value="local(meeting.next_meeting).strftime('%Y-%m-%dT%H:%M') if meeting.next_meeting else ''"/>
+                </div>
+                <div class="o_sl_box">
+                    <b>Asistentes (<t t-out="len(meeting.attendee_ids)"/>)</b>
+                    <small t-if="meeting.checkin_ids" class="text-muted d-block"><i class="fa fa-check-circle text-success"/> <t t-out="len(meeting.checkin_ids)"/> firmaron su asistencia</small>
+                    <div class="o_ad_checks">
+                        <label t-foreach="roster" t-as="p" class="o_ad_check">
+                            <input type="checkbox" name="attendee" t-att-value="p.id" t-att-checked="p in meeting.attendee_ids or None" t-att-disabled="locked or None"/>
+                            <span t-out="p.name"/>
+                        </label>
+                    </div>
+                </div>
+                <div t-if="meeting.agenda" class="o_sl_box"><b>Orden del día</b><div class="o_ad_html" t-out="meeting.agenda"/></div>
+                <div class="o_sl_box">
+                    <b>Desarrollo de la sesión</b>
+                    <div t-if="meeting.ai_summary" class="o_ad_html o_ad_summary" t-out="meeting.ai_summary"/>
+                    <div class="o_ad_editor_bar" t-if="not locked">
+                        <button type="button" data-ad-cmd="bold"><i class="fa fa-bold"/></button>
+                        <button type="button" data-ad-cmd="italic"><i class="fa fa-italic"/></button>
+                        <button type="button" data-ad-cmd="insertUnorderedList"><i class="fa fa-list-ul"/></button>
+                        <button type="button" data-ad-cmd="insertOrderedList"><i class="fa fa-list-ol"/></button>
+                        <button type="button" data-ad-cmd="formatBlock" data-ad-arg="h5">T</button>
+                    </div>
+                    <div class="o_ad_html o_ad_editable" t-att-contenteditable="'false' if locked else 'true'" data-ad-html="minutes" t-out="meeting.minutes or ''"/>
+                    <textarea name="minutes" class="d-none" t-out="meeting.minutes or ''"/>
+                </div>
+                <div class="o_sl_box">
+                    <b>Acuerdos</b>
+                    <div t-foreach="meeting.agreement_ids" t-as="a" class="o_ad_agreement">
+                        <div class="flex-grow-1"><div t-out="a.name"/>
+                            <small class="text-muted"><t t-out="a.responsible_id.name or 'Sin responsable'"/><t t-if="a.due_date"> · <t t-out="fmt_date(a.due_date)"/></t></small></div>
+                        <select t-att-name="'ag_state_%s' % a.id" class="form-select form-select-sm w-auto">
+                            <option t-foreach="[('pending', 'Pendiente'), ('done', 'Cumplido'), ('cancel', 'Cancelado')]" t-as="o" t-att-value="o[0]" t-att-selected="a.state == o[0] or None" t-out="o[1]"/>
+                        </select>
+                    </div>
+                    <div class="o_ad_new mt-2">
+                        <textarea name="new_agreement" class="form-control" rows="2" placeholder="Nuevo acuerdo…"/>
+                        <div class="row g-2 mt-1">
+                            <div class="col-7"><select name="new_responsible" class="form-select form-select-sm">
+                                <option value="">Responsable…</option>
+                                <option t-foreach="roster" t-as="p" t-att-value="p.id" t-out="p.name"/>
+                            </select></div>
+                            <div class="col-5"><input type="date" name="new_due" class="form-control form-control-sm"/></div>
+                        </div>
+                    </div>
+                </div>
+                <button class="btn o_sl_btn w-100 o_ad_sticky"><i class="fa fa-save"/> Guardar acta</button>
+            </form>
+        </t>
+    </template>
+
+    <template id="admin_agreements" name="Administración: acuerdos">
+        <t t-call="scout_management.leader_layout">
+            <t t-set="tab" t-value="'sec'"/>
+            <t t-call="scout_management.admin_tabs"/>
+            <h5 class="o_sl_h">Seguimiento de acuerdos</h5>
+            <div class="o_ad_filters">
+                <a t-att-href="admin_base + '/acuerdos?ver=pendientes'" t-attf-class="#{'active' if ver == 'pendientes' else ''}">Pendientes</a>
+                <a t-att-href="admin_base + '/acuerdos?ver=todos'" t-attf-class="#{'active' if ver != 'pendientes' else ''}">Todos</a>
+            </div>
+            <p t-if="not agreements" class="text-muted">No hay acuerdos pendientes.</p>
+            <div t-foreach="agreements" t-as="a" t-attf-class="o_sl_box o_ad_agreement #{'o_ad_late' if a.state == 'pending' and a.due_date and a.due_date &lt; today else ''}">
+                <div class="flex-grow-1 min-w-0">
+                    <div t-out="a.name"/>
+                    <small class="text-muted"><t t-out="a.responsible_id.name or 'Sin responsable'"/>
+                        <t t-if="a.due_date"> · vence <t t-out="fmt_date(a.due_date)"/></t>
+                        · <a t-att-href="'%s/actas/%s' % (admin_base, a.meeting_id.id)" t-out="a.meeting_id.name"/></small>
+                </div>
+                <form method="post" t-att-action="admin_base + '/acuerdos?ver=' + ver" class="d-flex gap-1">
+                    <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
+                    <input type="hidden" name="agreement_id" t-att-value="a.id"/>
+                    <button t-if="a.state != 'done'" name="state" value="done" class="btn btn-sm btn-success" title="Cumplido"><i class="fa fa-check"/></button>
+                    <button t-if="a.state != 'pending'" name="state" value="pending" class="btn btn-sm btn-light" title="Pendiente"><i class="fa fa-undo"/></button>
+                    <button t-if="a.state == 'pending'" name="state" value="cancel" class="btn btn-sm btn-light" title="Cancelar"><i class="fa fa-times"/></button>
+                </form>
+            </div>
+        </t>
+    </template>
+
+    <!-- ============================== TESORERÍA ============================== -->
+    <template id="admin_treasury" name="Administración: tesorería">
+        <t t-call="scout_management.leader_layout">
+            <t t-set="tab" t-value="'tes'"/>
+            <t t-call="scout_management.admin_tabs"/>
+            <h5 class="o_sl_h">Caja y bancos</h5>
+            <div class="o_ad_balances">
+                <div t-foreach="balances" t-as="b" class="o_ad_balance">
+                    <small><i t-attf-class="fa #{'fa-money' if b['journal'].type == 'cash' else 'fa-university'}"/> <t t-out="b['journal'].name"/></small>
+                    <b t-out="fmt_money(b['balance'])"/>
+                </div>
+            </div>
+            <div class="o_ad_actions">
+                <a class="btn btn-sm btn-success" t-att-href="admin_base + '/tesoreria/nuevo?tipo=income'"><i class="fa fa-arrow-down"/> Ingreso</a>
+                <a class="btn btn-sm btn-danger" t-att-href="admin_base + '/tesoreria/nuevo?tipo=expense'"><i class="fa fa-arrow-up"/> Egreso</a>
+                <a class="btn btn-sm o_sl_btn_outline" t-att-href="admin_base + '/tesoreria/nuevo?tipo=transfer'"><i class="fa fa-exchange"/> Traspaso</a>
+                <a class="btn btn-sm o_sl_btn_outline" t-att-href="admin_base + '/tesoreria/cuentas'"><i class="fa fa-users"/> Por cobrar / pagar</a>
+            </div>
+            <div t-if="pending" class="o_sl_box o_ad_pending">
+                <b>Pendientes de registrar o aprobar</b>
+                <a t-foreach="pending" t-as="m" class="o_ad_move" t-att-href="'%s/tesoreria/%s' % (admin_base, m.id)">
+                    <span t-attf-class="o_ad_dot o_ad_#{m.move_type}"/>
+                    <span class="flex-grow-1 min-w-0 text-truncate" t-out="(m.description or '').splitlines()[0] if m.description else m.name"/>
+                    <span t-attf-class="o_ad_state o_ad_state_#{m.state}" t-out="dict(m._fields['state'].selection).get(m.state)"/>
+                    <b t-out="fmt_money(m.amount)"/>
+                </a>
+            </div>
+            <div class="o_sl_title_row mt-2">
+                <div class="d-flex align-items-center gap-2">
+                    <a class="btn btn-sm btn-light" t-att-href="'%s/tesoreria?mes=%s&amp;tipo=%s&amp;estado=%s' % (admin_base, mes - 1, tipo, estado)"><i class="fa fa-chevron-left"/></a>
+                    <b class="text-capitalize" t-out="period_label"/>
+                    <a class="btn btn-sm btn-light" t-att-href="'%s/tesoreria?mes=%s&amp;tipo=%s&amp;estado=%s' % (admin_base, mes + 1, tipo, estado)"><i class="fa fa-chevron-right"/></a>
+                </div>
+                <a class="btn btn-sm o_sl_btn_outline" target="_blank" t-att-href="'%s/tesoreria/balance.pdf?desde=%s&amp;hasta=%s' % (admin_base, start, end)"><i class="fa fa-file-pdf-o"/> Balance para el Consejo</a>
+            </div>
+            <div class="o_ad_kv"><span>Ingresos registrados</span><b class="text-success" t-out="fmt_money(totals['income'])"/></div>
+            <div class="o_ad_kv"><span>Egresos registrados</span><b class="text-danger" t-out="fmt_money(totals['expense'])"/></div>
+            <div class="o_ad_filters">
+                <a t-foreach="[('', 'Todos'), ('income', 'Ingresos'), ('expense', 'Egresos'), ('transfer', 'Traspasos')]" t-as="f"
+                   t-att-href="'%s/tesoreria?mes=%s&amp;tipo=%s' % (admin_base, mes, f[0])" t-attf-class="#{'active' if tipo == f[0] else ''}" t-out="f[1]"/>
+            </div>
+            <p t-if="not moves" class="text-muted">Sin movimientos en este mes.</p>
+            <a t-foreach="moves" t-as="m" class="o_ad_move" t-att-href="'%s/tesoreria/%s' % (admin_base, m.id)">
+                <span t-attf-class="o_ad_dot o_ad_#{m.move_type}"/>
+                <span class="flex-grow-1 min-w-0">
+                    <span class="d-block text-truncate" t-out="(m.description or '').splitlines()[0] if m.description else m.name"/>
+                    <small class="text-muted"><t t-out="fmt_date(m.date)"/> · <t t-out="m.journal_id.name"/><t t-if="m.category_id"> · <t t-out="m.category_id.name"/></t></small>
+                </span>
+                <span t-if="m.state != 'posted'" t-attf-class="o_ad_state o_ad_state_#{m.state}" t-out="dict(m._fields['state'].selection).get(m.state)"/>
+                <b t-attf-class="#{'text-success' if m.move_type == 'income' else ('text-danger' if m.move_type == 'expense' else '')}" t-out="('-' if m.move_type == 'expense' else '') + fmt_money(m.amount)"/>
+            </a>
+        </t>
+    </template>
+
+    <template id="admin_treasury_form" name="Administración: nuevo movimiento">
+        <t t-call="scout_management.leader_layout">
+            <t t-set="tab" t-value="'tes'"/>
+            <t t-call="scout_management.admin_tabs"/>
+            <div class="o_ad_filters">
+                <a t-foreach="[('income', 'Ingreso'), ('expense', 'Egreso'), ('transfer', 'Traspaso')]" t-as="f"
+                   t-att-href="'%s/tesoreria/nuevo?tipo=%s' % (admin_base, f[0])" t-attf-class="#{'active' if tipo == f[0] else ''}" t-out="f[1]"/>
+            </div>
+            <form method="post" t-att-action="'%s/tesoreria/nuevo?tipo=%s' % (admin_base, tipo)" enctype="multipart/form-data" class="o_sl_box o_ad_form">
+                <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
+                <label class="form-label">Importe</label>
+                <input name="amount" type="number" step="0.01" min="0.01" inputmode="decimal" class="form-control form-control-lg" required="required" placeholder="0.00"/>
+                <label class="form-label mt-2" t-out="'Concepto de qué se trata' if tipo != 'transfer' else 'Motivo del traspaso'"/>
+                <textarea name="description" class="form-control" rows="2" required="required"/>
+                <div t-if="tipo != 'transfer'" class="mt-2">
+                    <label class="form-label">Tipo de concepto</label>
+                    <select name="category_id" class="form-select" required="required">
+                        <option value="">Elige…</option>
+                        <option t-foreach="categories" t-as="c" t-att-value="c.id" t-out="c.name"/>
+                    </select>
+                </div>
+                <div class="row g-2 mt-1">
+                    <div class="col-6"><label class="form-label" t-out="'Entra a' if tipo == 'income' else 'Sale de'"/>
+                        <select name="journal_id" class="form-select" required="required">
+                            <option t-foreach="journals" t-as="j" t-att-value="j.id" t-out="j.name"/>
+                        </select></div>
+                    <div t-if="tipo == 'transfer'" class="col-6"><label class="form-label">Entra a</label>
+                        <select name="dest_journal_id" class="form-select" required="required">
+                            <option t-foreach="journals" t-as="j" t-att-value="j.id" t-att-selected="j_index == 1 or None" t-out="j.name"/>
+                        </select></div>
+                    <div t-else="" class="col-6"><label class="form-label">Fecha</label>
+                        <input type="date" name="date" class="form-control" t-att-value="today"/></div>
+                </div>
+                <div t-if="tipo != 'transfer'" class="row g-2 mt-1">
+                    <div class="col-6"><label class="form-label">Forma de pago</label>
+                        <select name="payment_method" class="form-select">
+                            <option value="cash">Efectivo</option><option value="transfer">Transferencia</option>
+                            <option value="card">Tarjeta</option><option value="other">Otro</option>
+                        </select></div>
+                    <div class="col-6"><label class="form-label">Referencia</label>
+                        <input name="reference" class="form-control" placeholder="No. de transferencia"/></div>
+                </div>
+                <div t-if="tipo != 'transfer'" class="row g-2 mt-1">
+                    <div class="col-7"><label class="form-label">Miembro (opcional)</label>
+                        <select name="member_id" class="form-select">
+                            <option value="">—</option>
+                            <option t-foreach="members" t-as="p" t-att-value="p.id" t-out="p.name"/>
+                        </select></div>
+                    <div class="col-5"><label class="form-label">Sección</label>
+                        <select name="section_id" class="form-select">
+                            <option value="">—</option>
+                            <option t-foreach="sections" t-as="s" t-att-value="s.id" t-out="s.name"/>
+                        </select></div>
+                </div>
+                <label class="form-label mt-2">Comprobante (foto o PDF)</label>
+                <input type="file" name="attachment" accept="image/*,application/pdf" capture="environment" class="form-control"/>
+                <p t-if="tipo != 'income' and not acc.get('manager')" class="small text-muted mt-2 mb-0"><i class="fa fa-info-circle"/> Los egresos y traspasos van al jefe de grupo para su aprobación.</p>
+                <div class="d-flex gap-2 mt-3">
+                    <button name="post" value="1" class="btn o_sl_btn flex-grow-1"><i class="fa fa-check"/> Guardar y registrar</button>
+                    <button class="btn o_sl_btn_outline">Solo guardar</button>
+                </div>
+            </form>
+        </t>
+    </template>
+
+    <template id="admin_treasury_move" name="Administración: movimiento">
+        <t t-call="scout_management.leader_layout">
+            <t t-set="tab" t-value="'tes'"/>
+            <t t-call="scout_management.admin_tabs"/>
+            <div class="o_sl_box">
+                <div class="d-flex align-items-center">
+                    <span t-attf-class="o_ad_dot o_ad_#{move.move_type} me-2"/>
+                    <b t-out="move_types.get(move.move_type)"/>
+                    <span t-attf-class="o_ad_state o_ad_state_#{move.state} ms-auto" t-out="dict(move._fields['state'].selection).get(move.state)"/>
+                </div>
+                <div class="o_ad_big" t-out="fmt_money(move.amount)"/>
+                <div class="mb-2" t-out="move.description"/>
+                <div class="o_ad_kv"><span>Folio</span><b t-out="move.name"/></div>
+                <div class="o_ad_kv"><span>Fecha</span><b t-out="fmt_date(move.date)"/></div>
+                <div class="o_ad_kv"><span t-out="'Sale de' if move.move_type != 'income' else 'Entra a'"/><b t-out="move.journal_id.name"/></div>
+                <div t-if="move.dest_journal_id" class="o_ad_kv"><span>Entra a</span><b t-out="move.dest_journal_id.name"/></div>
+                <div t-if="move.category_id" class="o_ad_kv"><span>Concepto</span><b t-out="move.category_id.name"/></div>
+                <div class="o_ad_kv"><span>Forma de pago</span><b t-out="dict(move._fields['payment_method'].selection).get(move.payment_method)"/></div>
+                <div t-if="move.reference" class="o_ad_kv"><span>Referencia</span><b t-out="move.reference"/></div>
+                <div t-if="move.member_id" class="o_ad_kv"><span>Miembro</span><b t-out="move.member_id.name"/></div>
+                <div class="o_ad_kv"><span>Registró</span><b t-out="move.requested_by_id.name"/></div>
+                <div t-if="move.approved_by_id" class="o_ad_kv"><span>Autorizó</span><b t-out="move.approved_by_id.name"/></div>
+                <a t-if="move.attachment" class="btn btn-sm o_sl_btn_outline mt-2" target="_blank" t-att-href="'%s/tesoreria/%s/comprobante' % (admin_base, move.id)"><i class="fa fa-paperclip"/> Ver comprobante</a>
+            </div>
+            <div class="o_ad_actions">
+                <form t-foreach="[('registrar', 'Registrar' if move.move_type == 'income' or acc.get('manager') else 'Enviar a aprobación', move.state == 'draft', 'o_sl_btn'),
+                                  ('aprobar', 'Aprobar', move.state == 'to_approve' and acc.get('manager'), 'btn-success'),
+                                  ('rechazar', 'Rechazar', move.state == 'to_approve' and acc.get('manager'), 'btn-warning'),
+                                  ('cancelar', 'Cancelar movimiento', move.state in ('posted', 'draft', 'to_approve'), 'btn-light'),
+                                  ('borrador', 'Regresar a borrador', move.state == 'cancel', 'btn-light')]" t-as="b"
+                      t-if="b[2]" method="post" t-att-action="'%s/tesoreria/%s/%s' % (admin_base, move.id, b[0])" class="d-inline">
+                    <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
+                    <button t-attf-class="btn btn-sm #{b[3]}" t-att-data-ad-confirm="'¿Cancelar el movimiento? Se hará el asiento de reversa.' if b[0] == 'cancelar' else None" t-out="b[1]"/>
+                </form>
+            </div>
+        </t>
+    </template>
+
+    <template id="admin_receivables" name="Administración: por cobrar y por pagar">
+        <t t-call="scout_management.leader_layout">
+            <t t-set="tab" t-value="'tes'"/>
+            <t t-call="scout_management.admin_tabs"/>
+            <div class="o_ad_filters">
+                <a t-att-href="admin_base + '/tesoreria/cuentas?ver=cobrar'" t-attf-class="#{'active' if ver == 'cobrar' else ''}">Por cobrar (miembros)</a>
+                <a t-att-href="admin_base + '/tesoreria/cuentas?ver=pagar'" t-attf-class="#{'active' if ver == 'pagar' else ''}">Por pagar (proveedores)</a>
+            </div>
+            <div class="o_ad_kv"><span>Total pendiente</span><b t-out="fmt_money(total)"/></div>
+            <p t-if="not invoices" class="text-muted">No hay pendientes.</p>
+            <div t-foreach="invoices" t-as="inv" t-attf-class="o_ad_move #{'o_ad_late' if inv.invoice_date_due and inv.invoice_date_due &lt; today and inv.state == 'posted' else ''}">
+                <span class="flex-grow-1 min-w-0">
+                    <span class="d-block text-truncate" t-out="inv.scout_member_id.name or inv.partner_id.name"/>
+                    <small class="text-muted"><t t-out="inv.name if inv.state == 'posted' else 'Borrador'"/> · <t t-out="(inv.invoice_line_ids[:1].name or inv.ref or '')[:50]"/>
+                        <t t-if="inv.invoice_date_due"> · vence <t t-out="fmt_date(inv.invoice_date_due)"/></t></small>
+                </span>
+                <span t-if="inv.scout_approval_state == 'to_approve'" class="o_ad_state o_ad_state_to_approve">Por aprobar</span>
+                <b t-out="fmt_money(inv.amount_residual if inv.state == 'posted' else inv.amount_total)"/>
+            </div>
+            <p class="small text-muted mt-2">Los cobros en efectivo a un miembro se registran desde su ficha (Miembros → Pagos) y los pagos en línea llegan solos.</p>
+        </t>
+    </template>
+
+    <!-- ============================== TIENDA ============================== -->
+    <template id="admin_store" name="Administración: tiendita (vender)">
+        <t t-call="scout_management.leader_layout">
+            <t t-set="tab" t-value="'store'"/>
+            <t t-call="scout_management.admin_tabs"/>
+            <div class="o_ad_filters">
+                <a t-att-href="admin_base + '/tienda'" class="active"><i class="fa fa-shopping-basket"/> Vender</a>
+                <a t-att-href="admin_base + '/tienda/ventas'">Ventas</a>
+                <a t-att-href="admin_base + '/tienda/productos'">Productos</a>
+            </div>
+            <form method="post" t-att-action="admin_base + '/tienda/vender'" class="o_ad_pos" data-ad-pos="">
+                <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
+                <select name="sale_type" class="form-select form-select-sm mb-2" data-ad-pos-type="">
+                    <option t-foreach="sale_types" t-as="st" t-att-value="st[0]" t-out="st[1]"/>
+                </select>
+                <input type="search" class="form-control form-control-sm mb-2" placeholder="Buscar producto…" data-ad-pos-search=""/>
+                <p t-if="not products" class="text-muted">No hay productos en la tienda. Agrégalos en Productos.</p>
+                <div class="o_ad_products">
+                    <div t-foreach="products" t-as="p" class="o_ad_product" t-att-data-type="p.scout_sale_type or 'store'"
+                         t-att-data-name="p.name.lower()" t-att-data-price="p.lst_price"
+                         t-att-data-stock="p.scout_qty_available if p.scout_track_qty else ''">
+                        <div class="o_ad_product_name" t-out="p.name"/>
+                        <small class="text-muted"><t t-out="fmt_money(p.lst_price)"/><t t-if="p.scout_track_qty"> · hay <t t-out="'%g' % p.scout_qty_available"/></t></small>
+                        <div class="o_ad_qty">
+                            <button type="button" data-ad-step="-1">−</button>
+                            <input type="number" min="0" step="1" inputmode="numeric" t-att-name="'qty_%s' % p.id" value="0"/>
+                            <button type="button" data-ad-step="1">+</button>
+                        </div>
+                    </div>
+                </div>
+                <div class="o_ad_checkout">
+                    <div class="d-flex align-items-center mb-2"><span>Total</span><b class="ms-auto o_ad_total" data-ad-pos-total="">$ 0.00</b></div>
+                    <select name="member_id" class="form-select form-select-sm mb-1">
+                        <option value="">Miembro (opcional)…</option>
+                        <option t-foreach="members" t-as="m" t-att-value="m.id" t-out="m.name"/>
+                    </select>
+                    <input name="buyer" class="form-control form-control-sm mb-1" placeholder="o quién compra (nombre)"/>
+                    <div class="o_ad_paymodes">
+                        <label><input type="radio" name="payment_mode" value="paid" checked="checked"/> Pagó</label>
+                        <label><input type="radio" name="payment_mode" value="credit"/> Queda a deber</label>
+                        <label><input type="radio" name="payment_mode" value="online"/> Paga en línea</label>
+                    </div>
+                    <div class="row g-1 mt-1" data-ad-paid="">
+                        <div class="col-6"><select name="payment_method" class="form-select form-select-sm">
+                            <option value="cash">Efectivo</option><option value="transfer">Transferencia</option><option value="card">Tarjeta</option>
+                        </select></div>
+                        <div class="col-6"><select name="journal_id" class="form-select form-select-sm">
+                            <option value="">Caja automática</option>
+                            <option t-foreach="journals" t-as="j" t-att-value="j.id" t-out="j.name"/>
+                        </select></div>
+                        <div class="col-12"><input name="reference" class="form-control form-control-sm" placeholder="Referencia (transferencia)"/></div>
+                    </div>
+                    <button class="btn o_sl_btn w-100 mt-2" data-ad-pos-submit="" disabled="disabled"><i class="fa fa-check"/> Cobrar</button>
+                </div>
+            </form>
+        </t>
+    </template>
+
+    <template id="admin_store_sales" name="Administración: ventas">
+        <t t-call="scout_management.leader_layout">
+            <t t-set="tab" t-value="'store'"/>
+            <t t-call="scout_management.admin_tabs"/>
+            <div class="o_ad_filters">
+                <a t-att-href="admin_base + '/tienda'"><i class="fa fa-shopping-basket"/> Vender</a>
+                <a t-att-href="admin_base + '/tienda/ventas'" class="active">Ventas</a>
+                <a t-att-href="admin_base + '/tienda/productos'">Productos</a>
+            </div>
+            <form class="d-flex gap-2 align-items-end mb-2" method="get">
+                <div><label class="form-label small mb-0">Desde</label><input type="date" name="desde" class="form-control form-control-sm" t-att-value="date_from"/></div>
+                <div><label class="form-label small mb-0">Hasta</label><input type="date" name="hasta" class="form-control form-control-sm" t-att-value="date_to"/></div>
+                <button class="btn btn-sm o_sl_btn_outline">Ver</button>
+            </form>
+            <div class="o_ad_kv"><span>Total vendido</span><b t-out="fmt_money(totals['total'])"/></div>
+            <div class="o_ad_kv"><span>Cobrado</span><b class="text-success" t-out="fmt_money(totals['paid'])"/></div>
+            <div class="o_ad_kv"><span>A deber / en línea</span><b t-out="fmt_money(totals['credit'])"/></div>
+            <a class="btn btn-sm o_sl_btn_outline my-2" target="_blank" t-att-href="'%s/tienda/ventas.pdf?desde=%s&amp;hasta=%s' % (admin_base, date_from, date_to)"><i class="fa fa-file-pdf-o"/> Parte de ventas (PDF)</a>
+            <p t-if="not sales" class="text-muted">Sin ventas en esas fechas.</p>
+            <a t-foreach="sales" t-as="s" class="o_ad_move" t-att-href="'%s/tienda/venta/%s' % (admin_base, s.id)">
+                <span class="flex-grow-1 min-w-0">
+                    <span class="d-block text-truncate" t-out="', '.join('%g %s' % (l.quantity, l.product_id.name) for l in s.line_ids)"/>
+                    <small class="text-muted"><t t-out="s.name"/> · <t t-out="s.member_id.name or s.partner_id.name"/></small>
+                </span>
+                <span t-if="s.state == 'cancel'" class="o_ad_state o_ad_state_cancel">Cancelada</span>
+                <span t-elif="s.paid_state != 'paid'" class="o_ad_state o_ad_state_to_approve" t-out="dict(s._fields['paid_state'].selection).get(s.paid_state)"/>
+                <b t-out="fmt_money(s.amount_total)"/>
+            </a>
+        </t>
+    </template>
+
+    <template id="admin_store_sale" name="Administración: venta">
+        <t t-call="scout_management.leader_layout">
+            <t t-set="tab" t-value="'store'"/>
+            <t t-call="scout_management.admin_tabs"/>
+            <div class="o_sl_box">
+                <div class="d-flex align-items-center"><b t-out="sale.name"/>
+                    <span t-attf-class="o_ad_state o_ad_state_#{'cancel' if sale.state == 'cancel' else ('posted' if sale.paid_state == 'paid' else 'to_approve')} ms-auto"
+                          t-out="'Cancelada' if sale.state == 'cancel' else dict(sale._fields['paid_state'].selection).get(sale.paid_state)"/></div>
+                <div class="o_ad_big" t-out="fmt_money(sale.amount_total)"/>
+                <div t-foreach="sale.line_ids" t-as="l" class="o_ad_kv"><span><t t-out="'%g' % l.quantity"/> × <t t-out="l.product_id.name"/></span><b t-out="fmt_money(l.subtotal)"/></div>
+                <div class="o_ad_kv"><span>Compró</span><b t-out="sale.partner_id.name"/></div>
+                <div t-if="sale.member_id" class="o_ad_kv"><span>Miembro</span><b t-out="sale.member_id.name"/></div>
+                <div class="o_ad_kv"><span>Pago</span><b t-out="dict(sale._fields['payment_mode'].selection).get(sale.payment_mode)"/></div>
+                <div t-if="sale.payment_mode == 'paid'" class="o_ad_kv"><span>Forma / caja</span><b t-out="'%s · %s' % (dict(sale._fields['payment_method'].selection).get(sale.payment_method), sale.journal_id.name or '')"/></div>
+                <div class="o_ad_kv"><span>Fecha</span><b t-out="fmt_date(sale.date)"/></div>
+            </div>
+            <div class="o_ad_actions">
+                <a class="btn btn-sm o_sl_btn_outline" target="_blank" t-att-href="receipt_url"><i class="fa fa-file-pdf-o"/> Recibo</a>
+                <form t-if="sale.state == 'done'" method="post" t-att-action="'%s/tienda/venta/%s/whatsapp' % (admin_base, sale.id)" class="d-inline" target="_blank">
+                    <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
+                    <button class="btn btn-sm btn-success"><i class="fa fa-whatsapp"/> Enviar por WhatsApp</button>
+                </form>
+                <form t-if="sale.state == 'done'" method="post" t-att-action="'%s/tienda/venta/%s/cancelar' % (admin_base, sale.id)" class="d-inline">
+                    <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
+                    <button class="btn btn-sm btn-light" data-ad-confirm="¿Cancelar la venta? Regresa la mercancía y se cancela el ingreso.">Cancelar venta</button>
+                </form>
+                <a class="btn btn-sm o_sl_btn" t-att-href="admin_base + '/tienda'"><i class="fa fa-plus"/> Otra venta</a>
+            </div>
+        </t>
+    </template>
+
+    <template id="admin_store_products" name="Administración: productos">
+        <t t-call="scout_management.leader_layout">
+            <t t-set="tab" t-value="'store'"/>
+            <t t-call="scout_management.admin_tabs"/>
+            <div class="o_ad_filters">
+                <a t-att-href="admin_base + '/tienda'"><i class="fa fa-shopping-basket"/> Vender</a>
+                <a t-att-href="admin_base + '/tienda/ventas'">Ventas</a>
+                <a t-att-href="admin_base + '/tienda/productos'" class="active">Productos</a>
+            </div>
+            <details class="o_sl_box">
+                <summary><b><i class="fa fa-truck"/> Entrada de mercancía / ajuste</b></summary>
+                <form method="post" class="mt-2">
+                    <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
+                    <input type="hidden" name="action" value="entrada"/>
+                    <select name="product_tmpl_id" class="form-select mb-1" required="required">
+                        <option value="">Producto…</option>
+                        <option t-foreach="products.filtered('scout_track_qty')" t-as="p" t-att-value="p.id" t-out="'%s (hay %g)' % (p.name, p.scout_qty_available)"/>
+                    </select>
+                    <div class="row g-1">
+                        <div class="col-6"><input name="quantity" type="number" step="1" class="form-control" placeholder="Piezas (+ entra / - sale)" required="required"/></div>
+                        <div class="col-6"><input name="unit_cost" type="number" step="0.01" class="form-control" placeholder="Costo unitario"/></div>
+                    </div>
+                    <input name="note" class="form-control mt-1" placeholder="Nota (proveedor, motivo del ajuste…)"/>
+                    <button class="btn o_sl_btn btn-sm mt-2">Registrar</button>
+                </form>
+            </details>
+            <details class="o_sl_box">
+                <summary><b><i class="fa fa-plus"/> Producto nuevo</b></summary>
+                <form method="post" class="mt-2">
+                    <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
+                    <input type="hidden" name="action" value="nuevo"/>
+                    <input name="name" class="form-control mb-1" placeholder="Nombre" required="required"/>
+                    <div class="row g-1">
+                        <div class="col-6"><input name="price" type="number" step="0.01" class="form-control" placeholder="Precio de venta" required="required"/></div>
+                        <div class="col-6"><input name="cost" type="number" step="0.01" class="form-control" placeholder="Costo"/></div>
+                        <div class="col-6"><select name="sale_type" class="form-select"><option t-foreach="sale_types" t-as="st" t-att-value="st[0]" t-out="st[1]"/></select></div>
+                        <div class="col-6"><input name="initial" type="number" step="1" class="form-control" placeholder="Existencia inicial"/></div>
+                        <div class="col-6"><input name="min_qty" type="number" step="1" class="form-control" placeholder="Existencia mínima"/></div>
+                        <div class="col-6 d-flex align-items-center"><label class="small"><input type="checkbox" name="track" checked="checked"/> Controlar existencias</label></div>
+                    </div>
+                    <button class="btn o_sl_btn btn-sm mt-2">Crear producto</button>
+                </form>
+            </details>
+            <input type="search" class="form-control form-control-sm my-2" placeholder="Buscar…" data-sl-filter=".o_ad_prod_row"/>
+            <div t-foreach="products" t-as="p" t-attf-class="o_sl_box o_ad_prod_row #{'o_ad_low' if p.scout_low_stock else ''}">
+                <div class="d-flex align-items-center gap-2">
+                    <div class="flex-grow-1 min-w-0"><b t-out="p.name"/>
+                        <small class="d-block text-muted" t-out="dict(p._fields['scout_sale_type'].selection).get(p.scout_sale_type) or ''"/></div>
+                    <div class="text-end">
+                        <b t-if="p.scout_track_qty" t-attf-class="#{'text-danger' if p.scout_low_stock else ''}" t-out="'%g pzas' % p.scout_qty_available"/>
+                        <small t-else="" class="text-muted">sin control</small>
+                    </div>
+                </div>
+                <form method="post" class="d-flex gap-1 mt-1 align-items-center">
+                    <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
+                    <input type="hidden" name="action" value="precio"/>
+                    <input type="hidden" name="product_tmpl_id" t-att-value="p.id"/>
+                    <small>Precio $</small><input name="price" type="number" step="0.01" class="form-control form-control-sm" t-att-value="p.list_price"/>
+                    <small>Mín.</small><input name="min_qty" type="number" step="1" class="form-control form-control-sm" t-att-value="'%g' % p.scout_min_qty"/>
+                    <button class="btn btn-sm btn-light" title="Guardar"><i class="fa fa-save"/></button>
+                </form>
+            </div>
+        </t>
+    </template>
+
+    <!-- ============================== APROBACIONES ============================== -->
+    <template id="admin_approvals" name="Administración: aprobaciones">
+        <t t-call="scout_management.leader_layout">
+            <t t-set="tab" t-value="'appr'"/>
+            <t t-call="scout_management.admin_tabs"/>
+            <h5 class="o_sl_h">Aprobaciones del jefe de grupo</h5>
+            <t t-set="total" t-value="sum(len(g['records']) for g in groups)"/>
+            <div t-if="not total" class="o_sl_box text-center text-muted"><i class="fa fa-check-circle fa-2x text-success"/><div class="mt-1">No hay nada pendiente de aprobar.</div></div>
+            <t t-foreach="groups" t-as="g">
+                <div t-if="g['records']" class="o_sl_box">
+                    <b><i t-attf-class="fa #{g['icon']}"/> <t t-out="g['title']"/> (<t t-out="len(g['records'])"/>)</b>
+                    <div t-foreach="g['records']" t-as="r" class="o_ad_appr">
+                        <div class="flex-grow-1 min-w-0">
+                            <a t-if="g['url']" t-att-href="g['url'](r)" t-out="g['label'](r)" t-att-target="'_blank' if g['key'] == 'ficha' else None"/>
+                            <span t-else="" t-out="g['label'](r)"/>
+                            <b t-if="g['amount']" class="d-block" t-out="fmt_money(g['amount'](r))"/>
+                        </div>
+                        <form method="post" t-att-action="admin_base + '/aprobaciones'" class="d-flex gap-1">
+                            <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
+                            <input type="hidden" name="kind" t-att-value="g['key']"/>
+                            <input type="hidden" name="record_id" t-att-value="r.id"/>
+                            <button name="op" value="aprobar" class="btn btn-sm btn-success"><i class="fa fa-check"/> <t t-out="'Validar' if g['key'] == 'ficha' else 'Aprobar'"/></button>
+                            <button t-if="g['key'] != 'ficha'" name="op" value="rechazar" class="btn btn-sm btn-light" data-ad-confirm="¿Rechazar?"><i class="fa fa-times"/></button>
+                        </form>
+                    </div>
+                </div>
+            </t>
+        </t>
+    </template>
+</odoo>

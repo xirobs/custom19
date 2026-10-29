@@ -931,7 +931,16 @@ class ScoutLeaderPortal(http.Controller):
             mimetype=resource._scout_mimetype())
         return stream.get_response(as_attachment=bool(descargar))
 
-    # ------------------------------------------------------------------ cuadro de logros
+    # ------------------------------------------------------------------ cuadro de adelantos
+    @http.route(['/dirigentes/cuadro'], type='http', auth='user', website=True)
+    def leader_board_entry(self, **kw):
+        """Entrada desde el backend al cuadro de adelantos (tablero) de la primera sección que atiende."""
+        sections = self._svc()._sections()
+        if not sections:
+            return request.redirect('/dirigentes')
+        section = sections.filtered('is_leadership')[:1] or sections[:1]
+        return request.redirect('/dirigentes/%s/logros' % section.id)
+
     @http.route(['/dirigentes/<int:section_id>/logros'], type='http', auth='user', website=True)
     def leader_achievements(self, section_id, ver='adelantos', **kw):
         section, redirect = self._section_or_redirect(section_id)

@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 {
     'name': 'Gestión de Grupo Scout',
-    'version': '19.0.4.23.0',
+    'version': '19.0.4.24.0',
     'summary': 'Grupo scout sobre Contactos, Calendario, Contabilidad y Conversaciones: miembros, actividades, asistencia, adelantos, actas, tesorería y portal para padres',
     'description': """
 Gestión de Grupo Scout
@@ -14,7 +14,7 @@ Gestión de Grupo Scout
 * Informe trimestral por sección y PDFs con la estructura del grupo.
 * Portal para padres: información de su hijo, ficha en línea, pago en línea y chat con los dirigentes.
 * Portal de dirigentes (celular): pase de lista, control de asistencia, planificación trimestral y anual, adelantos, informes trimestral y anual y mensajes de su sección.
-* Patrullas / seisenas / madrigueras como fichas (mover y cambiar guía), cuadro de logros con termómetro, especialidades por categoría y ruta de enlace.
+* Patrullas / seisenas / madrigueras como fichas (mover y cambiar guía), cuadro de adelantos con termómetro, especialidades por categoría y ruta de enlace.
 * Nuevos ingresos con foto, firma del tutor y liga de pago; aviso al llegar a 2 asistencias sin registro; credencial electrónica con QR; avisos por edad.
 * Control de rutas de enlace y permanencia: contador de tiempo restante, alertas amarilla y roja, excepciones de hasta 3 meses, avisos a jefes de origen y destino, partida del Clan e historial.
 * Programa semanal de cada sesión con el formato del grupo (Programa y Método Scout), dictado por voz con intérprete por reglas, PDF y Excel.
@@ -79,6 +79,7 @@ Ver static/description/index.html para la ficha completa y doc/ para el manual d
         'views/portal_classroom_templates.xml',
         'views/leader_portal_templates.xml',
         'views/council_templates.xml',
+        'views/admin_portal_templates.xml',
         'views/scout_promo_templates.xml',
     ],
     'assets': {
@@ -104,6 +105,8 @@ Ver static/description/index.html para la ficha completa y doc/ para el manual d
             'scout_management/static/src/js/scout_council_core.js',
             'scout_management/static/src/js/scout_council.js',
             'scout_management/static/src/scss/scout_council.scss',
+            'scout_management/static/src/js/scout_admin.js',
+            'scout_management/static/src/scss/scout_admin.scss',
         ],
     },
     'images': ['static/description/1.png'],

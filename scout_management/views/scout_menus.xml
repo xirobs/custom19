@@ -33,7 +33,13 @@
     <menuitem id="menu_scout_member_import" name="Carga masiva desde Excel" parent="menu_scout_members" action="action_scout_member_import" sequence="25" groups="group_scout_officer"/>
     <menuitem id="menu_scout_signup_link" name="Liga de inscripción para papás" parent="menu_scout_members" action="action_scout_signup_link" sequence="22"/>
     <menuitem id="menu_scout_route" name="Control de rutas de enlace y permanencia" parent="menu_scout_members" action="action_scout_route" sequence="28"/>
-    <menuitem id="menu_scout_progress" name="Avances de recorridos" parent="menu_scout_members" action="action_scout_member_progress" sequence="30"/>
+    <record id="action_scout_board_url" model="ir.actions.act_url">
+        <field name="name">Cuadro de adelantos (tablero por sección)</field>
+        <field name="url">/dirigentes/cuadro</field>
+        <field name="target">self</field>
+    </record>
+    <menuitem id="menu_scout_board" name="Cuadro de adelantos por sección (tablero)" parent="menu_scout_members" action="action_scout_board_url" sequence="29"/>
+    <menuitem id="menu_scout_progress" name="Cuadro de adelantos (registros)" parent="menu_scout_members" action="action_scout_member_progress" sequence="30"/>
     <menuitem id="menu_scout_member_change" name="Bajas y cambios de sección" parent="menu_scout_members" action="action_scout_member_change" sequence="40"/>
     <menuitem id="menu_scout_family_chat" name="Chat con familias" parent="menu_scout_members" action="action_scout_family_conversation" sequence="50"/>
     <menuitem id="menu_scout_section" name="Secciones" parent="menu_scout_members" action="action_scout_section" sequence="60"/>

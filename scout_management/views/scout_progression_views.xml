@@ -82,7 +82,7 @@
                 <field name="section_id"/>
                 <filter name="achieved" string="Logrados" domain="[('state', '=', 'achieved')]"/>
                 <filter name="ongoing" string="En curso" domain="[('state', '=', 'in_progress')]"/>
-                <filter name="filter_date" string="Fecha de logro" date="date_achieved"/>
+                <filter name="filter_date" string="Fecha del adelanto" date="date_achieved"/>
                 <group>
                     <filter name="group_section" string="Sección" context="{'group_by': 'section_id'}"/>
                     <filter name="group_stage" string="Adelanto" context="{'group_by': 'stage_id'}"/>
@@ -92,7 +92,7 @@
         </field>
     </record>
     <record id="action_scout_member_progress" model="ir.actions.act_window">
-        <field name="name">Avances de recorridos</field>
+        <field name="name">Cuadro de adelantos</field>
         <field name="res_model">scout.member.progress</field>
         <field name="view_mode">list</field>
         <field name="context">{'search_default_group_section': 1}</field>

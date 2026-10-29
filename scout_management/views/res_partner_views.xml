@@ -147,7 +147,7 @@
                         </group>
                     </group>
                 </page>
-                <page string="Adelantos y recorridos" name="scout_progress" invisible="not is_scout" groups="scout_management.group_scout_leader">
+                <page string="Cuadro de adelantos" name="scout_progress" invisible="not is_scout" groups="scout_management.group_scout_leader">
                     <group>
                         <group string="Promesa y último adelanto">
                             <field name="scout_promise_date"/>
