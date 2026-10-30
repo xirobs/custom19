@@ -218,7 +218,7 @@ class TestGroupPortalHttp(_RssPortalCommon, HttpCase):
         self.assertEqual(res.status_code, 200)
         self.assertTrue(res.content.startswith(b'%PDF'))
         # El jefe no es capturista: no ve el formulario de carga
-        self.assertIn('Solo el capturista', self.url_open('/mi-grupo/importar').text)
+        self.assertIn('la hace solo el <b>capturista</b>', self.url_open('/mi-grupo/importar').text)
 
     def test_03_capturer_uploads_reviews_and_saves(self):
         self.authenticate('secre7@example.com', 'clave-secre7')
@@ -380,3 +380,111 @@ class TestCapturePayment(_RssPortalCommon, TransactionCase):
         batch.action_request_payment()
         batch.action_back_to_review()
         self.assertEqual(batch.state, 'review')
+
+
+@tagged('post_install', '-at_install', 'red_seguro_scout')
+class TestPortalAppAndCertificates(_RssPortalCommon, HttpCase):
+
+    @classmethod
+    def setUpClass(cls):
+        super().setUpClass()
+        cls._setup_data()
+        cls.capt = cls._member(cls.g7, 'secretary', 'capt7@example.com', capturer=True)
+        cls.jefe = cls._member(cls.g7, 'leader', 'jefeapp7@example.com')
+        cls.capt3 = cls._member(cls.g3, 'treasurer', 'capt3@example.com', capturer=True)
+        partner = cls.env['res.partner'].create({'name': 'Asesor Cert', 'email': 'asesorcert@example.com'})
+        cls.advisor = cls.env['rss.advisor'].create({'partner_id': partner.id})
+        cls.advisor.action_grant_portal()
+        cls.advisor.user_id.password = 'clave-asesorcert'
+
+    def _certs_pdf(self):
+        return _pdf([
+            ['CERTIFICADO INDIVIDUAL No. AP-0101', 'Asegurado: GARCIA LOPEZ MARIA FERNANDA'],   # grupo 7
+            ['CERTIFICADO INDIVIDUAL No. AP-0102', 'Asegurado: JOSE LUIS DE LA CRUZ RAMOS'],    # grupo 7
+            ['CERTIFICADO INDIVIDUAL No. AP-0103', 'Asegurado: PEREZ SOTO ANA', 'Nac: 05/01/2013'],  # grupo 3
+        ])
+
+    def _csrf(self, url):
+        return re.search(r'name="csrf_token" value="([^"]+)"', self.url_open(url).text).group(1)
+
+    def test_01_app_manifest_icons_and_entry(self):
+        res = self.url_open('/seguro-app/manifest.webmanifest')
+        self.assertEqual(res.status_code, 200)
+        manifest = res.json()
+        self.assertEqual(manifest['id'], '/seguro-app')
+        self.assertEqual(manifest['name'], 'Red Seguro Scout')
+        for icon in manifest['icons']:
+            self.assertEqual(self.url_open(icon['src']).status_code, 200, icon['src'])
+        self.assertIn('/web/login', self.url_open('/seguro-app').url)
+        self.authenticate('capt7@example.com', 'clave-capt7')
+        self.assertTrue(self.url_open('/seguro-app').url.endswith('/mi-grupo'))
+        page = self.url_open('/mi-grupo').text
+        self.assertIn('/seguro-app/manifest.webmanifest', page)
+        self.assertIn('Instala la app Red Seguro Scout', page)
+        self.assertNotIn('/scouts/manifest.webmanifest', page)
+        self.authenticate('asesorcert@example.com', 'clave-asesorcert')
+        self.assertTrue(self.url_open('/seguro-app').url.endswith('/seguro'))
+
+    def test_02_three_capture_options(self):
+        self.authenticate('capt7@example.com', 'clave-capt7')
+        page = self.url_open('/mi-grupo/importar').text
+        for text in ('A mano', 'Leer Excel', 'Leer PDF'):
+            self.assertIn(text, page)
+        self.authenticate('jefeapp7@example.com', 'clave-jefeapp7')
+        page = self.url_open('/mi-grupo/importar').text
+        self.assertNotIn('Leer Excel', page)
+        self.assertIn('capt7', page.lower())
+
+    def test_03_group_uploads_certificates_only_own_group(self):
+        self.authenticate('capt7@example.com', 'clave-capt7')
+        csrf = self._csrf('/mi-grupo/certificados')
+        self.url_open('/mi-grupo/certificados', data={'csrf_token': csrf},
+                      files={'files': ('certificados.pdf', self._certs_pdf(), 'application/pdf')})
+        batch = self.env['rss.certificate.batch'].search([('source', '=', 'group')], limit=1)
+        self.assertEqual(batch.member_id, self.capt)
+        lines = batch.line_ids.sorted('page_from')
+        self.assertEqual(lines[0].insured_id, self.maria)
+        self.assertEqual(lines[1].insured_id, self.jose)
+        self.assertFalse(lines[2].insured_id, 'Una persona de otro grupo no se identifica en este grupo')
+        page = self.url_open('/mi-grupo/certificados/%s' % batch.id).text
+        self.assertIn('AP-0101', page)
+        self.assertNotIn(self.ana_a.name + ' ·', page, 'No se ofrecen asegurados de otros grupos')
+        # Intentar asignar a alguien de otro grupo: se rechaza
+        self.url_open('/mi-grupo/certificados/%s' % batch.id, data={
+            'csrf_token': csrf, 'action': 'save', 'l%s_insured' % lines[2].id: str(self.ana_a.id)})
+        lines[2].invalidate_recordset()
+        self.assertFalse(lines[2].insured_id)
+        self.assertEqual(self.url_open('/mi-grupo/certificados/%s/linea/%s.pdf' % (batch.id, lines[0].id)).status_code, 200)
+        self.url_open('/mi-grupo/certificados/%s' % batch.id, data={
+            'csrf_token': csrf, 'action': 'attach', 'l%s_skip' % lines[2].id: '1'})
+        self.maria.invalidate_recordset()
+        self.assertEqual(self.maria.certificate_number, 'AP-0101')
+        self.assertFalse(self.ana_a.certificate_attachment_id)
+        # Otro grupo no ve esta carga
+        self.authenticate('capt3@example.com', 'clave-capt3')
+        self.assertNotIn('AP-0101', self.url_open('/mi-grupo/certificados/%s' % batch.id).text)
+        self.assertEqual(self.url_open('/mi-grupo/certificados/%s/linea/%s.pdf' % (batch.id, lines[0].id)).status_code, 404)
+
+    def test_04_non_capturer_cannot_upload_certificates(self):
+        self.authenticate('jefeapp7@example.com', 'clave-jefeapp7')
+        page = self.url_open('/mi-grupo/certificados').text
+        self.assertNotIn('Leer certificados', page)
+        csrf = re.search(r'csrf_token: "([^"]+)"|name="csrf_token" value="([^"]+)"', page)
+        token = (csrf.group(1) or csrf.group(2)) if csrf else ''
+        self.url_open('/mi-grupo/certificados', data={'csrf_token': token},
+                      files={'files': ('c.pdf', self._certs_pdf(), 'application/pdf')})
+        self.assertFalse(self.env['rss.certificate.batch'].search([('source', '=', 'group')]))
+
+    def test_05_advisor_uploads_certificates_all_groups(self):
+        self.authenticate('asesorcert@example.com', 'clave-asesorcert')
+        csrf = self._csrf('/seguro/certificados')
+        self.url_open('/seguro/certificados', data={'csrf_token': csrf},
+                      files={'files': ('certificados.pdf', self._certs_pdf(), 'application/pdf')})
+        batch = self.env['rss.certificate.batch'].search([('advisor_id', '=', self.advisor.id)], limit=1)
+        self.assertEqual(batch.source, 'advisor')
+        self.assertEqual(batch.line_ids.sorted('page_from')[2].insured_id, self.ana_a, 'Fecha de nacimiento desempata')
+        self.url_open('/seguro/certificados/%s' % batch.id, data={'csrf_token': csrf, 'action': 'attach'})
+        self.ana_a.invalidate_recordset()
+        self.assertEqual(self.ana_a.certificate_number, 'AP-0103')
+        res = self.url_open('/seguro/asegurados/%s/certificado' % self.ana_a.id)
+        self.assertTrue(res.content.startswith(b'%PDF'))

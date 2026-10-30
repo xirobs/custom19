@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 {
     'name': 'Red Seguro Scout',
-    'version': '19.0.1.4.0',
+    'version': '19.0.1.5.0',
     'category': 'Services',
     'summary': 'Rumbo Seguro · Altas y control del seguro de accidentes personales de grupos scouts, '
                'con la identidad de cada grupo',
@@ -52,6 +52,8 @@ que cubre a los miembros de los grupos scouts durante sus actividades.
         'views/rss_portal_admin_views.xml',
         'views/advisor_portal_templates.xml',
         'views/group_portal_templates.xml',
+        'views/rss_app_templates.xml',
+        'views/certificate_portal_templates.xml',
         'views/rss_menus.xml',
     ],
     'demo': [
@@ -63,6 +65,7 @@ que cubre a los miembros de los grupos scouts durante sus actividades.
         ],
         'web.assets_frontend': [
             'red_seguro_scout/static/src/scss/rss_advisor_portal.scss',
+            'red_seguro_scout/static/src/js/rss_app_install.js',
         ],
         'web.assets_web_dark': [
             'red_seguro_scout/static/src/scss/red_seguro_scout.dark.scss',

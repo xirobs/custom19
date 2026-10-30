@@ -235,3 +235,58 @@ $rssp-tint: #FBF6EE;
 .o_rssp_pill_imp_verifying { background: #F6E3E3; color: $rssp-navy; }
 .o_rssp_pill_imp_expired { background: #F6DADF; color: $rssp-red; }
 body:has(.o_rssp_modal) { overflow: hidden; }
+
+// ---------------- Aviso "Instala la app Red Seguro Scout" ----------------
+.o_rssi {
+    margin: 0 0 12px; padding: 10px 12px; border-radius: 16px; background: #fff;
+    border: 1px solid $rssp-line; box-shadow: 0 6px 18px rgba(110, 11, 20, .10);
+    &.d-none { display: none !important; }
+}
+.o_rssi_row { display: flex; align-items: center; gap: 10px;
+    > img { width: 48px; height: 48px; border-radius: 12px; flex: 0 0 auto; } }
+.o_rssi_text { flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; line-height: 1.25;
+    b { color: $rssp-navy; font-size: .95rem; } span { color: $rssp-muted; font-size: .8rem; } }
+.o_rssi_manual, .o_rssi_how { display: none; }
+.o_rssi_is_manual { .o_rssi_manual { display: inline; } .o_rssi_how { display: inline-block; }
+    .o_rssi_android, .o_rssi_btn { display: none; } .o_rssi_row { cursor: pointer; } }
+.o_rssi_btn { flex: 0 0 auto; border: 0; border-radius: 999px; background: $rssp-navy; color: #fff; font-weight: 800;
+    padding: .5rem 1rem; font-size: .88rem; }
+.o_rssi_how { align-self: flex-start; margin-top: .35rem; border: 0; border-radius: 999px; background: $rssp-gold;
+    color: #3A1A05; font-weight: 800; font-size: .8rem; padding: .3rem .8rem; }
+.o_rssi_close { flex: 0 0 auto; border: 0; background: transparent; color: $rssp-muted; font-size: 1.4rem; line-height: 1; }
+.o_rssi_steps { margin-top: 10px; padding-top: 10px; border-top: 1px dashed $rssp-line; font-size: .9rem;
+    &.d-none { display: none !important; }
+    [data-rssi-mode] { display: none; }
+    ol { margin: 0; padding-left: 1.3rem; display: grid; gap: .4rem; }
+    .fa { color: $rssp-gold; } }
+.o_rssi_mode_inapp [data-rssi-mode="inapp"], .o_rssi_mode_ios [data-rssi-mode="ios"],
+.o_rssi_mode_ios-other [data-rssi-mode="ios-other"], .o_rssi_mode_android-manual [data-rssi-mode="android-manual"] { display: block; }
+.o_rssi_ios_only, .o_rssi_android_only { display: none; }
+.o_rssi_on_ios .o_rssi_ios_only, .o_rssi_on_android .o_rssi_android_only { display: inline; }
+.o_rssi_alert { margin: 0 0 .5rem; padding: .5rem .7rem; border-radius: 10px; background: #FFF3E8; color: #8A3C0A; font-weight: 600; }
+.o_rssi_note { margin: .5rem 0 0; font-size: .8rem; color: $rssp-muted; }
+.o_rssi_copy { display: flex; gap: .5rem; margin-top: .5rem;
+    input { flex: 1 1 auto; min-width: 0; border: 1px solid $rssp-line; border-radius: 10px; padding: .4rem .6rem; font-size: .85rem; }
+    button { flex: 0 0 auto; border: 0; border-radius: 10px; background: $rssp-navy; color: #fff; font-weight: 700; padding: .4rem .8rem; } }
+@media (display-mode: standalone) { .o_rssi { display: none !important; } }
+
+// ---------------- Carga: tres opciones / accesos rápidos / certificados ----------------
+.o_rssp_load_options { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px;
+    @media (max-width: 900px) { grid-template-columns: minmax(0, 1fr); } }
+.o_rssp_load { display: flex; flex-direction: column; gap: 4px; scroll-margin-top: 80px;
+    &:target { outline: 3px solid $rssp-gold; } }
+.o_rssp_load_icon { width: 48px; height: 48px; border-radius: 12px; display: grid; place-items: center; font-size: 1.4rem;
+    background: $rssp-tint; color: $rssp-navy; margin-bottom: 4px; }
+.o_rssp_load_xls { background: #E3F2E8; color: #1D6B3A; }
+.o_rssp_load_pdf { background: #FBE4E4; color: #A11A1A; }
+.o_rssp_link_sm { margin-top: 8px; font-size: .85rem; color: $rssp-navy !important; font-weight: 700; }
+.o_rssp_quick { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; }
+.o_rssp_quick_btn { display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 10px 4px; border-radius: 12px;
+    background: $rssp-tint; color: $rssp-navy !important; text-decoration: none !important; font-weight: 700; font-size: .8rem;
+    .fa { font-size: 1.3rem; color: $rssp-navy; } }
+.o_rssp_select { width: 100%; min-width: 220px; border: 1px solid $rssp-line; border-radius: 6px; padding: 3px 6px; background: #fff; }
+.o_rssp_pill_cert_review { background: #F6E3E3; color: $rssp-navy; }
+.o_rssp_pill_cert_done { background: #D7F0DF; color: #1B5E3B; }
+.o_rssp_pill_cert_draft { background: #EEE; color: $rssp-muted; }
+.o_rssp_nav a { padding: 2px 4px; }
+@media (max-width: 420px) { .o_rssp_nav a { font-size: .62rem; } }

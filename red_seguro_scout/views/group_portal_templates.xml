@@ -7,7 +7,7 @@
             <t t-set="rss_member" t-value="request.env['rss.group.member']._for_user(request.env.user)"/>
             <div t-if="rss_member" class="my-3">
                 <a href="/mi-grupo" class="o_rssp_entry">
-                    <img src="/red_seguro_scout/static/description/icon.png" alt=""/>
+                    <img src="/red_seguro_scout/static/src/img/emblema_red_seguro_scout.png" alt=""/>
                     <div>
                         <div class="o_rssp_entry_title">Red Seguro Scout · <t t-out="rss_member.group_id.sudo().name"/></div>
                         <div class="o_rssp_entry_text">Asegurados, certificados, carga de listas y siniestros de tu grupo</div>
@@ -39,7 +39,7 @@
             <div class="o_rssp">
                 <header class="o_rssp_head">
                     <a href="/my" class="o_rssp_brand">
-                        <img src="/red_seguro_scout/static/description/icon.png" alt=""/>
+                        <img src="/red_seguro_scout/static/src/img/emblema_red_seguro_scout.png" alt=""/>
                         <div>
                             <div class="o_rssp_kicker">Red Seguro Scout · <i>Rumbo Seguro</i></div>
                             <div class="o_rssp_title">Aviso de privacidad</div>
@@ -54,11 +54,11 @@
     <template id="group_layout" name="Grupo: base">
         <t t-call="portal.portal_layout">
             <t t-set="no_breadcrumbs" t-value="True"/>
-            <div t-attf-class="o_rssp #{'o_rssp_wide' if group_page == 'import' else ''}">
+            <div t-attf-class="o_rssp #{'o_rssp_wide' if group_page in ('import', 'certificates') else ''}">
                 <header class="o_rssp_head">
                     <a href="/mi-grupo" class="o_rssp_brand">
                         <img t-if="group and group.logo" t-att-src="'/web/image/rss.scout.group/%s/logo/96x96' % group.id" alt=""/>
-                        <img t-else="" src="/red_seguro_scout/static/description/icon.png" alt=""/>
+                        <img t-else="" src="/red_seguro_scout/static/src/img/emblema_red_seguro_scout.png" alt=""/>
                         <div>
                             <div class="o_rssp_kicker">Red Seguro Scout · <i>Rumbo Seguro</i></div>
                             <div class="o_rssp_title" t-out="group.name if group else 'Mi grupo'"/>
@@ -77,6 +77,7 @@
                     <a href="/mi-grupo" t-attf-class="#{'active' if group_page == 'home' else ''}"><i class="fa fa-home"/><span>Inicio</span></a>
                     <a href="/mi-grupo/asegurados" t-attf-class="#{'active' if group_page == 'insured' else ''}"><i class="fa fa-users"/><span>Asegurados</span></a>
                     <a href="/mi-grupo/importar" t-attf-class="#{'active' if group_page == 'import' else ''}"><i class="fa fa-upload"/><span>Cargar lista</span></a>
+                    <a href="/mi-grupo/certificados" t-attf-class="#{'active' if group_page == 'certificates' else ''}"><i class="fa fa-certificate"/><span>Certificados</span></a>
                     <a href="/mi-grupo/siniestros" t-attf-class="#{'active' if group_page == 'claims' else ''}"><i class="fa fa-medkit"/><span>Siniestros</span></a>
                 </nav>
             </div>
@@ -124,9 +125,14 @@
             </section>
             <section class="o_rssp_card">
                 <h5>Cargar asegurados</h5>
-                <p class="o_rssp_muted mb-2" t-if="member.is_capturer">Sube la lista de tu grupo en Excel o PDF; la revisas antes de guardarla. <t t-out="capture_msg"/></p>
+                <p class="o_rssp_muted mb-2" t-if="member.is_capturer">Captura a mano o sube tu lista en Excel o PDF; la revisas y pagas el mismo día. <t t-out="capture_msg"/></p>
                 <p class="o_rssp_muted mb-2" t-else="">La carga la hace el capturista de tu grupo. Tú puedes consultar los asegurados, certificados y siniestros.</p>
-                <a t-if="member.is_capturer" href="/mi-grupo/importar" class="btn o_rssp_btn"><i class="fa fa-upload"/> Cargar lista</a>
+                <div t-if="member.is_capturer" class="o_rssp_quick">
+                    <a href="/mi-grupo/importar#a-mano" class="o_rssp_quick_btn"><i class="fa fa-pencil"/><span>A mano</span></a>
+                    <a href="/mi-grupo/importar#excel" class="o_rssp_quick_btn"><i class="fa fa-file-excel-o"/><span>Excel</span></a>
+                    <a href="/mi-grupo/importar#pdf" class="o_rssp_quick_btn"><i class="fa fa-file-pdf-o"/><span>PDF</span></a>
+                    <a href="/mi-grupo/certificados" class="o_rssp_quick_btn"><i class="fa fa-certificate"/><span>Certificados</span></a>
+                </div>
             </section>
             <section class="o_rssp_card" t-if="batches">
                 <h5>Últimas cargas</h5>
@@ -194,58 +200,77 @@
     <!-- Cargar lista -->
     <template id="group_import" name="Grupo: cargar lista">
         <t t-call="red_seguro_scout.group_layout">
-            <section class="o_rssp_card" t-if="member.is_capturer">
-                <h5>Cargar lista de asegurados</h5>
-                <p class="o_rssp_muted">Sube un <b>Excel</b> o un <b>PDF</b>. No tiene que ser un formato especial: el sistema busca las columnas de
-                    nombre, apellido paterno, apellido materno, fecha de nacimiento, sexo, padre o tutor, teléfono de emergencia y correo.
-                    Antes de guardar verás la lista para corregirla.</p>
-                <div t-if="not capture_open" class="alert alert-warning"><t t-out="capture_msg"/></div>
-                <form method="post" enctype="multipart/form-data" class="o_rssp_form" action="/mi-grupo/importar">
-                    <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
-                    <label for="rssp_file">Archivo (Excel .xlsx o PDF)</label>
-                    <input id="rssp_file" type="file" name="file" class="form-control" required="required"
-                           accept=".xlsx,.xlsm,.pdf,application/pdf,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"/>
-                    <label class="o_rssp_check">
-                        <input type="checkbox" name="privacy" value="1" required="required"/>
-                        Confirmo que cuento con la autorización de los padres o tutores y acepto el
-                        <a href="/aviso-de-privacidad-seguro" target="_blank">aviso de privacidad</a>.
-                    </label>
-                    <button type="submit" class="btn o_rssp_btn mt-2" t-att-disabled="None if capture_open else 'disabled'"><i class="fa fa-search"/> Leer archivo</button>
-                </form>
-                <div class="o_rssp_actions">
-                    <a href="/mi-grupo/importar/plantilla.xlsx" class="btn o_rssp_btn_ghost"><i class="fa fa-file-excel-o"/> Descargar plantilla Excel</a>
+            <t t-if="member.is_capturer">
+                <h4 class="o_rssp_h">¿Cómo quieres cargar a tus asegurados?</h4>
+                <div t-if="not capture_open" class="alert alert-warning mb-0"><t t-out="capture_msg"/></div>
+                <div class="o_rssp_load_options">
+                    <section id="a-mano" class="o_rssp_card o_rssp_load">
+                        <div class="o_rssp_load_icon"><i class="fa fa-pencil"/></div>
+                        <h5>A mano</h5>
+                        <p class="o_rssp_muted">Para una o pocas personas: llenas la tabla directamente.</p>
+                        <form method="post" class="o_rssp_form" action="/mi-grupo/capturar">
+                            <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
+                            <label for="rssp_rows">¿Cuántas personas?</label>
+                            <input id="rssp_rows" type="number" name="rows" min="1" max="30" value="1" class="form-control" style="max-width: 120px;"/>
+                            <label class="o_rssp_check">
+                            <input type="checkbox" name="privacy" value="1" required="required"/>
+                            Cuento con la autorización de los padres o tutores y acepto el
+                            <a href="/aviso-de-privacidad-seguro" target="_blank">aviso de privacidad</a>.
+                        </label>
+                            <button type="submit" class="btn o_rssp_btn mt-2" t-att-disabled="None if capture_open else 'disabled'"><i class="fa fa-pencil"/> Capturar</button>
+                        </form>
+                    </section>
+                    <section id="excel" class="o_rssp_card o_rssp_load">
+                        <div class="o_rssp_load_icon o_rssp_load_xls"><i class="fa fa-file-excel-o"/></div>
+                        <h5>Excel</h5>
+                        <p class="o_rssp_muted">Tu lista en .xlsx, con el formato que tengas: el sistema reconoce las columnas.</p>
+                        <form method="post" enctype="multipart/form-data" class="o_rssp_form" action="/mi-grupo/importar">
+                            <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
+                            <label for="rssp_xls">Archivo Excel</label>
+                            <input id="rssp_xls" type="file" name="file" class="form-control" required="required"
+                                   accept=".xlsx,.xlsm,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"/>
+                            <label class="o_rssp_check">
+                            <input type="checkbox" name="privacy" value="1" required="required"/>
+                            Cuento con la autorización de los padres o tutores y acepto el
+                            <a href="/aviso-de-privacidad-seguro" target="_blank">aviso de privacidad</a>.
+                        </label>
+                            <button type="submit" class="btn o_rssp_btn mt-2" t-att-disabled="None if capture_open else 'disabled'"><i class="fa fa-search"/> Leer Excel</button>
+                        </form>
+                        <a href="/mi-grupo/importar/plantilla.xlsx" class="o_rssp_link_sm"><i class="fa fa-download"/> Descargar plantilla (opcional)</a>
+                    </section>
+                    <section id="pdf" class="o_rssp_card o_rssp_load">
+                        <div class="o_rssp_load_icon o_rssp_load_pdf"><i class="fa fa-file-pdf-o"/></div>
+                        <h5>PDF</h5>
+                        <p class="o_rssp_muted">Una lista en PDF exportada de Excel o Word. Un escaneo o una foto no se pueden leer.</p>
+                        <form method="post" enctype="multipart/form-data" class="o_rssp_form" action="/mi-grupo/importar">
+                            <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
+                            <label for="rssp_pdf">Archivo PDF</label>
+                            <input id="rssp_pdf" type="file" name="file" class="form-control" required="required" accept=".pdf,application/pdf"/>
+                            <label class="o_rssp_check">
+                            <input type="checkbox" name="privacy" value="1" required="required"/>
+                            Cuento con la autorización de los padres o tutores y acepto el
+                            <a href="/aviso-de-privacidad-seguro" target="_blank">aviso de privacidad</a>.
+                        </label>
+                            <button type="submit" class="btn o_rssp_btn mt-2" t-att-disabled="None if capture_open else 'disabled'"><i class="fa fa-search"/> Leer PDF</button>
+                        </form>
+                    </section>
                 </div>
-                <p class="o_rssp_muted mt-2"><i class="fa fa-info-circle"/> Un PDF escaneado o una foto no se pueden leer; en ese caso usa Excel.</p>
-            </section>
-            <section class="o_rssp_card" t-if="member.is_capturer">
-                <h5>Capturar a mano</h5>
-                <p class="o_rssp_muted">Para registrar a una o pocas personas sin archivo.</p>
-                <form method="post" class="o_rssp_form" action="/mi-grupo/capturar">
-                    <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
-                    <label for="rssp_rows">¿Cuántas personas?</label>
-                    <input id="rssp_rows" type="number" name="rows" min="1" max="30" value="1" class="form-control" style="max-width: 120px;"/>
-                    <label class="o_rssp_check">
-                        <input type="checkbox" name="privacy" value="1" required="required"/>
-                        Confirmo que cuento con la autorización de los padres o tutores y acepto el
-                        <a href="/aviso-de-privacidad-seguro" target="_blank">aviso de privacidad</a>.
-                    </label>
-                    <button type="submit" class="btn o_rssp_btn mt-2" t-att-disabled="None if capture_open else 'disabled'"><i class="fa fa-pencil"/> Capturar</button>
-                </form>
-            </section>
-            <section class="o_rssp_card o_rssp_paynote" t-if="member.is_capturer">
-                <i class="fa fa-credit-card"/>
-                <div><b>El pago es el mismo día.</b> Después de revisar la lista se abre la ventana de pago (Mercado Pago o transferencia).
-                    Las personas quedan aseguradas solo cuando el pago se confirma; si no se paga ese día, la carga vence.</div>
-            </section>
+                <section class="o_rssp_card o_rssp_paynote">
+                    <i class="fa fa-credit-card"/>
+                    <div><b>Revisas la lista y pagas el mismo día.</b> En los tres casos verás la tabla para corregir antes de pagar (Mercado Pago o transferencia).
+                        Las personas quedan aseguradas solo cuando el pago se confirma; si no se paga ese día, la carga vence.</div>
+                </section>
+            </t>
             <section class="o_rssp_card" t-else="">
-                <h5>Cargar lista de asegurados</h5>
-                <p class="o_rssp_muted">Solo el capturista de tu grupo puede cargar asegurados. Si necesitan cambiar de capturista, pídelo a la administración central.</p>
+                <h5>Cargar asegurados</h5>
+                <p class="o_rssp_muted">La carga de asegurados la hace solo el <b>capturista</b> de tu grupo<t t-if="group.capturer_id">: <b t-out="group.capturer_id.name"/></t>.
+                    Si necesitan cambiar de capturista, pídelo a la administración central.</p>
             </section>
             <section class="o_rssp_card" t-if="batches">
                 <h5>Cargas anteriores</h5>
                 <a t-foreach="batches" t-as="b" class="o_rssp_list_item" t-attf-href="/mi-grupo/importar/#{b.id}">
                     <div>
-                        <b t-out="b.filename or 'Captura'"/>
+                        <b t-out="b.filename or 'Captura manual'"/>
                         <div class="o_rssp_muted"><t t-out="fmt_date(b.create_date)"/> · <t t-out="b.line_count"/> filas · <t t-out="b.member_id.name or b.user_id.name"/></div>
                     </div>
                     <span t-attf-class="o_rssp_pill o_rssp_pill_imp_#{b.state}" t-out="labels('rss.import.batch', 'state').get(b.state)"/>

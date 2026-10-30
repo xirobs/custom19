@@ -120,8 +120,14 @@ class RssCertificateBatch(models.Model):
 
     @staticmethod
     def _label_name(raw_upper):
-        match = NAME_LABEL_RE.search(normalize_text(raw_upper))
-        return ' '.join(match.group(1).split()[:6]).title() if match else False
+        """Nombre que aparece junto a la etiqueta «Asegurado/Nombre», solo en ese renglón."""
+        for line in raw_upper.splitlines():
+            match = NAME_LABEL_RE.search(normalize_text(line))
+            if match:
+                words = [w for w in match.group(1).split() if not w.isdigit()]
+                if len(words) >= 2:
+                    return ' '.join(words[:6]).title()
+        return False
 
     def action_read(self):
         Line = self.env['rss.certificate.line']
@@ -271,3 +277,69 @@ class RssCertificateLine(models.Model):
         self.ensure_one()
         return {'type': 'ir.actions.act_url', 'target': 'new',
                 'url': '/web/content/%s#page=%s' % (self.attachment_id.id, self.page_from)}
+
+
+class RssCertificateBatchPortal(models.Model):
+    _inherit = 'rss.certificate.batch'
+
+    source = fields.Selection([('office', 'Oficina'), ('group', 'Portal del grupo'), ('advisor', 'Portal del asesor')],
+                              string='Cargado desde', default='office', readonly=True)
+    member_id = fields.Many2one('rss.group.member', string='Subió (representante)', readonly=True,
+                                ondelete='set null')
+    advisor_id = fields.Many2one('rss.advisor', string='Subió (asesor)', readonly=True, ondelete='set null')
+
+    @api.model
+    def create_from_portal(self, groups, files, member=None, advisor=None):
+        """Crea la carga desde un portal, la lee y la deja en revisión.
+
+        ``groups``: grupos a los que puede pertenecer cada certificado (los del usuario).
+        ``files``: lista de (nombre, bytes).
+        """
+        if not groups:
+            raise UserError(_('No tienes grupos asignados.'))
+        Attachment = self.env['ir.attachment'].sudo()
+        attachments = Attachment.browse()
+        for name, data in files:
+            if not (data or b'').startswith(b'%PDF'):
+                raise UserError(_('«%s» no es un PDF. Sube el PDF de certificados que envió la aseguradora.', name))
+            attachments |= Attachment.create({'name': name, 'raw': data, 'mimetype': 'application/pdf',
+                                              'res_model': self._name})
+        if not attachments:
+            raise UserError(_('Elige el PDF de certificados.'))
+        label = groups[0].name if len(groups) == 1 else _('%s grupos', len(groups))
+        batch = self.sudo().create({
+            'name': _('Certificados %(who)s · %(date)s', who=label,
+                      date=fields.Date.context_today(self).strftime('%d/%m/%Y')),
+            'company_id': groups[0].company_id.id,
+            'group_ids': [fields.Command.set(groups.ids)],
+            'file_ids': [fields.Command.set(attachments.ids)],
+            'source': 'advisor' if advisor else 'group',
+            'member_id': member.id if member else False,
+            'advisor_id': advisor.id if advisor else False,
+        })
+        attachments.write({'res_id': batch.id})
+        batch.action_read()
+        return batch
+
+    def _portal_allowed_insured(self):
+        """Asegurados a los que puede asignarse un certificado de esta carga."""
+        self.ensure_one()
+        return self._candidate_insured()
+
+    def portal_apply(self, assignments, skips):
+        """Aplica lo que el usuario eligió en la revisión del portal.
+
+        ``assignments``: {línea_id: asegurado_id o 0}; ``skips``: ids de líneas a omitir.
+        Solo se aceptan asegurados de los grupos de la carga.
+        """
+        self.ensure_one()
+        allowed = self._portal_allowed_insured()
+        for line in self.line_ids.filtered(lambda l: not l.attached):
+            vals = {'skip': line.id in skips}
+            if line.id in assignments:
+                insured = self.env['rss.insured'].sudo().browse(assignments[line.id]).exists()
+                if insured and insured not in allowed:
+                    raise UserError(_('Ese asegurado no pertenece a tus grupos.'))
+                vals['insured_id'] = insured.id or False
+            line.write(vals)
+        return True

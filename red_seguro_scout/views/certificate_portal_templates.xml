@@ -1,0 +1,118 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- ========== Certificados de la póliza desde el portal (grupo y asesor) ========== -->
+    <!-- Variables: base_url (/mi-grupo o /seguro), can_upload, batches, stats, allowed -->
+    <template id="rss_cert_upload_body" name="Certificados: subir">
+        <div class="o_rssp_kpis">
+            <div class="o_rssp_kpi o_rssp_kpi_main"><b t-out="stats['with']"/><span>Con certificado</span></div>
+            <div class="o_rssp_kpi"><b t-out="stats['without']"/><span>Sin certificado</span></div>
+        </div>
+        <section class="o_rssp_card" t-if="can_upload">
+            <h5><i class="fa fa-certificate"/> Cargar certificados de la póliza</h5>
+            <p class="o_rssp_muted">Sube el PDF que envió la aseguradora, aunque traiga a todos en un solo archivo. El sistema lee el nombre de cada
+                certificado, lo identifica entre <t t-if="len(groups) == 1">los asegurados de tu grupo</t><t t-else="">los asegurados de tus grupos</t>
+                y, cuando lo confirmas, deja a cada persona <b>solo su certificado</b>.</p>
+            <form method="post" enctype="multipart/form-data" class="o_rssp_form" t-attf-action="#{base_url}/certificados">
+                <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
+                <label for="rssp_certs">PDF de certificados</label>
+                <input id="rssp_certs" type="file" name="files" class="form-control" multiple="multiple" required="required" accept=".pdf,application/pdf"/>
+                <button type="submit" class="btn o_rssp_btn mt-2"><i class="fa fa-search"/> Leer certificados</button>
+            </form>
+            <p class="o_rssp_muted mt-2"><i class="fa fa-info-circle"/> Debe ser el PDF original (con texto). Un escaneo o una foto no se pueden leer.</p>
+        </section>
+        <section class="o_rssp_card" t-else="">
+            <h5>Certificados</h5>
+            <p class="o_rssp_muted">Los certificados los carga el capturista de tu grupo o la administración central. Puedes descargar el de cada persona en <a t-attf-href="#{base_url}/asegurados?estatus=certificate">Asegurados</a>.</p>
+        </section>
+        <section class="o_rssp_card" t-if="batches">
+            <h5>Cargas de certificados</h5>
+            <a t-foreach="batches" t-as="b" class="o_rssp_list_item" t-attf-href="#{base_url}/certificados/#{b.id}">
+                <div>
+                    <b t-out="b.name"/>
+                    <div class="o_rssp_muted"><t t-out="b.page_count"/> páginas · <t t-out="b.matched_count"/> identificados · <t t-out="b.attached_count"/> anexados</div>
+                </div>
+                <span t-attf-class="o_rssp_pill o_rssp_pill_cert_#{b.state}" t-out="labels('rss.certificate.batch', 'state').get(b.state)"/>
+            </a>
+        </section>
+    </template>
+
+    <template id="rss_cert_review_body" name="Certificados: revisar">
+        <a t-attf-href="#{base_url}/certificados" class="o_rssp_back"><i class="fa fa-arrow-left"/> Certificados</a>
+        <section class="o_rssp_card">
+            <div class="o_rssp_row">
+                <div>
+                    <h4 class="o_rssp_h mb-0" t-out="batch.name"/>
+                    <div class="o_rssp_muted"><t t-out="batch.page_count"/> páginas leídas</div>
+                </div>
+                <span t-attf-class="o_rssp_pill o_rssp_pill_cert_#{batch.state}" t-out="labels('rss.certificate.batch', 'state').get(batch.state)"/>
+            </div>
+            <div class="o_rssp_summary">
+                <span class="o_rssp_pill o_rssp_pill_ok"><t t-out="batch.matched_count"/> identificados</span>
+                <span class="o_rssp_pill o_rssp_pill_warn"><t t-out="batch.pending_count"/> por asignar</span>
+                <span class="o_rssp_pill o_rssp_pill_imp_done"><t t-out="batch.attached_count"/> anexados</span>
+            </div>
+            <p class="o_rssp_muted" t-if="batch.state == 'review'">Revisa los que dicen <b>Varios posibles</b> o <b>Sin identificar</b>: elige a la persona
+                o márcalos para omitir. Con <i class="fa fa-eye"/> ves la página. Al final presiona <b>Anexar certificados</b>.</p>
+        </section>
+        <form method="post" t-attf-action="#{base_url}/certificados/#{batch.id}">
+            <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
+            <div class="o_rssp_table_wrap">
+                <table class="table o_rssp_table o_rssp_edit">
+                    <thead><tr><th>Págs.</th><th>Resultado</th><th>Nombre leído</th><th>Folio</th><th>Asegurado</th><th>Omitir</th><th/></tr></thead>
+                    <tbody>
+                        <tr t-foreach="batch.line_ids" t-as="l" t-attf-class="o_rssp_line_#{'ok' if l.attached or l.status == 'matched' else ('duplicate' if l.status == 'ambiguous' else 'error')}">
+                            <td t-out="l.pages"/>
+                            <td>
+                                <span t-if="l.attached" class="o_rssp_pill o_rssp_pill_line_ok">Anexado</span>
+                                <span t-else="" t-attf-class="o_rssp_pill o_rssp_pill_line_#{'ok' if l.status == 'matched' else ('duplicate' if l.status == 'ambiguous' else 'error')}"
+                                      t-out="labels('rss.certificate.line', 'status').get(l.status)"/>
+                                <div t-if="l.no_text" class="o_rssp_muted">Página sin texto</div>
+                            </td>
+                            <td t-out="l.name_read or '—'"/>
+                            <td t-out="l.certificate_number or '—'"/>
+                            <td>
+                                <t t-if="l.attached or batch.state == 'done'">
+                                    <b t-out="l.insured_id.name or '—'"/>
+                                    <div class="o_rssp_muted" t-out="l.insured_id.group_id.name or ''"/>
+                                </t>
+                                <select t-else="" t-attf-name="l#{l.id}_insured" class="o_rssp_select">
+                                    <option value="0">— Sin asignar —</option>
+                                    <t t-set="opts" t-value="l.candidate_ids if (l.candidate_ids and not l.insured_id) else allowed"/>
+                                    <option t-foreach="opts" t-as="i" t-att-value="i.id" t-att-selected="i == l.insured_id"
+                                            t-out="'%s · %s · %s' % (i.name, fmt_date(i.birthdate), i.group_id.name)"/>
+                                </select>
+                            </td>
+                            <td class="text-center"><input type="checkbox" t-attf-name="l#{l.id}_skip" value="1" t-att-checked="l.skip"
+                                                           t-att-disabled="l.attached or batch.state == 'done'"/></td>
+                            <td><a class="btn btn-sm o_rssp_btn_ghost" target="_blank" t-attf-href="#{base_url}/certificados/#{batch.id}/linea/#{l.id}.pdf" title="Ver"><i class="fa fa-eye"/></a></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+            <div class="o_rssp_actions o_rssp_sticky_actions" t-if="batch.state == 'review' and can_upload">
+                <button type="submit" name="action" value="save" class="btn o_rssp_btn_ghost"><i class="fa fa-save"/> Guardar cambios</button>
+                <button type="submit" name="action" value="attach" class="btn o_rssp_btn"><i class="fa fa-paperclip"/> Anexar certificados</button>
+            </div>
+        </form>
+    </template>
+
+    <!-- Envolturas por portal -->
+    <template id="group_certificates" name="Grupo: certificados">
+        <t t-call="red_seguro_scout.group_layout"><t t-call="red_seguro_scout.rss_cert_upload_body"/></t>
+    </template>
+    <template id="group_certificate_review" name="Grupo: revisar certificados">
+        <t t-call="red_seguro_scout.group_layout"><t t-call="red_seguro_scout.rss_cert_review_body"/></t>
+    </template>
+    <template id="advisor_certificates" name="Asesor: certificados">
+        <t t-call="red_seguro_scout.advisor_layout"><t t-call="red_seguro_scout.rss_cert_upload_body"/></t>
+    </template>
+    <template id="advisor_certificate_review" name="Asesor: revisar certificados">
+        <t t-call="red_seguro_scout.advisor_layout"><t t-call="red_seguro_scout.rss_cert_review_body"/></t>
+    </template>
+
+    <template id="advisor_layout_cert_nav" inherit_id="red_seguro_scout.advisor_layout" name="Asesor: menú certificados">
+        <xpath expr="//nav[hasclass('o_rssp_nav')]/a[last()]" position="before">
+            <a href="/seguro/certificados" t-attf-class="#{'active' if advisor_page == 'certificates' else ''}"><i class="fa fa-certificate"/><span>Certificados</span></a>
+        </xpath>
+    </template>
+</odoo>

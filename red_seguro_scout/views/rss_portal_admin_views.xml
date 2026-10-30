@@ -272,6 +272,7 @@
             <list string="Certificados" class="o_rss">
                 <field name="name"/>
                 <field name="create_date" string="Fecha"/>
+                <field name="source" optional="show"/>
                 <field name="page_count"/>
                 <field name="matched_count"/>
                 <field name="pending_count"/>
@@ -310,6 +311,9 @@
                         </group>
                         <group>
                             <field name="group_ids" widget="many2many_tags"/>
+                            <field name="source" invisible="source == 'office'"/>
+                            <field name="member_id" invisible="not member_id"/>
+                            <field name="advisor_id" invisible="not advisor_id"/>
                             <field name="page_count"/>
                             <field name="matched_count"/>
                             <field name="pending_count"/>

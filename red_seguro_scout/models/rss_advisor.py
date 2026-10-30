@@ -31,6 +31,7 @@ class RssAdvisor(models.Model):
                                  help='Vacío junto con agrupaciones: ve todos los grupos.')
     can_update_claims = fields.Boolean('Actualiza siniestros', default=True, tracking=True)
     can_ack_reports = fields.Boolean('Registra acuses de relaciones', default=True, tracking=True)
+    can_upload_certificates = fields.Boolean('Sube certificados de la póliza', default=True, tracking=True)
     user_id = fields.Many2one('res.users', string='Usuario de portal', compute='_compute_user',
                               store=True)
     has_portal = fields.Boolean('Con acceso al portal', compute='_compute_user', store=True)

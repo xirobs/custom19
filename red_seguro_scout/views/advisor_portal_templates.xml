@@ -7,7 +7,7 @@
         <div id="portal_client_category" position="before">
             <div t-if="request.env['rss.advisor']._for_user(request.env.user)" class="my-3">
                 <a href="/seguro" class="o_rssp_entry">
-                    <img src="/red_seguro_scout/static/description/icon.png" alt=""/>
+                    <img src="/red_seguro_scout/static/src/img/emblema_red_seguro_scout.png" alt=""/>
                     <div>
                         <div class="o_rssp_entry_title">Red Seguro Scout · Asesor</div>
                         <div class="o_rssp_entry_text">Asegurados, relaciones mensuales, pagos y siniestros</div>
@@ -24,7 +24,7 @@
             <div class="o_rssp">
                 <header class="o_rssp_head">
                     <a href="/seguro" class="o_rssp_brand">
-                        <img src="/red_seguro_scout/static/description/icon.png" alt=""/>
+                        <img src="/red_seguro_scout/static/src/img/emblema_red_seguro_scout.png" alt=""/>
                         <div>
                             <div class="o_rssp_kicker">Red Seguro Scout · <i>Rumbo Seguro</i></div>
                             <div class="o_rssp_title">Portal del asesor</div>
@@ -136,7 +136,7 @@
                 <table class="table o_rssp_table">
                     <thead><tr>
                         <th>Nombre</th><th>Grupo</th><th class="text-center">Edad</th><th>Sexo</th><th>Rama</th>
-                        <th>Tutor</th><th>Teléfono</th><th>Alta</th><th>Estatus</th>
+                        <th>Tutor</th><th>Teléfono</th><th>Alta</th><th>Estatus</th><th>Certificado</th>
                     </tr></thead>
                     <tbody>
                         <tr t-foreach="insured" t-as="i">
@@ -149,8 +149,9 @@
                             <td><a t-if="i.tutor_phone" t-attf-href="tel:#{i.tutor_phone}" t-out="i.tutor_phone"/></td>
                             <td t-out="fmt_date(i.date_start)"/>
                             <td><span t-attf-class="o_rssp_pill o_rssp_pill_#{i.state}" t-out="labels('rss.insured', 'state').get(i.state)"/></td>
+                            <td><a t-if="i.certificate_attachment_id" class="btn btn-sm o_rssp_btn_ghost" t-attf-href="/seguro/asegurados/#{i.id}/certificado"><i class="fa fa-file-pdf-o"/> <t t-out="i.certificate_number or 'PDF'"/></a></td>
                         </tr>
-                        <tr t-if="not insured"><td colspan="9" class="o_rssp_muted text-center">Sin resultados.</td></tr>
+                        <tr t-if="not insured"><td colspan="10" class="o_rssp_muted text-center">Sin resultados.</td></tr>
                     </tbody>
                 </table>
             </div>
