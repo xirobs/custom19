@@ -1,5 +1,7 @@
 # -*- coding: utf-8 -*-
-from odoo import models, fields
+from odoo import _, fields, models
+
+from ..services.gemini_service import GeminiService
 
 class ResConfigSettings(models.TransientModel):
     _inherit = 'res.config.settings'
@@ -87,3 +89,29 @@ class ResConfigSettings(models.TransientModel):
         help='Used only to estimate the "Estimated Cost" shown on each recording. Check '
              'aistudio.google.com for your model\'s actual current price.'
     )
+
+    nottaker_output_language = fields.Selection(
+        [('es', 'Español'), ('en', 'English'), ('pt', 'Português'), ('fr', 'Français'), ('auto', 'Same as the meeting')],
+        string='Notes Language', config_parameter='odoo_nottaker.output_language', default='es',
+        help='Language of the summary, key points and action items.')
+    nottaker_key_source = fields.Char(compute='_compute_nottaker_key_source')
+
+    def _compute_nottaker_key_source(self):
+        ICP = self.env['ir.config_parameter'].sudo()
+        own = (ICP.get_param('odoo_nottaker.gemini_api_key') or '').strip()
+        shared = GeminiService._fallback_key(self.env) if not own else ''
+        for rec in self:
+            rec.nottaker_key_source = (
+                _("Using this key") if own else
+                _("No key here: using the Gemini key configured in Scout Management (AI settings)") if shared else
+                _("No Gemini key configured: transcription will fail"))
+
+    def action_nottaker_test_connection(self):
+        self.ensure_one()
+        self.execute()  # save first, so the key just pasted is the one tested
+        model = GeminiService.test_connection(self.env)
+        return {
+            'type': 'ir.actions.client', 'tag': 'display_notification',
+            'params': {'type': 'success', 'sticky': False,
+                       'message': _("Google Gemini answered correctly (model %s).", model)},
+        }

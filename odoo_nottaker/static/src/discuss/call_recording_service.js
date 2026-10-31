@@ -75,6 +75,10 @@ export class CallRecordingService {
         this.segmentTimer = null;
         this.segmentMediaRecorder = null;
         this.segmentChunks = [];
+        this.audioOnlyRecorder = null;
+        this.audioOnlyChunks = [];
+        this.mixAudioStream = null;
+        this.heartbeatInterval = null;
         this.currentSegmentSpeakers = new Map();
         this.mixedAudioSourceKeys = new Set();
         this.pendingSegmentUploads = [];
@@ -292,6 +296,29 @@ export class CallRecordingService {
                 this.segmentChunks.push(event.data);
             }
         };
+        // Screen video is huge (4 Mbps) and expensive to transcribe: record the same mixed
+        // audio separately so only that small file goes to Gemini.
+        this.audioOnlyChunks = [];
+        this.audioOnlyRecorder = null;
+        if (this.isVideoRecording && this.mixAudioStream) {
+            try {
+                const aMime = this._audioMimeType();
+                this.audioOnlyRecorder = new MediaRecorder(this.mixAudioStream, {
+                    ...(aMime && { mimeType: aMime }),
+                    audioBitsPerSecond: 64_000,
+                });
+                const chunksRef = this.audioOnlyChunks;
+                this.audioOnlyRecorder.ondataavailable = (event) => {
+                    if (event.data && event.data.size > 0) {
+                        chunksRef.push(event.data);
+                    }
+                };
+                this.audioOnlyRecorder.start(1000);
+            } catch (e) {
+                console.warn("Note Taker: could not start the audio-only recorder:", e);
+                this.audioOnlyRecorder = null;
+            }
+        }
         this.segmentStartTime = Date.now();
         this.segmentMediaRecorder.start(1000);
         this.segmentTimer = setTimeout(() => this._rotateSegment(), SEGMENT_DURATION_MS);
@@ -301,6 +328,8 @@ export class CallRecordingService {
     async _finalizeCurrentSegmentForUpload({ isLast }) {
         const mediaRecorder = this.segmentMediaRecorder;
         const chunks = this.segmentChunks;
+        const audioOnlyRecorder = this.audioOnlyRecorder;
+        const audioOnlyChunks = this.audioOnlyChunks;
         const speakers = this.currentSegmentSpeakers;
         const startOffset = (this.segmentStartTime - this.meetingStartTime) / 1000;
         const index = this.segmentIndex;
@@ -319,6 +348,19 @@ export class CallRecordingService {
             }
         });
         await this._stopSpeakerRecordersMap(speakers);
+        if (audioOnlyRecorder && audioOnlyRecorder.state !== "inactive") {
+            await new Promise((resolve) => {
+                audioOnlyRecorder.addEventListener("stop", resolve, { once: true });
+                try {
+                    audioOnlyRecorder.stop();
+                } catch {
+                    resolve();
+                }
+            });
+        }
+        const audioOnlyBlob = audioOnlyChunks.length
+            ? new Blob(audioOnlyChunks, { type: audioOnlyRecorder?.mimeType || "audio/webm" })
+            : null;
 
         const duration = (Date.now() - this.segmentStartTime) / 1000;
         const mimeType = mediaRecorder?.mimeType || (this.isVideoRecording ? "video/webm" : "audio/webm");
@@ -333,7 +375,7 @@ export class CallRecordingService {
             }
         }
 
-        return { index, startOffset, duration, blob, speakerClips, isLast };
+        return { index, startOffset, duration, blob, audioOnlyBlob, speakerClips, isLast };
     }
 
     /** Rotation timer callback: closes out the current segment and immediately starts the next
@@ -367,13 +409,16 @@ export class CallRecordingService {
             formData.append("duration", seg.duration.toString());
             formData.append("is_video", this.isVideoRecording ? "1" : "0");
             formData.append("is_last", seg.isLast ? "1" : "0");
+            if (seg.audioOnlyBlob && seg.audioOnlyBlob.size > 0) {
+                formData.append("transcribe_audio", seg.audioOnlyBlob, `segment_${seg.index}_audio.webm`);
+            }
             for (const { name, blob } of seg.speakerClips) {
                 formData.append("speaker_names", name);
                 formData.append("speaker_audio", blob, "speaker.webm");
             }
 
             let resData = { status: "error", message: "upload never attempted" };
-            for (let attempt = 1; attempt <= 2; attempt++) {
+            for (let attempt = 1; attempt <= 3; attempt++) {
                 try {
                     const response = await fetch("/odoo_nottaker/upload_segment", {
                         method: "POST",
@@ -383,11 +428,11 @@ export class CallRecordingService {
                 } catch (err) {
                     resData = { status: "error", message: String(err) };
                 }
-                if (resData.status === "success" || attempt === 2) {
+                if (resData.status === "success" || attempt === 3) {
                     break;
                 }
                 console.warn(`Note Taker: segment ${seg.index} upload attempt ${attempt} failed (${resData.message}), retrying...`);
-                await new Promise((resolve) => setTimeout(resolve, 1500));
+                await new Promise((resolve) => setTimeout(resolve, 3000 * attempt));
             }
             if (resData.status !== "success") {
                 console.error(`Note Taker: segment ${seg.index} failed to upload:`, resData.message);
@@ -496,6 +541,7 @@ export class CallRecordingService {
             // Build the persistent record stream once: screen video (if granted) + mixed
             // audio, or audio only. Segments are just repeated MediaRecorder passes over this
             // same stream - the underlying tracks never stop/restart between segments.
+            this.mixAudioStream = destination.stream;
             this.isVideoRecording = Boolean(this.screenCaptureStream && this.screenCaptureStream.getVideoTracks().length > 0);
             if (this.isVideoRecording) {
                 this.recordStream = new MediaStream([
@@ -514,11 +560,32 @@ export class CallRecordingService {
 
             // Create the parent recording record up front so segments have somewhere to attach
             // to as they're produced throughout the meeting.
-            const { recording_id } = await rpc("/odoo_nottaker/start_recording", {
+            const startRes = await rpc("/odoo_nottaker/start_recording", {
                 channel_id: thread?.id || this._rtc?.state?.channel?.id || null,
                 partner_ids: this._computePartnerIds(),
             });
+            if (startRes.already_recording) {
+                this.notification.add(
+                    _t("This call is already being recorded by %s.", startRes.recorded_by || "?"),
+                    { title: _t("Auto Note Taker"), type: "info" }
+                );
+                this._teardownScreenCapture();
+                try {
+                    await this.audioContext.close();
+                } catch {
+                    // ignore
+                }
+                this.audioContext = null;
+                this._resetSegmentedState();
+                return;
+            }
+            const { recording_id } = startRes;
             this.recordingId = recording_id;
+            this.heartbeatInterval = setInterval(() => {
+                if (this.recordingId) {
+                    rpc("/odoo_nottaker/heartbeat", { recording_id: this.recordingId }).catch(() => {});
+                }
+            }, 120000);
 
             this._startSegment();
             this.audioRescanInterval = setInterval(() => this._rescanParticipantAudio(), AUDIO_RESCAN_INTERVAL);
@@ -555,6 +622,9 @@ export class CallRecordingService {
             if (this.audioRescanInterval) {
                 clearInterval(this.audioRescanInterval);
             }
+            if (this.heartbeatInterval) {
+                clearInterval(this.heartbeatInterval);
+            }
             if (this.segmentTimer) {
                 clearTimeout(this.segmentTimer);
             }
@@ -581,7 +651,13 @@ export class CallRecordingService {
             this.segmentTimer = null;
         }
 
+        if (this.heartbeatInterval) {
+            clearInterval(this.heartbeatInterval);
+            this.heartbeatInterval = null;
+        }
         this.state.isRecording = false;
+        const recordingId = this.recordingId;
+        const meetingDuration = this.meetingStartTime ? (Date.now() - this.meetingStartTime) / 1000 : 0;
 
         const finalSegment = await this._finalizeCurrentSegmentForUpload({ isLast: true });
         this._uploadSegmentInBackground(finalSegment);
@@ -603,6 +679,15 @@ export class CallRecordingService {
         });
 
         await Promise.allSettled(this.pendingSegmentUploads);
+        try {
+            await rpc("/odoo_nottaker/finish_recording", {
+                recording_id: recordingId,
+                total_segments: this.segmentIndex,
+                duration: meetingDuration,
+            });
+        } catch (e) {
+            console.warn("Note Taker: finish_recording failed", e);
+        }
 
         this.notification.add(
             _t("Recording uploaded - transcribing and generating AI notes in the background. Check Meeting Recordings & AI Notes shortly."),

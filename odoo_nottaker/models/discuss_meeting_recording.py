@@ -3,6 +3,7 @@ import base64
 import logging
 import re
 import threading
+from datetime import timedelta
 from odoo import models, fields, api, SUPERUSER_ID, _
 from odoo.exceptions import UserError
 from odoo.modules.registry import Registry
@@ -59,6 +60,8 @@ class DiscussMeetingRecording(models.Model):
     action_items = fields.Html(string='Action Items', sanitize=False)
 
     error_message = fields.Text(string='Processing Error')
+    finalize_start = fields.Datetime(string='Finalizing Since', copy=False)
+    failed_segment_count = fields.Integer(compute='_compute_failed_segment_count')
     posted_to_chat = fields.Boolean(string='Posted to Channel Chat', default=False)
 
     # Real numbers from Gemini's own usageMetadata on every call this recording made (each
@@ -72,6 +75,11 @@ class DiscussMeetingRecording(models.Model):
     estimated_cost = fields.Float(string='Estimated Cost ($)', default=0.0, digits=(16, 4),
                                    help='Estimated based on the per-1M-token prices configured in Settings. '
                                         'Actual billing depends on your Gemini plan/model and may differ.')
+
+    @api.depends('segment_ids.state')
+    def _compute_failed_segment_count(self):
+        for rec in self:
+            rec.failed_segment_count = len(rec.segment_ids.filtered(lambda s: s.state == 'failed'))
 
     @api.depends('duration')
     def _compute_duration_display(self):
@@ -245,15 +253,33 @@ class DiscussMeetingRecording(models.Model):
             )
             rec.invalidate_recordset(['state'])
             if rec.state not in ('recording', 'processing'):
-                continue  # already finalized (or being finalized) by another segment's thread
+                continue  # already finalized
+            if rec.finalize_start and rec.finalize_start > fields.Datetime.now() - timedelta(minutes=15):
+                continue  # being finalized by another segment's thread
             segments = rec.segment_ids.filtered(lambda s: s.sequence < rec.total_segments)
             if len(segments) < rec.total_segments:
                 continue  # not all segments have arrived yet
             if any(s.state not in ('completed', 'failed') for s in segments):
                 continue  # still processing
-            rec.state = 'processing'
+            rec.write({'state': 'processing', 'finalize_start': fields.Datetime.now()})
             self.env.cr.commit()  # release the lock before the (possibly slow) synthesis call
             rec._do_finalize(segments)
+
+    def _check_and_finalize_async(self):
+        self.env.cr.commit()
+        for rec in self:
+            threading.Thread(target=self._check_finalize_thread, args=(self.env.cr.dbname, rec.id),
+                             daemon=True).start()
+
+    @api.model
+    def _check_finalize_thread(self, db_name, recording_id):
+        with Registry(db_name).cursor() as cr:
+            env = api.Environment(cr, SUPERUSER_ID, {})
+            try:
+                env['discuss.meeting.recording'].browse(recording_id)._check_and_finalize()
+                cr.commit()
+            except Exception:
+                _logger.exception("Finalize check failed for recording %s", recording_id)
 
     def _do_finalize(self, segments):
         """Merges all segment transcripts and runs one lightweight text-only Gemini pass to
@@ -299,13 +325,19 @@ class DiscussMeetingRecording(models.Model):
             output_tokens = sum(segments.mapped('output_tokens')) + summary_result.get('output_tokens', 0)
             total_tokens = sum(segments.mapped('total_tokens')) + summary_result.get('total_tokens', 0)
 
+            errors = []
+            for seg in failed_segments.sorted('sequence'):
+                errors.append(_("Segment %(n)s: %(err)s", n=seg.sequence + 1,
+                                err=seg.error_message or _("unknown error")))
             self.write({
+                'finalize_start': False,
                 'transcript': failed_note + merged_transcript,
                 'summary': summary_result.get('summary'),
                 'key_points': summary_result.get('key_points'),
                 'action_items': summary_result.get('action_items'),
                 'state': 'completed' if ok_segments else 'failed',
-                'error_message': False if ok_segments else 'All segments failed to transcribe.',
+                'error_message': ("\n".join(errors) if errors else False) if ok_segments else (
+                    _("No segment could be transcribed:") + "\n" + "\n".join(errors)),
                 'prompt_tokens': prompt_tokens,
                 'output_tokens': output_tokens,
                 'total_tokens_used': total_tokens,
@@ -319,7 +351,8 @@ class DiscussMeetingRecording(models.Model):
                 self.action_post_to_chat()
         except Exception as e:
             _logger.exception("Error finalizing recording %s: %s", self.id, str(e))
-            self.write({'state': 'failed', 'error_message': str(e)})
+            self.env.cr.rollback()
+            self.write({'state': 'failed', 'error_message': str(e), 'finalize_start': False})
 
     def action_finalize_now(self):
         """Manual fallback: force-finalize using whatever segments currently exist, in case the
@@ -330,8 +363,8 @@ class DiscussMeetingRecording(models.Model):
                 raise UserError(_("No segments to finalize."))
             if any(s.state == 'processing' for s in segments):
                 raise UserError(_("Some segments are still being transcribed - wait for them to finish first."))
-            rec.total_segments = max(rec.total_segments, len(segments))
-            rec.state = 'processing'
+            rec.total_segments = max(rec.total_segments, max(segments.mapped('sequence')) + 1)
+            rec.write({'state': 'processing', 'finalize_start': fields.Datetime.now()})
         self.env.cr.commit()
 
         for rec in self:
@@ -352,6 +385,25 @@ class DiscussMeetingRecording(models.Model):
             except Exception:
                 _logger.exception("Manual finalize failed for recording %s", recording_id)
             cr.commit()
+
+    def action_retry_failed(self):
+        """Re-transcribes the failed segments (e.g. after fixing the API key or once the Gemini
+        quota resets); the recording is finalized again automatically when they finish."""
+        for rec in self:
+            failed = rec.segment_ids.filtered(lambda s: s.state in ('failed', 'draft'))
+            if not failed:
+                raise UserError(_("There are no failed segments to retry."))
+            if not rec.total_segments:
+                rec.total_segments = max(rec.segment_ids.mapped('sequence')) + 1
+            rec.write({'state': 'processing', 'error_message': False, 'finalize_start': False})
+            failed.write({'attempts': 0})
+            failed.action_process_segment()
+        return {
+            'type': 'ir.actions.client', 'tag': 'display_notification',
+            'params': {'type': 'info', 'message': _("Retrying transcription in the background. "
+                                                     "Reload this page in a minute."),
+                       'next': {'type': 'ir.actions.client', 'tag': 'soft_reload'}},
+        }
 
     def action_post_to_chat(self):
         for rec in self:

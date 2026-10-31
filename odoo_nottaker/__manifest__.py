@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 {
     'name': 'Discuss Call Recorder & AI Note Taker',
-    'version': '19.0.1.0.3',
+    'version': '19.0.1.1.0',
     'category': 'Productivity/Discuss',
     'summary': 'Record Discuss calls, transcribe speech to text, and generate AI meeting minutes with Google Gemini',
     'description': """
@@ -21,6 +21,7 @@ Discuss Call Recorder & AI Note Taker
     'depends': ['base', 'mail', 'web'],
     'data': [
         'security/ir.model.access.csv',
+        'data/ir_cron.xml',
         'views/discuss_meeting_recording_send_wizard_views.xml',
         'views/discuss_meeting_recording_views.xml',
         'views/discuss_meeting_recording_usage_log_views.xml',

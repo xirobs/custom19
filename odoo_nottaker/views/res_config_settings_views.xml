@@ -11,13 +11,19 @@
                         <field name="auto_record_calls"/>
                     </setting>
                     <setting id="gemini_api_key_setting" string="Google Gemini API Key" help="Free API key from Google AI Studio (https://aistudio.google.com/) for speech-to-text and AI summaries">
-                        <field name="gemini_api_key" placeholder="AIzaSy..."/>
+                        <field name="gemini_api_key" placeholder="AIzaSy..." password="True"/>
+                        <div class="small mt-1"><field name="nottaker_key_source" readonly="1"/></div>
+                        <button name="action_nottaker_test_connection" type="object" string="Test connection"
+                                class="btn-link px-0" icon="fa-plug"/>
                         <div class="text-muted small mt-1">
                             Get your free API key at <a href="https://aistudio.google.com/" target="_blank">Google AI Studio</a>.
                         </div>
                     </setting>
                     <setting id="gemini_model_setting" string="AI Model" help="Model used for audio transcription and meeting minutes generation">
                         <field name="gemini_model"/>
+                    </setting>
+                    <setting id="nottaker_language_setting" string="Notes Language" help="Language of the summary, key points and action items (the transcript keeps the spoken language)">
+                        <field name="nottaker_output_language"/>
                     </setting>
                     <setting id="gemini_auto_post_setting" string="Auto-Post to Channel Chat" help="Post meeting summary and action items directly to the Discuss channel when recording processing finishes">
                         <field name="gemini_auto_post_to_chat"/>

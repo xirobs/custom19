@@ -3,6 +3,8 @@ import base64
 import json
 import logging
 from markupsafe import escape
+from datetime import timedelta
+
 from odoo import http, fields, _
 from odoo.http import request
 from odoo.tools import consteq
@@ -90,13 +92,51 @@ class DiscussNoteTakerController(http.Controller):
             if channel.exists():
                 channel_name = channel.name
 
-        recording = request.env['discuss.meeting.recording'].create({
+        Recording = request.env['discuss.meeting.recording']
+        if channel and channel.exists():
+            # Only one recorder per call: every participant with auto-record on would otherwise
+            # upload (and pay Gemini for) their own copy of the same meeting.
+            active = Recording.sudo().search([
+                ('channel_id', '=', channel.id), ('state', '=', 'recording'),
+                ('write_date', '>', fields.Datetime.now() - timedelta(minutes=8)),
+            ], limit=1)
+            if active and active.user_id != request.env.user:
+                return {'already_recording': True, 'recorded_by': active.user_id.name or ''}
+        recording = Recording.create({
             'name': f"Meeting Recording - {channel_name} ({fields.Datetime.now().strftime('%Y-%m-%d %H:%M')})",
             'channel_id': channel.id if channel and channel.exists() else False,
             'partner_ids': [(6, 0, partner_ids)] if partner_ids else False,
             'state': 'recording',
         })
         return {'recording_id': recording.id}
+
+    @http.route('/odoo_nottaker/heartbeat', type='jsonrpc', auth='user')
+    def heartbeat(self, recording_id):
+        """Keeps the 'one recorder per call' lock alive during long segments."""
+        recording = request.env['discuss.meeting.recording'].browse(int(recording_id)).exists()
+        if recording and recording.state == 'recording':
+            recording.sudo().write({'end_time': fields.Datetime.now()})
+        return True
+
+    @http.route('/odoo_nottaker/finish_recording', type='jsonrpc', auth='user')
+    def finish_recording(self, recording_id, total_segments, duration=0.0):
+        """Called when the call ends, so the recording gets finalized even when the last
+        segment was empty and therefore never uploaded."""
+        recording = request.env['discuss.meeting.recording'].browse(int(recording_id)).exists()
+        if not recording:
+            return False
+        if not recording.total_segments:
+            uploaded = recording.segment_ids.mapped('sequence')
+            vals = {'total_segments': (max(uploaded) + 1) if uploaded else 0,
+                    'end_time': fields.Datetime.now()}
+            if duration:
+                vals['duration'] = float(duration)
+            if not uploaded:
+                vals.update(state='failed', error_message=_("No audio was captured during the call."))
+            recording.write(vals)
+            if uploaded:
+                recording._check_and_finalize_async()
+        return True
 
     @http.route('/odoo_nottaker/upload_segment', type='http', auth='user', methods=['POST'],
                 csrf=False, max_content_length=SEGMENT_MAX_CONTENT_LENGTH)
@@ -128,22 +168,52 @@ class DiscussNoteTakerController(http.Controller):
             # Isolated per-participant clips for this segment only, paired by position (the
             # i-th name goes with the i-th audio file) - helps Gemini label the segment's
             # transcript with real names instead of guessing "Speaker 1".
+            existing = request.env['discuss.meeting.recording.segment'].search(
+                [('recording_id', '=', recording.id), ('sequence', '=', sequence)], limit=1)
+            if existing:
+                # the browser retried an upload that actually reached us: don't duplicate it
+                return request.make_json_response({'status': 'success', 'segment_id': existing.id,
+                                                   'recording_id': recording.id})
+
             speaker_names = request.httprequest.form.getlist('speaker_names')
             speaker_files = request.httprequest.files.getlist('speaker_audio')
-            speaker_clips = []
+            Attachment = request.env['ir.attachment']
+            speaker_attachments = Attachment
             for name, sfile in zip(speaker_names, speaker_files):
                 try:
-                    speaker_clips.append((name, sfile.read(), sfile.content_type or 'audio/webm'))
+                    clip = sfile.read()
+                    if len(clip) < 2048:  # muted the whole segment: nothing useful (and often invalid)
+                        continue
+                    speaker_attachments |= Attachment.create({
+                        'name': f"{recording.name}_segment{sequence}_speaker.webm",
+                        'description': name,
+                        'type': 'binary',
+                        'datas': base64.b64encode(clip),
+                        'mimetype': (sfile.content_type or 'audio/webm').split(';')[0],
+                        'res_model': 'discuss.meeting.recording.segment',
+                    })
                 except Exception:
                     _logger.warning("Could not read isolated speaker clip for %s", name)
 
-            attachment = request.env['ir.attachment'].create({
+            attachment = Attachment.create({
                 'name': filename,
                 'type': 'binary',
                 'datas': audio_b64,
-                'mimetype': mimetype,
+                'mimetype': mimetype.split(';')[0],
                 'res_model': 'discuss.meeting.recording.segment',
             })
+            transcription_attachment = Attachment
+            tfile = request.httprequest.files.get('transcribe_audio')
+            if tfile:
+                tbytes = tfile.read()
+                if tbytes:
+                    transcription_attachment = Attachment.create({
+                        'name': f"{recording.name}_segment{sequence}_audio.webm",
+                        'type': 'binary',
+                        'datas': base64.b64encode(tbytes),
+                        'mimetype': (tfile.content_type or 'audio/webm').split(';')[0],
+                        'res_model': 'discuss.meeting.recording.segment',
+                    })
 
             segment = request.env['discuss.meeting.recording.segment'].create({
                 'recording_id': recording.id,
@@ -151,11 +221,14 @@ class DiscussNoteTakerController(http.Controller):
                 'start_offset': start_offset,
                 'is_last': is_last,
                 'audio_attachment_id': attachment.id,
+                'transcription_attachment_id': transcription_attachment.id or False,
+                'speaker_attachment_ids': [(6, 0, speaker_attachments.ids)],
             })
-            attachment.write({'res_id': segment.id})
+            (attachment | transcription_attachment | speaker_attachments).write({'res_id': segment.id})
 
             if is_last:
                 recording.write({
+                    'end_time': fields.Datetime.now(),
                     'total_segments': sequence + 1,
                     'duration': start_offset + duration,
                 })
@@ -164,7 +237,7 @@ class DiscussNoteTakerController(http.Controller):
             # response below must return immediately regardless of how long Gemini takes.
             request.env.cr.commit()
 
-            segment.action_process_segment(speaker_clips=speaker_clips)
+            segment.action_process_segment()
 
             return request.make_json_response({
                 'status': 'success',

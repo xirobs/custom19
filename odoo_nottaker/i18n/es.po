@@ -1,0 +1,1400 @@
+# Translation of Odoo Server.
+# This file contains the translation of the following modules:
+# 	* odoo_nottaker
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: Odoo Server 19.0\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-10-31 12:49+0000\n"
+"PO-Revision-Date: 2026-10-31 12:49+0000\n"
+"Last-Translator: \n"
+"Language-Team: \n"
+"Language: es\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: \n"
+"Plural-Forms: \n"
+
+#. module: odoo_nottaker
+#: model_terms:ir.ui.view,arch_db:odoo_nottaker.res_config_settings_view_form_inherit_nottaker
+msgid "$ per 1M input tokens"
+msgstr ""
+
+#. module: odoo_nottaker
+#: model_terms:ir.ui.view,arch_db:odoo_nottaker.res_config_settings_view_form_inherit_nottaker
+msgid "$ per 1M output tokens"
+msgstr ""
+
+#. module: odoo_nottaker
+#. odoo-python
+#: code:addons/odoo_nottaker/models/discuss_meeting_recording_segment.py:0
+msgid "(segment without audio)"
+msgstr "(segmento sin audio)"
+
+#. module: odoo_nottaker
+#: model_terms:ir.ui.view,arch_db:odoo_nottaker.view_discuss_meeting_recording_form
+msgid "<i class=\"fa fa-check-square-o\"/> Action Items &amp; Next Steps"
+msgstr "<i class=\"fa fa-check-square-o\"/> Tareas y próximos pasos"
+
+#. module: odoo_nottaker
+#: model_terms:ir.ui.view,arch_db:odoo_nottaker.view_discuss_meeting_recording_form
+msgid "<i class=\"fa fa-file-text-o\"/> Executive Summary"
+msgstr "<i class=\"fa fa-file-text-o\"/> Resumen ejecutivo"
+
+#. module: odoo_nottaker
+#: model_terms:ir.ui.view,arch_db:odoo_nottaker.view_discuss_meeting_recording_form
+msgid "<i class=\"fa fa-list-ul\"/> Key Discussion Points &amp; Decisions"
+msgstr "<i class=\"fa fa-list-ul\"/> Puntos clave y acuerdos"
+
+#. module: odoo_nottaker
+#: model_terms:ir.ui.view,arch_db:odoo_nottaker.view_discuss_meeting_recording_form
+msgid "<strong>Processing Error: </strong>"
+msgstr "<strong>Error de procesamiento: </strong>"
+
+#. module: odoo_nottaker
+#. odoo-javascript
+#: code:addons/odoo_nottaker/static/src/discuss/call_recording_service.js:0
+msgid "A recording segment failed to upload - the transcript may have a gap. "
+msgstr ""
+"No se pudo subir un segmento de la grabación; la transcripción puede tener "
+"un hueco. "
+
+#. module: odoo_nottaker
+#: model_terms:ir.ui.view,arch_db:odoo_nottaker.res_config_settings_view_form_inherit_nottaker
+msgid "AI Model"
+msgstr "Modelo de IA"
+
+#. module: odoo_nottaker
+#: model_terms:ir.ui.view,arch_db:odoo_nottaker.res_config_settings_view_form_inherit_nottaker
+msgid "AIzaSy..."
+msgstr ""
+
+#. module: odoo_nottaker
+#: model:ir.model.fields,field_description:odoo_nottaker.field_discuss_meeting_recording__action_items
+msgid "Action Items"
+msgstr "Tareas"
+
+#. module: odoo_nottaker
+#: model:ir.model.fields,field_description:odoo_nottaker.field_discuss_meeting_recording__message_needaction
+msgid "Action Needed"
+msgstr ""
+
+#. module: odoo_nottaker
+#: model:ir.model.fields,field_description:odoo_nottaker.field_discuss_meeting_recording__activity_ids
+msgid "Activities"
+msgstr ""
+
+#. module: odoo_nottaker
+#: model:ir.model.fields,field_description:odoo_nottaker.field_discuss_meeting_recording__activity_exception_decoration
+msgid "Activity Exception Decoration"
+msgstr ""
+
+#. module: odoo_nottaker
+#: model:ir.model.fields,field_description:odoo_nottaker.field_discuss_meeting_recording__activity_state
+msgid "Activity State"
+msgstr ""
+
+#. module: odoo_nottaker
+#: model:ir.model.fields,field_description:odoo_nottaker.field_discuss_meeting_recording__activity_type_icon
+msgid "Activity Type Icon"
+msgstr ""
+
+#. module: odoo_nottaker
+#: model:ir.model.fields,field_description:odoo_nottaker.field_discuss_meeting_recording_send_wizard__extra_emails
+msgid "Additional Emails"
+msgstr "Correos adicionales"
+
+#. module: odoo_nottaker
+#: model:ir.model.fields,field_description:odoo_nottaker.field_discuss_meeting_recording__message_attachment_count
+msgid "Attachment Count"
+msgstr ""
+
+#. module: odoo_nottaker
+#: model:ir.model.fields,field_description:odoo_nottaker.field_discuss_meeting_recording_segment__attempts
+msgid "Attempts"
+msgstr "Intentos"
+
+#. module: odoo_nottaker
+#: model:ir.model.fields,field_description:odoo_nottaker.field_discuss_meeting_recording__partner_ids
+#: model_terms:ir.ui.view,arch_db:odoo_nottaker.view_discuss_meeting_recording_form
+msgid "Attendees"
+msgstr "Asistentes"
+
+#. module: odoo_nottaker
+#: model_terms:ir.ui.view,arch_db:odoo_nottaker.view_discuss_meeting_recording_send_wizard_form
+msgid "Attendees with an email on file..."
+msgstr ""
+
+#. module: odoo_nottaker
+#: model:ir.model.fields,field_description:odoo_nottaker.field_discuss_meeting_recording__audio_attachment_id
+msgid "Audio File"
+msgstr "Archivo de audio"
+
+#. module: odoo_nottaker
+#: model:ir.model.fields,field_description:odoo_nottaker.field_discuss_meeting_recording__audio_player_html
+msgid "Audio Player"
+msgstr "Reproductor"
+
+#. module: odoo_nottaker
+#: model:ir.model.fields,field_description:odoo_nottaker.field_discuss_meeting_recording_segment__transcription_attachment_id
+msgid "Audio for Transcription"
+msgstr "Audio para transcribir"
+
+#. module: odoo_nottaker
+#. odoo-javascript
+#: code:addons/odoo_nottaker/static/src/discuss/call_recording_service.js:0
+msgid "Auto Note Taker"
+msgstr "Toma de notas automática"
+
+#. module: odoo_nottaker
+#: model_terms:ir.ui.view,arch_db:odoo_nottaker.res_config_settings_view_form_inherit_nottaker
+msgid "Auto-Post to Channel Chat"
+msgstr "Publicar en el chat del canal"
+
+#. module: odoo_nottaker
+#: model:ir.model.fields,field_description:odoo_nottaker.field_res_config_settings__auto_record_calls
+#: model_terms:ir.ui.view,arch_db:odoo_nottaker.res_config_settings_view_form_inherit_nottaker
+msgid "Auto-Record Meetings"
+msgstr "Grabar reuniones automáticamente"
+
+#. module: odoo_nottaker
+#: model:ir.model.fields,field_description:odoo_nottaker.field_res_config_settings__gemini_auto_post_to_chat
+msgid "Auto-post Summary to Discuss Channel"
+msgstr "Publicar el resumen en el canal"
+
+#. module: odoo_nottaker
+#. odoo-javascript
+#: code:addons/odoo_nottaker/static/src/discuss/call_recording_service.js:0
+msgid ""
+"Auto-record can't open the screen-share picker (browsers require a click). "
+"Recording audio only - click \"Start Recording\" manually to capture your "
+"screen."
+msgstr ""
+
+#. module: odoo_nottaker
+#: model:ir.model.fields,help:odoo_nottaker.field_res_config_settings__gemini_auto_post_to_chat
+msgid ""
+"Automatically post the generated meeting summary into the Discuss channel "
+"when processing is done."
+msgstr ""
+"Publica el resumen en el canal de Conversaciones cuando termina el "
+"procesamiento."
+
+#. module: odoo_nottaker
+#: model:ir.model.fields,help:odoo_nottaker.field_res_config_settings__auto_record_calls
+msgid ""
+"Automatically start recording when a meeting starts and stop/transcribe when"
+" the call ends."
+msgstr ""
+"Empieza a grabar al iniciar la reunión y transcribe al terminar la llamada."
+
+#. module: odoo_nottaker
+#: model_terms:ir.ui.view,arch_db:odoo_nottaker.res_config_settings_view_form_inherit_nottaker
+msgid ""
+"Automatically start recording when entering a call and automatically process"
+" AI transcript & notes when ending the call"
+msgstr ""
+"Empieza a grabar al entrar a una llamada y genera la transcripción y las "
+"notas con IA al terminarla"
+
+#. module: odoo_nottaker
+#: model_terms:ir.ui.view,arch_db:odoo_nottaker.view_discuss_meeting_recording_form
+msgid "Call Duration"
+msgstr "Duración de la llamada"
+
+#. module: odoo_nottaker
+#: model:ir.model.fields,field_description:odoo_nottaker.field_discuss_meeting_recording_usage_log__call_type
+#: model_terms:ir.ui.view,arch_db:odoo_nottaker.view_discuss_meeting_recording_usage_log_search
+msgid "Call Type"
+msgstr "Tipo de llamada"
+
+#. module: odoo_nottaker
+#. odoo-javascript
+#: code:addons/odoo_nottaker/static/src/discuss/call_recording_service.js:0
+msgid "Call ended: uploading final recording segment(s)..."
+msgstr "Llamada terminada: subiendo los últimos segmentos de la grabación..."
+
+#. module: odoo_nottaker
+#: model_terms:ir.ui.view,arch_db:odoo_nottaker.view_discuss_meeting_recording_send_wizard_form
+msgid "Cancel"
+msgstr "Cancelar"
+
+#. module: odoo_nottaker
+#: model:ir.model.fields,help:odoo_nottaker.field_discuss_meeting_recording_send_wizard__extra_emails
+msgid ""
+"Comma-separated email addresses - use this for guests who joined without an "
+"Odoo account, since they usually don't have an email on file to pick from "
+"above."
+msgstr ""
+
+#. module: odoo_nottaker
+#: model:ir.model.fields.selection,name:odoo_nottaker.selection__discuss_meeting_recording__state__completed
+#: model:ir.model.fields.selection,name:odoo_nottaker.selection__discuss_meeting_recording_segment__state__completed
+#: model_terms:ir.ui.view,arch_db:odoo_nottaker.view_discuss_meeting_recording_search
+msgid "Completed"
+msgstr "Completada"
+
+#. module: odoo_nottaker
+#: model:ir.model,name:odoo_nottaker.model_res_config_settings
+msgid "Config Settings"
+msgstr ""
+
+#. module: odoo_nottaker
+#: model:ir.model.fields,field_description:odoo_nottaker.field_discuss_meeting_recording__create_uid
+#: model:ir.model.fields,field_description:odoo_nottaker.field_discuss_meeting_recording_segment__create_uid
+#: model:ir.model.fields,field_description:odoo_nottaker.field_discuss_meeting_recording_send_wizard__create_uid
+#: model:ir.model.fields,field_description:odoo_nottaker.field_discuss_meeting_recording_usage_log__create_uid
+msgid "Created by"
+msgstr ""
+
+#. module: odoo_nottaker
+#: model:ir.model.fields,field_description:odoo_nottaker.field_discuss_meeting_recording__create_date
+#: model:ir.model.fields,field_description:odoo_nottaker.field_discuss_meeting_recording_segment__create_date
+#: model:ir.model.fields,field_description:odoo_nottaker.field_discuss_meeting_recording_send_wizard__create_date
+#: model:ir.model.fields,field_description:odoo_nottaker.field_discuss_meeting_recording_usage_log__create_date
+msgid "Created on"
+msgstr ""
+
+#. module: odoo_nottaker
+#: model:ir.model.fields,field_description:odoo_nottaker.field_res_config_settings__gemini_custom_prompt
+msgid "Custom AI Instructions / Language"
+msgstr "Instrucciones adicionales para la IA"
+
+#. module: odoo_nottaker
+#: model_terms:ir.ui.view,arch_db:odoo_nottaker.res_config_settings_view_form_inherit_nottaker
+msgid "Custom Prompt / Instructions"
+msgstr "Instrucciones adicionales"
+
+#. module: odoo_nottaker
+#: model_terms:ir.ui.view,arch_db:odoo_nottaker.view_discuss_meeting_recording_usage_log_search
+msgid "Day"
+msgstr ""
+
+#. module: odoo_nottaker
+#: model_terms:ir.ui.view,arch_db:odoo_nottaker.res_config_settings_view_form_inherit_nottaker
+msgid "Discuss AI Note Taker & Call Recorder"
+msgstr "Grabación de llamadas y notas con IA"
+
+#. module: odoo_nottaker
+#: model:ir.model.fields,field_description:odoo_nottaker.field_discuss_meeting_recording__channel_id
+#: model_terms:ir.ui.view,arch_db:odoo_nottaker.view_discuss_meeting_recording_search
+msgid "Discuss Channel"
+msgstr "Canal"
+
+#. module: odoo_nottaker
+#: model:ir.model,name:odoo_nottaker.model_discuss_meeting_recording
+msgid "Discuss Meeting Recording & AI Notes"
+msgstr "Grabación de reunión y notas IA"
+
+#. module: odoo_nottaker
+#: model:ir.model,name:odoo_nottaker.model_discuss_meeting_recording_segment
+msgid "Discuss Meeting Recording Segment"
+msgstr "Segmento de grabación"
+
+#. module: odoo_nottaker
+#: model:ir.model,name:odoo_nottaker.model_discuss_channel
+msgid "Discussion Channel"
+msgstr ""
+
+#. module: odoo_nottaker
+#: model:ir.model.fields,field_description:odoo_nottaker.field_discuss_channel__display_name
+#: model:ir.model.fields,field_description:odoo_nottaker.field_discuss_meeting_recording__display_name
+#: model:ir.model.fields,field_description:odoo_nottaker.field_discuss_meeting_recording_segment__display_name
+#: model:ir.model.fields,field_description:odoo_nottaker.field_discuss_meeting_recording_send_wizard__display_name
+#: model:ir.model.fields,field_description:odoo_nottaker.field_discuss_meeting_recording_usage_log__display_name
+#: model:ir.model.fields,field_description:odoo_nottaker.field_res_config_settings__display_name
+msgid "Display Name"
+msgstr ""
+
+#. module: odoo_nottaker
+#. odoo-javascript
+#: code:addons/odoo_nottaker/static/src/discuss/call_recording_service.js:0
+msgid "Don't Record"
+msgstr "No grabar"
+
+#. module: odoo_nottaker
+#: model:ir.model.fields,field_description:odoo_nottaker.field_discuss_meeting_recording__duration_display
+#: model_terms:ir.ui.view,arch_db:odoo_nottaker.view_discuss_meeting_recording_tree
+msgid "Duration"
+msgstr "Duración"
+
+#. module: odoo_nottaker
+#: model:ir.model.fields,field_description:odoo_nottaker.field_discuss_meeting_recording__duration
+msgid "Duration (Seconds)"
+msgstr "Duración (segundos)"
+
+#. module: odoo_nottaker
+#: model:ir.model.fields,field_description:odoo_nottaker.field_discuss_meeting_recording__end_time
+msgid "End Time"
+msgstr "Fin"
+
+#. module: odoo_nottaker
+#: model:ir.model.fields.selection,name:odoo_nottaker.selection__res_config_settings__nottaker_output_language__en
+msgid "English"
+msgstr ""
+
+#. module: odoo_nottaker
+#. odoo-python
+#: code:addons/odoo_nottaker/services/gemini_service.py:0
+msgid "Error de Google Gemini (HTTP %(code)s, modelo %(model)s): %(msg)s"
+msgstr "Error de Google Gemini (HTTP %(code)s, modelo %(model)s): %(msg)s"
+
+#. module: odoo_nottaker
+#: model:ir.model.fields.selection,name:odoo_nottaker.selection__res_config_settings__nottaker_output_language__es
+msgid "Español"
+msgstr ""
+
+#. module: odoo_nottaker
+#: model_terms:ir.ui.view,arch_db:odoo_nottaker.view_discuss_meeting_recording_tree
+msgid "Est. Cost ($)"
+msgstr "Costo est. ($)"
+
+#. module: odoo_nottaker
+#: model:ir.model.fields,field_description:odoo_nottaker.field_discuss_meeting_recording__estimated_cost
+#: model:ir.model.fields,field_description:odoo_nottaker.field_discuss_meeting_recording_usage_log__estimated_cost
+#: model_terms:ir.ui.view,arch_db:odoo_nottaker.view_discuss_meeting_recording_form
+msgid "Estimated Cost ($)"
+msgstr "Costo estimado ($)"
+
+#. module: odoo_nottaker
+#: model:ir.model.fields,help:odoo_nottaker.field_discuss_meeting_recording__estimated_cost
+msgid ""
+"Estimated based on the per-1M-token prices configured in Settings. Actual "
+"billing depends on your Gemini plan/model and may differ."
+msgstr ""
+
+#. module: odoo_nottaker
+#: model_terms:ir.actions.act_window,help:odoo_nottaker.action_discuss_meeting_recording_usage_log
+msgid ""
+"Every transcription and summary call this app makes gets logged here, so you can\n"
+"                see exactly how your token usage breaks down by model."
+msgstr ""
+
+#. module: odoo_nottaker
+#: model:ir.model.fields,field_description:odoo_nottaker.field_discuss_meeting_recording__summary
+msgid "Executive Summary"
+msgstr "Resumen ejecutivo"
+
+#. module: odoo_nottaker
+#: model:ir.model.fields.selection,name:odoo_nottaker.selection__discuss_meeting_recording__state__failed
+#: model:ir.model.fields.selection,name:odoo_nottaker.selection__discuss_meeting_recording_segment__state__failed
+msgid "Failed"
+msgstr "Con error"
+
+#. module: odoo_nottaker
+#: model:ir.model.fields,field_description:odoo_nottaker.field_discuss_meeting_recording__failed_segment_count
+msgid "Failed Segment Count"
+msgstr "Segmentos fallidos"
+
+#. module: odoo_nottaker
+#. odoo-python
+#: code:addons/odoo_nottaker/models/discuss_meeting_recording_send_wizard.py:0
+msgid ""
+"Failed to send the email: %s\n"
+"\n"
+"Check Settings > Technical > Email > Outgoing Mail Servers - an outgoing mail server must be configured before this app can send anything."
+msgstr ""
+
+#. module: odoo_nottaker
+#: model_terms:ir.ui.view,arch_db:odoo_nottaker.view_discuss_meeting_recording_form
+msgid "Finalize Now"
+msgstr "Finalizar ahora"
+
+#. module: odoo_nottaker
+#: model:ir.model.fields,field_description:odoo_nottaker.field_discuss_meeting_recording__finalize_start
+msgid "Finalizing Since"
+msgstr "Finalizando desde"
+
+#. module: odoo_nottaker
+#: model:ir.model.fields,field_description:odoo_nottaker.field_discuss_meeting_recording__message_follower_ids
+msgid "Followers"
+msgstr ""
+
+#. module: odoo_nottaker
+#: model:ir.model.fields,field_description:odoo_nottaker.field_discuss_meeting_recording__message_partner_ids
+msgid "Followers (Partners)"
+msgstr ""
+
+#. module: odoo_nottaker
+#: model:ir.model.fields,help:odoo_nottaker.field_discuss_meeting_recording__activity_type_icon
+msgid "Font awesome icon e.g. fa-tasks"
+msgstr ""
+
+#. module: odoo_nottaker
+#: model_terms:ir.ui.view,arch_db:odoo_nottaker.view_discuss_meeting_recording_form
+msgid ""
+"Force-finalize using whatever segments have been uploaded so far? Use this "
+"if the meeting recording seems stuck (e.g. the call ended abruptly)."
+msgstr ""
+"¿Finalizar con los segmentos subidos hasta ahora? Úsalo si la grabación "
+"parece atorada (por ejemplo, la llamada se cortó)."
+
+#. module: odoo_nottaker
+#: model:ir.model.fields.selection,name:odoo_nottaker.selection__res_config_settings__nottaker_output_language__fr
+msgid "Français"
+msgstr ""
+
+#. module: odoo_nottaker
+#: model:ir.model.fields,help:odoo_nottaker.field_res_config_settings__gemini_api_key
+msgid "Free API key from Google AI Studio (https://aistudio.google.com/)"
+msgstr ""
+
+#. module: odoo_nottaker
+#: model_terms:ir.ui.view,arch_db:odoo_nottaker.res_config_settings_view_form_inherit_nottaker
+msgid ""
+"Free API key from Google AI Studio (https://aistudio.google.com/) for "
+"speech-to-text and AI summaries"
+msgstr ""
+
+#. module: odoo_nottaker
+#: model:ir.model.fields,field_description:odoo_nottaker.field_discuss_meeting_recording__transcript
+msgid "Full Transcript"
+msgstr "Transcripción completa"
+
+#. module: odoo_nottaker
+#: model:ir.model,name:odoo_nottaker.model_discuss_meeting_recording_usage_log
+msgid "Gemini API Usage Log"
+msgstr ""
+
+#. module: odoo_nottaker
+#: model:ir.model.fields,field_description:odoo_nottaker.field_discuss_meeting_recording_usage_log__model
+#: model:ir.model.fields,field_description:odoo_nottaker.field_res_config_settings__gemini_model
+msgid "Gemini Model"
+msgstr ""
+
+#. module: odoo_nottaker
+#: model_terms:ir.ui.view,arch_db:odoo_nottaker.view_discuss_meeting_recording_form
+msgid "Gemini Usage"
+msgstr "Uso de Gemini"
+
+#. module: odoo_nottaker
+#: model_terms:ir.ui.view,arch_db:odoo_nottaker.view_discuss_meeting_recording_usage_log_tree
+msgid "Gemini Usage Log"
+msgstr "Registro de uso de Gemini"
+
+#. module: odoo_nottaker
+#: model:ir.actions.act_window,name:odoo_nottaker.action_discuss_meeting_recording_usage_log
+#: model:ir.ui.menu,name:odoo_nottaker.menu_discuss_meeting_recording_usage_log
+#: model_terms:ir.ui.view,arch_db:odoo_nottaker.view_discuss_meeting_recording_usage_log_graph
+#: model_terms:ir.ui.view,arch_db:odoo_nottaker.view_discuss_meeting_recording_usage_log_pivot
+msgid "Gemini Usage by Model"
+msgstr "Uso de Gemini por modelo"
+
+#. module: odoo_nottaker
+#: model:ir.model.fields,help:odoo_nottaker.field_res_config_settings__gemini_model
+msgid ""
+"Gemini model id to use, e.g. gemini-flash-latest (recommended, auto-updates)"
+" or gemini-pro-latest (deep reasoning, auto-updates). If this model becomes "
+"unavailable, the app automatically tries other current models."
+msgstr ""
+
+#. module: odoo_nottaker
+#. odoo-python
+#: code:addons/odoo_nottaker/services/gemini_service.py:0
+msgid "Gemini no devolvió respuesta%s."
+msgstr "Gemini no devolvió respuesta%s."
+
+#. module: odoo_nottaker
+#: model_terms:ir.ui.view,arch_db:odoo_nottaker.res_config_settings_view_form_inherit_nottaker
+msgid "Get your free API key at"
+msgstr "Obtén tu API key gratis en"
+
+#. module: odoo_nottaker
+#: model_terms:ir.ui.view,arch_db:odoo_nottaker.res_config_settings_view_form_inherit_nottaker
+msgid "Google AI Studio"
+msgstr ""
+
+#. module: odoo_nottaker
+#: model:ir.model.fields,field_description:odoo_nottaker.field_res_config_settings__gemini_api_key
+#: model_terms:ir.ui.view,arch_db:odoo_nottaker.res_config_settings_view_form_inherit_nottaker
+msgid "Google Gemini API Key"
+msgstr "API key de Google Gemini"
+
+#. module: odoo_nottaker
+#. odoo-python
+#: code:addons/odoo_nottaker/models/res_config_settings.py:0
+msgid "Google Gemini answered correctly (model %s)."
+msgstr "Google Gemini respondió correctamente (modelo %s)."
+
+#. module: odoo_nottaker
+#. odoo-python
+#: code:addons/odoo_nottaker/services/gemini_service.py:0
+msgid ""
+"Google Gemini could not process the uploaded recording in time (state: %s)."
+msgstr ""
+"Google Gemini no terminó de procesar la grabación a tiempo (estado: %s)."
+
+#. module: odoo_nottaker
+#. odoo-python
+#: code:addons/odoo_nottaker/services/gemini_service.py:0
+msgid ""
+"Google rechazó la API key (HTTP %(code)s): %(msg)s. Revisa que la clave sea "
+"correcta y que la 'Generative Language API' esté habilitada en tu proyecto."
+msgstr ""
+"Google rechazó la API key (HTTP %(code)s): %(msg)s. Revisa que la clave sea "
+"correcta y que la 'Generative Language API' esté habilitada en tu proyecto."
+
+#. module: odoo_nottaker
+#: model:ir.model.fields,field_description:odoo_nottaker.field_discuss_meeting_recording__has_message
+msgid "Has Message"
+msgstr ""
+
+#. module: odoo_nottaker
+#: model:ir.model.fields,help:odoo_nottaker.field_discuss_meeting_recording_segment__start_offset
+msgid "How far into the meeting this segment starts."
+msgstr ""
+
+#. module: odoo_nottaker
+#: model:ir.model.fields,field_description:odoo_nottaker.field_discuss_channel__id
+#: model:ir.model.fields,field_description:odoo_nottaker.field_discuss_meeting_recording__id
+#: model:ir.model.fields,field_description:odoo_nottaker.field_discuss_meeting_recording_segment__id
+#: model:ir.model.fields,field_description:odoo_nottaker.field_discuss_meeting_recording_send_wizard__id
+#: model:ir.model.fields,field_description:odoo_nottaker.field_discuss_meeting_recording_usage_log__id
+#: model:ir.model.fields,field_description:odoo_nottaker.field_res_config_settings__id
+msgid "ID"
+msgstr ""
+
+#. module: odoo_nottaker
+#: model:ir.model.fields,field_description:odoo_nottaker.field_discuss_meeting_recording__activity_exception_icon
+msgid "Icon"
+msgstr ""
+
+#. module: odoo_nottaker
+#: model:ir.model.fields,help:odoo_nottaker.field_discuss_meeting_recording__activity_exception_icon
+msgid "Icon to indicate an exception activity."
+msgstr ""
+
+#. module: odoo_nottaker
+#: model:ir.model.fields,help:odoo_nottaker.field_discuss_meeting_recording__message_needaction
+msgid "If checked, new messages require your attention."
+msgstr ""
+
+#. module: odoo_nottaker
+#: model:ir.model.fields,help:odoo_nottaker.field_discuss_meeting_recording__message_has_error
+msgid "If checked, some messages have a delivery error."
+msgstr ""
+
+#. module: odoo_nottaker
+#: model:ir.model.fields,field_description:odoo_nottaker.field_discuss_meeting_recording__prompt_tokens
+#: model:ir.model.fields,field_description:odoo_nottaker.field_discuss_meeting_recording_segment__prompt_tokens
+#: model:ir.model.fields,field_description:odoo_nottaker.field_discuss_meeting_recording_usage_log__prompt_tokens
+#: model_terms:ir.ui.view,arch_db:odoo_nottaker.view_discuss_meeting_recording_form
+msgid "Input Tokens"
+msgstr "Tokens de entrada"
+
+#. module: odoo_nottaker
+#: model:ir.model.fields,field_description:odoo_nottaker.field_discuss_meeting_recording__message_is_follower
+msgid "Is Follower"
+msgstr ""
+
+#. module: odoo_nottaker
+#: model:ir.model.fields,field_description:odoo_nottaker.field_discuss_meeting_recording__key_points
+msgid "Key Decisions & Points"
+msgstr "Puntos clave y acuerdos"
+
+#. module: odoo_nottaker
+#: model_terms:ir.ui.view,arch_db:odoo_nottaker.res_config_settings_view_form_inherit_nottaker
+msgid ""
+"Language of the summary, key points and action items (the transcript keeps "
+"the spoken language)"
+msgstr ""
+"Idioma del resumen, puntos clave y tareas (la transcripción conserva el "
+"idioma hablado)"
+
+#. module: odoo_nottaker
+#: model:ir.model.fields,help:odoo_nottaker.field_res_config_settings__nottaker_output_language
+msgid "Language of the summary, key points and action items."
+msgstr "Idioma del resumen, puntos clave y tareas."
+
+#. module: odoo_nottaker
+#: model:ir.model.fields,field_description:odoo_nottaker.field_discuss_meeting_recording_segment__is_last
+msgid "Last Segment of the Meeting"
+msgstr "Último segmento"
+
+#. module: odoo_nottaker
+#: model:ir.model.fields,field_description:odoo_nottaker.field_discuss_meeting_recording__write_uid
+#: model:ir.model.fields,field_description:odoo_nottaker.field_discuss_meeting_recording_segment__write_uid
+#: model:ir.model.fields,field_description:odoo_nottaker.field_discuss_meeting_recording_send_wizard__write_uid
+#: model:ir.model.fields,field_description:odoo_nottaker.field_discuss_meeting_recording_usage_log__write_uid
+msgid "Last Updated by"
+msgstr ""
+
+#. module: odoo_nottaker
+#: model:ir.model.fields,field_description:odoo_nottaker.field_discuss_meeting_recording__write_date
+#: model:ir.model.fields,field_description:odoo_nottaker.field_discuss_meeting_recording_segment__write_date
+#: model:ir.model.fields,field_description:odoo_nottaker.field_discuss_meeting_recording_send_wizard__write_date
+#: model:ir.model.fields,field_description:odoo_nottaker.field_discuss_meeting_recording_usage_log__write_date
+msgid "Last Updated on"
+msgstr ""
+
+#. module: odoo_nottaker
+#. odoo-javascript
+#: code:addons/odoo_nottaker/static/src/discuss/call_recording_service.js:0
+msgid "Me"
+msgstr "Yo"
+
+#. module: odoo_nottaker
+#: model:ir.model.fields,field_description:odoo_nottaker.field_discuss_meeting_recording_segment__recording_id
+#: model:ir.model.fields,field_description:odoo_nottaker.field_discuss_meeting_recording_send_wizard__recording_id
+#: model:ir.model.fields,field_description:odoo_nottaker.field_discuss_meeting_recording_usage_log__recording_id
+msgid "Meeting Recording"
+msgstr "Grabación de reunión"
+
+#. module: odoo_nottaker
+#: model_terms:ir.ui.view,arch_db:odoo_nottaker.view_discuss_meeting_recording_form
+msgid "Meeting Recording & AI Notes"
+msgstr "Grabación y notas IA"
+
+#. module: odoo_nottaker
+#. odoo-python
+#: code:addons/odoo_nottaker/models/discuss_meeting_recording.py:0
+msgid "Meeting Recording - %s"
+msgstr "Grabación de reunión - %s"
+
+#. module: odoo_nottaker
+#: model:ir.model.fields,field_description:odoo_nottaker.field_discuss_channel__meeting_recording_ids
+msgid "Meeting Recordings"
+msgstr "Grabaciones de reuniones"
+
+#. module: odoo_nottaker
+#: model:ir.actions.act_window,name:odoo_nottaker.action_discuss_meeting_recording
+#: model:ir.ui.menu,name:odoo_nottaker.menu_discuss_meeting_recording
+#: model_terms:ir.ui.view,arch_db:odoo_nottaker.view_discuss_meeting_recording_tree
+msgid "Meeting Recordings & AI Notes"
+msgstr "Grabaciones y notas IA"
+
+#. module: odoo_nottaker
+#: model:ir.model.fields,field_description:odoo_nottaker.field_discuss_meeting_recording__name
+msgid "Meeting Title"
+msgstr "Título de la reunión"
+
+#. module: odoo_nottaker
+#: model:ir.model.fields,field_description:odoo_nottaker.field_discuss_meeting_recording__message_has_error
+msgid "Message Delivery error"
+msgstr ""
+
+#. module: odoo_nottaker
+#: model:ir.model.fields,field_description:odoo_nottaker.field_discuss_meeting_recording__message_ids
+msgid "Messages"
+msgstr ""
+
+#. module: odoo_nottaker
+#: model_terms:ir.ui.view,arch_db:odoo_nottaker.view_discuss_meeting_recording_usage_log_search
+msgid "Model"
+msgstr ""
+
+#. module: odoo_nottaker
+#: model_terms:ir.ui.view,arch_db:odoo_nottaker.res_config_settings_view_form_inherit_nottaker
+msgid "Model used for audio transcription and meeting minutes generation"
+msgstr "Modelo usado para transcribir y generar la minuta"
+
+#. module: odoo_nottaker
+#: model:ir.model.fields,field_description:odoo_nottaker.field_discuss_meeting_recording__my_activity_date_deadline
+msgid "My Activity Deadline"
+msgstr ""
+
+#. module: odoo_nottaker
+#: model_terms:ir.ui.view,arch_db:odoo_nottaker.view_discuss_meeting_recording_search
+msgid "My Recordings"
+msgstr "Mis grabaciones"
+
+#. module: odoo_nottaker
+#: model:ir.model.fields,field_description:odoo_nottaker.field_discuss_meeting_recording__activity_date_deadline
+msgid "Next Activity Deadline"
+msgstr ""
+
+#. module: odoo_nottaker
+#: model:ir.model.fields,field_description:odoo_nottaker.field_discuss_meeting_recording__activity_summary
+msgid "Next Activity Summary"
+msgstr ""
+
+#. module: odoo_nottaker
+#: model:ir.model.fields,field_description:odoo_nottaker.field_discuss_meeting_recording__activity_type_id
+msgid "Next Activity Type"
+msgstr ""
+
+#. module: odoo_nottaker
+#. odoo-python
+#: code:addons/odoo_nottaker/models/discuss_meeting_recording.py:0
+msgid "No Discuss Channel linked to this recording."
+msgstr "Esta grabación no está ligada a un canal."
+
+#. module: odoo_nottaker
+#. odoo-python
+#: code:addons/odoo_nottaker/models/res_config_settings.py:0
+msgid "No Gemini key configured: transcription will fail"
+msgstr "No hay API key de Gemini: la transcripción fallará"
+
+#. module: odoo_nottaker
+#: model_terms:ir.actions.act_window,help:odoo_nottaker.action_discuss_meeting_recording_usage_log
+msgid "No Gemini usage logged yet!"
+msgstr ""
+
+#. module: odoo_nottaker
+#. odoo-python
+#: code:addons/odoo_nottaker/services/gemini_service.py:0
+msgid "No audio data provided for transcription."
+msgstr "No hay audio para transcribir."
+
+#. module: odoo_nottaker
+#. odoo-python
+#: code:addons/odoo_nottaker/models/discuss_meeting_recording.py:0
+#: code:addons/odoo_nottaker/models/discuss_meeting_recording_segment.py:0
+msgid "No audio file attached to process."
+msgstr "No hay archivo de audio para procesar."
+
+#. module: odoo_nottaker
+#. odoo-python
+#: code:addons/odoo_nottaker/controllers/main.py:0
+msgid "No audio was captured during the call."
+msgstr "No se capturó audio durante la llamada."
+
+#. module: odoo_nottaker
+#. odoo-python
+#: code:addons/odoo_nottaker/services/gemini_service.py:0
+msgid ""
+"No hay clave de Google Gemini configurada. Ve a Ajustes > Ajustes generales "
+"> «Discuss AI Note Taker», pega tu API key de "
+"https://aistudio.google.com/apikey y pulsa «Probar conexión»; luego usa "
+"«Reintentar segmentos fallidos»."
+msgstr ""
+"No hay clave de Google Gemini configurada. Ve a Ajustes > Ajustes generales "
+"> «Discuss AI Note Taker», pega tu API key de "
+"https://aistudio.google.com/apikey y pulsa «Probar conexión»; luego usa "
+"«Reintentar segmentos fallidos»."
+
+#. module: odoo_nottaker
+#. odoo-python
+#: code:addons/odoo_nottaker/models/res_config_settings.py:0
+msgid ""
+"No key here: using the Gemini key configured in Scout Management (AI "
+"settings)"
+msgstr ""
+"Sin clave aquí: se usa la API key de Gemini configurada en Gestión Scout "
+"(IA)"
+
+#. module: odoo_nottaker
+#: model_terms:ir.actions.act_window,help:odoo_nottaker.action_discuss_meeting_recording
+msgid "No meeting recordings yet!"
+msgstr "¡Todavía no hay grabaciones!"
+
+#. module: odoo_nottaker
+#. odoo-python
+#: code:addons/odoo_nottaker/services/gemini_service.py:0
+msgid "No se pudo subir el audio a Google Gemini (HTTP %s): %s"
+msgstr "No se pudo subir el audio a Google Gemini (HTTP %s): %s"
+
+#. module: odoo_nottaker
+#. odoo-python
+#: code:addons/odoo_nottaker/services/gemini_service.py:0
+msgid "No se pudo usar ningún modelo de Google Gemini. Detalle: %s"
+msgstr "No se pudo usar ningún modelo de Google Gemini. Detalle: %s"
+
+#. module: odoo_nottaker
+#. odoo-python
+#: code:addons/odoo_nottaker/models/discuss_meeting_recording.py:0
+msgid "No segment could be transcribed:"
+msgstr "No se pudo transcribir ningún segmento:"
+
+#. module: odoo_nottaker
+#. odoo-python
+#: code:addons/odoo_nottaker/models/discuss_meeting_recording.py:0
+msgid "No segments to finalize."
+msgstr "No hay segmentos para finalizar."
+
+#. module: odoo_nottaker
+#: model:ir.model.fields,field_description:odoo_nottaker.field_discuss_meeting_recording_send_wizard__note
+msgid "Note"
+msgstr "Nota"
+
+#. module: odoo_nottaker
+#. odoo-javascript
+#: code:addons/odoo_nottaker/static/src/discuss/call_recording_service.js:0
+msgid "Note Taker"
+msgstr "Toma de notas"
+
+#. module: odoo_nottaker
+#. odoo-javascript
+#: code:addons/odoo_nottaker/static/src/discuss/call_recording_service.js:0
+msgid "Note Taker Processing"
+msgstr "Procesando grabación"
+
+#. module: odoo_nottaker
+#: model:ir.actions.server,name:odoo_nottaker.ir_cron_nottaker_recover_ir_actions_server
+msgid "Note Taker: recover stuck transcriptions"
+msgstr "Toma de notas: recuperar transcripciones atoradas"
+
+#. module: odoo_nottaker
+#: model:ir.model.fields,field_description:odoo_nottaker.field_res_config_settings__nottaker_output_language
+#: model_terms:ir.ui.view,arch_db:odoo_nottaker.res_config_settings_view_form_inherit_nottaker
+msgid "Notes Language"
+msgstr "Idioma de las notas"
+
+#. module: odoo_nottaker
+#: model:ir.model.fields,field_description:odoo_nottaker.field_res_config_settings__nottaker_key_source
+msgid "Nottaker Key Source"
+msgstr ""
+
+#. module: odoo_nottaker
+#: model:ir.model.fields,field_description:odoo_nottaker.field_discuss_meeting_recording__message_needaction_counter
+msgid "Number of Actions"
+msgstr ""
+
+#. module: odoo_nottaker
+#: model:ir.model.fields,field_description:odoo_nottaker.field_discuss_meeting_recording__message_has_error_counter
+msgid "Number of errors"
+msgstr ""
+
+#. module: odoo_nottaker
+#: model:ir.model.fields,help:odoo_nottaker.field_discuss_meeting_recording__message_needaction_counter
+msgid "Number of messages requiring action"
+msgstr ""
+
+#. module: odoo_nottaker
+#: model:ir.model.fields,help:odoo_nottaker.field_discuss_meeting_recording__message_has_error_counter
+msgid "Number of messages with delivery error"
+msgstr ""
+
+#. module: odoo_nottaker
+#: model:ir.model.fields,help:odoo_nottaker.field_discuss_meeting_recording_send_wizard__partner_ids
+msgid "Only attendees with an email on file are actually emailed."
+msgstr ""
+
+#. module: odoo_nottaker
+#: model:ir.model.fields,help:odoo_nottaker.field_res_config_settings__gemini_custom_prompt
+msgid ""
+"Optional instructions for transcription (e.g. specific language, custom "
+"terminology, formatting)"
+msgstr ""
+
+#. module: odoo_nottaker
+#: model:ir.model.fields,help:odoo_nottaker.field_discuss_meeting_recording_send_wizard__note
+msgid "Optional message to include above the meeting notes."
+msgstr ""
+
+#. module: odoo_nottaker
+#: model_terms:ir.ui.view,arch_db:odoo_nottaker.view_discuss_meeting_recording_send_wizard_form
+msgid "Optional message to include above the notes..."
+msgstr ""
+
+#. module: odoo_nottaker
+#: model_terms:ir.ui.view,arch_db:odoo_nottaker.res_config_settings_view_form_inherit_nottaker
+msgid ""
+"Optional special instructions (e.g., specific language, company acronyms)"
+msgstr ""
+
+#. module: odoo_nottaker
+#: model:ir.model.fields,field_description:odoo_nottaker.field_discuss_meeting_recording__output_tokens
+#: model:ir.model.fields,field_description:odoo_nottaker.field_discuss_meeting_recording_segment__output_tokens
+#: model:ir.model.fields,field_description:odoo_nottaker.field_discuss_meeting_recording_usage_log__output_tokens
+#: model_terms:ir.ui.view,arch_db:odoo_nottaker.view_discuss_meeting_recording_form
+msgid "Output Tokens"
+msgstr "Tokens de salida"
+
+#. module: odoo_nottaker
+#. odoo-python
+#: code:addons/odoo_nottaker/models/discuss_meeting_recording_segment.py:0
+msgid "Participant"
+msgstr "Participante"
+
+#. module: odoo_nottaker
+#. odoo-python
+#: code:addons/odoo_nottaker/models/discuss_meeting_recording_send_wizard.py:0
+msgid ""
+"Pick at least one attendee with an email on file, or type an email address "
+"manually."
+msgstr ""
+
+#. module: odoo_nottaker
+#: model:ir.model.fields.selection,name:odoo_nottaker.selection__res_config_settings__nottaker_output_language__pt
+msgid "Português"
+msgstr ""
+
+#. module: odoo_nottaker
+#: model_terms:ir.ui.view,arch_db:odoo_nottaker.view_discuss_meeting_recording_form
+msgid "Post Summary to Discuss"
+msgstr "Publicar resumen en el canal"
+
+#. module: odoo_nottaker
+#: model_terms:ir.ui.view,arch_db:odoo_nottaker.res_config_settings_view_form_inherit_nottaker
+msgid ""
+"Post meeting summary and action items directly to the Discuss channel when "
+"recording processing finishes"
+msgstr ""
+"Publica el resumen y las tareas en el canal cuando termina el procesamiento"
+
+#. module: odoo_nottaker
+#: model:ir.model.fields,field_description:odoo_nottaker.field_discuss_meeting_recording__posted_to_chat
+msgid "Posted to Channel Chat"
+msgstr "Publicado en el canal"
+
+#. module: odoo_nottaker
+#: model:ir.model.fields,field_description:odoo_nottaker.field_res_config_settings__gemini_price_per_1m_input
+msgid "Price per 1M Input Tokens ($)"
+msgstr ""
+
+#. module: odoo_nottaker
+#: model:ir.model.fields,field_description:odoo_nottaker.field_res_config_settings__gemini_price_per_1m_output
+msgid "Price per 1M Output Tokens ($)"
+msgstr ""
+
+#. module: odoo_nottaker
+#: model_terms:ir.ui.view,arch_db:odoo_nottaker.view_discuss_meeting_recording_search
+msgid "Processing"
+msgstr "Procesando"
+
+#. module: odoo_nottaker
+#: model:ir.model.fields.selection,name:odoo_nottaker.selection__discuss_meeting_recording__state__processing
+#: model:ir.model.fields.selection,name:odoo_nottaker.selection__discuss_meeting_recording_segment__state__processing
+msgid "Processing (Gemini AI)"
+msgstr "Procesando (Gemini IA)"
+
+#. module: odoo_nottaker
+#: model:ir.model.fields,field_description:odoo_nottaker.field_discuss_meeting_recording__error_message
+#: model:ir.model.fields,field_description:odoo_nottaker.field_discuss_meeting_recording_segment__error_message
+msgid "Processing Error"
+msgstr "Error de procesamiento"
+
+#. module: odoo_nottaker
+#: model:ir.model.fields,field_description:odoo_nottaker.field_discuss_meeting_recording_segment__processing_start
+msgid "Processing Since"
+msgstr "Procesando desde"
+
+#. module: odoo_nottaker
+#. odoo-python
+#: code:addons/odoo_nottaker/models/discuss_meeting_recording_segment.py:0
+msgid "Processing was interrupted 3 times (server restart or timeout)."
+msgstr ""
+"El procesamiento se interrumpió 3 veces (reinicio del servidor o tiempo "
+"agotado)."
+
+#. module: odoo_nottaker
+#: model:ir.model.fields.selection,name:odoo_nottaker.selection__discuss_meeting_recording__state__draft
+msgid "Ready to Process"
+msgstr "Lista para procesar"
+
+#. module: odoo_nottaker
+#. odoo-javascript
+#: code:addons/odoo_nottaker/static/src/discuss/call_recording_service.js:0
+msgid "Record this meeting?"
+msgstr "¿Grabar esta reunión?"
+
+#. module: odoo_nottaker
+#. odoo-javascript
+#: code:addons/odoo_nottaker/static/src/discuss/call_recording_service.js:0
+msgid ""
+"Record your screen and the meeting audio? You'll be asked to choose what to "
+"share (entire screen, a window, or a tab). The recording is automatically "
+"transcribed with AI when the call ends."
+msgstr ""
+
+#. module: odoo_nottaker
+#: model:ir.model.fields,field_description:odoo_nottaker.field_discuss_meeting_recording__user_id
+msgid "Recorded By"
+msgstr "Grabada por"
+
+#. module: odoo_nottaker
+#: model:ir.model.fields.selection,name:odoo_nottaker.selection__discuss_meeting_recording__state__recording
+msgid "Recording"
+msgstr "Grabando"
+
+#. module: odoo_nottaker
+#. odoo-javascript
+#: code:addons/odoo_nottaker/static/src/discuss/call_recording_actions.js:0
+msgid "Recording (%s) - Click to Stop"
+msgstr "Grabando (%s) - clic para detener"
+
+#. module: odoo_nottaker
+#: model_terms:ir.ui.view,arch_db:odoo_nottaker.view_discuss_meeting_recording_form
+msgid "Recording Playback"
+msgstr "Reproducir grabación"
+
+#. module: odoo_nottaker
+#. odoo-javascript
+#: code:addons/odoo_nottaker/static/src/discuss/call_recording_service.js:0
+msgid "Recording meeting audio - will be transcribed automatically with AI."
+msgstr ""
+"Grabando el audio de la reunión; se transcribirá automáticamente con IA."
+
+#. module: odoo_nottaker
+#. odoo-javascript
+#: code:addons/odoo_nottaker/static/src/discuss/call_recording_service.js:0
+msgid ""
+"Recording uploaded - transcribing and generating AI notes in the background."
+" Check Meeting Recordings & AI Notes shortly."
+msgstr ""
+"Grabación subida: se está transcribiendo y generando las notas con IA. "
+"Revisa «Grabaciones y notas IA» en unos minutos."
+
+#. module: odoo_nottaker
+#. odoo-javascript
+#: code:addons/odoo_nottaker/static/src/discuss/call_recording_service.js:0
+msgid ""
+"Recording your screen and the meeting audio - will be transcribed "
+"automatically with AI."
+msgstr ""
+"Grabando tu pantalla y el audio de la reunión; se transcribirá "
+"automáticamente con IA."
+
+#. module: odoo_nottaker
+#: model_terms:ir.ui.view,arch_db:odoo_nottaker.discuss_channel_view_form_inherit_nottaker
+msgid "Recordings"
+msgstr "Grabaciones"
+
+#. module: odoo_nottaker
+#: model:ir.model.fields,field_description:odoo_nottaker.field_discuss_channel__meeting_recording_count
+msgid "Recordings Count"
+msgstr ""
+
+#. module: odoo_nottaker
+#: model:ir.model.fields,field_description:odoo_nottaker.field_discuss_meeting_recording__activity_user_id
+msgid "Responsible User"
+msgstr ""
+
+#. module: odoo_nottaker
+#: model_terms:ir.ui.view,arch_db:odoo_nottaker.view_discuss_meeting_recording_form
+msgid "Retry Failed Segments"
+msgstr "Reintentar segmentos fallidos"
+
+#. module: odoo_nottaker
+#. odoo-python
+#: code:addons/odoo_nottaker/models/discuss_meeting_recording.py:0
+msgid ""
+"Retrying transcription in the background. Reload this page in a minute."
+msgstr ""
+"Reintentando la transcripción en segundo plano. Recarga la página en un "
+"minuto."
+
+#. module: odoo_nottaker
+#: model:ir.model.fields.selection,name:odoo_nottaker.selection__res_config_settings__nottaker_output_language__auto
+msgid "Same as the meeting"
+msgstr "El mismo de la reunión"
+
+#. module: odoo_nottaker
+#. odoo-javascript
+#: code:addons/odoo_nottaker/static/src/discuss/call_recording_service.js:0
+msgid ""
+"Screen sharing wasn't granted - recording audio only (no camera fallback)."
+msgstr "No se permitió compartir pantalla: se grabará solo el audio."
+
+#. module: odoo_nottaker
+#. odoo-python
+#: code:addons/odoo_nottaker/services/gemini_service.py:0
+msgid ""
+"Se agotó la cuota de Google Gemini (HTTP 429). Espera unos minutos y usa "
+"'Reintentar segmentos fallidos', o activa facturación en tu proyecto de "
+"Google. Detalle: %s"
+msgstr ""
+"Se agotó la cuota de Google Gemini (HTTP 429). Espera unos minutos y usa "
+"'Reintentar segmentos fallidos', o activa facturación en tu proyecto de "
+"Google. Detalle: %s"
+
+#. module: odoo_nottaker
+#: model_terms:ir.ui.view,arch_db:odoo_nottaker.view_discuss_meeting_recording_usage_log_search
+msgid "Search Gemini Usage"
+msgstr ""
+
+#. module: odoo_nottaker
+#: model_terms:ir.ui.view,arch_db:odoo_nottaker.view_discuss_meeting_recording_search
+msgid "Search Recordings"
+msgstr "Buscar grabaciones"
+
+#. module: odoo_nottaker
+#. odoo-python
+#: code:addons/odoo_nottaker/models/discuss_meeting_recording.py:0
+msgid "Segment %(n)s: %(err)s"
+msgstr "Segmento %(n)s: %(err)s"
+
+#. module: odoo_nottaker
+#: model:ir.model.fields,field_description:odoo_nottaker.field_discuss_meeting_recording_segment__audio_attachment_id
+msgid "Segment File"
+msgstr "Archivo del segmento"
+
+#. module: odoo_nottaker
+#: model:ir.model.fields,field_description:odoo_nottaker.field_discuss_meeting_recording_segment__sequence
+msgid "Segment Number"
+msgstr "Número de segmento"
+
+#. module: odoo_nottaker
+#: model:ir.model.fields,field_description:odoo_nottaker.field_discuss_meeting_recording_segment__transcript
+msgid "Segment Transcript"
+msgstr "Transcripción del segmento"
+
+#. module: odoo_nottaker
+#: model:ir.model.fields.selection,name:odoo_nottaker.selection__discuss_meeting_recording_usage_log__call_type__segment
+msgid "Segment Transcription"
+msgstr "Transcripción de segmento"
+
+#. module: odoo_nottaker
+#: model:ir.model.fields,field_description:odoo_nottaker.field_discuss_meeting_recording__segment_ids
+#: model_terms:ir.ui.view,arch_db:odoo_nottaker.view_discuss_meeting_recording_form
+msgid "Segments"
+msgstr "Segmentos"
+
+#. module: odoo_nottaker
+#: model_terms:ir.ui.view,arch_db:odoo_nottaker.view_discuss_meeting_recording_send_wizard_form
+msgid "Send"
+msgstr "Enviar"
+
+#. module: odoo_nottaker
+#: model:ir.actions.act_window,name:odoo_nottaker.action_discuss_meeting_recording_send_wizard
+#: model:ir.model,name:odoo_nottaker.model_discuss_meeting_recording_send_wizard
+#: model_terms:ir.ui.view,arch_db:odoo_nottaker.view_discuss_meeting_recording_send_wizard_form
+msgid "Send Meeting Recording & Notes"
+msgstr "Enviar grabación y notas"
+
+#. module: odoo_nottaker
+#: model:ir.model.fields,field_description:odoo_nottaker.field_discuss_meeting_recording_send_wizard__partner_ids
+msgid "Send to Attendees"
+msgstr "Enviar a asistentes"
+
+#. module: odoo_nottaker
+#: model_terms:ir.ui.view,arch_db:odoo_nottaker.view_discuss_meeting_recording_form
+msgid "Send to Participant"
+msgstr "Enviar a participantes"
+
+#. module: odoo_nottaker
+#: model:ir.model.fields,help:odoo_nottaker.field_discuss_meeting_recording__total_segments
+msgid ""
+"Set once the meeting has ended and the last segment has been uploaded. 0 "
+"means still recording, or this is a legacy single-file recording."
+msgstr ""
+
+#. module: odoo_nottaker
+#: model:ir.model.fields.selection,name:odoo_nottaker.selection__discuss_meeting_recording_usage_log__call_type__legacy
+msgid "Single-File Transcription"
+msgstr ""
+
+#. module: odoo_nottaker
+#. odoo-python
+#: code:addons/odoo_nottaker/models/discuss_meeting_recording.py:0
+msgid ""
+"Some segments are still being transcribed - wait for them to finish first."
+msgstr "Aún se están transcribiendo segmentos; espera a que terminen."
+
+#. module: odoo_nottaker
+#: model:ir.model.fields,field_description:odoo_nottaker.field_discuss_meeting_recording_segment__speaker_attachment_ids
+msgid "Speaker Clips"
+msgstr "Clips por participante"
+
+#. module: odoo_nottaker
+#: model_terms:ir.ui.view,arch_db:odoo_nottaker.view_discuss_meeting_recording_search
+msgid "Start Date"
+msgstr ""
+
+#. module: odoo_nottaker
+#: model:ir.model.fields,field_description:odoo_nottaker.field_discuss_meeting_recording_segment__start_offset
+msgid "Start Offset (seconds)"
+msgstr "Inicio dentro de la reunión (s)"
+
+#. module: odoo_nottaker
+#. odoo-javascript
+#: code:addons/odoo_nottaker/static/src/discuss/call_recording_actions.js:0
+#: code:addons/odoo_nottaker/static/src/discuss/call_recording_service.js:0
+msgid "Start Recording"
+msgstr "Iniciar grabación"
+
+#. module: odoo_nottaker
+#: model:ir.model.fields,field_description:odoo_nottaker.field_discuss_meeting_recording__start_time
+msgid "Start Time"
+msgstr "Inicio"
+
+#. module: odoo_nottaker
+#: model_terms:ir.actions.act_window,help:odoo_nottaker.action_discuss_meeting_recording
+msgid ""
+"Start a call in any Discuss channel and the call will be automatically "
+"recorded and transcribed with AI notes."
+msgstr ""
+
+#. module: odoo_nottaker
+#: model:ir.model.fields,field_description:odoo_nottaker.field_discuss_meeting_recording__state
+#: model:ir.model.fields,field_description:odoo_nottaker.field_discuss_meeting_recording_segment__state
+#: model_terms:ir.ui.view,arch_db:odoo_nottaker.view_discuss_meeting_recording_search
+msgid "Status"
+msgstr "Estado"
+
+#. module: odoo_nottaker
+#: model:ir.model.fields,help:odoo_nottaker.field_discuss_meeting_recording__activity_state
+msgid ""
+"Status based on activities\n"
+"Overdue: Due date is already passed\n"
+"Today: Activity date is today\n"
+"Planned: Future activities."
+msgstr ""
+
+#. module: odoo_nottaker
+#: model:ir.model.fields.selection,name:odoo_nottaker.selection__discuss_meeting_recording_usage_log__call_type__synthesis
+msgid "Summary Synthesis"
+msgstr "Síntesis del resumen"
+
+#. module: odoo_nottaker
+#: model_terms:ir.ui.view,arch_db:odoo_nottaker.res_config_settings_view_form_inherit_nottaker
+msgid "Test connection"
+msgstr "Probar conexión"
+
+#. module: odoo_nottaker
+#. odoo-python
+#: code:addons/odoo_nottaker/models/discuss_meeting_recording.py:0
+msgid "There are no failed segments to retry."
+msgstr "No hay segmentos fallidos para reintentar."
+
+#. module: odoo_nottaker
+#. odoo-javascript
+#: code:addons/odoo_nottaker/static/src/discuss/call_recording_service.js:0
+msgid "This call is already being recorded by %s."
+msgstr "Esta llamada ya la está grabando %s."
+
+#. module: odoo_nottaker
+#. odoo-python
+#: code:addons/odoo_nottaker/models/discuss_meeting_recording.py:0
+msgid ""
+"This is a segmented recording - segments are transcribed automatically. Use "
+"'Finalize Now' if it's stuck instead."
+msgstr ""
+
+#. module: odoo_nottaker
+#. odoo-python
+#: code:addons/odoo_nottaker/models/discuss_meeting_recording_send_wizard.py:0
+msgid "This recording has no media file attached to share."
+msgstr ""
+
+#. module: odoo_nottaker
+#. odoo-python
+#: code:addons/odoo_nottaker/models/discuss_meeting_recording_send_wizard.py:0
+msgid ""
+"This recording isn't marked Completed yet - wait for transcription to finish"
+" first."
+msgstr ""
+
+#. module: odoo_nottaker
+#: model_terms:ir.ui.view,arch_db:odoo_nottaker.res_config_settings_view_form_inherit_nottaker
+msgid "Token Cost Estimation"
+msgstr ""
+
+#. module: odoo_nottaker
+#: model_terms:ir.ui.view,arch_db:odoo_nottaker.view_discuss_meeting_recording_form
+#: model_terms:ir.ui.view,arch_db:odoo_nottaker.view_discuss_meeting_recording_tree
+msgid "Tokens"
+msgstr "Tokens"
+
+#. module: odoo_nottaker
+#: model:ir.model.fields,help:odoo_nottaker.field_discuss_meeting_recording_segment__output_tokens
+msgid "Tokens Gemini charged for the generated transcript."
+msgstr ""
+
+#. module: odoo_nottaker
+#: model:ir.model.fields,help:odoo_nottaker.field_discuss_meeting_recording_segment__prompt_tokens
+msgid "Tokens Gemini charged for the media + prompt sent for this segment."
+msgstr ""
+
+#. module: odoo_nottaker
+#: model_terms:ir.ui.view,arch_db:odoo_nottaker.view_discuss_meeting_recording_tree
+#: model_terms:ir.ui.view,arch_db:odoo_nottaker.view_discuss_meeting_recording_usage_log_tree
+msgid "Total"
+msgstr ""
+
+#. module: odoo_nottaker
+#: model:ir.model.fields,field_description:odoo_nottaker.field_discuss_meeting_recording__total_segments
+msgid "Total Segments"
+msgstr "Total de segmentos"
+
+#. module: odoo_nottaker
+#: model:ir.model.fields,field_description:odoo_nottaker.field_discuss_meeting_recording__total_tokens_used
+#: model:ir.model.fields,field_description:odoo_nottaker.field_discuss_meeting_recording_segment__total_tokens
+#: model:ir.model.fields,field_description:odoo_nottaker.field_discuss_meeting_recording_usage_log__total_tokens
+#: model_terms:ir.ui.view,arch_db:odoo_nottaker.view_discuss_meeting_recording_form
+msgid "Total Tokens"
+msgstr "Tokens totales"
+
+#. module: odoo_nottaker
+#: model:ir.model.fields,help:odoo_nottaker.field_discuss_meeting_recording__output_tokens
+msgid ""
+"Total tokens Gemini charged for generated text across all calls made for "
+"this recording."
+msgstr ""
+
+#. module: odoo_nottaker
+#: model:ir.model.fields,help:odoo_nottaker.field_discuss_meeting_recording__prompt_tokens
+msgid ""
+"Total tokens Gemini charged for media + prompts across all calls made for "
+"this recording."
+msgstr ""
+
+#. module: odoo_nottaker
+#: model_terms:ir.ui.view,arch_db:odoo_nottaker.view_discuss_meeting_recording_form
+msgid "Transcribe & Summarize (Gemini)"
+msgstr "Transcribir y resumir (Gemini)"
+
+#. module: odoo_nottaker
+#: model:ir.model.fields,help:odoo_nottaker.field_discuss_meeting_recording__activity_exception_decoration
+msgid "Type of the exception activity on record."
+msgstr ""
+
+#. module: odoo_nottaker
+#. odoo-javascript
+#: code:addons/odoo_nottaker/static/src/discuss/call_recording_service.js:0
+msgid "Unknown participant"
+msgstr "Participante desconocido"
+
+#. module: odoo_nottaker
+#: model:ir.model.fields.selection,name:odoo_nottaker.selection__discuss_meeting_recording_segment__state__draft
+msgid "Uploaded"
+msgstr "Subido"
+
+#. module: odoo_nottaker
+#: model:ir.model.fields,help:odoo_nottaker.field_res_config_settings__gemini_price_per_1m_input
+#: model:ir.model.fields,help:odoo_nottaker.field_res_config_settings__gemini_price_per_1m_output
+msgid ""
+"Used only to estimate the \"Estimated Cost\" shown on each recording. Check "
+"aistudio.google.com for your model's actual current price."
+msgstr ""
+
+#. module: odoo_nottaker
+#: model_terms:ir.ui.view,arch_db:odoo_nottaker.res_config_settings_view_form_inherit_nottaker
+msgid ""
+"Used only to show an estimated cost on each recording - check "
+"aistudio.google.com for your model's actual current price"
+msgstr ""
+
+#. module: odoo_nottaker
+#. odoo-python
+#: code:addons/odoo_nottaker/models/res_config_settings.py:0
+msgid "Using this key"
+msgstr "Se usa esta clave"
+
+#. module: odoo_nottaker
+#: model_terms:ir.ui.view,arch_db:odoo_nottaker.view_discuss_meeting_recording_usage_log_tree
+msgid "When"
+msgstr ""
+
+#. module: odoo_nottaker
+#: model_terms:ir.ui.view,arch_db:odoo_nottaker.res_config_settings_view_form_inherit_nottaker
+msgid "e.g. Focus on action items, translate to Spanish, etc."
+msgstr "p. ej. enfócate en los acuerdos, usa términos scout, etc."
+
+#. module: odoo_nottaker
+#: model_terms:ir.ui.view,arch_db:odoo_nottaker.view_discuss_meeting_recording_form
+msgid "e.g. Marketing Strategy Sync"
+msgstr ""
+
+#. module: odoo_nottaker
+#: model_terms:ir.ui.view,arch_db:odoo_nottaker.view_discuss_meeting_recording_send_wizard_form
+msgid "guest1@example.com, guest2@example.com"
+msgstr ""
+
+#. module: odoo_nottaker
+#. odoo-python
+#: code:addons/odoo_nottaker/models/discuss_meeting_recording.py:0
+msgid "unknown error"
+msgstr "error desconocido"
+
+#. module: odoo_nottaker
+#: model_terms:ir.ui.view,arch_db:odoo_nottaker.view_discuss_meeting_recording_form
+msgid "🎙️ Full Word-for-Word Transcript"
+msgstr "🎙️ Transcripción completa"
+
+#. module: odoo_nottaker
+#: model_terms:ir.ui.view,arch_db:odoo_nottaker.view_discuss_meeting_recording_form
+msgid "📝 AI Summary & Action Items"
+msgstr "📝 Resumen IA y tareas"

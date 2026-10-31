@@ -37,6 +37,13 @@
                             class="btn-primary"
                             invisible="not segment_ids or state in ('completed', 'processing')"
                             confirm="Force-finalize using whatever segments have been uploaded so far? Use this if the meeting recording seems stuck (e.g. the call ended abruptly)."/>
+                    <button name="action_retry_failed"
+                            string="Retry Failed Segments"
+                            type="object"
+                            class="btn-primary"
+                            icon="fa-refresh"
+                            invisible="failed_segment_count == 0 or state == 'processing'"/>
+                    <field name="failed_segment_count" invisible="1"/>
                     <button name="action_post_to_chat"
                             string="Post Summary to Discuss"
                             type="object"
@@ -82,7 +89,7 @@
                         <field name="audio_player_html" widget="html" readonly="1" options="{'collaborative': false}" nolabel="1"/>
                     </group>
 
-                    <div class="alert alert-danger" role="alert" invisible="state != 'failed' or not error_message">
+                    <div class="alert alert-danger" role="alert" invisible="not error_message or state in ('processing', 'recording')" style="white-space: pre-line;">
                         <strong>Processing Error: </strong>
                         <field name="error_message" readonly="1"/>
                     </div>
@@ -115,6 +122,7 @@
                                     <field name="is_last"/>
                                     <field name="state" widget="badge" decoration-success="state == 'completed'" decoration-info="state == 'processing'" decoration-danger="state == 'failed'"/>
                                     <field name="total_tokens" string="Tokens"/>
+                                    <field name="attempts" optional="hide"/>
                                     <field name="error_message"/>
                                 </list>
                             </field>

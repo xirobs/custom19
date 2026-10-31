@@ -5,33 +5,82 @@ import logging
 import time
 import requests
 from odoo import _
+from markupsafe import escape
 from odoo.exceptions import UserError
 
 _logger = logging.getLogger(__name__)
+
+
+class GeminiRequestError(UserError):
+    """UserError carrying the HTTP status Gemini answered with (0 = no usable answer)."""
+
+    def __init__(self, status, message):
+        super().__init__(message)
+        self.status = status
+
 
 class GeminiService:
     # Gemini's inline base64 payload is capped around 20MB; stay safely under that.
     # Larger media (typically video recordings) goes through the File API instead.
     INLINE_SIZE_LIMIT = 15 * 1024 * 1024
 
+    # Real, currently served ids only (aliases first: they follow whatever Google serves).
+    FALLBACK_MODELS = ["gemini-flash-latest", "gemini-2.5-flash", "gemini-flash-lite-latest",
+                       "gemini-2.5-flash-lite", "gemini-2.0-flash"]
+    LANGUAGES = {
+        'es': 'Spanish (Mexico)', 'en': 'English', 'pt': 'Portuguese', 'fr': 'French',
+    }
+
     @staticmethod
-    def get_config(env):
+    def _fallback_key(env):
+        """If this module has no key but scout_management already has a Gemini key configured
+        (Ajustes > Grupo scout > IA), reuse it instead of failing every segment."""
+        Company = env['res.company'].sudo()
+        if 'scout_ai_api_key' not in Company._fields:
+            return ''
+        companies = env.company.sudo() | Company.search([('scout_ai_api_key', '!=', False)])
+        for company in companies:
+            key = (company.scout_ai_api_key or '').strip()
+            if key and (company.scout_ai_provider or 'gemini') == 'gemini':
+                return key
+        return ''
+
+    @classmethod
+    def get_config(cls, env):
         ICP = env['ir.config_parameter'].sudo()
-        api_key = ICP.get_param('odoo_nottaker.gemini_api_key', default='').strip()
-        model = ICP.get_param('odoo_nottaker.gemini_model', default='gemini-flash-latest').strip()
-        custom_prompt = ICP.get_param('odoo_nottaker.gemini_custom_prompt', default='').strip()
+        api_key = (ICP.get_param('odoo_nottaker.gemini_api_key', default='') or '').strip()
+        if not api_key:
+            api_key = cls._fallback_key(env)
+        model = (ICP.get_param('odoo_nottaker.gemini_model', default='') or '').strip() or 'gemini-flash-latest'
+        # people paste "models/gemini-..." from AI Studio
+        model = model.replace('models/', '')
+        custom_prompt = (ICP.get_param('odoo_nottaker.gemini_custom_prompt', default='') or '').strip()
+        lang = ICP.get_param('odoo_nottaker.output_language', default='es') or 'es'
+        if lang == 'auto':
+            custom_prompt = ("Write the summary, key_points and action_items in the main language spoken "
+                             "in the meeting. " + custom_prompt).strip()
+        elif lang in cls.LANGUAGES:
+            custom_prompt = (
+                f"Write the summary, key_points and action_items in {cls.LANGUAGES[lang]}. "
+                "Keep the transcript in the language actually spoken. " + custom_prompt
+            ).strip()
         return api_key, model, custom_prompt
+
+    @staticmethod
+    def _missing_key_error():
+        return UserError(_("No hay clave de Google Gemini configurada. Ve a Ajustes > Ajustes generales > "
+                           "«Discuss AI Note Taker», pega tu API key de https://aistudio.google.com/apikey "
+                           "y pulsa «Probar conexión»; luego usa «Reintentar segmentos fallidos»."))
 
     @classmethod
     def find_best_available_model(cls, api_key):
         """Fetch available models from Gemini API that support generateContent."""
         urls_to_try = [
-            f"https://generativelanguage.googleapis.com/v1beta/models?key={api_key}",
-            f"https://generativelanguage.googleapis.com/v1/models?key={api_key}",
+            "https://generativelanguage.googleapis.com/v1beta/models?pageSize=200",
         ]
         for url in urls_to_try:
             try:
-                resp = requests.get(url, timeout=10)
+                resp = requests.get(url, headers={'x-goog-api-key': api_key}, timeout=10)
                 if resp.status_code == 200:
                     data = resp.json()
                     models = data.get("models", [])
@@ -43,7 +92,7 @@ class GeminiService:
                             valid_models.append(name)
                     
                     # Preference order (aliases first: they auto-follow whatever Google currently serves)
-                    for pref in ["gemini-flash-latest", "gemini-pro-latest", "gemini-flash-lite-latest", "gemini-3.6-flash", "gemini-3.5-flash", "gemini-3.5-flash-lite"]:
+                    for pref in ["gemini-flash-latest", "gemini-2.5-flash", "gemini-flash-lite-latest", "gemini-2.5-flash-lite"]:
                         for vm in valid_models:
                             if pref in vm:
                                 return vm
@@ -67,14 +116,15 @@ class GeminiService:
             f'Content-Type: {mimetype}\r\n\r\n'
         ).encode('utf-8') + media_bytes + f'\r\n--{boundary}--'.encode('utf-8')
 
-        url = f'https://generativelanguage.googleapis.com/upload/v1beta/files?key={api_key}'
+        url = 'https://generativelanguage.googleapis.com/upload/v1beta/files'
         headers = {
             'X-Goog-Upload-Protocol': 'multipart',
+            'x-goog-api-key': api_key,
             'Content-Type': f'multipart/related; boundary={boundary}',
         }
-        resp = requests.post(url, headers=headers, data=body, timeout=120)
+        resp = requests.post(url, headers=headers, data=body, timeout=300)
         if resp.status_code != 200:
-            raise UserError(_("Failed to upload media to Google Gemini File API (Code %s): %s") % (
+            raise GeminiRequestError(resp.status_code, _("No se pudo subir el audio a Google Gemini (HTTP %s): %s") % (
                 resp.status_code, resp.text[:500]))
 
         file_info = resp.json().get('file', {})
@@ -83,13 +133,13 @@ class GeminiService:
         state = file_info.get('state', 'PROCESSING')
 
         # Video files need server-side processing before they can be referenced; poll until ACTIVE.
-        max_wait = 120
+        max_wait = 300
         waited = 0
         while state == 'PROCESSING' and waited < max_wait:
             time.sleep(3)
             waited += 3
-            poll_url = f'https://generativelanguage.googleapis.com/v1beta/{file_name}?key={api_key}'
-            poll_resp = requests.get(poll_url, timeout=30)
+            poll_url = f'https://generativelanguage.googleapis.com/v1beta/{file_name}'
+            poll_resp = requests.get(poll_url, headers={'x-goog-api-key': api_key}, timeout=30)
             if poll_resp.status_code == 200:
                 file_info = poll_resp.json()
                 state = file_info.get('state', state)
@@ -105,8 +155,8 @@ class GeminiService:
         if not file_name:
             return
         try:
-            url = f'https://generativelanguage.googleapis.com/v1beta/{file_name}?key={api_key}'
-            requests.delete(url, timeout=15)
+            url = f'https://generativelanguage.googleapis.com/v1beta/{file_name}'
+            requests.delete(url, headers={'x-goog-api-key': api_key}, timeout=15)
         except Exception as e:
             _logger.warning("Failed to delete temporary Gemini file %s: %s", file_name, str(e))
 
@@ -117,7 +167,7 @@ class GeminiService:
         with real names instead of generic "Speaker 1" guesses."""
         api_key, model, custom_prompt = cls.get_config(env)
         if not api_key:
-            raise UserError(_("Google Gemini API Key is missing. Please configure it in Settings > General Settings > Discuss."))
+            raise cls._missing_key_error()
 
         if not audio_bytes:
             raise UserError(_("No audio data provided for transcription."))
@@ -203,11 +253,36 @@ class GeminiService:
             "generationConfig": {
                 "response_mime_type": "application/json",
                 "temperature": 0.2,
+                "maxOutputTokens": 32768,
             }
         }
 
+        def payload_with(parts):
+            return dict(payload, contents=[{"parts": parts}])
+
         try:
-            result_json, usage = cls._generate_content_json(api_key, model, payload, log_label=f"media ({len(audio_bytes)} bytes, {mimetype})")
+            try:
+                result_json, usage = cls._generate_content_json(
+                    api_key, model, payload, log_label=f"media ({len(audio_bytes)} bytes, {mimetype})")
+            except GeminiRequestError as e:
+                if e.status != 400:
+                    raise
+                # 400 = Gemini could not use something in the request. The usual culprit is one
+                # of the isolated per-speaker clips (a participant muted the whole segment, a
+                # remote stream that never produced a valid WebM header...). Retry with only
+                # the main recording, and if that is inline, through the File API.
+                _logger.warning("Gemini rejected the request (%s); retrying with the main recording only", e)
+                parts = [media_part, {"text": prompt_text}]
+                try:
+                    result_json, usage = cls._generate_content_json(
+                        api_key, model, payload_with(parts), log_label="media (no speaker clips)")
+                except GeminiRequestError as e2:
+                    if e2.status != 400 or uploaded_file_name:
+                        raise
+                    uploaded_file_name, file_uri = cls._upload_file_to_gemini(api_key, audio_bytes, mimetype)
+                    parts = [{"file_data": {"mime_type": mimetype, "file_uri": file_uri}}, {"text": prompt_text}]
+                    result_json, usage = cls._generate_content_json(
+                        api_key, model, payload_with(parts), log_label="media (File API)")
         finally:
             if uploaded_file_name:
                 cls._delete_gemini_file(api_key, uploaded_file_name)
@@ -216,79 +291,98 @@ class GeminiService:
         formatted.update(usage)
         return formatted
 
+    @staticmethod
+    def _error_text(resp):
+        try:
+            err = resp.json().get('error', {})
+            return (err.get('message') or resp.text[:400]).strip().rstrip('.'), err
+        except Exception:
+            return resp.text[:400], {}
+
+    @staticmethod
+    def _retry_delay(err):
+        for d in (err or {}).get('details', []) or []:
+            delay = d.get('retryDelay')
+            if delay:
+                try:
+                    return float(str(delay).rstrip('s'))
+                except ValueError:
+                    pass
+        return 0.0
+
     @classmethod
     def _generate_content_json(cls, api_key, model, payload, log_label="request"):
-        """Calls Gemini's generateContent, trying `model` then a list of known-good fallbacks,
-        retrying on 404 (retired model)/503 (overloaded)/429 (rate limited) rather than giving
-        up on the whole request. Returns (result_json, usage) where result_json is the parsed
-        JSON object from the model's response text, and usage is
-        {'prompt_tokens': int, 'output_tokens': int, 'total_tokens': int} taken from Gemini's
-        own usageMetadata - real token counts, not an estimate. Shared by process_audio
-        (transcription) and synthesize_meeting_summary (text-only)."""
-        # Aliases (*-latest) are listed first since they auto-follow whatever Google currently
-        # serves, rather than pinning to a specific generation that Google can retire later.
-        models_to_try = [model]
-        for fallback in ["gemini-flash-latest", "gemini-pro-latest", "gemini-flash-lite-latest", "gemini-3.6-flash", "gemini-3.5-flash", "gemini-3.5-flash-lite", "gemini-2.5-flash-lite"]:
-            if fallback not in models_to_try:
-                models_to_try.append(fallback)
-
-        response = None
-        successful_model = None
-        last_err_msg = ""
-        success = False
+        """Calls Gemini's generateContent with `model`, then the fallback models.
+        - 404 / "model not found / not supported": try the next model.
+        - 429 / 500 / 503: wait (honouring Google's retryDelay, max 25s) and retry, then next model.
+        - 400 (bad request) and 401/403 (bad key / API disabled): stop and raise a clear error.
+        Returns (result_json, usage)."""
+        models_to_try = [model] + [m for m in cls.FALLBACK_MODELS if m != model]
+        errors = []
+        response = successful_model = None
+        headers = {"Content-Type": "application/json", "x-goog-api-key": api_key}
 
         for cur_model in models_to_try:
-            for api_ver in ["v1beta", "v1"]:
-                url = f"https://generativelanguage.googleapis.com/{api_ver}/models/{cur_model}:generateContent?key={api_key}"
-                headers = {"Content-Type": "application/json"}
+            url = f"https://generativelanguage.googleapis.com/v1beta/models/{cur_model}:generateContent"
+            for attempt in range(3):
                 try:
-                    _logger.info("Sending %s to Gemini API (%s/%s)...", log_label, api_ver, cur_model)
-                    resp = requests.post(url, json=payload, headers=headers, timeout=180)
-                    if resp.status_code == 200:
-                        response = resp
-                        successful_model = cur_model
-                        success = True
-                        break
-                    elif resp.status_code in (404, 503, 429):
-                        # 404: model not found/retired. 503: model temporarily overloaded on
-                        # Google's side. 429: rate limited. All three are worth trying the
-                        # next model/version for instead of giving up on the whole request.
-                        _logger.info("Model %s unavailable on %s (HTTP %s), trying next fallback...", cur_model, api_ver, resp.status_code)
-                        last_err_msg = resp.text
-                        continue
-                    else:
-                        err_msg = resp.text
-                        try:
-                            err_json = resp.json()
-                            if 'error' in err_json and 'message' in err_json['error']:
-                                err_msg = err_json['error']['message']
-                        except Exception:
-                            pass
-                        raise UserError(_("Google Gemini API error (Code %s): %s") % (resp.status_code, err_msg))
-                except UserError:
-                    raise
+                    _logger.info("Sending %s to Gemini (%s, attempt %s)", log_label, cur_model, attempt + 1)
+                    resp = requests.post(url, json=payload, headers=headers, timeout=300)
+                except requests.exceptions.Timeout:
+                    errors.append(f"{cur_model}: tiempo de espera agotado")
+                    break
                 except Exception as e:
-                    _logger.warning("Error calling %s: %s", url, str(e))
-                    last_err_msg = str(e)
-            if success:
+                    errors.append(f"{cur_model}: {e}")
+                    break
+                if resp.status_code == 200:
+                    response, successful_model = resp, cur_model
+                    break
+                msg, err = cls._error_text(resp)
+                low = msg.lower()
+                if resp.status_code == 404 or (resp.status_code == 400 and 'model' in low and (
+                        'not found' in low or 'not supported' in low or 'unsupported' in low)):
+                    errors.append(f"{cur_model}: modelo no disponible")
+                    break
+                if resp.status_code in (429, 500, 503):
+                    errors.append(f"{cur_model}: HTTP {resp.status_code} {msg[:160]}")
+                    quota_zero = resp.status_code == 429 and 'limit: 0' in low
+                    if attempt < 2 and not quota_zero:
+                        time.sleep(min(cls._retry_delay(err) or (4 * (attempt + 1)), 25))
+                        continue
+                    break
+                if resp.status_code in (401, 403) or 'api key' in low:
+                    raise GeminiRequestError(resp.status_code, _(
+                        "Google rechazó la API key (HTTP %(code)s): %(msg)s. Revisa que la clave sea correcta "
+                        "y que la 'Generative Language API' esté habilitada en tu proyecto.",
+                        code=resp.status_code, msg=msg))
+                raise GeminiRequestError(resp.status_code, _(
+                    "Error de Google Gemini (HTTP %(code)s, modelo %(model)s): %(msg)s",
+                    code=resp.status_code, model=cur_model, msg=msg))
+            if response is not None:
                 break
 
-        if not success or not response:
-            # Try dynamically discovering model
+        if response is None:
             best_model = cls.find_best_available_model(api_key)
             if best_model and best_model not in models_to_try:
-                url = f"https://generativelanguage.googleapis.com/v1beta/models/{best_model}:generateContent?key={api_key}"
                 try:
-                    resp = requests.post(url, json=payload, headers={"Content-Type": "application/json"}, timeout=180)
+                    resp = requests.post(
+                        f"https://generativelanguage.googleapis.com/v1beta/models/{best_model}:generateContent",
+                        json=payload, headers=headers, timeout=300)
                     if resp.status_code == 200:
-                        response = resp
-                        successful_model = best_model
-                        success = True
-                except Exception:
-                    pass
+                        response, successful_model = resp, best_model
+                    else:
+                        errors.append(f"{best_model}: HTTP {resp.status_code} {cls._error_text(resp)[0][:160]}")
+                except Exception as e:
+                    errors.append(f"{best_model}: {e}")
 
-        if not success or not response:
-            raise UserError(_("Could not reach Google Gemini API with any available model. Details: %s") % last_err_msg)
+        if response is None:
+            detail = "; ".join(errors[-6:])
+            if any('HTTP 429' in e for e in errors):
+                raise GeminiRequestError(429, _(
+                    "Se agotó la cuota de Google Gemini (HTTP 429). Espera unos minutos y usa "
+                    "'Reintentar segmentos fallidos', o activa facturación en tu proyecto de Google. Detalle: %s",
+                    detail))
+            raise GeminiRequestError(0, _("No se pudo usar ningún modelo de Google Gemini. Detalle: %s", detail))
 
         res_data = response.json()
         usage_metadata = res_data.get("usageMetadata", {})
@@ -298,21 +392,51 @@ class GeminiService:
             'output_tokens': usage_metadata.get('candidatesTokenCount', 0),
             'total_tokens': usage_metadata.get('totalTokenCount', 0),
         }
-        try:
-            candidates = res_data.get("candidates", [])
-            if not candidates:
-                raise ValueError("No response generated by Gemini.")
-            text_content = candidates[0].get("content", {}).get("parts", [{}])[0].get("text", "{}")
-            result_json = json.loads(text_content)
-        except Exception as e:
-            _logger.warning("Could not parse JSON response directly from Gemini: %s. Raw text: %s", str(e), response.text[:500])
-            result_json = {
-                "transcript": text_content if 'text_content' in locals() else response.text,
-                "summary": "Meeting recorded and processed.",
-                "key_points": [],
-                "action_items": []
-            }
+        candidates = res_data.get("candidates") or []
+        if not candidates:
+            block = (res_data.get("promptFeedback") or {}).get("blockReason")
+            raise GeminiRequestError(0, _("Gemini no devolvió respuesta%s.", f" (bloqueado: {block})" if block else ""))
+        parts = (candidates[0].get("content") or {}).get("parts") or []
+        # thinking models can return a "thought" part first: use the real answer parts
+        text_content = "".join(p.get("text", "") for p in parts if not p.get("thought")) or "{}"
+        result_json = cls._parse_json(text_content)
+        if result_json is None:
+            _logger.warning("Gemini answer is not valid JSON (finish=%s); keeping raw text",
+                            candidates[0].get("finishReason"))
+            result_json = {"transcript": text_content, "summary": "", "key_points": [], "action_items": []}
         return result_json, usage
+
+    @staticmethod
+    def _parse_json(text):
+        text = (text or '').strip()
+        if text.startswith('```'):
+            text = text.strip('`')
+            text = text[text.find('{'):] if '{' in text else text
+        try:
+            data = json.loads(text)
+            return data if isinstance(data, dict) else {"transcript": data}
+        except Exception:
+            pass
+        a, b = text.find('{'), text.rfind('}')
+        if a >= 0 and b > a:
+            try:
+                return json.loads(text[a:b + 1])
+            except Exception:
+                return None
+        return None
+
+    @classmethod
+    def test_connection(cls, env):
+        """Small text-only call used by the Settings 'Probar conexión' button."""
+        api_key, model, _prompt = cls.get_config(env)
+        if not api_key:
+            raise cls._missing_key_error()
+        payload = {
+            "contents": [{"parts": [{"text": 'Reply with the JSON {"ok": true}'}]}],
+            "generationConfig": {"response_mime_type": "application/json", "temperature": 0},
+        }
+        _res, usage = cls._generate_content_json(api_key, model, payload, log_label="connection test")
+        return usage.get('model')
 
     @classmethod
     def synthesize_meeting_summary(cls, env, segment_transcripts):
@@ -322,7 +446,7 @@ class GeminiService:
         window. Much cheaper/faster than another audio call since it's just processing text."""
         api_key, model, custom_prompt = cls.get_config(env)
         if not api_key:
-            raise UserError(_("Google Gemini API Key is missing. Please configure it in Settings > General Settings > Discuss."))
+            raise cls._missing_key_error()
 
         combined_text = "\n\n".join(segment_transcripts)
 
@@ -356,38 +480,64 @@ class GeminiService:
             **usage,
         }
 
+    @staticmethod
+    def _item_text(item):
+        if isinstance(item, dict):
+            main = item.get('task') or item.get('action') or item.get('item') or item.get('description') \
+                or item.get('text') or item.get('point') or ''
+            who = item.get('assignee') or item.get('owner') or item.get('responsible') or item.get('assigned_to')
+            due = item.get('due') or item.get('due_date') or item.get('deadline')
+            extra = " — ".join(str(x) for x in (who, due) if x)
+            main = main or ", ".join(f"{k}: {v}" for k, v in item.items())
+            return f"{main} ({extra})" if extra else str(main)
+        return str(item)
+
     @classmethod
     def _format_results(cls, result_json):
+        def esc(value):
+            return str(escape(str(value))).replace('\n', '<br/>')
+
         transcript_raw = result_json.get('transcript', '')
         if isinstance(transcript_raw, list):
-            transcript_html = "<br/>".join(f"<p>{line}</p>" for line in transcript_raw)
+            lines = []
+            for line in transcript_raw:
+                if isinstance(line, dict):
+                    who = line.get('speaker') or line.get('name') or ''
+                    said = line.get('text') or line.get('content') or ''
+                    ts = line.get('timestamp') or line.get('time') or ''
+                    line = f"{'[' + str(ts) + '] ' if ts else ''}{who + ': ' if who else ''}{said}"
+                lines.append(f"<p>{esc(line)}</p>")
+            transcript_html = "".join(lines)
         else:
-            transcript_html = f"<div class='o_meeting_transcript'>{str(transcript_raw).replace(chr(10), '<br/>')}</div>"
+            transcript_html = f"<div class='o_meeting_transcript'>{esc(transcript_raw)}</div>"
 
         summary_raw = result_json.get('summary', '')
         if isinstance(summary_raw, list):
-            summary_html = "".join(f"<p>{item}</p>" for item in summary_raw)
+            summary_html = "".join(f"<p>{esc(cls._item_text(item))}</p>" for item in summary_raw)
         else:
-            summary_html = f"<div class='o_meeting_summary'>{str(summary_raw).replace(chr(10), '<br/>')}</div>"
+            summary_html = f"<div class='o_meeting_summary'>{esc(summary_raw)}</div>"
 
         key_points_raw = result_json.get('key_points', [])
         if isinstance(key_points_raw, list):
-            kp_items = "".join(f"<li>{item}</li>" for item in key_points_raw if item)
-            key_points_html = f"<ul class='o_meeting_key_points'>{kp_items}</ul>" if kp_items else "<p>None recorded.</p>"
+            kp_items = "".join(f"<li>{esc(cls._item_text(item))}</li>" for item in key_points_raw if item)
+            key_points_html = f"<ul class='o_meeting_key_points'>{kp_items}</ul>" if kp_items else "<p>—</p>"
         else:
-            key_points_html = f"<div>{str(key_points_raw).replace(chr(10), '<br/>')}</div>"
+            key_points_html = f"<div>{esc(key_points_raw)}</div>"
 
         action_items_raw = result_json.get('action_items', [])
         if isinstance(action_items_raw, list):
-            ai_items = "".join(f"<li><input type='checkbox' disabled='disabled'/> <strong>{item}</strong></li>" for item in action_items_raw if item)
-            action_items_html = f"<ul class='o_meeting_action_items' style='list-style: none; padding-left: 0;'>{ai_items}</ul>" if ai_items else "<p>No specific action items identified.</p>"
+            ai_items = "".join(
+                f"<li><input type='checkbox' disabled='disabled'/> <strong>{esc(cls._item_text(item))}</strong></li>"
+                for item in action_items_raw if item)
+            action_items_html = (f"<ul class='o_meeting_action_items' style='list-style: none; padding-left: 0;'>"
+                                 f"{ai_items}</ul>") if ai_items else "<p>—</p>"
         else:
-            action_items_html = f"<div>{str(action_items_raw).replace(chr(10), '<br/>')}</div>"
+            action_items_html = f"<div>{esc(action_items_raw)}</div>"
 
         return {
             'transcript': transcript_html,
             'summary': summary_html,
             'key_points': key_points_html,
             'action_items': action_items_html,
-            'raw_json': json.dumps(result_json, indent=2)
+            'raw_json': json.dumps(result_json, indent=2, ensure_ascii=False)
         }
