@@ -827,6 +827,17 @@
                        t-att-href="'%s/credenciales/seccion.pdf?seccion=%s' % (admin_base, s.id)"><i class="fa fa-print"/> <t t-out="s.name"/></a>
                 </div>
             </div>
+            <div class="o_sl_box small">
+                <b>Qué saldrá en el reverso</b>
+                <div t-foreach="status" t-as="st" class="o_ad_kv">
+                    <span><t t-out="st['company'].name"/> <small class="text-muted">(<t t-out="st['members']"/> miembros)</small></span>
+                    <b>
+                        <span t-attf-class="#{'text-success' if st['signature'] else 'text-danger'}"><i t-attf-class="fa #{'fa-check' if st['signature'] else 'fa-times'}"/> firma</span>
+                        · <span t-attf-class="#{'text-success' if st['phone'] else 'text-danger'}"><i t-attf-class="fa #{'fa-check' if st['phone'] else 'fa-times'}"/> teléfono</span>
+                        <small t-if="st['from']" class="text-muted d-block">tomada de <t t-out="st['from'].name"/></small>
+                    </b>
+                </div>
+            </div>
             <form method="post" enctype="multipart/form-data" class="o_sl_box o_ad_form o_scout_sig_form">
                 <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
                 <b>Reverso de la credencial</b>

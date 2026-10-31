@@ -33,3 +33,4 @@ from . import scout_council_live
 from . import scout_payment_origin
 from . import scout_card_pdf
 from . import scout_treasury_ledger
+from . import scout_call_turns

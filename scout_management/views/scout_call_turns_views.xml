@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Canal de Conversaciones: configuración de los turnos de palabra -->
+    <record id="discuss_channel_view_form_scout_turns" model="ir.ui.view">
+        <field name="name">discuss.channel.form.scout.turns</field>
+        <field name="model">discuss.channel</field>
+        <field name="inherit_id" ref="mail.discuss_channel_view_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//notebook" position="inside">
+                <page string="Turnos de palabra" name="scout_turns">
+                    <group>
+                        <group string="Reloj">
+                            <field name="scout_turns_enabled"/>
+                            <field name="scout_turn_minutes" invisible="not scout_turns_enabled"/>
+                            <field name="scout_turn_yellow_pct" invisible="not scout_turns_enabled"/>
+                            <field name="scout_turn_red_seconds" invisible="not scout_turns_enabled"/>
+                            <field name="scout_turn_alarm_seconds" invisible="not scout_turns_enabled"/>
+                        </group>
+                        <group string="Al terminar el tiempo" invisible="not scout_turns_enabled">
+                            <field name="scout_turn_auto_mute"/>
+                            <field name="scout_turn_grace" invisible="not scout_turn_auto_mute"/>
+                            <field name="scout_turn_chat"/>
+                            <field name="scout_turn_popup"/>
+                            <field name="scout_turn_moderator_ids" widget="many2many_tags"/>
+                        </group>
+                    </group>
+                    <div class="text-muted small" invisible="not scout_turns_enabled">Verde con el tiempo completo, amarillo al pasar el % indicado,
+                        rojo cuando quedan los segundos indicados; alarma en los últimos segundos y, al terminar, aviso en el chat,
+                        aviso en la pantalla de quien habla y micrófono silenciado. Se controla desde el recuadro que aparece en la llamada.</div>
+                    <separator string="Duración de discurso por participante" invisible="not scout_turns_enabled"/>
+                    <field name="channel_member_ids" invisible="not scout_turns_enabled">
+                        <list editable="bottom" create="false" delete="false">
+                            <field name="partner_id" readonly="1"/>
+                            <field name="guest_id" readonly="1" optional="hide"/>
+                            <field name="scout_speech_seconds" string="Duración (s, 0 = la del canal)"/>
+                        </list>
+                    </field>
+                    <separator string="Historial de turnos" invisible="not scout_turn_log_ids"/>
+                    <field name="scout_turn_log_ids" readonly="1" invisible="not scout_turn_log_ids">
+                        <list decoration-danger="over">
+                            <field name="start"/>
+                            <field name="name"/>
+                            <field name="planned_seconds"/>
+                            <field name="seconds"/>
+                            <field name="over" column_invisible="1"/>
+                        </list>
+                    </field>
+                </page>
+            </xpath>
+        </field>
+    </record>
+</odoo>

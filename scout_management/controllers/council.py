@@ -136,6 +136,16 @@ class ScoutCouncil(http.Controller):
         return self._api(lambda: self._meeting(meeting_id, True)._scout_live_control(
             op, line_id, minutes, partner_id=partner_id, name=name))
 
+    @http.route(['/scouts/consejo/api/agotado'], type='jsonrpc', auth='user')
+    def api_expired(self, meeting_id, key=None, **kw):
+        return self._api(lambda: self._meeting(meeting_id)._scout_turn_expired(key))
+
+    @http.route(['/scouts/consejo/api/ajustes'], type='jsonrpc', auth='user')
+    def api_settings(self, meeting_id, auto_mute=None, grace=None, chat_notices=None, **kw):
+        cfg = {k: v for k, v in {'auto_mute': auto_mute, 'grace': grace, 'chat_notices': chat_notices}.items()
+               if v is not None}
+        return self._api(lambda: self._meeting(meeting_id, True)._scout_live_control('settings', cfg=cfg))
+
     @http.route(['/scouts/consejo/api/agenda'], type='jsonrpc', auth='user')
     def api_agenda(self, meeting_id, points=None, text=None, template=False, file=None, preview=False, **kw):
         def run():

@@ -78,3 +78,5 @@ access_scout_treasury_count_officer,scout.treasury.count officer,model_scout_tre
 access_scout_treasury_count_treasurer,scout.treasury.count treasurer,model_scout_treasury_count,group_scout_treasurer,1,1,1,0
 access_scout_treasury_count_manager,scout.treasury.count manager,model_scout_treasury_count,group_scout_manager,1,1,1,1
 access_scout_treasury_statement_wizard,scout.treasury.statement.wizard officer,model_scout_treasury_statement_wizard,group_scout_officer,1,1,1,1
+access_scout_call_turn_user,scout.call.turn user,model_scout_call_turn,base.group_user,1,0,0,0
+access_scout_call_turn_officer,scout.call.turn officer,model_scout_call_turn,group_scout_officer,1,1,1,1

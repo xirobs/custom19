@@ -5,3 +5,4 @@ from . import promo
 from . import app
 from . import council
 from . import admin_portal
+from . import call_turns

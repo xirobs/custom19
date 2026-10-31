@@ -213,6 +213,11 @@ class ScoutMeetingLive(models.Model):
     live_turn_seconds = fields.Integer(string='Tiempo del turno (s)', copy=False)
     live_speaker_id = fields.Many2one('res.partner', string='Tiene la palabra', copy=False)
     live_speaker_name = fields.Char(string='Nombre de quien habla', copy=False)
+    live_turn_key = fields.Integer(copy=False, help='Número de turno (cambia cada vez que se da la palabra).')
+    live_turn_notified = fields.Boolean(copy=False, help='Ya se avisó en el chat que terminó el tiempo del turno.')
+    live_auto_mute = fields.Boolean(string='Silenciar el micrófono al terminar el tiempo', default=True)
+    live_grace = fields.Integer(string='Segundos de gracia antes de silenciar', default=10)
+    live_chat_notices = fields.Boolean(string='Avisos en el chat de la videollamada', default=True)
     turn_ids = fields.One2many('scout.meeting.turn', 'meeting_id', string='Turnos de palabra')
     live_session_start = fields.Datetime(string='Inicio real', copy=False)
     live_session_end = fields.Datetime(string='Fin real', copy=False)
@@ -408,10 +413,11 @@ class ScoutMeetingLive(models.Model):
         if speaker is None and not name and line and line.responsible:
             name = line.responsible
         return {'live_state': state, 'live_line_id': line.id or False, 'live_started': now, 'live_elapsed': 0.0,
+                'live_turn_key': (self.live_turn_key or 0) + 1, 'live_turn_notified': False,
                 'live_turn_seconds': max(30, int(seconds)), 'live_speaker_id': speaker.id if speaker else False,
                 'live_speaker_name': (name or (speaker.name if speaker else '') or '')[:120] or False}
 
-    def _scout_live_control(self, op, line_id=None, minutes=None, partner_id=None, name=None):
+    def _scout_live_control(self, op, line_id=None, minutes=None, partner_id=None, name=None, cfg=None):
         """Botones de quien modera. El reloj cuenta el TURNO de quien tiene la palabra; el orden del día solo
         propone a quién le toca y cuántos minutos."""
         meeting = self._scout_check(moderate=True)
@@ -444,6 +450,20 @@ class ScoutMeetingLive(models.Model):
             meeting._scout_close_turn(now)
             meeting.write(dict(meeting._scout_turn_vals(current or lines[:1], now, speaker=speaker or False,
                                                         name=(name or '').strip(), seconds=seconds), **session))
+            meeting._scout_chat_notice(_('🎤 Tiene la palabra: %(who)s · %(min)s min%(point)s', who=meeting.live_speaker_name
+                                         or '—', min=('%g' % (seconds / 60)),
+                                         point=(' · %s' % meeting.live_line_id.name) if meeting.live_line_id else ''))
+        elif op == 'settings':
+            vals = {}
+            cfg = cfg or {}
+            if cfg:
+                if 'auto_mute' in cfg:
+                    vals['live_auto_mute'] = bool(cfg['auto_mute'])
+                if 'grace' in cfg:
+                    vals['live_grace'] = max(0, min(120, int(cfg['grace'] or 0)))
+                if 'chat_notices' in cfg:
+                    vals['live_chat_notices'] = bool(cfg['chat_notices'])
+            meeting.write(vals)
         elif op == 'end_turn':
             meeting._scout_close_turn(now)
             meeting.write({'live_state': 'waiting', 'live_speaker_id': False, 'live_speaker_name': False})
@@ -477,6 +497,37 @@ class ScoutMeetingLive(models.Model):
             meeting._scout_sync_agenda_html()
         return meeting._scout_live_payload()
 
+    def _scout_videocall_channel(self):
+        self.ensure_one()
+        event = self.sudo().event_id
+        return event.videocall_channel_id if event and 'videocall_channel_id' in event._fields else False
+
+    def _scout_chat_notice(self, text):
+        """Mensaje en el chat de la videollamada del consejo (lo ven todos los participantes)."""
+        meeting = self.sudo()
+        channel = meeting._scout_videocall_channel()
+        if not channel or not meeting.live_chat_notices:
+            return
+        try:
+            channel.message_post(body=text, message_type='comment', subtype_xmlid='mail.mt_comment',
+                                 author_id=self.env.ref('base.partner_root').id)
+        except Exception:  # noqa: BLE001 - el aviso nunca debe frenar el reloj
+            _logger.info('No se pudo avisar en el chat de la videollamada', exc_info=True)
+
+    def _scout_turn_expired(self, key):
+        """Algún participante detectó que el turno se acabó: se avisa UNA vez en el chat de la llamada."""
+        meeting = self._scout_check()
+        if meeting.live_state != 'running' or meeting.live_turn_key != int(key or 0) or meeting.live_turn_notified:
+            return {'ok': False}
+        if meeting._scout_elapsed() < (meeting.live_turn_seconds or 0) - 2:
+            return {'ok': False}
+        meeting.live_turn_notified = True
+        who = meeting.live_speaker_name or meeting.live_speaker_id.name or _('Quien tiene la palabra')
+        mute = _(' Su micrófono se silenciará en %s s.', meeting.live_grace) if meeting.live_auto_mute else ''
+        meeting._scout_chat_notice(_('⏱ Terminó el tiempo de %(who)s (%(min)s min).%(mute)s', who=who,
+                                     min='%g' % ((meeting.live_turn_seconds or 0) / 60), mute=mute))
+        return {'ok': True}
+
     def _scout_live_payload(self, full=True):
         """Estado del reloj para la pantalla y para la videollamada."""
         self.ensure_one()
@@ -502,7 +553,11 @@ class ScoutMeetingLive(models.Model):
                 'partner_id': meeting.live_speaker_id.id or False,
                 'duration': meeting.live_turn_seconds or 180,
                 'elapsed': round(turn_elapsed, 1),
+                'key': meeting.live_turn_key,
             } or None,
+            'auto_mute': meeting.live_auto_mute,
+            'grace': max(0, meeting.live_grace or 0),
+            'chat_notices': meeting.live_chat_notices,
             'point': current and {
                 'id': current.id, 'name': current.name, 'responsible': current.responsible or '',
                 'planned': (current.duration + current.extra_minutes) * 60,

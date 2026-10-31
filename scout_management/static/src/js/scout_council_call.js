@@ -19,6 +19,10 @@ export class ScoutCouncilCall extends Component {
                 <span class="o_scout_ccall_title" t-esc="headTitle"/>
                 <i t-attf-class="fa #{state.collapsed ? 'fa-chevron-up' : 'fa-chevron-down'} ms-auto"/>
             </div>
+            <div t-if="state.alert" t-attf-class="o_scout_ccall_alert o_scout_ccall_alert_#{state.alert.level}">
+                <b t-esc="state.alert.title"/>
+                <div t-if="state.alert.text" t-esc="state.alert.text"/>
+            </div>
             <div t-if="!state.collapsed" class="o_scout_ccall_body">
                 <div class="o_scout_ccall_bar"><span t-attf-style="width: #{barPct}%"/></div>
                 <div class="o_scout_ccall_meta">
@@ -58,6 +62,14 @@ export class ScoutCouncilCall extends Component {
                             <button class="btn btn-sm btn-primary" t-on-click="() => this.control('next')">Sig. punto <i class="fa fa-step-forward"/></button>
                         </t>
                     </div>
+                    <div class="o_scout_ccall_opts">
+                        <label><input type="checkbox" t-att-checked="state.data.auto_mute" t-on-change="(ev) => this.saveSettings({auto_mute: ev.target.checked})"/> Silenciar al terminar</label>
+                        <label t-if="state.data.auto_mute">gracia
+                            <select t-on-change="(ev) => this.saveSettings({grace: Number(ev.target.value)})">
+                                <option t-foreach="[0, 5, 10, 15, 30]" t-as="g" t-key="g" t-att-value="g" t-att-selected="g == state.data.grace" t-esc="g + ' s'"/>
+                            </select></label>
+                        <label><input type="checkbox" t-att-checked="state.data.chat_notices" t-on-change="(ev) => this.saveSettings({chat_notices: ev.target.checked})"/> Avisos en el chat</label>
+                    </div>
                     <div class="o_scout_ccall_rec_row">
                         <t t-if="state.recording">
                             <button class="btn btn-sm btn-danger" t-on-click="stopRecording"><i class="fa fa-stop"/> Detener transcripción</button>
@@ -76,7 +88,8 @@ export class ScoutCouncilCall extends Component {
     setup() {
         this.store = this.env.services["mail.store"];
         this.state = useState({ data: null, collapsed: false, recording: false, level: 0, error: "", lastText: "",
-                                now: Date.now(), minutes: "3", tickN: 0 });
+                                now: Date.now(), minutes: "3", tickN: 0, alert: null });
+        this.turnFlags = {};
         this.channelId = null;
         this.receivedAt = Date.now();
         this.lastPoll = 0;
@@ -230,9 +243,35 @@ export class ScoutCouncilCall extends Component {
         await this.control("floor", { partner_id: p.partnerId || false, name: p.name, minutes });
     }
 
+    /** ¿Soy yo quien tiene la palabra? (por mi contacto, o por nombre si entré como invitado) */
+    isMyTurn() {
+        const t = this.state.data?.turn;
+        if (!t) {
+            return false;
+        }
+        const rtc = this.rtc;
+        const local = rtc?.localSession || rtc?.selfSession;
+        const myPartner = local?.partner_id?.id;
+        if (t.partner_id) {
+            return Boolean(myPartner) && t.partner_id === myPartner;
+        }
+        const myName = (local?.name || local?.persona?.name || "").trim().toLowerCase();
+        return Boolean(myName && t.speaker && myName === t.speaker.trim().toLowerCase());
+    }
+
+    notify(message, type) {
+        try {
+            this.env.services.notification?.add(message, { type, sticky: false });
+        } catch {
+            // sin servicio de notificaciones
+        }
+    }
+
     watchPhase() {
         const phase = this.phase;
-        if (this.lastPhase && phase !== this.lastPhase && this.state.data?.running) {
+        const d = this.state.data;
+        const t = d?.turn;
+        if (this.lastPhase && phase !== this.lastPhase && d?.running) {
             if (phase === "yellow") {
                 councilBeep(1, 660);
             } else if (phase === "red") {
@@ -242,6 +281,80 @@ export class ScoutCouncilCall extends Component {
             }
         }
         this.lastPhase = phase;
+        if (!t || !d.running) {
+            this.state.alert = null;
+            return;
+        }
+        const flags = (this.turnFlags[t.key] = this.turnFlags[t.key] || {});
+        const mine = this.isMyTurn();
+        if (phase !== "over") {
+            flags.overAt = null;
+            if (mine && phase === "yellow" && !flags.half) {
+                flags.half = true;
+                this.notify("Llevas la mitad de tu tiempo.", "warning");
+            }
+            if (mine && phase === "red" && !flags.last) {
+                flags.last = true;
+                this.state.alert = { level: "red", title: "Te queda 1 minuto", text: "Ve cerrando tu participación." };
+                this.notify("Te queda 1 minuto para cerrar.", "warning");
+            }
+            if (phase === "green" || phase === "yellow") {
+                this.state.alert = null;
+            }
+            return;
+        }
+        // Tiempo agotado
+        if (!flags.overAt) {
+            flags.overAt = Date.now();
+            rpc("/scouts/consejo/api/agotado", { meeting_id: d.id, key: t.key }).catch(() => {});
+        }
+        if (!mine) {
+            this.state.alert = null;
+            return;
+        }
+        const grace = Number(d.grace || 0);
+        const left = Math.max(0, Math.ceil(grace - (Date.now() - flags.overAt) / 1000));
+        if (!flags.overNotified) {
+            flags.overNotified = true;
+            this.notify("Tu tiempo terminó. Cierra tu participación.", "danger");
+        }
+        if (d.auto_mute && !flags.muted) {
+            this.state.alert = { level: "over", title: "Tu tiempo terminó",
+                                 text: left ? `Tu micrófono se silenciará en ${left} s.` : "" };
+            if (left <= 0) {
+                flags.muted = true;
+                this.muteMe();
+            }
+        } else {
+            this.state.alert = { level: "over", title: "Tu tiempo terminó",
+                                 text: flags.muted ? "Se silenció tu micrófono. Pide más tiempo a quien modera." : "Cierra tu participación." };
+        }
+    }
+
+    async muteMe() {
+        try {
+            const rtc = this.rtc;
+            const local = rtc?.localSession || rtc?.selfSession;
+            if (local && !local.isSelfMuted && !local.is_muted) {
+                await rtc.mute();
+            }
+            this.notify("Se silenció tu micrófono porque terminó tu tiempo.", "info");
+        } catch {
+            // si no se puede silenciar, queda el aviso
+        }
+    }
+
+    async saveSettings(cfg) {
+        try {
+            const res = await rpc("/scouts/consejo/api/ajustes", { meeting_id: this.state.data.id, ...cfg });
+            if (res.error) {
+                this.state.error = res.error;
+            } else {
+                this.poll();
+            }
+        } catch (e) {
+            this.state.error = e.message || String(e);
+        }
     }
 
     toggle() {

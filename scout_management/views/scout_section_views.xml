@@ -209,6 +209,18 @@
                         <group string="Aprobaciones">
                             <field name="scout_expense_approval"/>
                         </group>
+                        <group string="Turnos de palabra en videollamadas (por omisión)">
+                            <field name="scout_turn_minutes"/>
+                            <field name="scout_turn_yellow_pct"/>
+                            <field name="scout_turn_red_seconds"/>
+                            <field name="scout_turn_alarm_seconds"/>
+                            <field name="scout_turn_auto_mute"/>
+                            <field name="scout_turn_grace" invisible="not scout_turn_auto_mute"/>
+                            <field name="scout_turn_chat"/>
+                            <field name="scout_turn_popup"/>
+                            <div colspan="2" class="text-muted small">Se copian a cada llamada al activar "Turnos de palabra";
+                                en cada canal se pueden cambiar (Conversaciones → canal → pestaña Turnos de palabra).</div>
+                        </group>
                         <group string="Credencial (reverso)">
                             <field name="scout_card_group_label" placeholder="Grupo Scout 7 Ethnos"/>
                             <field name="scout_card_emergency_phone" placeholder="Teléfono de emergencias"/>

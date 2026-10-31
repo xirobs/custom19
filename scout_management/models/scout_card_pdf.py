@@ -151,7 +151,22 @@ class ResCompanyScoutCard(models.Model):
         for other in candidates.sudo():
             if other.scout_card_chief_signature:
                 return other
+        # Último recurso: cualquier empresa del servidor que tenga los datos de la credencial cargados
+        everyone = self.env['res.company'].sudo().search([])
+        for other in everyone:
+            if other.scout_card_chief_signature:
+                return other
+        for other in everyone:
+            if other.scout_card_emergency_phone or other.scout_card_chief_name:
+                return other
         return company
+
+    @api.model
+    def _scout_card_companies(self):
+        """Empresas que tienen miembros scout (para guardar en todas los datos de la credencial)."""
+        data = self.env['res.partner'].sudo()._read_group([('is_scout', '=', True), ('company_id', '!=', False)],
+                                                          ['company_id'], ['__count'])
+        return self.env['res.company'].browse([c.id for c, _n in data]).sudo()
 
     def _scout_card_chief(self):
         self.ensure_one()

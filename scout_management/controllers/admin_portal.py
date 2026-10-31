@@ -589,14 +589,24 @@ class ScoutAdminPortal(http.Controller):
             upload = request.httprequest.files.get('network_logo')
             if upload and upload.filename:
                 vals['scout_card_network_logo'] = base64.b64encode(upload.read())
-            company.write(vals)
-            return self._back(BASE + '/credenciales', ok=_('Datos de la credencial guardados.'))
+            targets = company | (company._scout_card_companies() & request.env.user.company_ids.sudo())
+            targets.write(vals)
+            return self._back(BASE + '/credenciales', ok=_('Datos de la credencial guardados (%s).',
+                                                            ', '.join(targets.mapped('name'))))
         sections = request.env['scout.leader.portal']._group_sections()
         sample = request.env['res.partner'].sudo().search([
             ('is_scout', '=', True), ('scout_state', 'in', ('trial', 'active')), ('scout_type', '=', 'youth'),
             ('company_id', 'in', [company.id, False])], limit=1)
+        Partner = request.env['res.partner'].sudo()
+        status = []
+        for comp in (company | company._scout_card_companies()):
+            members = Partner.search_count([('is_scout', '=', True), ('company_id', '=', comp.id)])
+            conf = comp._scout_card_config_company()
+            status.append({'company': comp, 'members': members, 'signature': bool(conf.scout_card_chief_signature),
+                           'phone': comp.scout_card_emergency_phone or conf.scout_card_emergency_phone or '',
+                           'from': conf if conf != comp else False})
         return self._render('scout_management.admin_cards', company=company, sections=sections, sample=sample,
-                            chief=company._scout_card_chief())
+                            chief=company._scout_card_chief(), status=status)
 
     @http.route([BASE + '/credenciales/<string:what>.pdf'], type='http', auth='user', website=True)
     def admin_cards_pdf(self, what, seccion=None, **kw):
