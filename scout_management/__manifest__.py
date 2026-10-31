@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 {
     'name': 'Gestión de Grupo Scout',
-    'version': '19.0.4.28.0',
+    'version': '19.0.4.29.0',
     'summary': 'Grupo scout sobre Contactos, Calendario, Contabilidad y Conversaciones: miembros, actividades, asistencia, adelantos, actas, tesorería y portal para padres',
     'description': """
 Gestión de Grupo Scout

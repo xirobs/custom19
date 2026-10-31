@@ -146,6 +146,23 @@ function init() {
     setupSectionSuggestion(form);
     restoreDraft(form);
     form.addEventListener("submit", (ev) => {
+        const photo = form.querySelector('input[name="photo_data"][data-required="1"]');
+        if (photo && !photo.value) {
+            ev.preventDefault();
+            window.alert("Falta la foto del scout (de frente, para su credencial).");
+            const pick = form.querySelector(".o_scout_photo_pick");
+            if (pick) {
+                pick.scrollIntoView({ behavior: "smooth", block: "center" });
+            }
+            return;
+        }
+        const ine = form.querySelector('input[name="ine_front"][required]');
+        if (ine && !ine.files.length) {
+            ev.preventDefault();
+            window.alert("Falta la foto de la identificación (INE, FM3 o pasaporte).");
+            ine.scrollIntoView({ behavior: "smooth", block: "center" });
+            return;
+        }
         if (!form.querySelector('input[name="guardian_signature"]').value) {
             ev.preventDefault();
             window.alert("Falta la firma del padre, madre o tutor.");

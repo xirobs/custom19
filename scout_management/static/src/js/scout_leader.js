@@ -307,6 +307,17 @@ function setupPhoto(input) {
 
 function setupRequireIne(form) {
     form.addEventListener("submit", (ev) => {
+        const photo = form.querySelector('input[name="photo_data"]');
+        if (photo && !photo.value && form.dataset.slRequirePhoto === "1") {
+            ev.preventDefault();
+            ev.stopImmediatePropagation();
+            toast("Falta la foto del miembro (de frente, para su credencial).");
+            const box = form.querySelector(".o_sl_photo_box");
+            if (box) {
+                box.scrollIntoView({ behavior: "smooth", block: "center" });
+            }
+            return;
+        }
         const front = form.querySelector('input[name="ine_front_data"]');
         if (front && !front.value && form.dataset.slRequireIne === "1") {
             ev.preventDefault();

@@ -1013,6 +1013,9 @@ class ScoutLeaderPortal(models.AbstractModel):
     def register_member(self, section, member, post):
         """Ficha de registro firmada por el tutor (consentimientos) y cargo de la cuota con su liga de pago."""
         member = self._member(member.id, section)
+        if not member.sudo().image_1920:
+            raise UserError(_('Falta la foto de %s (de frente, para su credencial). Tómala antes de guardar la ficha.',
+                              member.name))
         signature = post.get('guardian_signature') or ''
         if not signature.startswith('data:image'):
             raise UserError(_('Falta la firma del padre, madre o tutor.'))

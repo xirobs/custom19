@@ -1230,13 +1230,15 @@
                 <t t-if="cycle and cycle.registration_fee"> · Cuota <b t-out="money(cycle.registration_fee)"/></t></div>
             <div t-if="registration and registration.state == 'validated'" class="alert alert-success o_sl_alert">La ficha de este ciclo ya está validada.</div>
             <form t-else="" t-att-action="'/dirigentes/%s/miembro/%s/registro' % (section.id, member.id)" method="post" class="o_sl_form o_scout_register_form"
-                  t-att-data-sl-require-ine="'0' if registration and registration.guardian_id_front else '1'">
+                  t-att-data-sl-require-ine="'0' if registration and registration.guardian_id_front else '1'"
+                  t-att-data-sl-require-photo="'0' if member.image_128 else '1'">
                 <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
                 <input type="hidden" name="photo_data"/>
                 <div t-if="not member.image_128" class="o_sl_photo_box">
                     <img class="o_sl_photo_preview d-none" alt=""/>
-                    <label class="btn o_sl_btn_outline"><i class="fa fa-camera"/> Foto del scout
+                    <label class="btn o_sl_btn_outline"><i class="fa fa-camera"/> Foto del <t t-out="'scouter' if member.scout_type == 'leader' else 'scout'"/> (obligatoria)
                         <input type="file" accept="image/*" capture="user" class="d-none" data-sl-photo="1"/></label>
+                    <small class="text-danger d-block">Sin foto no se puede guardar la ficha (es para su credencial).</small>
                 </div>
                 <div class="o_sl_card_box small">
                     <b>Datos:</b> <t t-out="member.name"/>, <t t-out="member.scout_birthdate and member.scout_birthdate.strftime('%d/%m/%Y') or 'sin fecha de nacimiento'"/>.
@@ -1369,10 +1371,42 @@
         </div>
     </template>
 
+    <template id="scout_card_back" name="Credencial scout (reverso)">
+        <t t-set="bk" t-value="card['back']"/>
+        <div class="o_scout_card o_scout_card_back mt-3">
+            <img t-if="card.get('logo')" class="o_scout_card_wm" t-att-src="card['logo']" alt=""/>
+            <div class="o_scout_card_head">
+                <img t-if="card.get('logo')" t-att-src="card['logo']" alt=""/>
+                <div class="flex-grow-1"><div class="o_scout_card_kicker">Pertenece al</div><div class="o_scout_card_group" t-out="bk['group']"/></div>
+                <div class="o_scout_card_blood"><small>SANGRE</small><b t-out="bk['blood'] or '—'"/></div>
+            </div>
+            <div class="o_scout_card_back_body">
+                <div class="fw-bold" t-out="'%s · %s' % (member.name, member.scout_section_id.display_name or '')"/>
+                <div class="small"><t t-if="bk['folio']">Ficha No. <t t-out="bk['folio']"/></t><t t-if="bk['cycle']"> · Ciclo <t t-out="bk['cycle'].name"/></t></div>
+                <div class="d-flex gap-2 mt-2">
+                    <div class="flex-grow-1 small">
+                        <div class="o_scout_card_lbl">En caso de emergencia</div>
+                        <div t-if="bk['phone']" class="o_scout_card_phone">Grupo: <t t-out="bk['phone']"/></div>
+                        <div t-foreach="member.scout_emergency_ids[:2]" t-as="ec"><b t-out="ec.name"/> · <t t-out="ec.phone"/></div>
+                        <div t-if="not member.scout_emergency_ids and member.scout_guardian_id"><b t-out="member.scout_guardian_id.name"/> · <t t-out="member.scout_guardian_id.phone or ''"/></div>
+                    </div>
+                    <div class="o_scout_card_sign text-center">
+                        <img t-if="bk['signature']" t-att-src="bk['signature']" alt="Firma"/>
+                        <div t-else="" class="o_scout_card_nosign">Sin firma cargada</div>
+                        <div class="o_scout_card_sign_line"><b t-out="bk['chief'] or ''"/><br/>Jefe de grupo</div>
+                    </div>
+                </div>
+                <div t-if="bk['network']" class="small text-center fw-bold mt-1">Miembro de la <t t-out="bk['network']"/></div>
+            </div>
+            <div class="o_scout_card_foot justify-content-center"><span class="small fw-bold" t-out="('Si la encuentras llama al %s' % bk['phone']) if bk['phone'] else 'Siempre listos para servir'"/></div>
+        </div>
+    </template>
+
     <template id="leader_member_card" name="Dirigentes: credencial">
         <t t-call="scout_management.leader_layout">
             <h5 class="o_sl_h">Credencial electrónica</h5>
             <t t-call="scout_management.scout_card_body"/>
+            <t t-call="scout_management.scout_card_back"/>
             <div class="o_sl_card_box small mt-3">
                 <h6><i class="fa fa-plus-square text-danger"/> Emergencia</h6>
                 <div>Tipo de sangre: <b t-out="dict(member._fields['scout_blood_type'].selection).get(member.scout_blood_type) or '—'"/></div>

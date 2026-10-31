@@ -1210,6 +1210,7 @@ def _card_values(member):
         'logo': member._scout_card_logo(),
         'qr': member._scout_card_qr(),
         'company': member.company_id or request.env.company,
+        'back': member._scout_card_back_values(),
     }
 
 

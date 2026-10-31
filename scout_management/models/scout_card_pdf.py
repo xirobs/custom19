@@ -138,6 +138,21 @@ class ResCompanyScoutCard(models.Model):
     def write(self, vals):
         return super().write(self._scout_clean_signature_vals(dict(vals)))
 
+    def _scout_card_config_company(self):
+        """Empresa de donde se toman la firma y los datos del reverso. Si el miembro está en otra empresa del
+        mismo grupo (servidor multiempresa) que no tiene la firma cargada, se usa la que sí la tiene."""
+        self.ensure_one()
+        company = self.sudo()
+        if company.scout_card_chief_signature:
+            return company
+        candidates = company.parent_ids | company.child_ids | self.env.user.company_ids | self.env.company
+        if 'root_id' in company._fields and company.root_id:
+            candidates |= self.env['res.company'].sudo().search([]).filtered(lambda c: c.root_id == company.root_id)
+        for other in candidates.sudo():
+            if other.scout_card_chief_signature:
+                return other
+        return company
+
     def _scout_card_chief(self):
         self.ensure_one()
         if self.scout_card_chief_name:
@@ -224,8 +239,9 @@ class ScoutCardPdf(models.AbstractModel):
             except OSError:
                 logo = None
         emblem = _pil(getattr(company, 'scout_emblem', False))
-        signature = _pil(company.scout_card_chief_signature)
-        network = _pil(company.scout_card_network_logo)
+        conf = company._scout_card_config_company()
+        signature = _pil(conf.scout_card_chief_signature)
+        network = _pil(conf.scout_card_network_logo or company.scout_card_network_logo)
         data = {
             'logo': _reader(logo) if logo else None,
             'logo_ratio': (logo.width / logo.height) if logo else 1,
@@ -236,10 +252,10 @@ class ScoutCardPdf(models.AbstractModel):
             'signature_ratio': (signature.width / signature.height) if signature else 3,
             'network': _reader(network) if network else None,
             'network_ratio': (network.width / network.height) if network else 1,
-            'group': company.scout_card_group_label or company.name or '',
-            'chief': company._scout_card_chief(),
-            'phone': company.scout_card_emergency_phone or company.phone or '',
-            'network_name': company.scout_card_network or NETWORK_DEFAULT,
+            'group': company.scout_card_group_label or conf.scout_card_group_label or company.name or '',
+            'chief': company.scout_card_chief_name or conf._scout_card_chief() or company._scout_card_chief(),
+            'phone': company.scout_card_emergency_phone or conf.scout_card_emergency_phone or company.phone or '',
+            'network_name': company.scout_card_network or conf.scout_card_network or NETWORK_DEFAULT,
         }
         assets[key] = data
         return data

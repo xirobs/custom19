@@ -201,6 +201,28 @@ class ResPartnerScoutTools(models.Model):
         return self.scout_type == 'leader' or self.scout_registration_status in ('paid', 'exempt') \
             or bool(self._scout_paid_next_registration())
 
+    def _scout_card_back_values(self):
+        """Datos del reverso de la credencial para la pantalla (los mismos que el PDF)."""
+        self.ensure_one()
+        member = self.sudo()
+        company = (member.company_id or self.env.company).sudo()
+        conf = company._scout_card_config_company()
+        sig = conf.scout_card_chief_signature
+        if isinstance(sig, bytes):
+            sig = sig.decode()
+        reg, cycle = member._scout_card_info()
+        blood = dict(member._fields['scout_blood_type'].selection).get(member.scout_blood_type) \
+            if member.scout_blood_type and member.scout_blood_type != 'unknown' else ''
+        return {
+            'group': company.scout_card_group_label or conf.scout_card_group_label or company.name,
+            'phone': company.scout_card_emergency_phone or conf.scout_card_emergency_phone or company.phone or '',
+            'chief': company.scout_card_chief_name or conf._scout_card_chief() or company._scout_card_chief(),
+            'signature': 'data:image/png;base64,%s' % sig if sig else False,
+            'network': company.scout_card_network or conf.scout_card_network or '',
+            'folio': reg.name if reg and member.scout_type == 'youth' else '',
+            'cycle': cycle, 'blood': blood,
+        }
+
     def _scout_card_logo(self):
         """Logo del grupo (marca de agua de la credencial) como data URI."""
         self.ensure_one()

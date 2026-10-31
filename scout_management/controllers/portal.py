@@ -371,6 +371,8 @@ def scout_save_registration(post, member, guardian=None):
                         guardian_id_front_name=previous.guardian_id_front_name)
         elif not (existing and existing.guardian_id_front):
             return None, _('Adjunta la identificación del padre, madre o tutor (INE, FM3 o pasaporte).')
+    if not scout_photo_from_post(post.get('photo_data')) and not (member and member.sudo().image_1920):
+        return None, _('Falta la foto del scout (de frente, para su credencial). Tómala o elígela antes de enviar.')
     if member:
         vals['kind'] = 'return' if member.scout_state == 'inactive' else 'renewal'
     proof = post.get('payment_proof')

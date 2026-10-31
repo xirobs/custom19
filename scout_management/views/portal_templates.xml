@@ -262,8 +262,8 @@
                             <div class="col-12"><label class="form-label">Domicilio</label>
                                 <input name="street" class="form-control" t-att-value="member.street"/></div>
                             <div class="col-12">
-                                <label class="form-label">Foto del scout <small class="text-muted">(de frente, para su credencial; la puede tomar el scout o su tutor)</small></label>
-                                <input type="hidden" name="photo_data"/>
+                                <label class="form-label">Foto del scout * <small class="text-muted">(de frente, para su credencial; la puede tomar el scout o su tutor)</small></label>
+                                <input type="hidden" name="photo_data" t-att-data-required="None if (member and member.image_128) else '1'"/>
                                 <label class="o_scout_photo_pick d-flex align-items-center gap-3">
                                     <img t-if="member and member.image_128" t-att-src="image_data_uri(member.image_256)" class="o_sl_photo_preview o_scout_avatar_big" alt=""/>
                                     <img t-else="" class="o_sl_photo_preview o_scout_avatar_big d-none" alt=""/>
