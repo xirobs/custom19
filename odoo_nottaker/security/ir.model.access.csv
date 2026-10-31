@@ -1,0 +1,8 @@
+id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink
+access_discuss_meeting_recording_user,discuss.meeting.recording.user,model_discuss_meeting_recording,base.group_user,1,1,1,1
+access_discuss_meeting_recording_system,discuss.meeting.recording.system,model_discuss_meeting_recording,base.group_system,1,1,1,1
+access_discuss_meeting_recording_segment_user,discuss.meeting.recording.segment.user,model_discuss_meeting_recording_segment,base.group_user,1,1,1,1
+access_discuss_meeting_recording_segment_system,discuss.meeting.recording.segment.system,model_discuss_meeting_recording_segment,base.group_system,1,1,1,1
+access_discuss_meeting_recording_usage_log_user,discuss.meeting.recording.usage.log.user,model_discuss_meeting_recording_usage_log,base.group_user,1,0,1,0
+access_discuss_meeting_recording_usage_log_system,discuss.meeting.recording.usage.log.system,model_discuss_meeting_recording_usage_log,base.group_system,1,1,1,1
+access_discuss_meeting_recording_send_wizard_user,discuss.meeting.recording.send.wizard.user,model_discuss_meeting_recording_send_wizard,base.group_user,1,1,1,1

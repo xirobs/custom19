@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="res_config_settings_view_form_inherit_nottaker" model="ir.ui.view">
+        <field name="name">res.config.settings.view.form.inherit.odoo_nottaker</field>
+        <field name="model">res.config.settings</field>
+        <field name="inherit_id" ref="base_setup.res_config_settings_view_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//block[@id='discuss']" position="after">
+                <block title="Discuss AI Note Taker &amp; Call Recorder" id="discuss_nottaker_settings">
+                    <setting id="auto_record_calls_setting" string="Auto-Record Meetings" help="Automatically start recording when entering a call and automatically process AI transcript &amp; notes when ending the call">
+                        <field name="auto_record_calls"/>
+                    </setting>
+                    <setting id="gemini_api_key_setting" string="Google Gemini API Key" help="Free API key from Google AI Studio (https://aistudio.google.com/) for speech-to-text and AI summaries">
+                        <field name="gemini_api_key" placeholder="AIzaSy..."/>
+                        <div class="text-muted small mt-1">
+                            Get your free API key at <a href="https://aistudio.google.com/" target="_blank">Google AI Studio</a>.
+                        </div>
+                    </setting>
+                    <setting id="gemini_model_setting" string="AI Model" help="Model used for audio transcription and meeting minutes generation">
+                        <field name="gemini_model"/>
+                    </setting>
+                    <setting id="gemini_auto_post_setting" string="Auto-Post to Channel Chat" help="Post meeting summary and action items directly to the Discuss channel when recording processing finishes">
+                        <field name="gemini_auto_post_to_chat"/>
+                    </setting>
+                    <setting id="gemini_custom_prompt_setting" string="Custom Prompt / Instructions" help="Optional special instructions (e.g., specific language, company acronyms)">
+                        <field name="gemini_custom_prompt" placeholder="e.g. Focus on action items, translate to Spanish, etc."/>
+                    </setting>
+                    <setting id="gemini_pricing_setting" string="Token Cost Estimation" help="Used only to show an estimated cost on each recording - check aistudio.google.com for your model's actual current price">
+                        <div class="d-flex gap-4">
+                            <div>
+                                <label for="gemini_price_per_1m_input" string="$ per 1M input tokens"/>
+                                <field name="gemini_price_per_1m_input"/>
+                            </div>
+                            <div>
+                                <label for="gemini_price_per_1m_output" string="$ per 1M output tokens"/>
+                                <field name="gemini_price_per_1m_output"/>
+                            </div>
+                        </div>
+                    </setting>
+                </block>
+            </xpath>
+        </field>
+    </record>
+</odoo>

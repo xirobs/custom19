@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Discuss Menu Integration -->
+    <menuitem id="menu_discuss_meeting_recording"
+              name="Meeting Recordings &amp; AI Notes"
+              parent="mail.menu_root_discuss"
+              action="action_discuss_meeting_recording"
+              sequence="3"/>
+</odoo>

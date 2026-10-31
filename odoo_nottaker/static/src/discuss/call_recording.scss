@@ -1,0 +1,53 @@
+@keyframes recordingPulse {
+    0% {
+        opacity: 1;
+        transform: scale(1);
+    }
+    50% {
+        opacity: 0.4;
+        transform: scale(1.15);
+    }
+    100% {
+        opacity: 1;
+        transform: scale(1);
+    }
+}
+
+.pulse-recording {
+    animation: recordingPulse 1.5s infinite ease-in-out;
+    color: #dc3545 !important;
+}
+
+.o_meeting_transcript {
+    font-size: 14px;
+    line-height: 1.6;
+    color: #333;
+    padding: 12px;
+    background: #fafafa;
+    border-radius: 6px;
+    border: 1px solid #e9ecef;
+}
+
+.o_meeting_summary {
+    font-size: 14px;
+    line-height: 1.6;
+    color: #212529;
+    padding: 10px;
+    background: #f8f9fa;
+    border-left: 4px solid #0d6efd;
+    border-radius: 4px;
+}
+
+.o_meeting_key_points li {
+    margin-bottom: 6px;
+    font-size: 13.5px;
+}
+
+.o_meeting_action_items li {
+    margin-bottom: 8px;
+    font-size: 13.5px;
+    background: #f8fff9;
+    padding: 6px 10px;
+    border-radius: 4px;
+    border: 1px solid #d4edda;
+}

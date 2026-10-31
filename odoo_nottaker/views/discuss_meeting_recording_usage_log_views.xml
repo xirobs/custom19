@@ -1,0 +1,90 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Graph View (pie chart by model = visual % breakdown) -->
+    <record id="view_discuss_meeting_recording_usage_log_graph" model="ir.ui.view">
+        <field name="name">discuss.meeting.recording.usage.log.graph</field>
+        <field name="model">discuss.meeting.recording.usage.log</field>
+        <field name="arch" type="xml">
+            <graph string="Gemini Usage by Model" type="pie">
+                <field name="model"/>
+                <field name="total_tokens" type="measure"/>
+            </graph>
+        </field>
+    </record>
+
+    <!-- Pivot View (exact numbers + % via Odoo's built-in pivot totals) -->
+    <record id="view_discuss_meeting_recording_usage_log_pivot" model="ir.ui.view">
+        <field name="name">discuss.meeting.recording.usage.log.pivot</field>
+        <field name="model">discuss.meeting.recording.usage.log</field>
+        <field name="arch" type="xml">
+            <pivot string="Gemini Usage by Model">
+                <field name="model" type="row"/>
+                <field name="call_type" type="col"/>
+                <field name="total_tokens" type="measure"/>
+                <field name="prompt_tokens" type="measure"/>
+                <field name="output_tokens" type="measure"/>
+                <field name="estimated_cost" type="measure"/>
+            </pivot>
+        </field>
+    </record>
+
+    <!-- List View -->
+    <record id="view_discuss_meeting_recording_usage_log_tree" model="ir.ui.view">
+        <field name="name">discuss.meeting.recording.usage.log.list</field>
+        <field name="model">discuss.meeting.recording.usage.log</field>
+        <field name="arch" type="xml">
+            <list string="Gemini Usage Log" default_order="create_date desc">
+                <field name="create_date" string="When"/>
+                <field name="recording_id"/>
+                <field name="model"/>
+                <field name="call_type"/>
+                <field name="prompt_tokens" sum="Total"/>
+                <field name="output_tokens" sum="Total"/>
+                <field name="total_tokens" sum="Total"/>
+                <field name="estimated_cost" sum="Total"/>
+            </list>
+        </field>
+    </record>
+
+    <!-- Search View -->
+    <record id="view_discuss_meeting_recording_usage_log_search" model="ir.ui.view">
+        <field name="name">discuss.meeting.recording.usage.log.search</field>
+        <field name="model">discuss.meeting.recording.usage.log</field>
+        <field name="arch" type="xml">
+            <search string="Search Gemini Usage">
+                <field name="model"/>
+                <field name="recording_id"/>
+                <group>
+                    <filter string="Model" name="group_by_model" domain="[]" context="{'group_by': 'model'}"/>
+                    <filter string="Call Type" name="group_by_call_type" domain="[]" context="{'group_by': 'call_type'}"/>
+                    <filter string="Day" name="group_by_day" domain="[]" context="{'group_by': 'create_date:day'}"/>
+                </group>
+            </search>
+        </field>
+    </record>
+
+    <!-- Action: opens on the pie chart (grouped by model) by default -->
+    <record id="action_discuss_meeting_recording_usage_log" model="ir.actions.act_window">
+        <field name="name">Gemini Usage by Model</field>
+        <field name="res_model">discuss.meeting.recording.usage.log</field>
+        <field name="view_mode">graph,pivot,list</field>
+        <field name="search_view_id" ref="view_discuss_meeting_recording_usage_log_search"/>
+        <field name="context">{'search_default_group_by_model': 1}</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">
+                No Gemini usage logged yet!
+            </p>
+            <p>
+                Every transcription and summary call this app makes gets logged here, so you can
+                see exactly how your token usage breaks down by model.
+            </p>
+        </field>
+    </record>
+
+    <!-- Menu -->
+    <menuitem id="menu_discuss_meeting_recording_usage_log"
+              name="Gemini Usage by Model"
+              parent="mail.menu_root_discuss"
+              action="action_discuss_meeting_recording_usage_log"
+              sequence="4"/>
+</odoo>

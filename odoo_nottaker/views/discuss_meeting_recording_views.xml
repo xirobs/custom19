@@ -1,0 +1,167 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- List View -->
+    <record id="view_discuss_meeting_recording_tree" model="ir.ui.view">
+        <field name="name">discuss.meeting.recording.list</field>
+        <field name="model">discuss.meeting.recording</field>
+        <field name="arch" type="xml">
+            <list string="Meeting Recordings &amp; AI Notes" sample="1">
+                <field name="name"/>
+                <field name="channel_id"/>
+                <field name="start_time"/>
+                <field name="duration_display" string="Duration"/>
+                <field name="user_id" widget="many2one_avatar_user"/>
+                <field name="partner_ids" widget="many2many_tags"/>
+                <field name="total_tokens_used" string="Tokens" optional="hide" sum="Total"/>
+                <field name="estimated_cost" string="Est. Cost ($)" optional="show" sum="Total"/>
+                <field name="state" widget="badge" decoration-success="state == 'completed'" decoration-info="state == 'processing'" decoration-warning="state == 'recording'" decoration-danger="state == 'failed'"/>
+            </list>
+        </field>
+    </record>
+
+    <!-- Form View -->
+    <record id="view_discuss_meeting_recording_form" model="ir.ui.view">
+        <field name="name">discuss.meeting.recording.form</field>
+        <field name="model">discuss.meeting.recording</field>
+        <field name="arch" type="xml">
+            <form string="Meeting Recording &amp; AI Notes">
+                <header>
+                    <button name="action_process_recording"
+                            string="Transcribe &amp; Summarize (Gemini)"
+                            type="object"
+                            class="btn-primary"
+                            invisible="state in ('recording', 'processing') or segment_ids"/>
+                    <button name="action_finalize_now"
+                            string="Finalize Now"
+                            type="object"
+                            class="btn-primary"
+                            invisible="not segment_ids or state in ('completed', 'processing')"
+                            confirm="Force-finalize using whatever segments have been uploaded so far? Use this if the meeting recording seems stuck (e.g. the call ended abruptly)."/>
+                    <button name="action_post_to_chat"
+                            string="Post Summary to Discuss"
+                            type="object"
+                            class="btn-secondary"
+                            invisible="state != 'completed'"/>
+                    <button name="%(action_discuss_meeting_recording_send_wizard)d"
+                            string="Send to Participant"
+                            type="action"
+                            class="btn-secondary"
+                            context="{'default_recording_id': id}"
+                            invisible="state != 'completed'"/>
+                    <field name="state" widget="statusbar" statusbar_visible="recording,draft,processing,completed"/>
+                </header>
+                <sheet>
+                    <div class="oe_title">
+                        <label for="name" class="oe_edit_only"/>
+                        <h1>
+                            <field name="name" placeholder="e.g. Marketing Strategy Sync"/>
+                        </h1>
+                    </div>
+                    <group>
+                        <group>
+                            <field name="channel_id"/>
+                            <field name="start_time"/>
+                            <field name="duration_display" string="Call Duration"/>
+                        </group>
+                        <group>
+                            <field name="user_id" widget="many2one_avatar_user"/>
+                            <field name="partner_ids" widget="many2many_tags" placeholder="Attendees"/>
+                            <field name="posted_to_chat" invisible="not channel_id"/>
+                        </group>
+                        <group string="Gemini Usage" invisible="not total_tokens_used">
+                            <field name="prompt_tokens" string="Input Tokens"/>
+                            <field name="output_tokens" string="Output Tokens"/>
+                            <field name="total_tokens_used" string="Total Tokens"/>
+                            <field name="estimated_cost" string="Estimated Cost ($)"/>
+                        </group>
+                    </group>
+
+                    <!-- Recording Player Section -->
+                    <group string="Recording Playback" invisible="not audio_attachment_id and not segment_ids">
+                        <field name="audio_attachment_id" invisible="1"/>
+                        <field name="audio_player_html" widget="html" readonly="1" options="{'collaborative': false}" nolabel="1"/>
+                    </group>
+
+                    <div class="alert alert-danger" role="alert" invisible="state != 'failed' or not error_message">
+                        <strong>Processing Error: </strong>
+                        <field name="error_message" readonly="1"/>
+                    </div>
+
+                    <notebook>
+                        <page string="📝 AI Summary &amp; Action Items" name="summary_page">
+                            <div class="row">
+                                <div class="col-md-12 mb-3">
+                                    <h4 class="text-primary"><i class="fa fa-file-text-o"/> Executive Summary</h4>
+                                    <field name="summary" widget="html" readonly="1" options="{'collaborative': false}"/>
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <h4 class="text-info"><i class="fa fa-list-ul"/> Key Discussion Points &amp; Decisions</h4>
+                                    <field name="key_points" widget="html" readonly="1" options="{'collaborative': false}"/>
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <h4 class="text-success"><i class="fa fa-check-square-o"/> Action Items &amp; Next Steps</h4>
+                                    <field name="action_items" widget="html" readonly="1" options="{'collaborative': false}"/>
+                                </div>
+                            </div>
+                        </page>
+                        <page string="🎙️ Full Word-for-Word Transcript" name="transcript_page">
+                            <field name="transcript" widget="html" readonly="1" options="{'collaborative': false}"/>
+                        </page>
+                        <page string="Segments" name="segments_page" invisible="not segment_ids">
+                            <field name="segment_ids" readonly="1">
+                                <list>
+                                    <field name="sequence"/>
+                                    <field name="start_offset" widget="float_time"/>
+                                    <field name="is_last"/>
+                                    <field name="state" widget="badge" decoration-success="state == 'completed'" decoration-info="state == 'processing'" decoration-danger="state == 'failed'"/>
+                                    <field name="total_tokens" string="Tokens"/>
+                                    <field name="error_message"/>
+                                </list>
+                            </field>
+                        </page>
+                    </notebook>
+                </sheet>
+                <chatter/>
+            </form>
+        </field>
+    </record>
+
+    <!-- Search View -->
+    <record id="view_discuss_meeting_recording_search" model="ir.ui.view">
+        <field name="name">discuss.meeting.recording.search</field>
+        <field name="model">discuss.meeting.recording</field>
+        <field name="arch" type="xml">
+            <search string="Search Recordings">
+                <field name="name"/>
+                <field name="channel_id"/>
+                <field name="user_id"/>
+                <separator/>
+                <filter string="Completed" name="filter_completed" domain="[('state', '=', 'completed')]"/>
+                <filter string="Processing" name="filter_processing" domain="[('state', '=', 'processing')]"/>
+                <filter string="My Recordings" name="filter_my_recordings" domain="[('user_id', '=', uid)]"/>
+                <separator/>
+                <group>
+                    <filter string="Discuss Channel" name="group_by_channel" domain="[]" context="{'group_by': 'channel_id'}"/>
+                    <filter string="Status" name="group_by_state" domain="[]" context="{'group_by': 'state'}"/>
+                    <filter string="Start Date" name="group_by_date" domain="[]" context="{'group_by': 'start_time'}"/>
+                </group>
+            </search>
+        </field>
+    </record>
+
+    <!-- Action -->
+    <record id="action_discuss_meeting_recording" model="ir.actions.act_window">
+        <field name="name">Meeting Recordings &amp; AI Notes</field>
+        <field name="res_model">discuss.meeting.recording</field>
+        <field name="view_mode">list,form</field>
+        <field name="search_view_id" ref="view_discuss_meeting_recording_search"/>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">
+                No meeting recordings yet!
+            </p>
+            <p>
+                Start a call in any Discuss channel and the call will be automatically recorded and transcribed with AI notes.
+            </p>
+        </field>
+    </record>
+</odoo>

@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="discuss_channel_view_form_inherit_nottaker" model="ir.ui.view">
+        <field name="name">discuss.channel.form.inherit.odoo_nottaker</field>
+        <field name="model">discuss.channel</field>
+        <field name="inherit_id" ref="mail.discuss_channel_view_form"/>
+        <field name="arch" type="xml">
+            <div name="button_box" position="inside">
+                <button name="action_view_recordings" 
+                        type="object" 
+                        class="oe_stat_button" 
+                        icon="fa-microphone">
+                    <field name="meeting_recording_count" widget="statinfo" string="Recordings"/>
+                </button>
+            </div>
+        </field>
+    </record>
+</odoo>
