@@ -4,7 +4,7 @@ import io
 import re
 from datetime import date
 
-from odoo.exceptions import ValidationError
+from odoo.exceptions import UserError, ValidationError
 from odoo.fields import Command
 from odoo.tests import HttpCase, TransactionCase, tagged
 
@@ -488,3 +488,74 @@ class TestPortalAppAndCertificates(_RssPortalCommon, HttpCase):
         self.assertEqual(self.ana_a.certificate_number, 'AP-0103')
         res = self.url_open('/seguro/asegurados/%s/certificado' % self.ana_a.id)
         self.assertTrue(res.content.startswith(b'%PDF'))
+
+
+@tagged('post_install', '-at_install', 'red_seguro_scout')
+class TestPortalLoginAndPassword(_RssPortalCommon, TransactionCase):
+
+    @classmethod
+    def setUpClass(cls):
+        super().setUpClass()
+        cls._setup_data()
+
+    def test_login_follows_email_and_admin_sets_password(self):
+        # Caso real: se dio acceso con un correo provisional y luego se corrigió el correo.
+        partner = self.env['res.partner'].create({'name': 'Prueba Grupo', 'email': 'example@example.com'})
+        member = self.env['rss.group.member'].create({'group_id': self.g7.id, 'partner_id': partner.id,
+                                                     'role': 'leader'})
+        action = member.action_grant_portal()
+        self.assertEqual(action['res_model'], 'rss.portal.password', 'Tras dar acceso pide la contraseña')
+        self.assertEqual(member.portal_login, 'example@example.com')
+        member.email = 'Creart.3dp@gmail.com'
+        self.assertEqual(member.user_id.login, 'creart.3dp@gmail.com', 'El usuario entra con el correo nuevo')
+        # Cambio hecho desde el contacto también se refleja
+        partner.email = 'creart.3dp+g1@gmail.com'
+        self.assertEqual(member.user_id.login, 'creart.3dp+g1@gmail.com')
+
+        wiz = self.env['rss.portal.password'].with_context(
+            **member.action_set_password()['context']).create(
+            {'password': 'corta', 'confirm': 'corta'})
+        with self.assertRaises(UserError):
+            wiz.action_apply()
+        wiz.write({'password': 'RumboSeguro2026', 'confirm': 'RumboSeguro2026'})
+        wiz.action_apply()
+        user = member.user_id
+        user.with_user(user)._check_credentials({'type': 'password', 'password': 'RumboSeguro2026'},
+                                                {'interactive': False})
+        with self.assertRaises(Exception):
+            user.with_user(user)._check_credentials({'type': 'password', 'password': 'otra-cosa'},
+                                                    {'interactive': False})
+
+    def test_email_already_used_is_rejected(self):
+        self._member(self.g7, 'treasurer', 'ocupado@example.com')
+        other = self._member(self.g3, 'leader', 'libre@example.com')
+        with self.assertRaises(UserError):
+            other.email = 'ocupado@example.com'
+
+
+@tagged('post_install', '-at_install', 'red_seguro_scout')
+class TestInsuranceLogin(_RssPortalCommon, HttpCase):
+
+    @classmethod
+    def setUpClass(cls):
+        super().setUpClass()
+        cls._setup_data()
+        cls.capturista = cls._member(cls.g7, 'secretary', 'seguro7@example.com', capturer=True)
+
+    def test_login_page_shows_insurance_brand(self):
+        res = self.url_open('/seguro-app/entrar')
+        self.assertIn('redirect=/seguro-app', res.url)
+        self.assertIn('o_rss_login_brand', res.text)
+        self.assertIn('/seguro-app/manifest.webmanifest', res.text)
+        plain = self.url_open('/web/login')
+        self.assertNotIn('o_rss_login_brand', plain.text, 'La entrada general no cambia')
+
+    def test_portal_user_lands_in_insurance_portal(self):
+        self.authenticate('seguro7@example.com', 'clave-seguro7')
+        res = self.url_open('/mi-grupo')
+        self.assertIn('emblema_red_seguro_scout.png', res.text)
+        self.assertIn('Rumbo Seguro', res.text)
+        from odoo.addons.red_seguro_scout.controllers.app import RssLoginHome
+        self.assertTrue(self.env['rss.group.member']._rss_is_login_redirect('/mi-grupo/importar'))
+        self.assertFalse(self.env['rss.group.member']._rss_is_login_redirect('/my'))
+        self.assertTrue(RssLoginHome)

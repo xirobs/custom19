@@ -2,7 +2,7 @@
 from odoo import api, fields, models, _
 from odoo.exceptions import ValidationError
 
-from .rss_portal_access import grant_portal_user
+from .rss_portal_access import grant_portal_user, sync_portal_login
 
 ROLE_SELECTION = [
     ('leader', 'Jefe de grupo'),
@@ -30,6 +30,7 @@ class RssGroupMember(models.Model):
                                  ondelete='restrict')
     name = fields.Char(related='partner_id.name', store=True, readonly=False, string='Nombre')
     email = fields.Char(related='partner_id.email', readonly=False, string='Correo')
+    portal_login = fields.Char(related='user_id.login', string='Usuario para entrar')
     phone = fields.Char(related='partner_id.phone', readonly=False, string='WhatsApp')
     role = fields.Selection(ROLE_SELECTION, string='Cargo', required=True, tracking=True)
     is_capturer = fields.Boolean(
@@ -77,7 +78,33 @@ class RssGroupMember(models.Model):
             user = grant_portal_user(self.env, member.partner_id, member.company_id)
             member._compute_user()
             member.message_post(body=_('Acceso al portal del grupo otorgado (%s).', user.login))
+        if len(self) == 1:
+            return self.action_set_password()
         return True
+
+    def write(self, vals):
+        res = super().write(vals)
+        if 'email' in vals or 'partner_id' in vals:
+            for rec in self.filtered('user_id'):
+                sync_portal_login(self.env, rec.partner_id)
+        return res
+
+    def action_set_password(self):
+        """Abre el asistente para que la administración asigne la contraseña del portal."""
+        self.ensure_one()
+        if not self.user_id:
+            grant_portal_user(self.env, self.partner_id, self.company_id)
+            self._compute_user()
+        sync_portal_login(self.env, self.partner_id)
+        return {
+            'type': 'ir.actions.act_window',
+            'name': _('Contraseña del portal'),
+            'res_model': 'rss.portal.password',
+            'view_mode': 'form',
+            'target': 'new',
+            'context': {'default_user_id': self.user_id.id, 'default_source_model': self._name,
+                        'default_source_id': self.id},
+        }
 
     def action_revoke_portal(self):
         for member in self:
@@ -103,6 +130,12 @@ class RssGroupMember(models.Model):
         return {'type': 'ir.actions.act_url', 'url': '/mi-grupo', 'target': 'new'}
 
     @api.model
+    def _rss_is_login_redirect(self, redirect):
+        """¿La entrada viene de la app o de un portal del seguro? (para mostrar su imagen)."""
+        path = (redirect or '').split('?')[0]
+        return any(path == p or path.startswith(p + '/') for p in ('/seguro-app', '/mi-grupo', '/seguro'))
+
+    @api.model
     def _for_user(self, user):
         """Representante activo del usuario (vacío si no representa a ningún grupo)."""
         if not user or user._is_public():
@@ -119,3 +152,18 @@ class RssScoutGroupMembers(models.Model):
     def _compute_capturer(self):
         for group in self:
             group.capturer_id = group.portal_member_ids.filtered('is_capturer')[:1]
+
+
+class ResPartnerRssLogin(models.Model):
+    _inherit = 'res.partner'
+
+    def write(self, vals):
+        res = super().write(vals)
+        if 'email' in vals:
+            env = self.env
+            for partner in self:
+                is_rss = (env['rss.group.member'].sudo().search_count([('partner_id', '=', partner.id)])
+                          or env['rss.advisor'].sudo().search_count([('partner_id', '=', partner.id)]))
+                if is_rss:
+                    sync_portal_login(env, partner)
+        return res

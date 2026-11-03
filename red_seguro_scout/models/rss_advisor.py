@@ -2,7 +2,7 @@
 from odoo import api, fields, models, _
 from odoo.exceptions import UserError
 
-from .rss_portal_access import grant_portal_user
+from .rss_portal_access import grant_portal_user, sync_portal_login
 
 
 class RssAdvisor(models.Model):
@@ -20,6 +20,7 @@ class RssAdvisor(models.Model):
                                  ondelete='restrict')
     name = fields.Char(related='partner_id.name', store=True, readonly=False, string='Nombre')
     email = fields.Char(related='partner_id.email', readonly=False, string='Correo')
+    portal_login = fields.Char(related='user_id.login', string='Usuario para entrar')
     phone = fields.Char(related='partner_id.phone', readonly=False, string='Teléfono')
     insurer_id = fields.Many2one('res.partner', string='Aseguradora / despacho', tracking=True)
     company_id = fields.Many2one('res.company', string='Organización', required=True,
@@ -69,7 +70,33 @@ class RssAdvisor(models.Model):
             user = grant_portal_user(self.env, advisor.partner_id, advisor.company_id)
             advisor._compute_user()
             advisor.message_post(body=_('Acceso al portal del asesor otorgado (%s).', user.login))
+        if len(self) == 1:
+            return self.action_set_password()
         return True
+
+    def write(self, vals):
+        res = super().write(vals)
+        if 'email' in vals or 'partner_id' in vals:
+            for rec in self.filtered('user_id'):
+                sync_portal_login(self.env, rec.partner_id)
+        return res
+
+    def action_set_password(self):
+        """Abre el asistente para que la administración asigne la contraseña del portal."""
+        self.ensure_one()
+        if not self.user_id:
+            grant_portal_user(self.env, self.partner_id, self.company_id)
+            self._compute_user()
+        sync_portal_login(self.env, self.partner_id)
+        return {
+            'type': 'ir.actions.act_window',
+            'name': _('Contraseña del portal'),
+            'res_model': 'rss.portal.password',
+            'view_mode': 'form',
+            'target': 'new',
+            'context': {'default_user_id': self.user_id.id, 'default_source_model': self._name,
+                        'default_source_id': self.id},
+        }
 
     def action_revoke_portal(self):
         for advisor in self:

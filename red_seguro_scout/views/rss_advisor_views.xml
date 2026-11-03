@@ -26,6 +26,8 @@
                             class="btn-primary" invisible="has_portal"/>
                     <button name="action_grant_portal" type="object" string="Reenviar acceso"
                             invisible="not has_portal"/>
+                    <button name="action_set_password" type="object" string="Asignar contraseña" icon="fa-key"
+                            invisible="not has_portal" groups="red_seguro_scout.group_rss_manager"/>
                     <button name="action_open_portal" type="object" string="Ver portal" icon="fa-external-link"
                             invisible="not has_portal"/>
                     <button name="action_revoke_portal" type="object" string="Quitar acceso"
@@ -46,6 +48,7 @@
                             <field name="phone" widget="phone"/>
                             <field name="insurer_id"/>
                             <field name="user_id" readonly="1" invisible="not user_id"/>
+                            <field name="portal_login" readonly="1" invisible="not user_id"/>
                         </group>
                         <group string="Qué puede hacer">
                             <field name="can_update_claims"/>

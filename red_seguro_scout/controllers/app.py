@@ -8,6 +8,7 @@ import json
 
 from odoo import http
 from odoo.http import request
+from odoo.addons.portal.controllers.web import Home as PortalHome
 
 WINE = '#6E0B14'
 CREAM = '#F8F1E7'
@@ -29,6 +30,14 @@ class RssApp(http.Controller):
         if user._is_internal() and user.has_group('red_seguro_scout.group_rss_user'):
             return request.redirect('/odoo/action-red_seguro_scout.rss_insured_action')
         return request.redirect('/my')
+
+    @http.route(['/seguro-app/entrar', '/seguro/entrar'], type='http', auth='public', website=True,
+                sitemap=False)
+    def rss_app_login(self, **kw):
+        """Liga para compartir con representantes y asesores: entrada con la imagen del seguro."""
+        if not request.env.user._is_public():
+            return request.redirect('/seguro-app')
+        return request.redirect('/web/login?redirect=/seguro-app')
 
     @http.route(['/seguro-app/manifest.webmanifest'], type='http', auth='public', methods=['GET'],
                 readonly=True, sitemap=False)
@@ -61,3 +70,15 @@ class RssApp(http.Controller):
         return request.make_response(json.dumps(manifest, ensure_ascii=False), [
             ('Content-Type', 'application/manifest+json; charset=utf-8'),
             ('Cache-Control', 'public, max-age=3600')])
+
+
+class RssLoginHome(PortalHome):
+
+    def _login_redirect(self, uid, redirect=None):
+        """Representantes y asesores del seguro llegan a su portal, no a «Mi cuenta» de BitaScout."""
+        if not redirect:
+            user = request.env['res.users'].sudo().browse(uid)
+            if user.share and (request.env['rss.group.member'].sudo()._for_user(user)
+                               or request.env['rss.advisor'].sudo()._for_user(user)):
+                redirect = '/seguro-app'
+        return super()._login_redirect(uid, redirect=redirect)

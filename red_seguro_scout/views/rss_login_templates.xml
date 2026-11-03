@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Entrada con la imagen del seguro (no la de BitaScout) cuando se viene de la app o de los portales
+         del seguro: /seguro-app, /mi-grupo, /seguro, o la liga directa /seguro-app/entrar. -->
+    <template id="rss_login" inherit_id="web.login" name="Red Seguro Scout: entrada con imagen del seguro" priority="60">
+        <xpath expr="//form[@data-captcha='login']" position="before">
+            <t t-set="rss_login_mode" t-value="request.env['rss.group.member'].sudo()._rss_is_login_redirect(redirect)"/>
+            <t t-if="rss_login_mode">
+                <t t-set="page_name" t-value="'rss_login'"/>
+                <style>
+                    .o_scout_login_brand, .o_scout_login_foot, .o_scout_install { display: none !important; }
+                    .o_database_list > .card-body > .text-center.pb-3 { display: none !important; }
+                    .o_database_list { max-width: 360px !important; }
+                    #wrapwrap:has(.o_rss_login_brand) {
+                        background: radial-gradient(circle at 85% 12%, rgba(233, 168, 37, .30), transparent 42%),
+                                    linear-gradient(160deg, #6E0B14 0%, #3b060b 100%) !important; }
+                    .o_database_list:has(.o_rss_login_brand) { background: #fff !important; border-radius: 22px !important;
+                        box-shadow: 0 30px 70px rgba(0, 0, 0, .35) !important; }
+                    .o_database_list .card-body:has(.o_rss_login_brand) { background: #fff !important; border-radius: 22px;
+                        padding-top: 1.6rem !important; }
+                    .o_rss_login_brand { text-align: center; margin: -0.5rem 0 1.25rem; }
+                    .o_rss_login_brand img { width: 112px; height: 112px; object-fit: contain; border-radius: 24px;
+                        box-shadow: 0 6px 18px rgba(110, 11, 20, .18); }
+                    .o_rss_login_kicker { margin-top: .9rem; color: #6E0B14; font-weight: 700; letter-spacing: .08em;
+                        text-transform: uppercase; font-size: .78rem; }
+                    .o_rss_login_title { color: #3b060b; font-size: 1.45rem; font-weight: 800; line-height: 1.15; }
+                    .o_rss_login_motto { color: #b07d10; font-style: italic; font-weight: 600; }
+                    .o_rss_login_hint { color: #5c4a3d; font-size: .86rem; margin-top: .5rem; }
+                    .o_rss_login_foot { text-align: center; margin-top: 1.2rem; font-size: .84rem; color: #5c4a3d; }
+                    .o_rss_login_foot a { color: #6E0B14; font-weight: 600; }
+                    .oe_login_form .btn-primary { background: #6E0B14 !important; border-color: #6E0B14 !important; }
+                    .oe_login_form .btn-link, .oe_login_form a { color: #6E0B14; }
+                </style>
+                <div class="o_rss_login_brand">
+                    <img src="/red_seguro_scout/static/src/img/app/icon_192.png" alt="Red Seguro Scout"/>
+                    <div class="o_rss_login_kicker">Seguro de accidentes scout</div>
+                    <div class="o_rss_login_title">Red Seguro Scout</div>
+                    <div class="o_rss_login_motto">Rumbo Seguro</div>
+                    <div class="o_rss_login_hint">Representantes de grupo y asesores: asegurados, pagos, certificados y siniestros.</div>
+                </div>
+            </t>
+        </xpath>
+        <xpath expr="//form[@data-captcha='login']" position="after">
+            <div t-if="rss_login_mode" class="o_rss_login_foot">
+                <div>¿No tienes contraseña? Pídela a la administración central de Red Seguro Scout.</div>
+                <a href="/aviso-de-privacidad-seguro">Aviso de privacidad</a>
+                <t t-call="red_seguro_scout.rss_app_install_bar"/>
+            </div>
+        </xpath>
+    </template>
+</odoo>

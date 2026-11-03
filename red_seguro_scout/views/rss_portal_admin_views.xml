@@ -39,6 +39,8 @@
                 <header>
                     <button name="action_grant_portal" type="object" string="Dar acceso al portal" class="btn-primary" invisible="has_portal"/>
                     <button name="action_grant_portal" type="object" string="Reenviar acceso" invisible="not has_portal"/>
+                    <button name="action_set_password" type="object" string="Asignar contraseña" icon="fa-key"
+                            invisible="not has_portal" groups="red_seguro_scout.group_rss_manager"/>
                     <button name="action_make_capturer" type="object" string="Hacer capturista del grupo" invisible="is_capturer"
                             groups="red_seguro_scout.group_rss_manager"
                             confirm="Esta persona será la única que puede cargar asegurados del grupo; el capturista anterior deja de serlo. ¿Continuar?"/>
@@ -64,6 +66,7 @@
                             <field name="email" widget="email" required="1"/>
                             <field name="phone" widget="phone"/>
                             <field name="user_id" readonly="1" invisible="not user_id"/>
+                            <field name="portal_login" readonly="1" invisible="not user_id"/>
                         </group>
                     </group>
                 </sheet>

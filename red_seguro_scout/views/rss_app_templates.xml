@@ -15,6 +15,26 @@
         </xpath>
     </template>
 
+    <!-- Encabezado y pie del portal con la imagen del seguro (no el logo de la organización scout) -->
+    <template id="rss_portal_frame" inherit_id="portal.frontend_layout" name="Red Seguro Scout: encabezado del portal">
+        <xpath expr="//a[hasclass('navbar-brand')]" position="attributes">
+            <attribute name="t-att-href">'/seguro-app' if (page_name or '').startswith('rss_') else '/'</attribute>
+        </xpath>
+        <xpath expr="//a[hasclass('navbar-brand')]/img" position="attributes">
+            <attribute name="t-att-src">'/red_seguro_scout/static/src/img/emblema_red_seguro_scout.png' if (page_name or '').startswith('rss_') else '/logo.png?company=%s' % res_company.id</attribute>
+            <attribute name="t-att-alt">'Red Seguro Scout' if (page_name or '').startswith('rss_') else 'Logo of %s' % res_company.name</attribute>
+            <attribute name="t-att-title">'Red Seguro Scout' if (page_name or '').startswith('rss_') else res_company.name</attribute>
+        </xpath>
+    </template>
+    <template id="rss_portal_footer" inherit_id="web.frontend_layout" name="Red Seguro Scout: pie del portal">
+        <xpath expr="//*[hasclass('o_footer_copyright_name')]" position="attributes">
+            <attribute name="t-if">not (page_name or '').startswith('rss_')</attribute>
+        </xpath>
+        <xpath expr="//*[hasclass('o_footer_copyright_name')]" position="after">
+            <span t-if="(page_name or '').startswith('rss_')" class="o_footer_copyright_name me-2">Red Seguro Scout · <i>Rumbo Seguro</i></span>
+        </xpath>
+    </template>
+
     <template id="rss_app_install_bar" name="Red Seguro Scout: instalar la app">
         <div class="o_rssi d-none" role="region" aria-label="Instalar la app Red Seguro Scout">
             <div class="o_rssi_row">
