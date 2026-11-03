@@ -116,12 +116,16 @@ class RssGroupPortal(http.Controller):
 
     # ------------------------------------------------------------------ asegurados
     @http.route(['/mi-grupo/asegurados'], type='http', auth='user', website=True, sitemap=False)
-    def group_insured(self, q=None, estatus='all', page=1, **kw):
+    def group_insured(self, q=None, estatus='all', origen='all', page=1, **kw):
         member, denied = self._guard()
         if denied:
             return denied
         env = request.env(su=True)
         domain = self._insured_domain(member)
+        if origen == 'platform':
+            domain.append(('capture_source', 'in', ('backend', False)))
+        elif origen == 'portal':
+            domain.append(('capture_source', 'in', ('portal', 'excel', 'pdf')))
         if estatus in ('active', 'draft', 'inactive'):
             domain.append(('state', '=', estatus))
         elif estatus == 'certificate':
@@ -136,8 +140,22 @@ class RssGroupPortal(http.Controller):
             page = 1
         total = env['rss.insured'].search_count(domain)
         insured = env['rss.insured'].search(domain, limit=PAGE_SIZE, offset=(page - 1) * PAGE_SIZE)
+        # Personas que se cargaron en el portal pero aún no quedan aseguradas (falta pagar o validar)
+        pending = env['rss.import.line'].search([
+            ('batch_id.group_id', '=', member.group_id.id),
+            ('batch_id.state', 'in', ('review', 'payment', 'verifying')),
+            ('include', '=', True), ('status', '!=', 'error'), ('insured_id', '=', False)],
+            order='batch_id desc, sequence', limit=200)
+        if q:
+            qn = q.lower()
+            pending = pending.filtered(lambda l: qn in ' '.join(
+                x for x in (l.first_name, l.second_name, l.last_name_father, l.last_name_mother,
+                            l.tutor_name) if x).lower())
+        is_open, window_msg = self._capture_window(member)
         return self._render('red_seguro_scout.group_insured', member, 'insured', insured=insured,
-                            q=q or '', estatus=estatus, page=page, total=total, page_size=PAGE_SIZE)
+                            q=q or '', estatus=estatus, origen=origen, page=page, total=total,
+                            page_size=PAGE_SIZE, pending=pending, capture_open=is_open,
+                            window_msg=window_msg)
 
     @http.route(['/mi-grupo/asegurados/<int:insured_id>/certificado'], type='http', auth='user', sitemap=False)
     def group_certificate(self, insured_id, **kw):

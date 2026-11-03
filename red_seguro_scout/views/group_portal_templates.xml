@@ -150,6 +150,26 @@
     <!-- Asegurados -->
     <template id="group_insured" name="Grupo: asegurados">
         <t t-call="red_seguro_scout.group_layout">
+            <section class="o_rssp_card o_rssp_alta">
+                <div class="o_rssp_row">
+                    <div>
+                        <h4 class="o_rssp_h mb-0">Asegurados de tu grupo</h4>
+                        <div class="o_rssp_muted">Aquí aparecen todos: los que da de alta la oficina en la plataforma y los que carga tu grupo en el portal.</div>
+                    </div>
+                    <a t-if="member.is_capturer" href="/mi-grupo/importar#a-mano" class="btn o_rssp_btn"><i class="fa fa-user-plus"/> Dar de alta asegurados</a>
+                </div>
+                <details class="o_rssp_howto" t-att-open="None if total else 'open'">
+                    <summary>¿Cómo dar de alta a un asegurado?</summary>
+                    <ol>
+                        <li><b>Entra a «Cargar lista»</b> (o el botón <i>Dar de alta asegurados</i>). Solo el <b>capturista</b> de tu grupo puede hacerlo<t t-if="not member.is_capturer">; pídeselo o solicita a la administración central que te asigne</t>.</li>
+                        <li><b>Elige cómo cargarlos:</b> <a href="/mi-grupo/importar#a-mano">a mano</a> (uno por uno), <a href="/mi-grupo/importar#excel">Excel</a> (descarga la plantilla) o <a href="/mi-grupo/importar#pdf">PDF</a> con la lista.</li>
+                        <li><b>Revisa la lista:</b> nombre, dos apellidos, fecha de nacimiento, sexo y padre o tutor con teléfono de emergencia. El sistema avisa de errores y de personas repetidas.</li>
+                        <li><b>Paga el mismo día</b> con Mercado Pago o transferencia (subes el comprobante). Si no se paga hoy, la carga vence.</li>
+                        <li><b>Listo:</b> al confirmarse el pago quedan <b>Asegurados</b> en esta lista; después llega su certificado.</li>
+                    </ol>
+                    <p t-if="window_msg" class="o_rssp_muted mb-0"><i class="fa fa-calendar"/> <t t-out="window_msg"/></p>
+                </details>
+            </section>
             <form class="o_rssp_filters" method="get" action="/mi-grupo/asegurados">
                 <input type="search" name="q" t-att-value="q" class="form-control" placeholder="Nombre o tutor"/>
                 <select name="estatus" class="form-select">
@@ -159,8 +179,32 @@
                     <option value="certificate" t-att-selected="estatus == 'certificate'">Con certificado</option>
                     <option value="no_certificate" t-att-selected="estatus == 'no_certificate'">Sin certificado</option>
                 </select>
+                <select name="origen" class="form-select">
+                    <option value="all" t-att-selected="origen == 'all'">Cargados en plataforma y portal</option>
+                    <option value="platform" t-att-selected="origen == 'platform'">Solo plataforma (oficina)</option>
+                    <option value="portal" t-att-selected="origen == 'portal'">Solo portal</option>
+                </select>
                 <button type="submit" class="btn o_rssp_btn"><i class="fa fa-search"/> Buscar</button>
             </form>
+            <section t-if="pending" class="o_rssp_card o_rssp_pending">
+                <h5 class="o_rssp_h"><i class="fa fa-hourglass-half"/> En trámite: <t t-out="len(pending)"/> por quedar asegurados</h5>
+                <p class="o_rssp_muted">Se cargaron en el portal pero falta revisar, pagar o validar el pago. No están asegurados todavía.</p>
+                <div class="o_rssp_table_wrap">
+                    <table class="table o_rssp_table">
+                        <thead><tr><th>Nombre</th><th>Nacimiento</th><th>Padre o tutor</th><th>Carga</th><th>Falta</th></tr></thead>
+                        <tbody>
+                            <tr t-foreach="pending" t-as="l">
+                                <td><b t-out="' '.join(x for x in (l.first_name, l.second_name, l.last_name_father, l.last_name_mother) if x)"/></td>
+                                <td t-out="fmt_date(l.birthdate)"/>
+                                <td t-out="l.tutor_name or ''"/>
+                                <td><t t-out="l.batch_id.filename or 'Captura'"/><div class="o_rssp_muted" t-out="fmt_date(l.batch_id.create_date)"/></td>
+                                <td><a t-attf-href="/mi-grupo/importar/#{l.batch_id.id}" t-attf-class="o_rssp_pill o_rssp_pill_imp_#{l.batch_id.state}"
+                                       t-out="{'review': 'Revisar y pagar', 'payment': 'Pagar hoy', 'verifying': 'Validación del pago'}.get(l.batch_id.state)"/></td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </section>
             <p class="o_rssp_muted"><t t-out="total"/> personas</p>
             <div class="o_rssp_table_wrap">
                 <table class="table o_rssp_table">
@@ -176,7 +220,8 @@
                             <td t-out="labels('rss.insured', 'sex').get(i.sex)"/>
                             <td t-out="i.tutor_name or ''"/>
                             <td><a t-if="i.tutor_phone" t-attf-href="tel:#{i.tutor_phone}" t-out="i.tutor_phone"/></td>
-                            <td><span t-attf-class="o_rssp_pill o_rssp_pill_#{i.state}" t-out="labels('rss.insured', 'state').get(i.state)"/></td>
+                            <td><span t-attf-class="o_rssp_pill o_rssp_pill_#{i.state}" t-out="labels('rss.insured', 'state').get(i.state)"/><div><span t-attf-class="o_rssp_origin o_rssp_origin_#{'platform' if i.capture_source in (False, 'backend') else 'portal'}"
+      t-out="{'backend': 'Plataforma', 'portal': 'Portal · a mano', 'excel': 'Portal · Excel', 'pdf': 'Portal · PDF'}.get(i.capture_source, 'Plataforma')"/></div></td>
                             <td>
                                 <a t-if="i.certificate_attachment_id" class="btn btn-sm o_rssp_btn_ghost" t-attf-href="/mi-grupo/asegurados/#{i.id}/certificado">
                                     <i class="fa fa-file-pdf-o"/> <t t-out="i.certificate_number or 'Descargar'"/>
@@ -190,9 +235,9 @@
                 </table>
             </div>
             <div class="o_rssp_pager" t-if="total &gt; page_size">
-                <a t-if="page &gt; 1" class="btn o_rssp_btn_ghost" t-attf-href="/mi-grupo/asegurados?q=#{q}&amp;estatus=#{estatus}&amp;page=#{page - 1}">Anterior</a>
+                <a t-if="page &gt; 1" class="btn o_rssp_btn_ghost" t-attf-href="/mi-grupo/asegurados?q=#{q}&amp;estatus=#{estatus}&amp;origen=#{origen}&amp;page=#{page - 1}">Anterior</a>
                 <span>Página <t t-out="page"/></span>
-                <a t-if="page * page_size &lt; total" class="btn o_rssp_btn_ghost" t-attf-href="/mi-grupo/asegurados?q=#{q}&amp;estatus=#{estatus}&amp;page=#{page + 1}">Siguiente</a>
+                <a t-if="page * page_size &lt; total" class="btn o_rssp_btn_ghost" t-attf-href="/mi-grupo/asegurados?q=#{q}&amp;estatus=#{estatus}&amp;origen=#{origen}&amp;page=#{page + 1}">Siguiente</a>
             </div>
             <p class="o_rssp_muted">¿Algún dato está mal? Las correcciones las hace la administración central de Red Seguro Scout.</p>
         </t>

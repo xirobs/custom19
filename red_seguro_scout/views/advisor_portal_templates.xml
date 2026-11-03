@@ -129,9 +129,14 @@
                     <option value="inactive" t-att-selected="estatus == 'inactive'">Bajas</option>
                     <option value="all" t-att-selected="estatus == 'all'">Todos</option>
                 </select>
+                <select name="origen" class="form-select">
+                    <option value="all" t-att-selected="origen == 'all'">Cargados en plataforma y portal</option>
+                    <option value="platform" t-att-selected="origen == 'platform'">Solo plataforma (oficina)</option>
+                    <option value="portal" t-att-selected="origen == 'portal'">Solo portal</option>
+                </select>
                 <button type="submit" class="btn o_rssp_btn"><i class="fa fa-search"/> Buscar</button>
             </form>
-            <p class="o_rssp_muted"><t t-out="total"/> resultados</p>
+            <p class="o_rssp_muted"><t t-out="total"/> resultados · se muestran los dados de alta en la plataforma y los cargados por los grupos en el portal.</p>
             <div class="o_rssp_table_wrap">
                 <table class="table o_rssp_table">
                     <thead><tr>
@@ -148,7 +153,8 @@
                             <td t-out="i.tutor_name or ''"/>
                             <td><a t-if="i.tutor_phone" t-attf-href="tel:#{i.tutor_phone}" t-out="i.tutor_phone"/></td>
                             <td t-out="fmt_date(i.date_start)"/>
-                            <td><span t-attf-class="o_rssp_pill o_rssp_pill_#{i.state}" t-out="labels('rss.insured', 'state').get(i.state)"/></td>
+                            <td><span t-attf-class="o_rssp_pill o_rssp_pill_#{i.state}" t-out="labels('rss.insured', 'state').get(i.state)"/><div><span t-attf-class="o_rssp_origin o_rssp_origin_#{'platform' if i.capture_source in (False, 'backend') else 'portal'}"
+      t-out="{'backend': 'Plataforma', 'portal': 'Portal · a mano', 'excel': 'Portal · Excel', 'pdf': 'Portal · PDF'}.get(i.capture_source, 'Plataforma')"/></div></td>
                             <td><a t-if="i.certificate_attachment_id" class="btn btn-sm o_rssp_btn_ghost" t-attf-href="/seguro/asegurados/#{i.id}/certificado"><i class="fa fa-file-pdf-o"/> <t t-out="i.certificate_number or 'PDF'"/></a><t t-call="red_seguro_scout.rss_cert_info"/></td>
                         </tr>
                         <tr t-if="not insured"><td colspan="10" class="o_rssp_muted text-center">Sin resultados.</td></tr>
@@ -156,9 +162,9 @@
                 </table>
             </div>
             <div class="o_rssp_pager" t-if="total &gt; page_size">
-                <a t-if="page &gt; 1" class="btn o_rssp_btn_ghost" t-attf-href="/seguro/asegurados?q=#{q}&amp;grupo=#{group.id or ''}&amp;estatus=#{estatus}&amp;page=#{page - 1}">Anterior</a>
+                <a t-if="page &gt; 1" class="btn o_rssp_btn_ghost" t-attf-href="/seguro/asegurados?q=#{q}&amp;grupo=#{group.id or ''}&amp;estatus=#{estatus}&amp;origen=#{origen}&amp;page=#{page - 1}">Anterior</a>
                 <span>Página <t t-out="page"/></span>
-                <a t-if="page * page_size &lt; total" class="btn o_rssp_btn_ghost" t-attf-href="/seguro/asegurados?q=#{q}&amp;grupo=#{group.id or ''}&amp;estatus=#{estatus}&amp;page=#{page + 1}">Siguiente</a>
+                <a t-if="page * page_size &lt; total" class="btn o_rssp_btn_ghost" t-attf-href="/seguro/asegurados?q=#{q}&amp;grupo=#{group.id or ''}&amp;estatus=#{estatus}&amp;origen=#{origen}&amp;page=#{page + 1}">Siguiente</a>
             </div>
         </t>
     </template>

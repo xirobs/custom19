@@ -619,3 +619,34 @@ class TestCertificateData(_RssPortalCommon, TransactionCase):
         from odoo.tools.pdf import PdfFileReader
         import io
         self.assertEqual(len(PdfFileReader(io.BytesIO(a.certificate_attachment_id.raw)).pages), 2)
+
+
+@tagged('post_install', '-at_install', 'red_seguro_scout')
+class TestInsuredListAllSources(_RssPortalCommon, HttpCase):
+
+    @classmethod
+    def setUpClass(cls):
+        super().setUpClass()
+        cls._setup_data()
+        cls.capturista = cls._member(cls.g7, 'secretary', 'lista7@example.com', capturer=True)
+        cls.maria.capture_source = 'excel'          # cargada por el grupo en el portal
+        # una persona cargada en el portal que aún no paga
+        batch = cls.env['rss.import.batch'].sudo().create_manual(
+            cls.g7, member=cls.capturista, privacy_accepted=True, rows=1)
+        batch.line_ids[:1].write({'first_name': 'Pendiente', 'last_name_father': 'Sinpago', 'last_name_mother': 'Hoy',
+                                  'birthdate': date(2015, 2, 2), 'sex': 'male', 'tutor_name': 'Tutor',
+                                  'tutor_phone': '2221112233'})
+
+    def test_list_shows_platform_and_portal(self):
+        self.authenticate('lista7@example.com', 'clave-lista7')
+        html = self.url_open('/mi-grupo/asegurados').text
+        self.assertIn('José Luis de la Cruz Ramos', html, 'Alta hecha en la plataforma')
+        self.assertIn('María Fernanda García López', html)
+        self.assertIn('Portal · Excel', html)
+        self.assertIn('Plataforma', html)
+        self.assertIn('Dar de alta asegurados', html)
+        self.assertIn('Pendiente Sinpago Hoy', html, 'Aparece en trámite')
+        only_portal = self.url_open('/mi-grupo/asegurados?origen=portal').text
+        self.assertIn('María Fernanda García López', only_portal)
+        self.assertNotIn('José Luis de la Cruz Ramos', only_portal)
+        self.assertNotIn('Ana', only_portal, 'Nunca muestra otros grupos')

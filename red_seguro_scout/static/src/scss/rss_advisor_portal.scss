@@ -301,3 +301,15 @@ body:has(.o_rssp_modal) { overflow: hidden; }
         th, td { padding: .2rem .35rem; border-bottom: 1px solid rgba(110, 11, 20, .12); text-align: left; }
         th { font-weight: 700; white-space: nowrap; } td:nth-child(n+2) { white-space: nowrap; } }
 }
+
+// Alta de asegurados y origen del registro
+.o_rssp_alta .o_rssp_row { gap: 1rem; flex-wrap: wrap; }
+.o_rssp_howto { margin-top: .8rem;
+    summary { cursor: pointer; font-weight: 700; color: var(--rss-wine, #6E0B14); }
+    ol { margin: .6rem 0 .4rem; padding-left: 1.2rem; li { margin-bottom: .35rem; } }
+}
+.o_rssp_pending { border-left: 4px solid #E9A825; }
+.o_rssp_origin { display: inline-block; margin-top: .3rem; font-size: .72rem; font-weight: 600; border-radius: 99px;
+    padding: .05rem .5rem; white-space: nowrap; }
+.o_rssp_origin_platform { background: rgba(110, 11, 20, .08); color: #6E0B14; }
+.o_rssp_origin_portal { background: rgba(233, 168, 37, .18); color: #7a5404; }

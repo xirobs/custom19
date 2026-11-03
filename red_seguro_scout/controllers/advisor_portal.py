@@ -99,7 +99,7 @@ class RssAdvisorPortal(http.Controller):
 
     # ------------------------------------------------------------------ asegurados
     @http.route(['/seguro/asegurados'], type='http', auth='user', website=True, sitemap=False)
-    def advisor_insured(self, grupo=None, q=None, estatus='active', page=1, **kw):
+    def advisor_insured(self, grupo=None, q=None, estatus='active', origen='all', page=1, **kw):
         advisor, denied = self._guard()
         if denied:
             return denied
@@ -111,6 +111,10 @@ class RssAdvisorPortal(http.Controller):
             domain.append(('group_id', '=', group.id))
         if estatus in ('active', 'draft', 'inactive'):
             domain.append(('state', '=', estatus))
+        if origen == 'platform':
+            domain.append(('capture_source', 'in', ('backend', False)))
+        elif origen == 'portal':
+            domain.append(('capture_source', 'in', ('portal', 'excel', 'pdf')))
         if q:
             domain += ['|', '|', ('name', 'ilike', q), ('curp', 'ilike', q), ('tutor_name', 'ilike', q)]
         page = max(int(page or 1), 1)
@@ -118,7 +122,7 @@ class RssAdvisorPortal(http.Controller):
         insured = env['rss.insured'].search(domain, limit=PAGE_SIZE, offset=(page - 1) * PAGE_SIZE)
         return self._render('red_seguro_scout.advisor_insured', advisor, 'insured',
                             insured=insured, groups=groups, group=group, q=q or '',
-                            estatus=estatus, page=page, total=total, page_size=PAGE_SIZE)
+                            estatus=estatus, origen=origen, page=page, total=total, page_size=PAGE_SIZE)
 
     # ------------------------------------------------------------------ relaciones
     @http.route(['/seguro/relaciones'], type='http', auth='user', website=True, sitemap=False)
