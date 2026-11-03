@@ -136,6 +136,9 @@ class ScoutAdminPortal(http.Controller):
             stats['expense'] = month_st['total_expense']
             Move = env['scout.treasury.move']
             stats['moves_pending'] = Move.search_count([('state', 'in', ('draft', 'to_approve'))])
+            debts = env['scout.debt'].summary()
+            stats['debt_payable'] = debts['total_payable']
+            stats['debt_receivable'] = debts['total_receivable']
         if acc['store']:
             sales = env['scout.store.sale'].search([('state', '=', 'done'), ('date', '=', today)])
             stats['sales_today'] = sum(sales.mapped('amount_total'))
@@ -452,6 +455,97 @@ class ScoutAdminPortal(http.Controller):
         return self._render('scout_management.admin_receivables', invoices=invoices, ver=ver, total=total,
                             origen=origen, origins=CHARGE_ORIGINS,
                             today=fields.Date.context_today(request.env.user))
+
+    # ------------------------------------------------------------------ deudas y adeudos anteriores
+    @http.route([BASE + '/deudas'], type='http', auth='user', website=True)
+    def admin_debts(self, ver='pagar', estado='pendientes', **kw):
+        acc, redirect = self._guard('treasury')
+        if redirect:
+            return redirect
+        Debt = request.env['scout.debt']
+        direction = 'receivable' if ver == 'cobrar' else 'payable'
+        domain = [('company_id', '=', request.env.company.id), ('direction', '=', direction)]
+        if estado != 'todas':
+            domain.append(('state', 'in', ('open', 'partial')))
+        debts = Debt.search(domain, order='state_order, due_date, date, id', limit=300)
+        summary = Debt.summary()
+        from ..models.scout_debt import DEBT_KINDS
+        return self._render('scout_management.admin_debts', debts=debts, ver=ver, estado=estado,
+                            summary=summary, kinds=dict(DEBT_KINDS),
+                            today=fields.Date.context_today(request.env.user))
+
+    @http.route([BASE + '/deudas/nueva'], type='http', auth='user', website=True, methods=['GET', 'POST'])
+    def admin_debt_new(self, ver='pagar', **post):
+        acc, redirect = self._guard('treasury')
+        if redirect:
+            return redirect
+        from ..models.scout_debt import DEBT_KINDS
+        if request.httprequest.method == 'POST':
+            url = '%s/deudas/nueva?ver=%s' % (BASE, ver)
+            try:
+                kind = post.get('kind') if post.get('kind') in dict(DEBT_KINDS) else 'other'
+                vals = {
+                    'direction': 'receivable' if post.get('direction') == 'receivable' else 'payable',
+                    'name': (post.get('name') or '').strip(),
+                    'kind': kind,
+                    'party_name': (post.get('party_name') or '').strip() or False,
+                    'member_id': _int(post.get('member_id')) or False,
+                    'section_id': _int(post.get('section_id')) or False,
+                    'date': _date(post.get('date'), fields.Date.context_today(request.env.user)),
+                    'due_date': _date(post.get('due_date')),
+                    'amount': _float(post.get('amount')),
+                    'paid_before': _float(post.get('paid_before')),
+                    'notes': (post.get('notes') or '').strip() or False,
+                }
+                if not vals['name']:
+                    raise UserError(_('Escribe el concepto de la deuda.'))
+                debt = request.env['scout.debt'].create(vals)
+            except ERRORS as e:
+                return self._back(url, error=self._err(e))
+            return self._back('%s/deudas/%s' % (BASE, debt.id), ok=_('Deuda registrada.'))
+        sections = request.env['scout.section'].sudo().search([])
+        return self._render('scout_management.admin_debt_form', ver=ver, kinds=DEBT_KINDS,
+                            members=self._members(), sections=sections,
+                            today=fields.Date.context_today(request.env.user))
+
+    @http.route([BASE + '/deudas/<int:debt_id>'], type='http', auth='user', website=True, methods=['GET', 'POST'])
+    def admin_debt(self, debt_id, **post):
+        acc, redirect = self._guard('treasury')
+        if redirect:
+            return redirect
+        debt = request.env['scout.debt'].browse(debt_id).exists()
+        if not debt:
+            return request.redirect(BASE + '/deudas')
+        url = '%s/deudas/%s' % (BASE, debt.id)
+        if request.httprequest.method == 'POST':
+            try:
+                if post.get('op') == 'cancelar':
+                    debt.action_cancel_debt()
+                    return self._back(url, ok=_('Deuda cancelada.'))
+                if post.get('op') == 'reabrir':
+                    debt.action_reopen()
+                    return self._back(url, ok=_('Deuda reabierta.'))
+                journal = self._journals().filtered(lambda j: j.id == _int(post.get('journal_id')))[:1]
+                attachment = name = None
+                upload = request.httprequest.files.get('attachment')
+                if upload and upload.filename:
+                    data = upload.read()
+                    if len(data) > 10 * 1024 * 1024:
+                        raise UserError(_('El comprobante pesa más de 10 MB.'))
+                    attachment, name = base64.b64encode(data), upload.filename
+                method = post.get('payment_method') if post.get('payment_method') in (
+                    'cash', 'transfer', 'card', 'other') else None
+                move = debt.action_register_payment(
+                    _float(post.get('amount')), journal, _date(post.get('date')), method,
+                    (post.get('reference') or '').strip() or None, attachment, name)
+            except ERRORS as e:
+                return self._back(url, error=self._err(e))
+            msg = _('Abono %s registrado.', move.name) if move.state == 'posted' else \
+                _('Abono %s enviado al jefe de grupo para aprobación; la deuda baja al aprobarse.', move.name)
+            return self._back(url, ok=msg)
+        from ..models.scout_debt import DEBT_KINDS
+        return self._render('scout_management.admin_debt', debt=debt, journals=self._journals(),
+                            kinds=dict(DEBT_KINDS), today=fields.Date.context_today(request.env.user))
 
     @http.route([BASE + '/tesoreria/balance.pdf'], type='http', auth='user', website=True)
     def admin_treasury_pdf(self, desde=None, hasta=None, **kw):

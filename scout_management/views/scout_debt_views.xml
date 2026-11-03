@@ -1,0 +1,158 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="rule_scout_debt_company" model="ir.rule">
+        <field name="name">Deudas: multiempresa</field>
+        <field name="model_id" ref="model_scout_debt"/>
+        <field name="domain_force">[('company_id', 'in', company_ids)]</field>
+    </record>
+
+    <record id="view_scout_debt_list" model="ir.ui.view">
+        <field name="name">scout.debt.list</field>
+        <field name="model">scout.debt</field>
+        <field name="arch" type="xml">
+            <list string="Deudas y adeudos" decoration-muted="state in ('paid', 'cancel')" decoration-danger="state != 'paid' and due_date and due_date &lt; current_date">
+                <field name="direction" widget="badge" decoration-danger="direction == 'payable'" decoration-success="direction == 'receivable'"/>
+                <field name="name"/>
+                <field name="kind" optional="show"/>
+                <field name="party_name" string="A quién / quién"/>
+                <field name="member_id" optional="hide"/>
+                <field name="date" optional="hide"/>
+                <field name="due_date" optional="show"/>
+                <field name="amount" sum="Total"/>
+                <field name="paid_before" optional="hide" sum="Total"/>
+                <field name="paid_amount" optional="show" sum="Total"/>
+                <field name="residual" sum="Total"/>
+                <field name="state" widget="badge" decoration-warning="state == 'partial'" decoration-success="state == 'paid'" decoration-danger="state == 'open'"/>
+                <field name="currency_id" column_invisible="1"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_scout_debt_form" model="ir.ui.view">
+        <field name="name">scout.debt.form</field>
+        <field name="model">scout.debt</field>
+        <field name="arch" type="xml">
+            <form string="Deuda o adeudo">
+                <header>
+                    <button name="action_open_payment_wizard" type="object" class="btn-primary"
+                            string="Registrar pago" invisible="direction != 'payable' or state in ('paid', 'cancel') or not id"/>
+                    <button name="action_open_payment_wizard" type="object" class="btn-primary"
+                            string="Registrar cobro" invisible="direction != 'receivable' or state in ('paid', 'cancel') or not id"/>
+                    <button name="action_cancel_debt" type="object" string="Cancelar deuda" invisible="state == 'cancel'"
+                            confirm="¿Cancelar esta deuda? Ya no contará como pendiente."/>
+                    <button name="action_reopen" type="object" string="Reabrir" invisible="state != 'cancel'"/>
+                    <field name="state" widget="statusbar" statusbar_visible="open,partial,paid"/>
+                </header>
+                <sheet>
+                    <div class="oe_title">
+                        <field name="direction" widget="radio" options="{'horizontal': true}"/>
+                        <h1><field name="name" placeholder="Ej. Insignias de aniversario"/></h1>
+                    </div>
+                    <group>
+                        <group>
+                            <field name="kind"/>
+                            <field name="party_name" placeholder="Proveedor, persona, sección..."/>
+                            <field name="member_id"/>
+                            <field name="section_id"/>
+                            <field name="partner_id"/>
+                        </group>
+                        <group>
+                            <field name="date"/>
+                            <field name="due_date"/>
+                            <field name="amount"/>
+                            <field name="paid_before"/>
+                            <field name="paid_amount"/>
+                            <field name="in_approval" invisible="not in_approval"/>
+                            <field name="residual" class="fw-bold"/>
+                            <field name="currency_id" invisible="1"/>
+                            <field name="company_id" groups="base.group_multi_company"/>
+                        </group>
+                    </group>
+                    <notebook>
+                        <page string="Pagos / cobros" name="payments">
+                            <field name="payment_ids" readonly="1">
+                                <list>
+                                    <field name="name"/>
+                                    <field name="date"/>
+                                    <field name="journal_id"/>
+                                    <field name="payment_method"/>
+                                    <field name="reference"/>
+                                    <field name="amount" sum="Total"/>
+                                    <field name="state" widget="badge"/>
+                                    <field name="currency_id" column_invisible="1"/>
+                                </list>
+                            </field>
+                        </page>
+                        <page string="Notas" name="notes">
+                            <field name="notes"/>
+                        </page>
+                    </notebook>
+                </sheet>
+                <chatter/>
+            </form>
+        </field>
+    </record>
+
+    <record id="view_scout_debt_search" model="ir.ui.view">
+        <field name="name">scout.debt.search</field>
+        <field name="model">scout.debt</field>
+        <field name="arch" type="xml">
+            <search>
+                <field name="name"/>
+                <field name="party_name"/>
+                <field name="member_id"/>
+                <filter name="pending" string="Pendientes" domain="[('state', 'in', ('open', 'partial'))]"/>
+                <filter name="payable" string="El grupo debe" domain="[('direction', '=', 'payable')]"/>
+                <filter name="receivable" string="Nos deben" domain="[('direction', '=', 'receivable')]"/>
+                <filter name="late" string="Vencidas" domain="[('due_date', '&lt;', context_today().strftime('%Y-%m-%d')), ('state', 'in', ('open', 'partial'))]"/>
+                <group>
+                    <filter name="by_direction" string="Tipo" context="{'group_by': 'direction'}"/>
+                    <filter name="by_kind" string="Rubro" context="{'group_by': 'kind'}"/>
+                    <filter name="by_state" string="Estado" context="{'group_by': 'state'}"/>
+                </group>
+            </search>
+        </field>
+    </record>
+
+    <record id="view_scout_debt_payment_wizard" model="ir.ui.view">
+        <field name="name">scout.debt.payment.wizard.form</field>
+        <field name="model">scout.debt.payment.wizard</field>
+        <field name="arch" type="xml">
+            <form>
+                <group>
+                    <field name="debt_id" readonly="1"/>
+                    <field name="amount"/>
+                    <field name="journal_id" options="{'no_create': True}"/>
+                    <field name="date"/>
+                    <field name="payment_method"/>
+                    <field name="reference"/>
+                    <field name="attachment" filename="attachment_name"/>
+                    <field name="attachment_name" invisible="1"/>
+                    <field name="company_id" invisible="1"/>
+                    <field name="currency_id" invisible="1"/>
+                </group>
+                <p class="text-muted small">Se registra como egreso (pago) o ingreso (cobro) en la caja o banco elegido.
+                    Si los egresos necesitan aprobación del jefe de grupo, la deuda baja cuando se apruebe.</p>
+                <footer>
+                    <button name="action_confirm" type="object" string="Registrar" class="btn-primary"/>
+                    <button special="cancel" string="Cancelar"/>
+                </footer>
+            </form>
+        </field>
+    </record>
+
+    <record id="action_scout_debt" model="ir.actions.act_window">
+        <field name="name">Deudas y adeudos</field>
+        <field name="res_model">scout.debt</field>
+        <field name="view_mode">list,form</field>
+        <field name="context">{'search_default_pending': 1, 'search_default_by_direction': 1}</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">Registra lo que el grupo debe y lo que le deben</p>
+            <p>Insignias, seguros, uniformes, préstamos... aunque vengan de antes de la plataforma. Cada pago o cobro
+                sale o entra de la caja o banco real y la deuda baja sola.</p>
+        </field>
+    </record>
+
+    <menuitem id="menu_scout_debt" name="Deudas y adeudos (anteriores)" parent="menu_scout_treasury"
+              action="action_scout_debt" sequence="15"/>
+</odoo>

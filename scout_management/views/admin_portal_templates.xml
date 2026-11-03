@@ -50,6 +50,8 @@
                     <a class="o_sl_tile" t-att-href="admin_base + '/tesoreria/nuevo?tipo=expense'"><i class="fa fa-arrow-up"/><span>Registrar egreso</span>
                         <small t-out="'Este mes %s' % fmt_money(stats['expense'])"/></a>
                     <a class="o_sl_tile" t-att-href="admin_base + '/tesoreria/cuentas'"><i class="fa fa-users"/><span>Por cobrar y por pagar</span><small>Cargos a miembros y proveedores</small></a>
+                    <a class="o_sl_tile" t-att-href="admin_base + '/deudas'"><i class="fa fa-book"/><span>Deudas y adeudos</span>
+                        <small t-out="'Debemos %s · Nos deben %s' % (fmt_money(stats.get('debt_payable', 0)), fmt_money(stats.get('debt_receivable', 0)))"/></a>
                     <a class="o_sl_tile" t-att-href="admin_base + '/cobro/nuevo'"><i class="fa fa-qrcode"/><span>Cobro con Mercado Pago</span><small>Registro, cuota, campamento o cualquier ingreso</small></a>
                     <a class="o_sl_tile" t-att-href="admin_base + '/tesoreria/en-linea'"><i class="fa fa-credit-card"/><span>Pagos en línea recibidos</span><small>Quién pagó y de qué</small></a>
                 </t>
@@ -229,6 +231,7 @@
                 <a class="btn btn-sm o_ad_btn_mp" t-att-href="admin_base + '/cobro/nuevo'"><i class="fa fa-qrcode"/> Cobro con Mercado Pago</a>
                 <a class="btn btn-sm o_sl_btn_outline" t-att-href="admin_base + '/tesoreria/en-linea'"><i class="fa fa-credit-card"/> Pagos en línea</a>
                 <a class="btn btn-sm o_sl_btn_outline" t-att-href="admin_base + '/tesoreria/cuentas'"><i class="fa fa-users"/> Por cobrar / pagar</a>
+                <a class="btn btn-sm o_sl_btn_outline" t-att-href="admin_base + '/deudas'"><i class="fa fa-book"/> Deudas y adeudos</a>
             </div>
             <div class="o_sl_title_row mt-2">
                 <div class="d-flex align-items-center gap-2">
@@ -867,6 +870,167 @@
                 <small class="text-muted d-block">Si no subes ni dibujas nada se conserva la firma actual.</small>
                 <button t-if="acc.get('manager')" class="btn o_sl_btn w-100 mt-3"><i class="fa fa-save"/> Guardar</button>
                 <p t-else="" class="small text-muted mt-2">Solo el jefe de grupo puede cambiar estos datos.</p>
+            </form>
+        </t>
+    </template>
+    <!-- ============================== DEUDAS Y ADEUDOS ============================== -->
+    <template id="admin_debts" name="Administración: deudas y adeudos">
+        <t t-call="scout_management.leader_layout">
+            <t t-set="tab" t-value="'tes'"/>
+            <t t-call="scout_management.admin_tabs"/>
+            <h5 class="o_sl_h">Deudas y adeudos</h5>
+            <div class="o_sl_box">
+                <div class="o_ad_kv"><span>El grupo debe</span><b class="text-danger" t-out="fmt_money(summary['total_payable'])"/></div>
+                <div class="o_ad_kv"><span>Nos deben</span><b class="text-success" t-out="fmt_money(summary['total_receivable'])"/></div>
+            </div>
+            <div class="o_ad_filters">
+                <a t-att-href="admin_base + '/deudas?ver=pagar'" t-attf-class="#{'active' if ver != 'cobrar' else ''}">El grupo debe</a>
+                <a t-att-href="admin_base + '/deudas?ver=cobrar'" t-attf-class="#{'active' if ver == 'cobrar' else ''}">Nos deben</a>
+            </div>
+            <div class="o_ad_filters">
+                <a t-att-href="'%s/deudas?ver=%s' % (admin_base, ver)" t-attf-class="#{'active' if estado != 'todas' else ''}">Pendientes</a>
+                <a t-att-href="'%s/deudas?ver=%s&amp;estado=todas' % (admin_base, ver)" t-attf-class="#{'active' if estado == 'todas' else ''}">Todas</a>
+            </div>
+            <a class="btn btn-sm o_sl_btn my-2" t-att-href="'%s/deudas/nueva?ver=%s' % (admin_base, ver)"><i class="fa fa-plus"/>
+                <t t-out="'Registrar deuda del grupo' if ver != 'cobrar' else 'Registrar quién nos debe'"/></a>
+            <p t-if="not debts" class="text-muted">No hay deudas registradas aquí.</p>
+            <a t-foreach="debts" t-as="d" t-att-href="'%s/deudas/%s' % (admin_base, d.id)"
+               t-attf-class="o_ad_move #{'o_ad_late' if d.due_date and d.due_date &lt; today and d.state in ('open', 'partial') else ''}">
+                <span class="flex-grow-1 min-w-0">
+                    <span class="d-block text-truncate" t-out="d.name"/>
+                    <small class="text-muted"><t t-out="kinds.get(d.kind)"/><t t-if="d._who()"> · <t t-out="d._who()"/></t>
+                        <t t-if="d.due_date"> · vence <t t-out="fmt_date(d.due_date)"/></t>
+                        · total <t t-out="fmt_money(d.amount)"/></small>
+                </span>
+                <span t-attf-class="o_ad_state o_ad_state_#{'posted' if d.state == 'paid' else ('to_approve' if d.state == 'partial' else ('cancel' if d.state == 'cancel' else 'draft'))}"
+                      t-out="dict(d._fields['state'].selection).get(d.state)"/>
+                <b class="ms-2" t-out="fmt_money(d.residual)"/>
+            </a>
+            <p class="small text-muted mt-2">Aquí se registran las deudas que vienen de antes de la plataforma (insignias, seguros,
+                uniformes, préstamos...) y lo que personas o secciones le deben al grupo. Cada abono sale o entra de la caja o banco
+                real, aparece en el balance para el Consejo y la deuda baja sola.</p>
+        </t>
+    </template>
+
+    <template id="admin_debt_form" name="Administración: nueva deuda">
+        <t t-call="scout_management.leader_layout">
+            <t t-set="tab" t-value="'tes'"/>
+            <t t-call="scout_management.admin_tabs"/>
+            <form method="post" t-att-action="'%s/deudas/nueva?ver=%s' % (admin_base, ver)" class="o_sl_box o_ad_form">
+                <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
+                <label class="form-label">Tipo</label>
+                <select name="direction" class="form-select">
+                    <option value="payable" t-att-selected="ver != 'cobrar' or None">El grupo debe (por pagar)</option>
+                    <option value="receivable" t-att-selected="ver == 'cobrar' or None">Nos deben (por cobrar)</option>
+                </select>
+                <label class="form-label mt-2">Concepto</label>
+                <input name="name" class="form-control" required="required" placeholder="Ej. Insignias de aniversario"/>
+                <div class="row g-2 mt-1">
+                    <div class="col-6"><label class="form-label">Rubro</label>
+                        <select name="kind" class="form-select">
+                            <option t-foreach="kinds" t-as="k" t-att-value="k[0]" t-out="k[1]"/>
+                        </select></div>
+                    <div class="col-6"><label class="form-label">A quién / quién</label>
+                        <input name="party_name" class="form-control" placeholder="Proveedor, persona..."/></div>
+                </div>
+                <div class="row g-2 mt-1">
+                    <div class="col-7"><label class="form-label">Miembro (opcional)</label>
+                        <select name="member_id" class="form-select">
+                            <option value="">—</option>
+                            <option t-foreach="members" t-as="p" t-att-value="p.id" t-out="p.name"/>
+                        </select></div>
+                    <div class="col-5"><label class="form-label">Sección</label>
+                        <select name="section_id" class="form-select">
+                            <option value="">—</option>
+                            <option t-foreach="sections" t-as="s" t-att-value="s.id" t-out="s.name"/>
+                        </select></div>
+                </div>
+                <div class="row g-2 mt-1">
+                    <div class="col-6"><label class="form-label">Importe total</label>
+                        <input name="amount" type="number" step="0.01" min="0.01" inputmode="decimal" class="form-control" required="required" placeholder="0.00"/></div>
+                    <div class="col-6"><label class="form-label">Ya abonado antes</label>
+                        <input name="paid_before" type="number" step="0.01" min="0" inputmode="decimal" class="form-control" placeholder="0.00"/></div>
+                </div>
+                <div class="row g-2 mt-1">
+                    <div class="col-6"><label class="form-label">Fecha de la deuda</label>
+                        <input type="date" name="date" class="form-control" t-att-value="today"/></div>
+                    <div class="col-6"><label class="form-label">Fecha límite</label>
+                        <input type="date" name="due_date" class="form-control"/></div>
+                </div>
+                <label class="form-label mt-2">Notas</label>
+                <textarea name="notes" class="form-control" rows="2"/>
+                <p class="small text-muted mt-2 mb-0">"Ya abonado antes" es lo que se pagó antes de usar la plataforma: baja la deuda pero no mueve caja ni bancos.</p>
+                <button class="btn o_sl_btn w-100 mt-3"><i class="fa fa-check"/> Guardar deuda</button>
+            </form>
+        </t>
+    </template>
+
+    <template id="admin_debt" name="Administración: deuda">
+        <t t-call="scout_management.leader_layout">
+            <t t-set="tab" t-value="'tes'"/>
+            <t t-call="scout_management.admin_tabs"/>
+            <t t-set="payable" t-value="debt.direction == 'payable'"/>
+            <div class="o_sl_box">
+                <div class="d-flex align-items-center">
+                    <b t-out="'El grupo debe' if payable else 'Nos deben'"/>
+                    <span class="o_ad_state ms-auto" t-out="dict(debt._fields['state'].selection).get(debt.state)"/>
+                </div>
+                <div class="mb-1 fw-bold" t-out="debt.name"/>
+                <div class="o_ad_big" t-out="fmt_money(debt.residual)"/>
+                <div class="small text-muted mb-2">pendiente</div>
+                <div class="o_ad_kv"><span>Rubro</span><b t-out="kinds.get(debt.kind)"/></div>
+                <div t-if="debt._who()" class="o_ad_kv"><span t-out="'A quién' if payable else 'Quién'"/><b t-out="debt._who()"/></div>
+                <div class="o_ad_kv"><span>Importe total</span><b t-out="fmt_money(debt.amount)"/></div>
+                <div t-if="debt.paid_before" class="o_ad_kv"><span>Abonado antes de la plataforma</span><b t-out="fmt_money(debt.paid_before)"/></div>
+                <div class="o_ad_kv"><span t-out="'Pagado' if payable else 'Cobrado'"/><b t-out="fmt_money(debt.paid_amount)"/></div>
+                <div t-if="debt.in_approval" class="o_ad_kv"><span>Por aprobar</span><b t-out="fmt_money(debt.in_approval)"/></div>
+                <div class="o_ad_kv"><span>Fecha</span><b t-out="fmt_date(debt.date)"/></div>
+                <div t-if="debt.due_date" class="o_ad_kv"><span>Fecha límite</span><b t-out="fmt_date(debt.due_date)"/></div>
+                <div t-if="debt.notes" class="small mt-2" style="white-space: pre-line;" t-out="debt.notes"/>
+            </div>
+            <form t-if="debt.state in ('open', 'partial')" method="post" t-att-action="'%s/deudas/%s' % (admin_base, debt.id)"
+                  enctype="multipart/form-data" class="o_sl_box o_ad_form">
+                <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
+                <b t-out="'Registrar pago' if payable else 'Registrar cobro'"/>
+                <div class="row g-2 mt-1">
+                    <div class="col-6"><label class="form-label">Importe</label>
+                        <input name="amount" type="number" step="0.01" min="0.01" inputmode="decimal" class="form-control" required="required"
+                               t-att-value="'%.2f' % (debt.residual - debt.in_approval)"/></div>
+                    <div class="col-6"><label class="form-label">Fecha</label>
+                        <input type="date" name="date" class="form-control" t-att-value="today"/></div>
+                </div>
+                <div class="row g-2 mt-1">
+                    <div class="col-6"><label class="form-label" t-out="'Sale de' if payable else 'Entra a'"/>
+                        <select name="journal_id" class="form-select" required="required">
+                            <option t-foreach="journals" t-as="j" t-att-value="j.id" t-out="j.name"/>
+                        </select></div>
+                    <div class="col-6"><label class="form-label">Forma de pago</label>
+                        <select name="payment_method" class="form-select">
+                            <option value="transfer">Transferencia</option><option value="cash">Efectivo</option>
+                            <option value="card">Tarjeta</option><option value="other">Otro</option>
+                        </select></div>
+                </div>
+                <label class="form-label mt-2">Referencia</label>
+                <input name="reference" class="form-control" placeholder="No. de transferencia"/>
+                <label class="form-label mt-2">Comprobante (foto o PDF)</label>
+                <input type="file" name="attachment" accept="image/*,application/pdf" capture="environment" class="form-control"/>
+                <p t-if="payable and not acc.get('manager')" class="small text-muted mt-2 mb-0"><i class="fa fa-info-circle"/> Los pagos van al jefe de grupo para su aprobación.</p>
+                <button class="btn o_sl_btn w-100 mt-3"><i class="fa fa-check"/> <t t-out="'Registrar pago' if payable else 'Registrar cobro'"/></button>
+            </form>
+            <h6 class="o_sl_h mt-3">Historial de abonos</h6>
+            <p t-if="not debt.payment_ids" class="text-muted">Todavía no hay abonos.</p>
+            <a t-foreach="debt.payment_ids.sorted('date', reverse=True)" t-as="m" class="o_ad_move" t-att-href="'%s/tesoreria/%s' % (admin_base, m.id)">
+                <span t-attf-class="o_ad_dot o_ad_#{m.move_type}"/>
+                <span class="flex-grow-1 min-w-0"><span class="d-block" t-out="m.name"/>
+                    <small class="text-muted"><t t-out="fmt_date(m.date)"/> · <t t-out="m.journal_id.name"/><t t-if="m.reference"> · <t t-out="m.reference"/></t></small></span>
+                <span t-attf-class="o_ad_state o_ad_state_#{m.state}" t-out="dict(m._fields['state'].selection).get(m.state)"/>
+                <b class="ms-2" t-out="fmt_money(m.amount)"/>
+            </a>
+            <form method="post" t-att-action="'%s/deudas/%s' % (admin_base, debt.id)" class="mt-3">
+                <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
+                <button t-if="debt.state != 'cancel'" name="op" value="cancelar" class="btn btn-sm btn-light"
+                        data-ad-confirm="¿Cancelar esta deuda? Ya no contará como pendiente.">Cancelar deuda</button>
+                <button t-else="" name="op" value="reabrir" class="btn btn-sm btn-light">Reabrir</button>
             </form>
         </t>
     </template>

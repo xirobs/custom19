@@ -97,6 +97,12 @@ class ReportScoutTreasury(models.AbstractModel):
                                      ('move_type', '=', 'in_invoice'), ('scout_approval_state', '=', 'to_approve')]):
                 to_approve.append({'who': bill.partner_id.name, 'desc': bill.ref or _('Factura de proveedor'),
                                    'amount': bill.amount_total})
+            # deudas y adeudos anteriores a la plataforma
+            debts = self.env['scout.debt'].sudo().summary(company)
+            for debt in debts['receivable']:
+                receivables.append({'who': debt._who(), 'desc': debt.name, 'amount': debt.residual})
+            for debt in debts['payable']:
+                payables.append({'who': debt._who(), 'desc': debt.name, 'amount': debt.residual})
             for tm in self.env['scout.treasury.move'].sudo().search([('company_id', '=', company.id),
                                                                      ('state', '=', 'to_approve')]):
                 to_approve.append({'who': tm.partner_id.name or '', 'desc': tm.description, 'amount': tm.amount})

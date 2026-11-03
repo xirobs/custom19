@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo noupdate="1">
+    <record id="category_debt_payment" model="scout.treasury.category">
+        <field name="name">Pago de deudas anteriores</field>
+        <field name="category_type">expense</field>
+        <field name="sequence">15</field>
+    </record>
+    <record id="category_debt_collection" model="scout.treasury.category">
+        <field name="name">Cobro de adeudos anteriores</field>
+        <field name="category_type">income</field>
+        <field name="report_group">other</field>
+        <field name="sequence">15</field>
+    </record>
+</odoo>
