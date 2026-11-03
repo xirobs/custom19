@@ -84,9 +84,16 @@ class RssAdvisorPortal(http.Controller):
         month_start = today.replace(day=1)
         report = env['rss.report'].search([('company_id', '=', advisor.company_id.id),
                                            ('period_date', '>=', month_start)], limit=1)
+        Insured = env['rss.insured']
+        counts = {}
+        for row in Insured._read_group([('group_id', 'in', groups.ids)], ['group_id', 'state'], ['__count']):
+            counts.setdefault(row[0].id, {})[row[1]] = row[2]
+        certs = dict((g.id, n) for g, n in Insured._read_group(
+            [('group_id', 'in', groups.ids), ('has_certificate', '=', True)], ['group_id'], ['__count']))
         stats = {
-            'insured': env['rss.insured'].search_count([('group_id', 'in', groups.ids),
-                                                         ('state', '=', 'active')]),
+            'insured': Insured.search_count([('group_id', 'in', groups.ids), ('state', '=', 'active')]),
+            'draft': Insured.search_count([('group_id', 'in', groups.ids), ('state', '=', 'draft')]),
+            'certificates': sum(certs.values()),
             'groups': len(groups),
             'claims_open': env['rss.claim'].search_count(self._claims_domain(advisor) + [
                 ('state', 'in', ('reported', 'in_process', 'approved'))]),
@@ -95,11 +102,12 @@ class RssAdvisorPortal(http.Controller):
         claims = env['rss.claim'].search(self._claims_domain(advisor) + [
             ('state', 'in', ('reported', 'in_process', 'approved'))], limit=5)
         return self._render('red_seguro_scout.advisor_home', advisor, 'home', stats=stats,
-                            report=report, claims=claims, groups=groups)
+                            report=report, claims=claims, groups=groups, group_counts=counts,
+                            group_certs=certs)
 
     # ------------------------------------------------------------------ asegurados
     @http.route(['/seguro/asegurados'], type='http', auth='user', website=True, sitemap=False)
-    def advisor_insured(self, grupo=None, q=None, estatus='active', origen='all', page=1, **kw):
+    def advisor_insured(self, grupo=None, q=None, estatus='all', origen='all', page=1, **kw):
         advisor, denied = self._guard()
         if denied:
             return denied
@@ -111,6 +119,10 @@ class RssAdvisorPortal(http.Controller):
             domain.append(('group_id', '=', group.id))
         if estatus in ('active', 'draft', 'inactive'):
             domain.append(('state', '=', estatus))
+        elif estatus == 'certificate':
+            domain.append(('has_certificate', '=', True))
+        elif estatus == 'no_certificate':
+            domain.append(('has_certificate', '=', False))
         if origen == 'platform':
             domain.append(('capture_source', 'in', ('backend', False)))
         elif origen == 'portal':

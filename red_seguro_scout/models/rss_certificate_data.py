@@ -1,7 +1,15 @@
 # -*- coding: utf-8 -*-
 """Datos que se leen de cada certificado y quedan en la ficha del asegurado:
 póliza y certificado, vigencia, contratante y coberturas."""
+import io
+import logging
+
 from odoo import api, fields, models, _
+from odoo.exceptions import UserError
+
+from .rss_cert_parser import parse_certificate
+
+_logger = logging.getLogger(__name__)
 
 CERT_FIELDS = (
     # campo en la línea leída -> campo en el asegurado
@@ -63,7 +71,42 @@ class RssInsuredCertificateData(models.Model):
         """Copia a la ficha lo leído en el certificado y reemplaza sus coberturas."""
         self.ensure_one()
         vals = {target: line[source] for source, target in CERT_FIELDS if line[source]}
-        coverages = line.coverage_data or []
+        self._write_certificate_vals(vals, line.coverage_data or [])
+
+    def action_reread_certificate(self):
+        """Vuelve a leer el PDF de certificado ya anexado y actualiza los datos de la ficha
+        (póliza, vigencia, contratante y coberturas). No cambia a quién pertenece."""
+        from odoo.tools.pdf import PdfFileReader
+        from .rss_certificate import _page_text, _line_data
+        done = 0
+        for rec in self.filtered('certificate_attachment_id'):
+            try:
+                reader = PdfFileReader(io.BytesIO(rec.certificate_attachment_id.sudo().raw), strict=False)
+            except Exception:  # noqa: BLE001
+                _logger.warning('No se pudo abrir el certificado de %s', rec.display_name)
+                continue
+            merged = {}
+            for page in reader.pages:
+                data = parse_certificate(_page_text(page))
+                for key, value in data.items():
+                    merged.setdefault(key, value)
+            if not merged:
+                continue
+            line_vals = _line_data(merged)
+            line_vals['name_read'] = merged.get('insured_name') or False
+            vals = {target: line_vals.get(source) for source, target in CERT_FIELDS if line_vals.get(source)}
+            if merged.get('certificate_number'):
+                vals['certificate_number'] = merged['certificate_number']
+            rec._write_certificate_vals(vals, merged.get('coverages') or [])
+            done += 1
+        if not done and len(self) == 1:
+            raise UserError(_('No se pudieron leer datos del certificado anexado.'))
+        return {'type': 'ir.actions.client', 'tag': 'display_notification',
+                'params': {'type': 'success', 'message': _('Datos del certificado actualizados en %s asegurados.', done),
+                           'next': {'type': 'ir.actions.client', 'tag': 'soft_reload'}}}
+
+    def _write_certificate_vals(self, vals, coverages):
+        self.ensure_one()
         if coverages:
             vals['coverage_ids'] = [fields.Command.clear()] + [fields.Command.create({
                 'sequence': 10 * (n + 1),

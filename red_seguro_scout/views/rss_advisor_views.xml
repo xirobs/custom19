@@ -54,6 +54,7 @@
                             <field name="can_update_claims"/>
                             <field name="can_ack_reports"/>
                             <field name="can_upload_certificates"/>
+                            <field name="can_register_insured"/>
                             <field name="company_id" groups="base.group_multi_company"/>
                         </group>
                     </group>

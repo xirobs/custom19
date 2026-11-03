@@ -225,6 +225,13 @@ class RssCertificateBatch(models.Model):
                     text_norm = normalize_text(raw)
                     data = parse_certificate(original)
                     found, candidates = batch._match_certificate(data, text_norm, raw, index, Insured)
+                    structured = bool(data.get('policy_number') or data.get('certificate_number')
+                                      or data.get('insured_name'))
+                    if current is not None and current.policy_number and not structured:
+                        # Formato con recuadros (p. ej. AP Colectivo): la hoja 2 —designación de
+                        # beneficiarios y firmas— no trae póliza, certificado ni asegurado; es del anterior.
+                        current.page_to = number
+                        continue
                     folio = data.get('certificate_number') or batch._folio(raw)
                     label = data.get('insured_name') or batch._label_name(raw)
                     same_folio = bool(current and folio and folio == current.certificate_number)
@@ -256,6 +263,18 @@ class RssCertificateBatch(models.Model):
             batch.message_post(body=_('%(pages)s páginas leídas: %(ok)s certificados identificados y '
                                       '%(pending)s por asignar.', pages=pages_read,
                                       ok=batch.matched_count, pending=batch.pending_count))
+        return True
+
+    def action_rebuild(self):
+        """Vuelve a separar el PDF original y a anexar los certificados (las dos hojas de cada
+        asegurado). Reemplaza el certificado anexado de cada persona identificada."""
+        for batch in self:
+            batch.line_ids.unlink()
+            batch.state = 'draft'
+            batch.action_read()
+            if batch.matched_count:
+                batch.with_context(rss_cert_replace=True).action_attach()
+            batch.message_post(body=_('Certificados vueltos a separar y anexar.'))
         return True
 
     def action_attach(self):

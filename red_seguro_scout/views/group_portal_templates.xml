@@ -128,7 +128,7 @@
                 <p class="o_rssp_muted mb-2" t-if="member.is_capturer">Captura a mano o sube tu lista en Excel o PDF; la revisas y pagas el mismo día. <t t-out="capture_msg"/></p>
                 <p class="o_rssp_muted mb-2" t-else="">La carga la hace el capturista de tu grupo. Tú puedes consultar los asegurados, certificados y siniestros.</p>
                 <div t-if="member.is_capturer" class="o_rssp_quick">
-                    <a href="/mi-grupo/importar#a-mano" class="o_rssp_quick_btn"><i class="fa fa-pencil"/><span>A mano</span></a>
+                    <a href="/mi-grupo/alta" class="o_rssp_quick_btn"><i class="fa fa-user-plus"/><span>Dar de alta</span></a>
                     <a href="/mi-grupo/importar#excel" class="o_rssp_quick_btn"><i class="fa fa-file-excel-o"/><span>Excel</span></a>
                     <a href="/mi-grupo/importar#pdf" class="o_rssp_quick_btn"><i class="fa fa-file-pdf-o"/><span>PDF</span></a>
                     <a href="/mi-grupo/certificados" class="o_rssp_quick_btn"><i class="fa fa-certificate"/><span>Certificados</span></a>
@@ -156,13 +156,16 @@
                         <h4 class="o_rssp_h mb-0">Asegurados de tu grupo</h4>
                         <div class="o_rssp_muted">Aquí aparecen todos: los que da de alta la oficina en la plataforma y los que carga tu grupo en el portal.</div>
                     </div>
-                    <a t-if="member.is_capturer" href="/mi-grupo/importar#a-mano" class="btn o_rssp_btn"><i class="fa fa-user-plus"/> Dar de alta asegurados</a>
+                    <div class="o_rssp_actions m-0" t-if="member.is_capturer">
+                        <a href="/mi-grupo/alta" class="btn o_rssp_btn"><i class="fa fa-user-plus"/> Dar de alta un asegurado</a>
+                        <a href="/mi-grupo/importar#excel" class="btn o_rssp_btn_ghost"><i class="fa fa-file-excel-o"/> Cargar lista (Excel / PDF)</a>
+                    </div>
                 </div>
                 <details class="o_rssp_howto" t-att-open="None if total else 'open'">
                     <summary>¿Cómo dar de alta a un asegurado?</summary>
                     <ol>
-                        <li><b>Entra a «Cargar lista»</b> (o el botón <i>Dar de alta asegurados</i>). Solo el <b>capturista</b> de tu grupo puede hacerlo<t t-if="not member.is_capturer">; pídeselo o solicita a la administración central que te asigne</t>.</li>
-                        <li><b>Elige cómo cargarlos:</b> <a href="/mi-grupo/importar#a-mano">a mano</a> (uno por uno), <a href="/mi-grupo/importar#excel">Excel</a> (descarga la plantilla) o <a href="/mi-grupo/importar#pdf">PDF</a> con la lista.</li>
+                        <li><b>Presiona «Dar de alta un asegurado»</b> para capturar a una persona con su formulario, o <b>«Cargar lista»</b> para subir varias. Solo el <b>capturista</b> de tu grupo puede hacerlo<t t-if="not member.is_capturer">; pídeselo o solicita a la administración central que te asigne</t>.</li>
+                        <li><b>Elige cómo cargarlos:</b> <a href="/mi-grupo/alta">formulario</a> (uno por uno, con «Guardar y dar de alta otro»), <a href="/mi-grupo/importar#excel">Excel</a> (descarga la plantilla) o <a href="/mi-grupo/importar#pdf">PDF</a> con la lista.</li>
                         <li><b>Revisa la lista:</b> nombre, dos apellidos, fecha de nacimiento, sexo y padre o tutor con teléfono de emergencia. El sistema avisa de errores y de personas repetidas.</li>
                         <li><b>Paga el mismo día</b> con Mercado Pago o transferencia (subes el comprobante). Si no se paga hoy, la carga vence.</li>
                         <li><b>Listo:</b> al confirmarse el pago quedan <b>Asegurados</b> en esta lista; después llega su certificado.</li>

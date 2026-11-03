@@ -20,6 +20,7 @@ DATE_RE = re.compile(r'(\d{1,2})[/\-.](\d{1,2})[/\-.](\d{4})')
 MONEY_RE = re.compile(r'^\$\s*[\d,]+(?:\.\d+)?$')
 MONEY_IN_RE = re.compile(r'(\$\s*[\d,]+(?:\.\d+)?|NO\s+APLICA|AMPARADA|INCLUIDA|N/A)', re.I)
 POLICY_RE = re.compile(r'^[A-Z]{0,5}-?\d{5,}[A-Z0-9-]*$')
+POLICY_CLEAN_RE = re.compile(r'^([A-Z]{0,5}-?\d{5,}(?:-\d+)*)')
 CERT_RE = re.compile(r'^[A-Z]{0,4}-?\d{1,12}$')
 SEX_WORDS = {'MASCULINO': 'male', 'FEMENINO': 'female', 'HOMBRE': 'male', 'MUJER': 'female'}
 
@@ -161,6 +162,13 @@ def parse_certificate(text):
         if match:
             data['policy_number'] = match.group(1)
 
+    if data.get('policy_number'):
+        clean = POLICY_CLEAN_RE.match(data['policy_number'].replace(' ', ''))
+        if clean:
+            data['policy_number'] = clean.group(1)
+    if data.get('certificate_number'):
+        data['certificate_number'] = re.sub(r'(?<=\d)[A-Z]+$', '', data['certificate_number'])
+
     # Fechas
     for key, pattern in (('date_start', r'FECHA DE ALTA DEL CERTIFICADO'),
                          ('date_end', r'FECHA DE FIN DEL CERTIFICADO')):
@@ -172,6 +180,17 @@ def parse_certificate(text):
     if match:
         data['policy_date_start'] = _to_date(match.group(1))
         data['policy_date_end'] = _to_date(match.group(2))
+    # Respaldo: la etiqueta y su fecha vienen separadas (otra columna). Las fechas aparecen
+    # en el mismo orden que las etiquetas: alta, fin, inicio y fin de la vigencia de la póliza.
+    if not data.get('date_start'):
+        pos = joined.find('FECHA DE ALTA')
+        if pos >= 0:
+            tail = joined[pos:pos + 600]
+            stop = tail.find('CONTRATANTE')
+            dates = [d for d in (_to_date(m.group(0)) for m in DATE_RE.finditer(tail[:stop] if stop > 0 else tail)) if d]
+            keys = ('date_start', 'date_end', 'policy_date_start', 'policy_date_end')
+            for key, value in zip(keys, dates):
+                data[key] = value      # etiquetas sin fecha al lado: manda el orden
 
     # Secciones Contratante y Asegurado
     i_con = _find(plain, 'CONTRATANTE')
@@ -218,7 +237,7 @@ def _section(tokens, plain, start, end, labels, prefix):
             address.append(' '.join(tok.split()))
     out['%s_name' % prefix] = name
     out['%s_rfc' % prefix] = rfc
-    out['%s_address' % prefix] = ', '.join(address)
+    out['%s_address' % prefix] = re.sub(r'\s*,(\s*,)+', ',', ', '.join(a.strip(' ,') for a in address if a.strip(' ,')))
     if prefix == 'insured':
         out['insured_birthdate'] = birth
         out['insured_sex'] = sex

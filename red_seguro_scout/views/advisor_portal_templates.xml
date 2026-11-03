@@ -65,7 +65,9 @@
     <template id="advisor_home" name="Asesor: inicio">
         <t t-call="red_seguro_scout.advisor_layout">
             <div class="o_rssp_kpis">
-                <a href="/seguro/asegurados" class="o_rssp_kpi o_rssp_kpi_main"><b t-out="stats['insured']"/><span>Asegurados vigentes</span></a>
+                <a href="/seguro/asegurados?estatus=active" class="o_rssp_kpi o_rssp_kpi_main"><b t-out="stats['insured']"/><span>Asegurados vigentes</span></a>
+                <a href="/seguro/asegurados?estatus=draft" class="o_rssp_kpi"><b t-out="stats['draft']"/><span>En preinscripción</span></a>
+                <a href="/seguro/asegurados?estatus=certificate" class="o_rssp_kpi"><b t-out="stats['certificates']"/><span>Con certificado</span></a>
                 <div class="o_rssp_kpi"><b t-out="stats['groups']"/><span>Grupos</span></div>
                 <a href="/seguro/siniestros" class="o_rssp_kpi"><b t-out="stats['claims_open']"/><span>Siniestros abiertos</span></a>
                 <a href="/seguro/pagos" class="o_rssp_kpi"><b t-out="stats['unpaid']"/><span>Grupos sin pago del año</span></a>
@@ -101,11 +103,13 @@
             </section>
 
             <section class="o_rssp_card">
-                <h5>Grupos</h5>
+                <div class="o_rssp_row"><h5 class="mb-0">Grupos</h5>
+                    <a t-if="advisor.can_register_insured" href="/seguro/alta" class="btn o_rssp_btn"><i class="fa fa-user-plus"/> Dar de alta un asegurado</a></div>
                 <a t-foreach="groups" t-as="g" class="o_rssp_list_item" t-attf-href="/seguro/asegurados?grupo=#{g.id}">
                     <div>
                         <b t-out="g.name"/>
-                        <div class="o_rssp_muted"><t t-out="g.member_count"/> asegurados<t t-if="g.cluster_id"> · <t t-out="g.cluster_id.name"/></t></div>
+                        <t t-set="gc" t-value="group_counts.get(g.id, {})"/>
+                        <div class="o_rssp_muted"><t t-out="gc.get('active', 0)"/> asegurados · <t t-out="gc.get('draft', 0)"/> en preinscripción · <t t-out="group_certs.get(g.id, 0)"/> con certificado<t t-if="g.cluster_id"> · <t t-out="g.cluster_id.name"/></t></div>
                     </div>
                     <span t-if="g.paid_current_year" class="o_rssp_pill o_rssp_pill_ok">Pagado</span>
                     <span t-else="" class="o_rssp_pill o_rssp_pill_warn">Sin pago</span>
@@ -117,6 +121,15 @@
     <!-- Asegurados -->
     <template id="advisor_insured" name="Asesor: asegurados">
         <t t-call="red_seguro_scout.advisor_layout">
+            <section class="o_rssp_card o_rssp_alta">
+                <div class="o_rssp_row">
+                    <div>
+                        <h4 class="o_rssp_h mb-0">Asegurados de tus grupos</h4>
+                        <div class="o_rssp_muted">Todos: los dados de alta en la plataforma y los cargados en el portal, en preinscripción o vigentes, con su certificado.</div>
+                    </div>
+                    <a t-if="advisor.can_register_insured" t-attf-href="/seguro/alta#{'?grupo=%s' % group.id if group else ''}" class="btn o_rssp_btn"><i class="fa fa-user-plus"/> Dar de alta un asegurado</a>
+                </div>
+            </section>
             <form class="o_rssp_filters" method="get" action="/seguro/asegurados">
                 <input type="search" name="q" t-att-value="q" class="form-control" placeholder="Nombre, CURP o tutor"/>
                 <select name="grupo" class="form-select">
@@ -124,10 +137,12 @@
                     <option t-foreach="groups" t-as="g" t-att-value="g.id" t-att-selected="g == group" t-out="g.name"/>
                 </select>
                 <select name="estatus" class="form-select">
-                    <option value="active" t-att-selected="estatus == 'active'">Asegurados</option>
-                    <option value="draft" t-att-selected="estatus == 'draft'">Pre-registro</option>
-                    <option value="inactive" t-att-selected="estatus == 'inactive'">Bajas</option>
                     <option value="all" t-att-selected="estatus == 'all'">Todos</option>
+                    <option value="active" t-att-selected="estatus == 'active'">Asegurados vigentes</option>
+                    <option value="draft" t-att-selected="estatus == 'draft'">Preinscripción</option>
+                    <option value="certificate" t-att-selected="estatus == 'certificate'">Con certificado</option>
+                    <option value="no_certificate" t-att-selected="estatus == 'no_certificate'">Sin certificado</option>
+                    <option value="inactive" t-att-selected="estatus == 'inactive'">Bajas</option>
                 </select>
                 <select name="origen" class="form-select">
                     <option value="all" t-att-selected="origen == 'all'">Cargados en plataforma y portal</option>

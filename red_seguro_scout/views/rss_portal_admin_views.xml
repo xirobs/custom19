@@ -295,6 +295,8 @@
                     <button name="action_read" type="object" string="Volver a leer" invisible="state != 'review'"
                             confirm="Se vuelven a leer los PDF; las asignaciones manuales aún no anexadas se pierden. ¿Continuar?"/>
                     <button name="action_attach" type="object" string="Anexar a cada asegurado" class="btn-primary" invisible="state != 'review'"/>
+                    <button name="action_rebuild" type="object" string="Volver a separar y anexar" invisible="state == 'draft'"
+                            confirm="Se vuelve a leer el PDF original y se reemplaza el certificado anexado de cada persona identificada (con todas sus hojas). Las asignaciones hechas a mano se pierden. ¿Continuar?"/>
                     <field name="state" widget="statusbar"/>
                 </header>
                 <sheet>
@@ -372,6 +374,8 @@
             <xpath expr="//header" position="inside">
                 <button name="action_download_certificate" type="object" string="Certificado" icon="fa-file-pdf-o"
                         invisible="not certificate_attachment_id"/>
+                <button name="action_reread_certificate" type="object" string="Releer datos del certificado" icon="fa-refresh"
+                        invisible="not certificate_attachment_id"/>
             </xpath>
             <xpath expr="//page[@name='claims']" position="before">
                 <page string="Certificado y captura" name="certificate">
@@ -423,6 +427,13 @@
         <field name="model">rss.insured</field>
         <field name="inherit_id" ref="red_seguro_scout.rss_insured_view_list"/>
         <field name="arch" type="xml">
+            <xpath expr="//list" position="inside">
+                <header>
+                    <button name="action_activate" type="object" string="Dar de alta en el seguro"
+                            confirm="Los seleccionados pasan a «Asegurado» y entran en la relación mensual. ¿Continuar?"/>
+                    <button name="action_reread_certificate" type="object" string="Releer datos del certificado"/>
+                </header>
+            </xpath>
             <field name="state" position="before">
                 <field name="has_certificate" optional="show" widget="boolean"/>
                 <field name="cert_policy_number" optional="hide"/>

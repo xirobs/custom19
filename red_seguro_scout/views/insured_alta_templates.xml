@@ -1,0 +1,70 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Formulario de alta de un asegurado: el mismo para el portal del grupo y el del asesor.
+         Variables: action (URL), alta_groups (grupos a elegir; vacío = el del grupo), form (valores
+         escritos si hubo error), back_url, alta_note (texto del paso siguiente). -->
+    <template id="rss_insured_alta_form" name="Alta de asegurado: formulario">
+        <t t-set="form" t-value="form or {}"/>
+        <a t-att-href="back_url" class="o_rssp_back"><i class="fa fa-arrow-left"/> Asegurados</a>
+        <section class="o_rssp_card o_rssp_alta_form">
+            <h4 class="o_rssp_h"><i class="fa fa-user-plus"/> Dar de alta a un asegurado</h4>
+            <p class="o_rssp_muted" t-out="alta_note"/>
+            <form method="post" t-att-action="action">
+                <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
+                <div class="o_rssp_form_grid">
+                    <label t-if="alta_groups" class="o_rssp_span2">Grupo *
+                        <select name="group_id" class="form-select" required="required">
+                            <option value="">— Elige el grupo —</option>
+                            <option t-foreach="alta_groups" t-as="g" t-att-value="g.id"
+                                    t-att-selected="str(g.id) == str(form.get('group_id'))" t-out="g.name"/>
+                        </select>
+                    </label>
+                    <div class="o_rssp_form_sub o_rssp_span2">Datos del scout</div>
+                    <label>Primer nombre *<input name="first_name" class="form-control" required="required" t-att-value="form.get('first_name')"/></label>
+                    <label>Segundo nombre<input name="second_name" class="form-control" t-att-value="form.get('second_name')"/></label>
+                    <label>Apellido paterno *<input name="last_name_father" class="form-control" required="required" t-att-value="form.get('last_name_father')"/></label>
+                    <label>Apellido materno<input name="last_name_mother" class="form-control" t-att-value="form.get('last_name_mother')"/></label>
+                    <label>Fecha de nacimiento *<input type="date" name="birthdate" class="form-control" required="required" t-att-value="form.get('birthdate')"/></label>
+                    <label>Sexo *
+                        <select name="sex" class="form-select" required="required">
+                            <option value="">—</option>
+                            <option value="male" t-att-selected="form.get('sex') == 'male'">Masculino</option>
+                            <option value="female" t-att-selected="form.get('sex') == 'female'">Femenino</option>
+                        </select>
+                    </label>
+                    <label class="o_rssp_span2">CURP <small class="o_rssp_muted">(opcional)</small>
+                        <input name="curp" class="form-control" maxlength="18" style="text-transform: uppercase" t-att-value="form.get('curp')"/></label>
+                    <div class="o_rssp_form_sub o_rssp_span2">Padre, madre o tutor</div>
+                    <label class="o_rssp_span2">Nombre completo *<input name="tutor_name" class="form-control" required="required" t-att-value="form.get('tutor_name')"/></label>
+                    <label>Parentesco
+                        <select name="tutor_relationship" class="form-select">
+                            <option value="">—</option>
+                            <option value="father" t-att-selected="form.get('tutor_relationship') == 'father'">Padre</option>
+                            <option value="mother" t-att-selected="form.get('tutor_relationship') == 'mother'">Madre</option>
+                            <option value="tutor" t-att-selected="form.get('tutor_relationship') == 'tutor'">Tutor(a) legal</option>
+                            <option value="other" t-att-selected="form.get('tutor_relationship') == 'other'">Otro</option>
+                        </select>
+                    </label>
+                    <label>Teléfono de emergencia *<input type="tel" name="tutor_phone" class="form-control" required="required" t-att-value="form.get('tutor_phone')"/></label>
+                    <label class="o_rssp_span2">Correo del tutor<input type="email" name="tutor_email" class="form-control" t-att-value="form.get('tutor_email')"/></label>
+                </div>
+                <label class="o_rssp_check">
+                    <input type="checkbox" name="privacy" value="1" required="required"/>
+                    Tengo la autorización del padre, madre o tutor y acepto el
+                    <a href="/aviso-de-privacidad-seguro" target="_blank">aviso de privacidad</a>.
+                </label>
+                <div class="o_rssp_actions">
+                    <button type="submit" name="next" value="done" class="btn o_rssp_btn"><i class="fa fa-check"/> Guardar</button>
+                    <button type="submit" name="next" value="another" class="btn o_rssp_btn_ghost"><i class="fa fa-plus"/> Guardar y dar de alta otro</button>
+                </div>
+            </form>
+        </section>
+    </template>
+
+    <template id="group_insured_alta" name="Grupo: alta de asegurado">
+        <t t-call="red_seguro_scout.group_layout"><t t-call="red_seguro_scout.rss_insured_alta_form"/></t>
+    </template>
+    <template id="advisor_insured_alta" name="Asesor: alta de asegurado">
+        <t t-call="red_seguro_scout.advisor_layout"><t t-call="red_seguro_scout.rss_insured_alta_form"/></t>
+    </template>
+</odoo>

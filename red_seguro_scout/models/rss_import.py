@@ -326,6 +326,8 @@ class RssImportBatch(models.Model):
                 'tutor_name': line.tutor_name,
                 'tutor_phone': line.tutor_phone,
                 'tutor_email': line.tutor_email or False,
+                'curp': (line.curp or '').strip().upper() or False,
+                'tutor_relationship': line.tutor_relationship or False,
                 'group_id': self.group_id.id,
                 'state': 'draft',
                 'date_start': today,
@@ -423,6 +425,10 @@ class RssImportLine(models.Model):
     tutor_name = fields.Char('Padre o tutor')
     tutor_phone = fields.Char('Teléfono de emergencia')
     tutor_email = fields.Char('Correo')
+    curp = fields.Char('CURP', size=18)
+    tutor_relationship = fields.Selection([
+        ('father', 'Padre'), ('mother', 'Madre'), ('tutor', 'Tutor(a) legal'), ('other', 'Otro'),
+    ], string='Parentesco')
     raw_sex = fields.Char('Sexo (como venía)')
     raw_birthdate = fields.Char('Fecha (como venía)')
     status = fields.Selection([

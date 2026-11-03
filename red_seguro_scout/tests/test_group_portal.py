@@ -618,6 +618,13 @@ class TestCertificateData(_RssPortalCommon, TransactionCase):
         self.assertFalse(self.laura.certificate_attachment_id, 'La contratante homónima no recibe certificado')
         from odoo.tools.pdf import PdfFileReader
         import io
+        self.assertEqual(len(PdfFileReader(io.BytesIO(a.certificate_attachment_id.raw)).pages), 2,
+                         'Hoja 1 (datos) + hoja 2 (beneficiarios y firmas)')
+        self.assertEqual(by_cert['394'].pages, '5–6')
+        # Volver a separar reemplaza el certificado por uno con sus dos hojas
+        old = a.certificate_attachment_id
+        batch.action_rebuild()
+        self.assertNotEqual(a.certificate_attachment_id, old)
         self.assertEqual(len(PdfFileReader(io.BytesIO(a.certificate_attachment_id.raw)).pages), 2)
 
 
@@ -644,9 +651,87 @@ class TestInsuredListAllSources(_RssPortalCommon, HttpCase):
         self.assertIn('María Fernanda García López', html)
         self.assertIn('Portal · Excel', html)
         self.assertIn('Plataforma', html)
-        self.assertIn('Dar de alta asegurados', html)
+        self.assertIn('Dar de alta un asegurado', html)
         self.assertIn('Pendiente Sinpago Hoy', html, 'Aparece en trámite')
         only_portal = self.url_open('/mi-grupo/asegurados?origen=portal').text
         self.assertIn('María Fernanda García López', only_portal)
         self.assertNotIn('José Luis de la Cruz Ramos', only_portal)
         self.assertNotIn('Ana', only_portal, 'Nunca muestra otros grupos')
+
+
+@tagged('post_install', '-at_install', 'red_seguro_scout')
+class TestPortalAlta(_RssPortalCommon, HttpCase):
+
+    @classmethod
+    def setUpClass(cls):
+        super().setUpClass()
+        cls._setup_data()
+        cls.cap = cls._member(cls.g7, 'secretary', 'alta7@example.com', capturer=True)
+        partner = cls.env['res.partner'].create({'name': 'Asesora Alta', 'email': 'asesora.alta@example.com'})
+        cls.advisor = cls.env['rss.advisor'].create({'partner_id': partner.id})
+        cls.advisor.action_grant_portal()
+        cls.advisor.user_id.password = 'asesora-alta-1'
+
+    def _csrf(self, url):
+        return re.search(r'name="csrf_token" value="([^"]+)"', self.url_open(url).text).group(1)
+
+    def _person(self, **extra):
+        data = {'first_name': 'Valeria', 'last_name_father': 'Soto', 'last_name_mother': 'Ruiz',
+                'birthdate': '2015-04-10', 'sex': 'female', 'tutor_name': 'Marta Ruiz',
+                'tutor_relationship': 'mother', 'tutor_phone': '2225550101', 'privacy': '1', 'next': 'another'}
+        data.update(extra)
+        return data
+
+    def test_group_alta_goes_to_todays_capture(self):
+        self.authenticate('alta7@example.com', 'clave-alta7')
+        html = self.url_open('/mi-grupo/asegurados').text
+        self.assertIn('/mi-grupo/alta', html)
+        res = self.url_open('/mi-grupo/alta', data=dict(self._person(), csrf_token=self._csrf('/mi-grupo/alta')))
+        self.assertIn('/mi-grupo/alta', res.url)
+        res = self.url_open('/mi-grupo/alta', data=dict(self._person(first_name='Pablo', sex='male', next='done'),
+                                                        csrf_token=self._csrf('/mi-grupo/alta')))
+        batch = self.env['rss.import.batch'].search([('group_id', '=', self.g7.id), ('source', '=', 'manual')])
+        self.assertEqual(len(batch), 1, 'Las altas del día van en una sola captura')
+        self.assertEqual(sorted(batch.line_ids.mapped('first_name')), ['Pablo', 'Valeria'])
+        self.assertIn('/mi-grupo/importar/%s' % batch.id, res.url)
+        self.assertEqual(batch.line_ids.filtered(lambda l: l.first_name == 'Valeria').tutor_relationship, 'mother')
+        # sin datos obligatorios no se agrega
+        res = self.url_open('/mi-grupo/alta', data=dict(self._person(first_name=''), csrf_token=self._csrf('/mi-grupo/alta')))
+        self.assertIn('Falta', res.text)
+        self.assertEqual(len(batch.line_ids), 2)
+
+    def test_advisor_sees_preinscritos_and_registers(self):
+        self.authenticate('asesora.alta@example.com', 'asesora-alta-1')
+        home = self.url_open('/seguro').text
+        self.assertIn('En preinscripción', home)
+        lst = self.url_open('/seguro/asegurados').text
+        self.assertIn('María Fernanda García López', lst, 'Por omisión muestra todos, también preinscritos')
+        self.assertIn('/seguro/alta', lst)
+        res = self.url_open('/seguro/alta', data=dict(self._person(group_id=str(self.g3.id), next='done'),
+                                                      csrf_token=self._csrf('/seguro/alta')))
+        new = self.env['rss.insured'].search([('first_name', '=', 'Valeria'), ('group_id', '=', self.g3.id)])
+        self.assertTrue(new)
+        self.assertEqual((new.state, new.capture_source), ('draft', 'portal'))
+        self.assertIn('grupo=%s' % self.g3.id, res.url)
+        # repetido: no se duplica
+        self.url_open('/seguro/alta', data=dict(self._person(group_id=str(self.g7.id)), csrf_token=self._csrf('/seguro/alta')))
+        self.assertEqual(self.env['rss.insured'].search_count([('first_name', '=', 'Valeria')]), 1)
+
+    def test_reread_fixes_glued_policy(self):
+        import os
+        path = os.path.join(os.path.dirname(__file__), 'data', 'certificados_ap_colectivo.pdf')
+        from odoo.tools.pdf import PdfFileReader, PdfFileWriter
+        import io
+        with open(path, 'rb') as f:
+            reader = PdfFileReader(io.BytesIO(f.read()))
+        writer = PdfFileWriter()
+        writer.add_page(reader.pages[2])
+        out = io.BytesIO()
+        writer.write(out)
+        att = self.env['ir.attachment'].create({'name': 'c.pdf', 'raw': out.getvalue(), 'mimetype': 'application/pdf',
+                                                'res_model': 'rss.insured', 'res_id': self.maria.id})
+        self.maria.write({'certificate_attachment_id': att.id, 'cert_policy_number': 'AP30101716CERTIFICADO'})
+        self.maria.action_reread_certificate()
+        self.assertEqual(self.maria.cert_policy_number, 'AP30101716')
+        self.assertEqual(self.maria.cert_date_start, date(2026, 10, 7))
+        self.assertEqual(len(self.maria.coverage_ids), 3)
