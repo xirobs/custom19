@@ -559,3 +559,63 @@ class TestInsuranceLogin(_RssPortalCommon, HttpCase):
         self.assertTrue(self.env['rss.group.member']._rss_is_login_redirect('/mi-grupo/importar'))
         self.assertFalse(self.env['rss.group.member']._rss_is_login_redirect('/my'))
         self.assertTrue(RssLoginHome)
+
+
+@tagged('post_install', '-at_install', 'red_seguro_scout')
+class TestCertificateData(_RssPortalCommon, TransactionCase):
+    """Certificado «AP Colectivo» (Pan-American): 3 asegurados, cada uno con su reverso."""
+
+    @classmethod
+    def setUpClass(cls):
+        super().setUpClass()
+        cls._setup_data()
+        env = cls.env
+        cls.angel = env['rss.insured'].create({
+            'first_name': 'Ángel', 'last_name_father': 'Rodríguez', 'last_name_mother': 'Bandera',
+            'birthdate': date(2013, 5, 2), 'sex': 'male', 'group_id': cls.g7.id,
+            'tutor_name': 'Laura Karina Pérez Juárez', 'tutor_phone': '6141234567', 'date_start': date(2026, 10, 7)})
+        # Una asegurada con el mismo nombre que la contratante: no debe recibir el certificado de Ángel
+        cls.laura = env['rss.insured'].create({
+            'first_name': 'Laura', 'second_name': 'Karina', 'last_name_father': 'Pérez', 'last_name_mother': 'Juárez',
+            'birthdate': date(2012, 1, 1), 'sex': 'female', 'group_id': cls.g7.id,
+            'tutor_name': 'Tutor', 'tutor_phone': '2220000000', 'date_start': date(2026, 9, 1)})
+
+    def test_reads_policy_contractor_and_coverages(self):
+        import os
+        path = os.path.join(os.path.dirname(__file__), 'data', 'certificados_ap_colectivo.pdf')
+        with open(path, 'rb') as f:
+            pdf = self.env['ir.attachment'].create({'name': 'certificados.pdf', 'raw': f.read(),
+                                                     'mimetype': 'application/pdf'})
+        batch = self.env['rss.certificate.batch'].create({'group_ids': [Command.set(self.g7.ids)],
+                                                          'file_ids': [Command.set(pdf.ids)]})
+        batch.action_read()
+        self.assertEqual(len(batch.line_ids), 3, 'Un certificado por asegurado (el reverso se une)')
+        by_cert = {l.certificate_number: l for l in batch.line_ids}
+        self.assertEqual(by_cert['392'].insured_id, self.angel, 'Apellidos primero: RODRÍGUEZ BANDERA ÁNGEL')
+        self.assertEqual(by_cert['392'].pages, '1–2')
+        self.assertEqual(by_cert['393'].insured_id, self.maria)
+        self.assertEqual(by_cert['394'].insured_id, self.jose, 'Partícula «de la Cruz»')
+        line = by_cert['392']
+        self.assertEqual(line.policy_number, 'AP30101716')
+        self.assertEqual(line.contractor_name, 'LAURA KARINA PEREZ JUAREZ')
+        self.assertEqual(line.contractor_rfc, 'PEJL801115AN0')
+        self.assertIn('C.P. 31060', line.contractor_address)
+        self.assertEqual(line.group_id, self.g7)
+        batch.action_attach()
+        a = self.angel
+        self.assertTrue(a.certificate_attachment_id)
+        self.assertEqual((a.cert_policy_number, a.certificate_number), ('AP30101716', '392'))
+        self.assertEqual((a.cert_date_start, a.cert_date_end), (date(2026, 10, 7), date(2027, 8, 19)))
+        self.assertEqual((a.cert_policy_date_start, a.cert_policy_date_end), (date(2026, 8, 19), date(2027, 8, 19)))
+        self.assertEqual(a.cert_insurer, 'Pan-American México')
+        self.assertEqual(a.contractor_rfc, 'PEJL801115AN0')
+        cov = {c.name: c for c in a.coverage_ids}
+        self.assertEqual(cov['Indemnización por muerte accidental'].sum_insured, 100000)
+        self.assertEqual(cov['Pérdidas Orgánicas Escala B'].sum_insured, 100000)
+        gm = cov['Reembolso de Gastos Médicos por Accidente']
+        self.assertEqual((gm.sum_insured, gm.deductible), (50000, 300))
+        self.assertEqual(a.coverage_total, 250000)
+        self.assertFalse(self.laura.certificate_attachment_id, 'La contratante homónima no recibe certificado')
+        from odoo.tools.pdf import PdfFileReader
+        import io
+        self.assertEqual(len(PdfFileReader(io.BytesIO(a.certificate_attachment_id.raw)).pages), 2)

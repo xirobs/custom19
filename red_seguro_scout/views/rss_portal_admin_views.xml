@@ -331,6 +331,12 @@
                             <field name="pages" readonly="1"/>
                             <field name="name_read" readonly="1"/>
                             <field name="certificate_number"/>
+                            <field name="policy_number" optional="show" readonly="1"/>
+                            <field name="contractor_name" optional="show" readonly="1"/>
+                            <field name="contractor_rfc" optional="hide" readonly="1"/>
+                            <field name="date_start" optional="hide" readonly="1"/>
+                            <field name="date_end" optional="hide" readonly="1"/>
+                            <field name="coverage_summary" optional="hide" readonly="1"/>
                             <field name="candidate_ids" widget="many2many_tags" readonly="1" optional="show"/>
                             <field name="insured_id" readonly="attached" options="{'no_create': True}"/>
                             <field name="group_id"/>
@@ -371,10 +377,36 @@
                 <page string="Certificado y captura" name="certificate">
                     <group>
                         <group string="Certificado de la póliza">
-                            <field name="certificate_number"/>
+                            <field name="cert_insurer" invisible="not cert_insurer"/>
+                            <field name="cert_product" invisible="not cert_product"/>
+                            <field name="cert_policy_number"/>
+                            <field name="certificate_number" string="Certificado No."/>
+                            <field name="cert_insured_name" invisible="not cert_insured_name"/>
+                            <label for="cert_date_start" string="Vigencia del certificado"/>
+                            <div class="o_row"><field name="cert_date_start"/> – <field name="cert_date_end"/></div>
+                            <label for="cert_policy_date_start" string="Vigencia de la póliza"/>
+                            <div class="o_row"><field name="cert_policy_date_start"/> – <field name="cert_policy_date_end"/></div>
                             <field name="certificate_attachment_id" options="{'no_create': True}"/>
                             <field name="certificate_date"/>
                         </group>
+                        <group string="Contratante">
+                            <field name="contractor_name" string="Nombre o razón social"/>
+                            <field name="contractor_rfc" string="RFC"/>
+                            <field name="contractor_address" string="Domicilio"/>
+                        </group>
+                    </group>
+                    <separator string="Coberturas del certificado"/>
+                    <field name="coverage_ids" nolabel="1">
+                        <list editable="bottom">
+                            <field name="sequence" widget="handle"/>
+                            <field name="name"/>
+                            <field name="sum_insured" sum="Total"/>
+                            <field name="deductible_text" string="Deducible"/>
+                            <field name="waiting_period"/>
+                            <field name="currency_id" column_invisible="1"/>
+                        </list>
+                    </field>
+                    <group>
                         <group string="Captura">
                             <field name="capture_source"/>
                             <field name="captured_by_id"/>
@@ -393,6 +425,9 @@
         <field name="arch" type="xml">
             <field name="state" position="before">
                 <field name="has_certificate" optional="show" widget="boolean"/>
+                <field name="cert_policy_number" optional="hide"/>
+                <field name="certificate_number" optional="hide" string="Certificado"/>
+                <field name="contractor_name" optional="hide"/>
                 <field name="capture_source" optional="hide"/>
             </field>
         </field>

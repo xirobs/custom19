@@ -149,7 +149,7 @@
                             <td><a t-if="i.tutor_phone" t-attf-href="tel:#{i.tutor_phone}" t-out="i.tutor_phone"/></td>
                             <td t-out="fmt_date(i.date_start)"/>
                             <td><span t-attf-class="o_rssp_pill o_rssp_pill_#{i.state}" t-out="labels('rss.insured', 'state').get(i.state)"/></td>
-                            <td><a t-if="i.certificate_attachment_id" class="btn btn-sm o_rssp_btn_ghost" t-attf-href="/seguro/asegurados/#{i.id}/certificado"><i class="fa fa-file-pdf-o"/> <t t-out="i.certificate_number or 'PDF'"/></a></td>
+                            <td><a t-if="i.certificate_attachment_id" class="btn btn-sm o_rssp_btn_ghost" t-attf-href="/seguro/asegurados/#{i.id}/certificado"><i class="fa fa-file-pdf-o"/> <t t-out="i.certificate_number or 'PDF'"/></a><t t-call="red_seguro_scout.rss_cert_info"/></td>
                         </tr>
                         <tr t-if="not insured"><td colspan="10" class="o_rssp_muted text-center">Sin resultados.</td></tr>
                     </tbody>

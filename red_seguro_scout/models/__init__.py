@@ -15,6 +15,7 @@ from . import rss_group_member
 from . import rss_insured_ext
 from . import rss_import
 from . import rss_certificate
+from . import rss_certificate_data
 from . import rss_privacy
 from . import rss_policy_billing
 from . import rss_payment_tx

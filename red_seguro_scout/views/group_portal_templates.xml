@@ -182,6 +182,7 @@
                                     <i class="fa fa-file-pdf-o"/> <t t-out="i.certificate_number or 'Descargar'"/>
                                 </a>
                                 <span t-else="" class="o_rssp_muted">Pendiente</span>
+                                <t t-call="red_seguro_scout.rss_cert_info"/>
                             </td>
                         </tr>
                         <tr t-if="not insured"><td colspan="8" class="o_rssp_muted text-center">Sin resultados.</td></tr>

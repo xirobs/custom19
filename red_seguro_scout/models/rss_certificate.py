@@ -10,6 +10,7 @@ from odoo import api, fields, models, _
 from odoo.exceptions import UserError
 
 from .rss_common import normalize_text
+from .rss_cert_parser import parse_certificate
 
 _logger = logging.getLogger(__name__)
 
@@ -25,6 +26,38 @@ FOLIO_STOPWORDS = {'DE', 'DEL', 'NO', 'NUM', 'NUMERO', 'INDIVIDUAL', 'POLIZA', '
 def _pdf_reader(data):
     from odoo.tools.pdf import PdfFileReader
     return PdfFileReader(io.BytesIO(data), strict=False)
+
+
+def _page_text(page):
+    """Texto de la página respetando columnas (con respaldo al modo simple)."""
+    try:
+        text = page.extract_text(extraction_mode='layout') or ''
+    except Exception:  # noqa: BLE001 - versiones de pypdf sin modo layout
+        text = ''
+    if not text.strip():
+        text = page.extract_text() or ''
+    return text
+
+
+def _line_data(data):
+    """Campos de rss.certificate.line con lo leído del certificado."""
+    if not data:
+        return {}
+    return {
+        'policy_number': data.get('policy_number') or False,
+        'insurer_name': data.get('insurer') or False,
+        'product': data.get('product') or False,
+        'date_start': data.get('date_start') or False,
+        'date_end': data.get('date_end') or False,
+        'policy_date_start': data.get('policy_date_start') or False,
+        'policy_date_end': data.get('policy_date_end') or False,
+        'contractor_name': data.get('contractor_name') or False,
+        'contractor_rfc': data.get('contractor_rfc') or False,
+        'contractor_address': data.get('contractor_address') or False,
+        'birthdate_read': data.get('insured_birthdate') or False,
+        'sex_read': data.get('insured_sex') or False,
+        'coverage_data': data.get('coverages') or False,
+    }
 
 
 class RssCertificateBatch(models.Model):
@@ -106,6 +139,43 @@ class RssCertificateBatch(models.Model):
             return by_date, Insured.browse()
         return Insured.browse(), candidates
 
+    def _match_certificate(self, data, text_norm, raw_upper, index, Insured):
+        """Primero busca por el nombre del recuadro «Asegurado» (así no se confunde con el
+        contratante); si no hay, por cualquier nombre de la página. Desempata con fecha de
+        nacimiento y sexo leídos."""
+        name = normalize_text(data.get('insured_name') or '')
+        found, candidates = Insured.browse(), Insured.browse()
+        if name:
+            exact = index.get(name)
+            if exact:
+                candidates = Insured.browse(list(exact))
+            else:
+                found, candidates = self._match_page(name, raw_upper, index, Insured)
+                candidates = found or candidates
+        if not candidates:
+            text = text_norm
+            contractor = normalize_text(data.get('contractor_name') or '')
+            if contractor:
+                text = (' %s ' % text).replace(' %s ' % contractor, ' ')
+            found, candidates = self._match_page(text, raw_upper, index, Insured)
+            candidates = found or candidates
+        if len(candidates) > 1:
+            birth, sex = data.get('insured_birthdate'), data.get('insured_sex')
+            narrowed = candidates
+            if birth:
+                narrowed = narrowed.filtered(lambda i: i.birthdate == birth) or narrowed
+            if sex and len(narrowed) > 1:
+                narrowed = narrowed.filtered(lambda i: i.sex == sex) or narrowed
+            if len(narrowed) > 1:
+                dates = {'%04d-%02d-%02d' % (int(y), int(m), int(d)) for d, m, y in DATE_RE.findall(raw_upper)
+                         if 0 < int(m) <= 12 and 0 < int(d) <= 31}
+                by_date = narrowed.filtered(lambda i: i.birthdate and i.birthdate.isoformat() in dates)
+                narrowed = by_date if len(by_date) == 1 else narrowed
+            candidates = narrowed
+        if len(candidates) == 1:
+            return candidates, Insured.browse()
+        return Insured.browse(), candidates
+
     @staticmethod
     def _folio(raw_upper):
         """Primer código con número que aparece poco después de «Certificado/Folio»."""
@@ -150,11 +220,13 @@ class RssCertificateBatch(models.Model):
                 current = None
                 for number, page in enumerate(reader.pages, start=1):
                     pages_read += 1
-                    raw = (page.extract_text() or '').upper()
+                    original = _page_text(page)
+                    raw = original.upper()
                     text_norm = normalize_text(raw)
-                    found, candidates = self._match_page(text_norm, raw, index, Insured)
-                    folio = batch._folio(raw)
-                    label = batch._label_name(raw)
+                    data = parse_certificate(original)
+                    found, candidates = batch._match_certificate(data, text_norm, raw, index, Insured)
+                    folio = data.get('certificate_number') or batch._folio(raw)
+                    label = data.get('insured_name') or batch._label_name(raw)
                     same_folio = bool(current and folio and folio == current.certificate_number)
                     if current is not None and not (found or candidates) and (
                             not text_norm or same_folio or not (folio or label)):
@@ -162,8 +234,11 @@ class RssCertificateBatch(models.Model):
                         # Una página con folio o etiqueta de asegurado distinta NUNCA se pega a otro.
                         current.page_to = number
                         continue
-                    if found and current and current.insured_id == found and current.attachment_id == pdf:
+                    if found and current and current.insured_id == found and current.attachment_id == pdf \
+                            and (not folio or folio == current.certificate_number):
                         current.page_to = number
+                        if data and not current.coverage_data and data.get('coverages'):
+                            current.coverage_data = data['coverages']
                         continue
                     current = Line.create({
                         'batch_id': batch.id,
@@ -175,6 +250,7 @@ class RssCertificateBatch(models.Model):
                         'certificate_number': folio,
                         'name_read': label or (found.name if found else False),
                         'no_text': not text_norm,
+                        **_line_data(data),
                     })
             batch.write({'state': 'review', 'page_count': pages_read})
             batch.message_post(body=_('%(pages)s páginas leídas: %(ok)s certificados identificados y '
@@ -223,6 +299,7 @@ class RssCertificateBatch(models.Model):
                     'certificate_number': line.certificate_number or insured.certificate_number,
                     'certificate_date': today,
                 })
+                insured._apply_certificate_line(line)
                 insured.message_post(body=_('Certificado de la póliza anexado (%s).', batch.name),
                                      attachment_ids=attachment.ids)
                 line.write({'attached': True, 'result_attachment_id': attachment.id})

@@ -290,3 +290,14 @@ body:has(.o_rssp_modal) { overflow: hidden; }
 .o_rssp_pill_cert_draft { background: #EEE; color: $rssp-muted; }
 .o_rssp_nav a { padding: 2px 4px; }
 @media (max-width: 420px) { .o_rssp_nav a { font-size: .62rem; } }
+
+// Datos del certificado dentro de la lista de asegurados
+.o_rssp_cert_info {
+    margin-top: .4rem; font-size: .82rem; min-width: 220px;
+    summary { cursor: pointer; color: var(--rss-wine, #6E0B14); font-weight: 600; }
+    dl { margin: .4rem 0; display: grid; grid-template-columns: auto 1fr; gap: .15rem .6rem; }
+    dt { font-weight: 600; } dd { margin: 0; }
+    .o_rssp_cov { width: 100%; border-collapse: collapse;
+        th, td { padding: .2rem .35rem; border-bottom: 1px solid rgba(110, 11, 20, .12); text-align: left; }
+        th { font-weight: 700; white-space: nowrap; } td:nth-child(n+2) { white-space: nowrap; } }
+}

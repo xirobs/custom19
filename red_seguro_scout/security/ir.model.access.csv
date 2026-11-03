@@ -30,3 +30,4 @@ access_rss_certificate_line_user,rss.certificate.line.user,model_rss_certificate
 access_rss_policy_tariff_user,rss.policy.tariff.user,model_rss_policy_tariff,group_rss_user,1,0,0,0
 access_rss_policy_tariff_manager,rss.policy.tariff.manager,model_rss_policy_tariff,group_rss_manager,1,1,1,1
 access_rss_portal_password_manager,rss.portal.password.manager,model_rss_portal_password,group_rss_manager,1,1,1,1
+access_rss_insured_coverage_user,rss.insured.coverage.user,model_rss_insured_coverage,group_rss_user,1,1,1,1

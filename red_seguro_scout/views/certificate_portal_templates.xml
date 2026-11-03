@@ -58,7 +58,7 @@
             <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
             <div class="o_rssp_table_wrap">
                 <table class="table o_rssp_table o_rssp_edit">
-                    <thead><tr><th>Págs.</th><th>Resultado</th><th>Nombre leído</th><th>Folio</th><th>Asegurado</th><th>Omitir</th><th/></tr></thead>
+                    <thead><tr><th>Págs.</th><th>Resultado</th><th>Nombre leído</th><th>Póliza / Cert.</th><th>Contratante</th><th>Asegurado</th><th>Omitir</th><th/></tr></thead>
                     <tbody>
                         <tr t-foreach="batch.line_ids" t-as="l" t-attf-class="o_rssp_line_#{'ok' if l.attached or l.status == 'matched' else ('duplicate' if l.status == 'ambiguous' else 'error')}">
                             <td t-out="l.pages"/>
@@ -69,7 +69,8 @@
                                 <div t-if="l.no_text" class="o_rssp_muted">Página sin texto</div>
                             </td>
                             <td t-out="l.name_read or '—'"/>
-                            <td t-out="l.certificate_number or '—'"/>
+                            <td><t t-out="l.policy_number or '—'"/><div class="o_rssp_muted">Cert. <t t-out="l.certificate_number or '—'"/></div></td>
+                            <td><t t-out="l.contractor_name or '—'"/><div class="o_rssp_muted" t-if="l.contractor_rfc" t-out="l.contractor_rfc"/></td>
                             <td>
                                 <t t-if="l.attached or batch.state == 'done'">
                                     <b t-out="l.insured_id.name or '—'"/>
@@ -94,6 +95,27 @@
                 <button type="submit" name="action" value="attach" class="btn o_rssp_btn"><i class="fa fa-paperclip"/> Anexar certificados</button>
             </div>
         </form>
+    </template>
+
+    <!-- Datos del certificado del asegurado (portal del grupo y del asesor) -->
+    <template id="rss_cert_info" name="Certificados: datos del asegurado">
+        <details t-if="i.cert_policy_number or i.contractor_name or i.coverage_ids" class="o_rssp_cert_info">
+            <summary>Póliza <t t-out="i.cert_policy_number or '—'"/> · Cert. <t t-out="i.certificate_number or '—'"/></summary>
+            <dl>
+                <t t-if="i.cert_insurer"><dt>Aseguradora</dt><dd><t t-out="i.cert_insurer"/><t t-if="i.cert_product"> · <t t-out="i.cert_product"/></t></dd></t>
+                <t t-if="i.cert_date_start or i.cert_date_end"><dt>Vigencia</dt><dd><t t-out="fmt_date(i.cert_date_start)"/> – <t t-out="fmt_date(i.cert_date_end)"/></dd></t>
+                <t t-if="i.contractor_name"><dt>Contratante</dt><dd><t t-out="i.contractor_name"/><t t-if="i.contractor_rfc"> · RFC <t t-out="i.contractor_rfc"/></t>
+                    <div t-if="i.contractor_address" class="o_rssp_muted" t-out="i.contractor_address"/></dd></t>
+            </dl>
+            <table t-if="i.coverage_ids" class="o_rssp_cov">
+                <tr><th>Cobertura</th><th>Suma asegurada</th><th>Deducible</th></tr>
+                <tr t-foreach="i.coverage_ids" t-as="c">
+                    <td t-out="c.name"/>
+                    <td t-out="c.sum_insured_text or ('$ {:,.2f}'.format(c.sum_insured))"/>
+                    <td t-out="c.deductible_text or ''"/>
+                </tr>
+            </table>
+        </details>
     </template>
 
     <!-- Envolturas por portal -->
