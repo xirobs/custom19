@@ -344,11 +344,15 @@ class ScoutFormLinkWizard(models.TransientModel):
         from .scout_online_payment import scout_whatsapp_phone
         phone = scout_whatsapp_phone(self.phone)
         if self.member_id:
-            text = _('Hola, esta es la liga para llenar (o renovar) la ficha de registro de %(name)s en %(group)s. '
+            text = _('Hola, esta es la liga para llenar, renovar o reingresar la ficha de registro de %(name)s en %(group)s. '
                      'Ahí mismo firmas, adjuntas tu INE y eliges pagar en línea o en efectivo: %(link)s',
                      name=self.member_id.name, group=self.env.company.name, link=self.link)
         else:
             text = _('Hola, esta es la liga para inscribir a tu hijo(a) en %(group)s. Llena la ficha, firma, adjunta tu '
                      'INE y elige pagar en línea o en efectivo: %(link)s', group=self.env.company.name, link=self.link)
+        cycle = self.env['scout.cycle'].sudo()._get_registration()
+        fees = cycle._fee_text(self.member_id or None) if cycle else ''
+        if fees:
+            text += '\n\n' + fees
         return {'type': 'ir.actions.act_url', 'target': 'new',
                 'url': f'https://wa.me/{phone}?text={quote(text)}' if phone else f'https://wa.me/?text={quote(text)}'}

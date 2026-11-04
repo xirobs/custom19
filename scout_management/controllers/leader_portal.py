@@ -691,6 +691,26 @@ class ScoutLeaderPortal(http.Controller):
         return self._render('scout_management.leader_enrollment', section, 'members', mode=mode, enroll=data,
                             groups=data[mode])
 
+    # ------------------------------------------------------------------ bajas (las aprueba el jefe de grupo)
+    @http.route(['/dirigentes/<int:section_id>/miembro/<int:member_id>/baja'], type='http', auth='user',
+                website=True, methods=['POST'])
+    def leader_leave_request(self, section_id, member_id, **post):
+        section, redirect = self._section_or_redirect(section_id)
+        if redirect:
+            return redirect
+        url = f'/dirigentes/{section.id}/miembro/{member_id}'
+        from datetime import datetime
+        try:
+            day = datetime.strptime(post['date'], '%Y-%m-%d').date() if post.get('date') else None
+        except ValueError:
+            day = None
+        reason = ' - '.join(x for x in ((post.get('motive') or '').strip(), (post.get('reason') or '').strip()) if x)
+        try:
+            self._svc().request_leave(section, member_id, reason, day)
+        except (UserError, AccessError, ValidationError) as e:
+            return self._back(url, error=str(e.args[0]))
+        return self._back(url, ok=_('Baja enviada al jefe de grupo. Seguirá en la lista hasta que la apruebe.'))
+
     # ------------------------------------------------------------------ reingresos
     @http.route(['/dirigentes/<int:section_id>/reingreso'], type='http', auth='user', website=True, methods=['GET'])
     def leader_returns(self, section_id, **kw):
@@ -788,7 +808,11 @@ class ScoutLeaderPortal(http.Controller):
         link = request.env['res.partner'].sudo()._scout_signup_url(section)
         text = _('Hola, esta es la liga para inscribir a tu hijo(a) en %(group)s: llenas la ficha, firmas, adjuntas tu '
                  'INE y eliges pagar en línea o en efectivo. %(link)s', group=request.env.company.name, link=link)
-        return self._render('scout_management.leader_family_link', section, 'members', link=link,
+        cycle = request.env['scout.cycle'].sudo()._get_registration()
+        fees = cycle._fee_text() if cycle else ''
+        if fees:
+            text += '\n\n' + fees
+        return self._render('scout_management.leader_family_link', section, 'members', link=link, fees=fees,
                             qr=scout_qr_data_uri(link), whatsapp=f'https://wa.me/?text={quote(text)}')
 
     @http.route(['/dirigentes/<int:section_id>/miembro/<int:member_id>/pago/efectivo'], type='http', auth='user',

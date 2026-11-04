@@ -104,6 +104,7 @@
                     <group>
                         <group string="Padre, madre o tutor (principal)">
                             <field name="scout_guardian_id" context="{'default_street': street, 'default_street2': street2, 'default_city': city, 'default_zip': zip}"/>
+                            <field name="scout_leader_child"/>
                             <field name="scout_guardian_relationship"/>
                             <field name="scout_guardian_phone" widget="phone" readonly="not scout_guardian_id"/>
                             <field name="scout_guardian_email" widget="email" readonly="not scout_guardian_id"/>

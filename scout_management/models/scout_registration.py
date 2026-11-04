@@ -132,10 +132,11 @@ class ScoutRegistration(models.Model):
         for reg in self:
             reg.age = relativedelta(today, reg.birthdate).years if reg.birthdate else 0
 
-    @api.depends('cycle_id')
+    @api.depends('cycle_id', 'member_id')
     def _compute_registration_fee(self):
         for reg in self:
-            reg.registration_fee = reg.cycle_id.registration_fee
+            day = fields.Date.to_date(reg.create_date) if reg.create_date else None
+            reg.registration_fee = reg.cycle_id._fee_for(reg.member_id, day) if reg.cycle_id else 0.0
 
     @api.depends('invoice_id.payment_state', 'invoice_id.state', 'registration_fee', 'manual_payment_state')
     def _compute_payment_state(self):

@@ -316,7 +316,8 @@
                     </div></fieldset>
 
                     <fieldset class="card mb-3"><div class="card-body">
-                        <legend class="h5">4. Pago de registro<t t-if="cycle.registration_fee"> · <t t-out="'$ {:,.2f}'.format(cycle.registration_fee)"/></t></legend>
+                        <legend class="h5">4. Pago de registro<t t-if="cycle and cycle._fee_for(member or None)"> · <t t-out="'$ {:,.2f}'.format(cycle._fee_for(member or None))"/></t></legend>
+                        <p t-if="cycle and cycle._fee_text()" class="small mb-2 o_scout_fee_text"><i class="fa fa-info-circle"/> <t t-out="cycle._fee_text()"/></p>
                         <p class="small text-muted mb-2">Al enviar la ficha podrás pagar en línea o entregar el efectivo en la junta.</p>
                         <div class="form-check"><input class="form-check-input" type="radio" name="payment_method" id="pm1" value="online" checked="1"/>
                             <label class="form-check-label" for="pm1"><b>En línea</b>: tarjeta, OXXO o Mercado Pago (al enviar la ficha)</label></div>

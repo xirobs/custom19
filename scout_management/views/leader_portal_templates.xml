@@ -884,9 +884,32 @@
             <div t-if="member.scout_type == 'youth'" class="d-flex gap-2 mb-3">
                 <t t-set="flink" t-value="member._scout_form_url()"/>
                 <a class="btn o_sl_btn_wa flex-fill" target="_blank"
-                   t-att-href="'https://wa.me/%s?text=%s' % (''.join(c for c in (member.scout_guardian_id.phone or '') if c.isdigit()), url_quote('Hola, esta es la liga para llenar o renovar la ficha de registro de %s: firmas, adjuntas tu INE y eliges pagar en línea o en efectivo. %s' % (member.name, flink)))"><i class="fa fa-whatsapp"/> Liga de ficha a la familia</a>
+                   t-att-href="svc.family_form_whatsapp(member, request.env['scout.cycle'].sudo()._get_registration())['whatsapp']"><i class="fa fa-whatsapp"/> Liga de ficha a la familia</a>
                 <button type="button" class="btn o_sl_btn_outline" t-att-data-sl-copy="flink" title="Copiar liga"><i class="fa fa-copy"/></button>
             </div>
+            <t t-set="leave_req" t-value="svc.pending_leave(member)"/>
+            <div t-if="leave_req" class="alert alert-warning o_sl_alert mx-0"><i class="fa fa-hourglass-half"/>
+                Baja solicitada (<t t-out="leave_req.reason"/>), a partir del <t t-out="leave_req.effective_date.strftime('%d/%m/%Y')"/>.
+                Falta la aprobación del jefe de grupo.</div>
+            <details t-elif="member.scout_state != 'inactive' and member.scout_type == 'youth'" class="o_sl_card_box o_sl_leave_box mb-3">
+                <summary class="text-danger"><i class="fa fa-user-times"/> Solicitar baja</summary>
+                <form t-att-action="'/dirigentes/%s/miembro/%s/baja' % (section.id, member.id)" method="post" class="mt-2">
+                    <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
+                    <label class="form-label small">Motivo</label>
+                    <select name="motive" class="form-select form-select-sm" required="required">
+                        <option value="">Elige…</option>
+                        <option>Dejó de asistir</option><option>Decisión de la familia</option><option>Cambio de domicilio</option>
+                        <option>Cambio a otro grupo scout</option><option>Salud</option><option>Falta de pago</option>
+                        <option>Disciplina</option><option>Otro</option>
+                    </select>
+                    <label class="form-label small mt-2">Detalle</label>
+                    <textarea name="reason" class="form-control form-control-sm" rows="2" placeholder="Explica brevemente"/>
+                    <label class="form-label small mt-2">A partir de</label>
+                    <input type="date" name="date" class="form-control form-control-sm" t-att-value="svc._today().strftime('%Y-%m-%d')"/>
+                    <p class="small text-muted mt-2 mb-2">El jefe de grupo recibe la solicitud y, al aprobarla, el scout pasa a baja (se puede pedir reingreso después).</p>
+                    <button class="btn btn-sm btn-danger w-100" onclick="return confirm('¿Enviar la solicitud de baja al jefe de grupo?');"><i class="fa fa-paper-plane"/> Enviar solicitud de baja</button>
+                </form>
+            </details>
             <div class="o_sl_card_box">
                 <h6>Datos personales</h6>
                 <dl class="o_sl_dl small mb-0">
@@ -1227,7 +1250,8 @@
             <h5 class="o_sl_h mb-0" t-out="svc.registration_label(member) if svc.registration_label(member) != 'Ficha y firma' else 'Ficha de registro'"/>
             <div t-if="member.scout_state == 'inactive'" class="alert alert-info o_sl_alert mx-0"><i class="fa fa-undo"/> Reingreso: el jefe de grupo lo reactiva al aprobar la solicitud.</div>
             <div class="text-muted mb-2"><t t-out="member.name"/> · Ciclo <t t-out="cycle.name if cycle else '—'"/>
-                <t t-if="cycle and cycle.registration_fee"> · Cuota <b t-out="money(cycle.registration_fee)"/></t></div>
+                <t t-if="cycle and cycle._fee_for(member)"> · Cuota <b t-out="money(cycle._fee_for(member))"/></t></div>
+            <div t-if="cycle and cycle._fee_text()" class="small text-muted mb-2" t-out="cycle._fee_text()"/>
             <div t-if="registration and registration.state == 'validated'" class="alert alert-success o_sl_alert">La ficha de este ciclo ya está validada.</div>
             <form t-else="" t-att-action="'/dirigentes/%s/miembro/%s/registro' % (section.id, member.id)" method="post" class="o_sl_form o_scout_register_form"
                   t-att-data-sl-require-ine="'0' if registration and registration.guardian_id_front else '1'"
@@ -2180,6 +2204,7 @@
                 <img t-att-src="qr" class="o_sl_qr" alt="QR"/>
                 <div class="small text-break mt-2" t-out="link"/>
             </div>
+            <div t-if="fees" class="alert alert-info o_sl_alert mx-0 small"><i class="fa fa-money"/> <t t-out="fees"/> (va incluido en el mensaje)</div>
             <div class="d-grid gap-2">
                 <a class="btn o_sl_btn_wa o_sl_btn_big" t-att-href="whatsapp" target="_blank"><i class="fa fa-whatsapp"/> Compartir por WhatsApp</a>
                 <button type="button" class="btn o_sl_btn_outline" t-att-data-sl-copy="link"><i class="fa fa-copy"/> Copiar liga</button>

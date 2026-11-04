@@ -9,7 +9,11 @@
                 <field name="name"/>
                 <field name="date_start"/>
                 <field name="date_end"/>
-                <field name="registration_fee"/>
+                <field name="early_fee"/>
+                <field name="early_from"/>
+                <field name="early_until"/>
+                <field name="registration_fee" string="Cuota normal"/>
+                <field name="leader_fee" string="Dirigentes e hijos"/>
                 <field name="is_current" widget="boolean_toggle"/>
                 <field name="registration_open" widget="boolean_toggle"/>
                 <field name="company_id" groups="base.group_multi_company"/>

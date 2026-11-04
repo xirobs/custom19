@@ -1614,6 +1614,14 @@ class ScoutLeaderPortal(models.AbstractModel):
                      'contraseña), firma y al final puedes pagar en línea con Mercado Pago (tarjeta u OXXO) o en '
                      'efectivo: %(url)s', cycle=cycle.name if cycle else '', name=member.name, group=company.name,
                      url=url)
+        elif member.scout_state == 'inactive':
+            text = _('Hola, esta es la ficha de reingreso %(cycle)s de %(name)s en %(group)s. Revisa y actualiza '
+                     'sus datos aquí (sin contraseña), firma y al final puedes pagar en línea con Mercado Pago '
+                     '(tarjeta u OXXO) o en efectivo: %(url)s', cycle=cycle.name if cycle else '', name=member.name,
+                     group=company.name, url=url)
+        fees = cycle.sudo()._fee_text(member) if cycle else ''
+        if fees:
+            text += '\n\n' + fees
         phone = scout_whatsapp_phone(member.scout_guardian_id.phone or member.phone)
         return {'url': url, 'whatsapp': f'https://wa.me/{phone}?text={quote(text)}' if phone
                 else f'https://wa.me/?text={quote(text)}'}
@@ -1623,6 +1631,31 @@ class ScoutLeaderPortal(models.AbstractModel):
         return self.env['res.partner'].sudo().search([
             ('is_scout', '=', True), ('scout_type', '=', 'youth'), ('scout_state', '=', 'inactive'),
             ('scout_section_id', '=', section.id)], order='scout_leave_date desc, name')
+
+    @api.model
+    def pending_leave(self, member):
+        return self.env['scout.member.change'].sudo().search(
+            [('member_id', '=', member.id), ('change_type', '=', 'leave'), ('state', '=', 'to_approve')], limit=1)
+
+    @api.model
+    def request_leave(self, section, member_id, reason, effective_date=None):
+        """El jefe de sección pide la baja; el miembro sigue activo hasta que el jefe de grupo la aprueba."""
+        member = self._member(member_id, section)
+        if member.scout_state == 'inactive':
+            raise UserError(_('%s ya está dado de baja.', member.name))
+        reason = (reason or '').strip()
+        if not reason:
+            raise UserError(_('Escribe el motivo de la baja.'))
+        change = self.pending_leave(member)
+        if change:
+            return change
+        change = self.env['scout.member.change'].sudo().create({
+            'member_id': member.id, 'change_type': 'leave', 'reason': reason,
+            'effective_date': effective_date or self._today(),
+        })
+        self._note(member, _('Baja solicitada por %(user)s (%(section)s): %(reason)s. Falta la aprobación del jefe '
+                             'de grupo.', user=self.env.user.name, section=section.display_name, reason=reason))
+        return change
 
     @api.model
     def request_return(self, section, member_id, reason):
