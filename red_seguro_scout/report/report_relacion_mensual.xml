@@ -50,6 +50,7 @@
         <t t-set="brand" t-value="doc._rss_brand()"/>
         <t t-set="sex_labels" t-value="dict(doc.line_ids._fields['sex'].selection)"/>
         <t t-set="section_labels" t-value="dict(doc.line_ids._fields['section'].selection)"/>
+        <t t-set="st" t-value="doc._export_stats()"/>
         <div class="page rs-doc">
             <t t-out="doc._rss_report_css(brand)"/>
             <t t-call="red_seguro_scout.rss_brand_header">
@@ -66,15 +67,15 @@
             </t>
 
             <table class="rs-kpis"><tr>
-                <td class="rs-kpi"><div class="v" t-out="doc.insured_count"/><div class="l">Asegurados</div></td>
-                <td class="rs-kpi"><div class="v" t-out="doc.group_count"/><div class="l">Grupos</div></td>
-                <td class="rs-kpi"><div class="v" t-out="doc.new_count"/><div class="l">Altas del mes</div></td>
-                <td class="rs-kpi"><div class="v" t-out="doc.drop_count"/><div class="l">Bajas del mes</div></td>
-                <td class="rs-kpi"><div class="v" t-out="doc.total_days"/><div class="l">Días-asegurado</div></td>
+                <td class="rs-kpi"><div class="v" t-out="st['insured_count']"/><div class="l">Asegurados</div></td>
+                <td class="rs-kpi"><div class="v" t-out="st['group_count']"/><div class="l">Grupos</div></td>
+                <td class="rs-kpi"><div class="v" t-out="st['new_count']"/><div class="l">Altas del mes</div></td>
+                <td class="rs-kpi"><div class="v" t-out="st['drop_count']"/><div class="l">Bajas del mes</div></td>
+                <td class="rs-kpi"><div class="v" t-out="st['total_days']"/><div class="l">Días-asegurado</div></td>
             </tr></table>
 
-            <div t-if="doc.unpaid_group_names" class="rs-warn">
-                Grupos sin pago registrado del ejercicio: <t t-out="doc.unpaid_group_names"/>
+            <div t-if="st['unpaid_group_names']" class="rs-warn">
+                Grupos sin pago registrado del ejercicio: <t t-out="st['unpaid_group_names']"/>
             </div>
 
             <table class="rs-table">
@@ -97,8 +98,8 @@
                 </thead>
                 <tbody>
                     <t t-set="counter" t-value="0"/>
-                    <t t-foreach="doc.line_ids.group_id.sorted(lambda g: (g.number or 0, g.name or ''))" t-as="grp">
-                        <t t-set="glines" t-value="doc.line_ids.filtered(lambda l: l.group_id == grp).sorted(lambda l: ((l.last_name_father or '').lower(), (l.last_name_mother or '').lower(), (l.first_name or '').lower()))"/>
+                    <t t-foreach="st['lines'].group_id.sorted(lambda g: (g.number or 0, g.name or ''))" t-as="grp">
+                        <t t-set="glines" t-value="st['lines'].filtered(lambda l: l.group_id == grp).sorted(lambda l: ((l.last_name_father or '').lower(), (l.last_name_mother or '').lower(), (l.first_name or '').lower()))"/>
                         <tr class="rs-group">
                             <td colspan="13">
                                 <t t-out="grp.name"/>
@@ -129,8 +130,8 @@
                         </t>
                     </t>
                     <tr class="rs-subtotal">
-                        <td colspan="11" class="rs-r">Total de asegurados: <t t-out="doc.insured_count"/> · Días-asegurado</td>
-                        <td class="rs-c" t-out="doc.total_days"/>
+                        <td colspan="11" class="rs-r">Total de asegurados: <t t-out="st['insured_count']"/> · Días-asegurado</td>
+                        <td class="rs-c" t-out="st['total_days']"/>
                         <td/>
                     </tr>
                 </tbody>

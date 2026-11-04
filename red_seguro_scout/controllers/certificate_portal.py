@@ -73,7 +73,7 @@ class RssGroupCertificates(RssGroupPortal):
 
     def _cert_values(self, member):
         group = member.group_id.sudo()
-        return {'base_url': '/mi-grupo', 'can_upload': member.is_capturer, 'groups': group}
+        return {'base_url': '/mi-grupo', 'can_upload': member.can_capture, 'groups': group}
 
     @http.route(['/mi-grupo/certificados'], type='http', auth='user', website=True, methods=['GET'], sitemap=False)
     def group_certificates(self, **kw):
@@ -92,7 +92,7 @@ class RssGroupCertificates(RssGroupPortal):
         member, denied = self._guard()
         if denied:
             return denied
-        if not member.is_capturer:
+        if not member.can_capture:
             return self._back('/mi-grupo/certificados', error=_('Solo el capturista de tu grupo puede cargar certificados.'))
         try:
             batch = request.env['rss.certificate.batch'].sudo().create_from_portal(
@@ -121,7 +121,7 @@ class RssGroupCertificates(RssGroupPortal):
             return denied
         url = '/mi-grupo/certificados/%s' % batch_id
         batch = self._cert_batch(member, batch_id)
-        if not batch or not member.is_capturer or batch.state != 'review':
+        if not batch or not member.can_capture or batch.state != 'review':
             return request.redirect('/mi-grupo/certificados')
         try:
             _apply_review(batch, post)

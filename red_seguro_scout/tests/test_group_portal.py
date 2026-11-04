@@ -217,7 +217,10 @@ class TestGroupPortalHttp(_RssPortalCommon, HttpCase):
         res = self.url_open('/mi-grupo/asegurados/%s/certificado' % self.maria.id)
         self.assertEqual(res.status_code, 200)
         self.assertTrue(res.content.startswith(b'%PDF'))
-        # El jefe no es capturista: no ve el formulario de carga
+        # Por omisión los tres representantes cargan; el jefe ve el formulario aunque no sea capturista
+        self.assertNotIn('la hace solo el <b>capturista</b>', self.url_open('/mi-grupo/importar').text)
+        # Si el grupo limita la carga al capturista, el jefe ya no la ve
+        self.g7.portal_capture_mode = 'capturer'
         self.assertIn('la hace solo el <b>capturista</b>', self.url_open('/mi-grupo/importar').text)
 
     def test_03_capturer_uploads_reviews_and_saves(self):
@@ -431,6 +434,8 @@ class TestPortalAppAndCertificates(_RssPortalCommon, HttpCase):
         for text in ('A mano', 'Leer Excel', 'Leer PDF'):
             self.assertIn(text, page)
         self.authenticate('jefeapp7@example.com', 'clave-jefeapp7')
+        self.assertIn('Leer Excel', self.url_open('/mi-grupo/importar').text, 'Por omisión cargan los tres')
+        self.g7.portal_capture_mode = 'capturer'
         page = self.url_open('/mi-grupo/importar').text
         self.assertNotIn('Leer Excel', page)
         self.assertIn('capt7', page.lower())
@@ -466,6 +471,7 @@ class TestPortalAppAndCertificates(_RssPortalCommon, HttpCase):
         self.assertEqual(self.url_open('/mi-grupo/certificados/%s/linea/%s.pdf' % (batch.id, lines[0].id)).status_code, 404)
 
     def test_04_non_capturer_cannot_upload_certificates(self):
+        self.g7.portal_capture_mode = 'capturer'
         self.authenticate('jefeapp7@example.com', 'clave-jefeapp7')
         page = self.url_open('/mi-grupo/certificados').text
         self.assertNotIn('Leer certificados', page)
@@ -735,3 +741,52 @@ class TestPortalAlta(_RssPortalCommon, HttpCase):
         self.assertEqual(self.maria.cert_policy_number, 'AP30101716')
         self.assertEqual(self.maria.cert_date_start, date(2026, 10, 7))
         self.assertEqual(len(self.maria.coverage_ids), 3)
+
+
+@tagged('post_install', '-at_install', 'red_seguro_scout')
+class TestRepresentativesLikeAdvisor(_RssPortalCommon, HttpCase):
+    """Jefe, secretario y tesorero hacen lo mismo que el asesor, solo con su grupo."""
+
+    @classmethod
+    def setUpClass(cls):
+        super().setUpClass()
+        cls._setup_data()
+        cls.teso = cls._member(cls.g7, 'treasurer', 'teso.adv@example.com')       # no es capturista
+        cls._member(cls.g7, 'leader', 'jefe.adv@example.com', capturer=True)
+        cls.claim = cls.env['rss.claim'].create({'insured_id': cls.maria.id, 'injury_type': 'fracture',
+                                                 'date_accident': date(2026, 10, 1)})
+        cls.report = cls.env['rss.report'].create({'policy_id': cls.policy.id, 'period_date': date(2026, 10, 1)})
+        cls.report.action_generate()
+
+    def _csrf(self, url):
+        return re.search(r'name="csrf_token" value="([^"]+)"', self.url_open(url).text).group(1)
+
+    def test_treasurer_can_do_everything_for_own_group(self):
+        self.authenticate('teso.adv@example.com', 'clave-teso.adv')
+        self.assertIn('/mi-grupo/alta', self.url_open('/mi-grupo/asegurados').text, 'Puede dar de alta')
+        self.assertEqual(self.url_open('/mi-grupo/alta').status_code, 200)
+        for url in ('/mi-grupo/relaciones', '/mi-grupo/pagos', '/mi-grupo/certificados'):
+            res = self.url_open(url)
+            self.assertEqual(res.status_code, 200, url)
+        self.assertTrue(self.report.line_ids.filtered(lambda l: l.group_id == self.g3), 'La relación trae otros grupos')
+        if self.report:
+            html = self.url_open('/mi-grupo/relaciones').text
+            self.assertIn('/mi-grupo/relaciones/%s/excel' % self.report.id, html)
+            xlsx = self.url_open('/mi-grupo/relaciones/%s/excel' % self.report.id)
+            self.assertTrue(xlsx.content.startswith(b'PK'))
+            import io
+            import openpyxl
+            ws = openpyxl.load_workbook(io.BytesIO(xlsx.content)).active
+            text = ' '.join(str(c.value) for row in ws.iter_rows() for c in row if c.value).upper()
+            self.assertIn('GARCÍA', text)
+            self.assertNotIn('PÉREZ', text, 'Nunca exporta asegurados de otro grupo')
+            self.assertNotIn('LAN NAKUH', text)
+        if self.claim:
+            url = '/mi-grupo/siniestros/%s' % self.claim.id
+            self.assertIn('Guardar seguimiento', self.url_open(url).text)
+            self.url_open(url, data={'csrf_token': self._csrf(url), 'state': 'in_process',
+                                     'insurer_claim_number': 'SIN-77', 'note': 'Se entregó informe médico'},
+                          files={'documents': ('informe.pdf', b'%PDF-1.4 x', 'application/pdf')})
+            self.assertEqual((self.claim.state, self.claim.insurer_claim_number), ('in_process', 'SIN-77'))
+            att = self.claim.attachment_ids[:1]
+            self.assertEqual(self.url_open('%s/documento/%s' % (url, att.id)).status_code, 200)

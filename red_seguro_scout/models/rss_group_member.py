@@ -40,6 +40,9 @@ class RssGroupMember(models.Model):
                               store=True)
     has_portal = fields.Boolean('Con acceso al portal', compute='_compute_user', store=True)
     active = fields.Boolean(default=True, tracking=True)
+    can_capture = fields.Boolean(
+        'Puede dar de alta y cargar', compute='_compute_can_capture',
+        help='Alta de asegurados, carga de listas, pagos y certificados desde el portal.')
 
     _group_role_uniq = models.Constraint(
         'UNIQUE (group_id, role)', 'Ese cargo ya está asignado en el grupo.')
@@ -52,6 +55,12 @@ class RssGroupMember(models.Model):
             user = member.partner_id.sudo().with_context(active_test=False).user_ids[:1]
             member.user_id = user
             member.has_portal = bool(user and user.active)
+
+    @api.depends('is_capturer', 'active', 'group_id.portal_capture_mode')
+    def _compute_can_capture(self):
+        for member in self:
+            mode = member.group_id.portal_capture_mode or 'all'
+            member.can_capture = member.active and (mode == 'all' or member.is_capturer)
 
     @api.constrains('is_capturer', 'group_id', 'active')
     def _check_single_capturer(self):
@@ -147,6 +156,12 @@ class RssScoutGroupMembers(models.Model):
     _inherit = 'rss.scout.group'
 
     portal_member_ids = fields.One2many('rss.group.member', 'group_id', string='Representantes del portal')
+    portal_capture_mode = fields.Selection([
+        ('all', 'Los tres representantes (jefe, secretario y tesorero)'),
+        ('capturer', 'Solo el capturista'),
+    ], string='En el portal dan de alta y cargan', default='all', required=True,
+        help='Quién del grupo puede dar de alta asegurados, cargar listas, pagar y subir certificados. '
+             'Consultar, descargar relaciones y recibos y dar seguimiento a siniestros lo pueden hacer los tres.')
     capturer_id = fields.Many2one('rss.group.member', string='Capturista', compute='_compute_capturer')
 
     def _compute_capturer(self):

@@ -96,8 +96,12 @@
                 <page string="Representantes del portal" name="portal_members">
                     <div class="o_rss_hint">
                         Jefe de grupo, secretario(a) y tesorero(a): uno por cargo, cada cuenta ligada solo a este grupo.
-                        Solo el <b>capturista</b> puede cargar asegurados; el cambio de capturista lo hace la administración central.
+                        En el portal ven y hacen lo mismo que el asesor, pero solo con su grupo: asegurados y su alta,
+                        certificados, relaciones mensuales, pagos y recibos, y seguimiento de siniestros.
                     </div>
+                    <group>
+                        <field name="portal_capture_mode" widget="radio"/>
+                    </group>
                     <field name="portal_member_ids" context="{'default_group_id': id}">
                         <list>
                             <field name="role"/>

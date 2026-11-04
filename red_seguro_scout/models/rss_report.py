@@ -93,6 +93,29 @@ class RssReport(models.Model):
             unpaid = lines.filtered(lambda l: not l.group_paid).group_id
             rep.unpaid_group_names = ', '.join(unpaid.mapped('name')) or False
 
+    def _export_lines(self):
+        """Renglones a exportar. Con ``rss_only_group_ids`` en el contexto (portal del grupo)
+        solo salen los de esos grupos: un grupo nunca ve los datos de otro."""
+        self.ensure_one()
+        only = self.env.context.get('rss_only_group_ids')
+        lines = self.line_ids
+        if only:
+            lines = lines.filtered(lambda l: l.group_id.id in only)
+        return lines
+
+    def _export_stats(self):
+        lines = self._export_lines()
+        unpaid = lines.filtered(lambda l: not l.group_paid).group_id
+        return {
+            'lines': lines,
+            'insured_count': len(lines),
+            'group_count': len(lines.group_id),
+            'new_count': len(lines.filtered('is_new')),
+            'drop_count': len(lines.filtered('is_drop')),
+            'total_days': sum(lines.mapped('days_covered')),
+            'unpaid_group_names': ', '.join(unpaid.mapped('name')) or False,
+        }
+
     def _rss_brand(self):
         """La relación sale con la identidad de la organización; si la relación
         es de un solo grupo, con la de ese grupo."""
@@ -239,6 +262,7 @@ class RssReport(models.Model):
         sex = dict(SEX_SELECTION)
         section = dict(SECTION_SELECTION)
         policy = self.policy_id
+        stats = self._export_stats()
 
         # Hoja 1: relación -------------------------------------------------
         ws = book.add_worksheet('Relación')
@@ -251,7 +275,7 @@ class RssReport(models.Model):
         ws.write('A3', _('Periodo: %(start)s al %(end)s · Asegurados: %(count)s',
                          start=self.date_from.strftime('%d/%m/%Y'),
                          end=self.date_to.strftime('%d/%m/%Y'),
-                         count=self.insured_count), sub_f)
+                         count=stats['insured_count']), sub_f)
         headers = [
             ('#', 5), (_('Grupo'), 18), (_('Apellido paterno'), 18),
             (_('Apellido materno'), 18), (_('Nombre(s)'), 22), (_('Fecha de nacimiento'), 13),
@@ -264,7 +288,7 @@ class RssReport(models.Model):
         for col, (label, width) in enumerate(headers):
             ws.write(hrow, col, label, head_f)
             ws.set_column(col, col, width)
-        lines = self.line_ids.sorted(lambda l: (l.group_id.number or 0, l.group_id.name or '',
+        lines = stats['lines'].sorted(lambda l: (l.group_id.number or 0, l.group_id.name or '',
                                                 l.last_name_father or '',
                                                 l.last_name_mother or '', l.first_name or ''))
         for idx, line in enumerate(lines, start=1):
@@ -296,7 +320,7 @@ class RssReport(models.Model):
         ws.write(last + 2, 1, _('Total asegurados'), total_f)
         ws.write_number(last + 2, 2, len(lines), total_f)
         ws.write(last + 2, 14, _('Días'), total_f)
-        ws.write_number(last + 2, 15, self.total_days, total_f)
+        ws.write_number(last + 2, 15, stats['total_days'], total_f)
         ws.freeze_panes(hrow + 1, 0)
         if lines:
             ws.autofilter(hrow, 0, last, len(headers) - 1)
@@ -330,7 +354,7 @@ class RssReport(models.Model):
             row += 1
         ws2.write(row + 1, 0, _('Total'), total_f)
         ws2.write_number(row + 1, 2, len(lines), total_f)
-        ws2.write_number(row + 1, 7, self.total_days, total_f)
+        ws2.write_number(row + 1, 7, stats['total_days'], total_f)
 
         book.close()
         return output.getvalue()

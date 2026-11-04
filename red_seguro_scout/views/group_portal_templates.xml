@@ -66,7 +66,7 @@
                     </a>
                     <div class="o_rssp_who" t-if="member">
                         <span t-out="member.name"/>
-                        <small><t t-out="labels('rss.group.member', 'role').get(member.role)"/><t t-if="member.is_capturer"> · Capturista</t></small>
+                        <small><t t-out="labels('rss.group.member', 'role').get(member.role)"/><t t-if="member.can_capture"> · Capturista</t></small>
                     </div>
                 </header>
                 <div t-if="error" class="alert alert-danger o_rssp_alert" role="alert"><i class="fa fa-exclamation-circle"/> <t t-out="error"/></div>
@@ -75,8 +75,9 @@
                 <t t-call="red_seguro_scout.rss_privacy_footer"/>
                 <nav t-if="member" class="o_rssp_nav">
                     <a href="/mi-grupo" t-attf-class="#{'active' if group_page == 'home' else ''}"><i class="fa fa-home"/><span>Inicio</span></a>
-                    <a href="/mi-grupo/asegurados" t-attf-class="#{'active' if group_page == 'insured' else ''}"><i class="fa fa-users"/><span>Asegurados</span></a>
-                    <a href="/mi-grupo/importar" t-attf-class="#{'active' if group_page == 'import' else ''}"><i class="fa fa-upload"/><span>Cargar lista</span></a>
+                    <a href="/mi-grupo/asegurados" t-attf-class="#{'active' if group_page in ('insured', 'import') else ''}"><i class="fa fa-users"/><span>Asegurados</span></a>
+                    <a href="/mi-grupo/relaciones" t-attf-class="#{'active' if group_page == 'reports' else ''}"><i class="fa fa-file-excel-o"/><span>Relaciones</span></a>
+                    <a href="/mi-grupo/pagos" t-attf-class="#{'active' if group_page == 'payments' else ''}"><i class="fa fa-money"/><span>Pagos</span></a>
                     <a href="/mi-grupo/certificados" t-attf-class="#{'active' if group_page == 'certificates' else ''}"><i class="fa fa-certificate"/><span>Certificados</span></a>
                     <a href="/mi-grupo/siniestros" t-attf-class="#{'active' if group_page == 'claims' else ''}"><i class="fa fa-medkit"/><span>Siniestros</span></a>
                 </nav>
@@ -125,14 +126,29 @@
             </section>
             <section class="o_rssp_card">
                 <h5>Cargar asegurados</h5>
-                <p class="o_rssp_muted mb-2" t-if="member.is_capturer">Captura a mano o sube tu lista en Excel o PDF; la revisas y pagas el mismo día. <t t-out="capture_msg"/></p>
+                <p class="o_rssp_muted mb-2" t-if="member.can_capture">Captura a mano o sube tu lista en Excel o PDF; la revisas y pagas el mismo día. <t t-out="capture_msg"/></p>
                 <p class="o_rssp_muted mb-2" t-else="">La carga la hace el capturista de tu grupo. Tú puedes consultar los asegurados, certificados y siniestros.</p>
-                <div t-if="member.is_capturer" class="o_rssp_quick">
+                <div t-if="member.can_capture" class="o_rssp_quick">
                     <a href="/mi-grupo/alta" class="o_rssp_quick_btn"><i class="fa fa-user-plus"/><span>Dar de alta</span></a>
                     <a href="/mi-grupo/importar#excel" class="o_rssp_quick_btn"><i class="fa fa-file-excel-o"/><span>Excel</span></a>
                     <a href="/mi-grupo/importar#pdf" class="o_rssp_quick_btn"><i class="fa fa-file-pdf-o"/><span>PDF</span></a>
                     <a href="/mi-grupo/certificados" class="o_rssp_quick_btn"><i class="fa fa-certificate"/><span>Certificados</span></a>
                 </div>
+            </section>
+            <section class="o_rssp_card">
+                <h5>Relación de este mes</h5>
+                <t t-if="report">
+                    <div class="o_rssp_row">
+                        <div><b t-out="report.name"/>
+                            <div class="o_rssp_muted"><t t-out="report_stats['insured_count']"/> asegurados de tu grupo · límite <t t-out="fmt_date(report.deadline)"/></div></div>
+                        <span t-attf-class="o_rssp_pill o_rssp_pill_#{report.state}" t-out="labels('rss.report', 'state').get(report.state)"/>
+                    </div>
+                    <div class="o_rssp_actions">
+                        <a class="btn o_rssp_btn" t-attf-href="/mi-grupo/relaciones/#{report.id}/excel"><i class="fa fa-file-excel-o"/> Excel</a>
+                        <a class="btn o_rssp_btn_ghost" t-attf-href="/mi-grupo/relaciones/#{report.id}/pdf"><i class="fa fa-file-pdf-o"/> PDF</a>
+                    </div>
+                </t>
+                <p t-else="" class="o_rssp_muted">Todavía no se genera la relación de este mes (se genera del día 1 al 10).</p>
             </section>
             <section class="o_rssp_card" t-if="batches">
                 <h5>Últimas cargas</h5>
@@ -156,7 +172,7 @@
                         <h4 class="o_rssp_h mb-0">Asegurados de tu grupo</h4>
                         <div class="o_rssp_muted">Aquí aparecen todos: los que da de alta la oficina en la plataforma y los que carga tu grupo en el portal.</div>
                     </div>
-                    <div class="o_rssp_actions m-0" t-if="member.is_capturer">
+                    <div class="o_rssp_actions m-0" t-if="member.can_capture">
                         <a href="/mi-grupo/alta" class="btn o_rssp_btn"><i class="fa fa-user-plus"/> Dar de alta un asegurado</a>
                         <a href="/mi-grupo/importar#excel" class="btn o_rssp_btn_ghost"><i class="fa fa-file-excel-o"/> Cargar lista (Excel / PDF)</a>
                     </div>
@@ -164,7 +180,7 @@
                 <details class="o_rssp_howto" t-att-open="None if total else 'open'">
                     <summary>¿Cómo dar de alta a un asegurado?</summary>
                     <ol>
-                        <li><b>Presiona «Dar de alta un asegurado»</b> para capturar a una persona con su formulario, o <b>«Cargar lista»</b> para subir varias. Solo el <b>capturista</b> de tu grupo puede hacerlo<t t-if="not member.is_capturer">; pídeselo o solicita a la administración central que te asigne</t>.</li>
+                        <li><b>Presiona «Dar de alta un asegurado»</b> para capturar a una persona con su formulario, o <b>«Cargar lista»</b> para subir varias. <t t-if="member.can_capture">Lo puede hacer el jefe de grupo, el secretario o el tesorero.</t><t t-else="">En tu grupo solo lo hace el <b>capturista</b>; pídeselo a él o a la administración central.</t></li>
                         <li><b>Elige cómo cargarlos:</b> <a href="/mi-grupo/alta">formulario</a> (uno por uno, con «Guardar y dar de alta otro»), <a href="/mi-grupo/importar#excel">Excel</a> (descarga la plantilla) o <a href="/mi-grupo/importar#pdf">PDF</a> con la lista.</li>
                         <li><b>Revisa la lista:</b> nombre, dos apellidos, fecha de nacimiento, sexo y padre o tutor con teléfono de emergencia. El sistema avisa de errores y de personas repetidas.</li>
                         <li><b>Paga el mismo día</b> con Mercado Pago o transferencia (subes el comprobante). Si no se paga hoy, la carga vence.</li>
@@ -249,7 +265,7 @@
     <!-- Cargar lista -->
     <template id="group_import" name="Grupo: cargar lista">
         <t t-call="red_seguro_scout.group_layout">
-            <t t-if="member.is_capturer">
+            <t t-if="member.can_capture">
                 <h4 class="o_rssp_h">¿Cómo quieres cargar a tus asegurados?</h4>
                 <div t-if="not capture_open" class="alert alert-warning mb-0"><t t-out="capture_msg"/></div>
                 <div class="o_rssp_load_options">
@@ -331,7 +347,7 @@
     <!-- Revisión de la carga (tabla editable) y cobro -->
     <template id="group_import_review" name="Grupo: revisar carga">
         <t t-call="red_seguro_scout.group_layout">
-            <t t-set="ro" t-value="batch.state != 'review' or not member.is_capturer"/>
+            <t t-set="ro" t-value="batch.state != 'review' or not member.can_capture"/>
             <a href="/mi-grupo/importar" class="o_rssp_back"><i class="fa fa-arrow-left"/> Cargar lista</a>
             <section class="o_rssp_card">
                 <div class="o_rssp_row">
@@ -398,7 +414,7 @@
                         </tbody>
                     </table>
                 </div>
-                <div id="fin" class="o_rssp_actions o_rssp_sticky_actions" t-if="batch.state == 'review' and member.is_capturer">
+                <div id="fin" class="o_rssp_actions o_rssp_sticky_actions" t-if="batch.state == 'review' and member.can_capture">
                     <button type="submit" name="action" value="add_row" class="btn o_rssp_btn_ghost"><i class="fa fa-plus"/> Agregar persona</button>
                     <button type="submit" name="action" value="validate" class="btn o_rssp_btn_ghost"><i class="fa fa-refresh"/> Revisar de nuevo</button>
                     <button type="submit" name="action" value="confirm" class="btn o_rssp_btn">
@@ -524,9 +540,102 @@
                     <dt>Lesión</dt><dd><t t-out="labels('rss.claim', 'injury_type').get(claim.injury_type)"/><t t-if="claim.body_part"> · <t t-out="claim.body_part"/></t></dd>
                     <dt>Atención</dt><dd t-out="claim.medical_center or '—'"/>
                     <dt>Núm. de siniestro</dt><dd t-out="claim.insurer_claim_number or 'En trámite'"/>
+                    <dt t-if="claim.amount_claimed">Reclamado</dt><dd t-if="claim.amount_claimed" t-out="money(claim.amount_claimed)"/>
+                    <dt t-if="claim.amount_paid">Pagado</dt><dd t-if="claim.amount_paid" t-out="money(claim.amount_paid)"/>
                 </dl>
                 <p t-if="claim.description" class="o_rssp_desc" t-out="claim.description"/>
+                <div t-if="claim.attachment_ids" class="o_rssp_docs">
+                    <a t-foreach="claim.attachment_ids" t-as="a" class="o_rssp_doc" t-attf-href="/mi-grupo/siniestros/#{claim.id}/documento/#{a.id}">
+                        <i class="fa fa-paperclip"/> <t t-out="a.name"/>
+                    </a>
+                </div>
             </section>
+            <section class="o_rssp_card">
+                <h5>Seguimiento</h5>
+                <form method="post" enctype="multipart/form-data" class="o_rssp_form" t-attf-action="/mi-grupo/siniestros/#{claim.id}">
+                    <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
+                    <label for="rssp_state">Estatus</label>
+                    <select id="rssp_state" name="state" class="form-select">
+                        <option t-foreach="states" t-as="st" t-att-value="st" t-att-selected="st == claim.state" t-out="labels('rss.claim', 'state').get(st)"/>
+                    </select>
+                    <label for="rssp_number">Número de siniestro (aseguradora)</label>
+                    <input id="rssp_number" type="text" name="insurer_claim_number" class="form-control" t-att-value="claim.insurer_claim_number or ''"/>
+                    <div class="o_rssp_two">
+                        <div><label for="rssp_claimed">Monto reclamado</label>
+                            <input id="rssp_claimed" type="text" inputmode="decimal" name="amount_claimed" class="form-control" t-att-value="claim.amount_claimed or ''"/></div>
+                        <div><label for="rssp_paid">Monto pagado</label>
+                            <input id="rssp_paid" type="text" inputmode="decimal" name="amount_paid" class="form-control" t-att-value="claim.amount_paid or ''"/></div>
+                    </div>
+                    <label for="rssp_note">Nota</label>
+                    <textarea id="rssp_note" name="note" rows="3" class="form-control" placeholder="Qué pasó, qué falta, siguiente paso..."/>
+                    <label for="rssp_docs">Documentos (informe médico, facturas, recetas, identificación)</label>
+                    <input id="rssp_docs" type="file" name="documents" multiple="multiple" class="form-control" accept=".pdf,image/*"/>
+                    <button type="submit" class="btn o_rssp_btn mt-2">Guardar seguimiento</button>
+                </form>
+            </section>
+            <section class="o_rssp_card" t-if="messages">
+                <h5>Historial</h5>
+                <div t-foreach="messages" t-as="m" class="o_rssp_msg">
+                    <div class="o_rssp_muted"><b t-out="m.author_id.name"/> · <t t-out="m.date and m.date.strftime('%d/%m/%Y %H:%M')"/></div>
+                    <div t-out="m.body"/>
+                </div>
+            </section>
+        </t>
+    </template>
+    <!-- Relaciones mensuales (solo los asegurados del grupo) -->
+    <template id="group_reports" name="Grupo: relaciones">
+        <t t-call="red_seguro_scout.group_layout">
+            <h4 class="o_rssp_h">Relaciones mensuales</h4>
+            <p class="o_rssp_muted">La relación que se envía a la aseguradora cada mes. Aquí ves y descargas solo los asegurados de tu grupo.</p>
+            <section t-foreach="reports" t-as="r" class="o_rssp_card">
+                <t t-set="st" t-value="rstats[r.id]"/>
+                <div class="o_rssp_row">
+                    <div>
+                        <b t-out="r.name"/>
+                        <div class="o_rssp_muted"><t t-out="st['insured_count']"/> asegurados de tu grupo · altas <t t-out="st['new_count']"/> · bajas <t t-out="st['drop_count']"/> · límite <t t-out="fmt_date(r.deadline)"/></div>
+                        <div class="o_rssp_muted" t-if="r.insurer_ack">Acuse de la aseguradora: <b t-out="r.insurer_ack"/></div>
+                    </div>
+                    <span t-attf-class="o_rssp_pill o_rssp_pill_#{r.state}" t-out="labels('rss.report', 'state').get(r.state)"/>
+                </div>
+                <div class="o_rssp_actions">
+                    <a class="btn o_rssp_btn" t-attf-href="/mi-grupo/relaciones/#{r.id}/excel"><i class="fa fa-file-excel-o"/> Excel</a>
+                    <a class="btn o_rssp_btn_ghost" t-attf-href="/mi-grupo/relaciones/#{r.id}/pdf"><i class="fa fa-file-pdf-o"/> PDF</a>
+                </div>
+            </section>
+            <div t-if="not reports" class="o_rssp_empty"><i class="fa fa-file-o fa-2x"/>
+                <p>Todavía no hay relaciones con asegurados de tu grupo. Se generan del día 1 al 10 de cada mes con los asegurados vigentes.</p></div>
+        </t>
+    </template>
+
+    <!-- Pagos del grupo -->
+    <template id="group_payments" name="Grupo: pagos">
+        <t t-call="red_seguro_scout.group_layout">
+            <h4 class="o_rssp_h">Pagos del grupo</h4>
+            <section class="o_rssp_card o_rssp_pending" t-if="pending_batches">
+                <h5 class="o_rssp_h"><i class="fa fa-hourglass-half"/> Pagos en trámite</h5>
+                <a t-foreach="pending_batches" t-as="b" class="o_rssp_list_item" t-attf-href="/mi-grupo/importar/#{b.id}">
+                    <div><b t-out="b.filename or 'Captura'"/>
+                        <div class="o_rssp_muted"><t t-out="fmt_date(b.create_date)"/> · <t t-out="money(b.amount_total)"/></div></div>
+                    <span t-attf-class="o_rssp_pill o_rssp_pill_imp_#{b.state}" t-out="labels('rss.import.batch', 'state').get(b.state)"/>
+                </a>
+            </section>
+            <div class="o_rssp_table_wrap">
+                <table class="table o_rssp_table">
+                    <thead><tr><th>Recibo</th><th>Fecha</th><th class="text-center">Personas</th><th class="text-end">Importe</th><th>Estatus</th><th/></tr></thead>
+                    <tbody>
+                        <tr t-foreach="payments" t-as="p">
+                            <td><b t-out="p.name"/></td>
+                            <td t-out="fmt_date(p.date)"/>
+                            <td class="text-center" t-out="p.member_count"/>
+                            <td class="text-end" t-out="money(p.amount)"/>
+                            <td><span t-attf-class="o_rssp_pill o_rssp_pill_#{p.state}" t-out="labels('rss.payment', 'state').get(p.state)"/>
+                                <div class="o_rssp_muted" t-if="p.insurer_folio" t-out="p.insurer_folio"/></td>
+                            <td><a class="btn btn-sm o_rssp_btn_ghost" t-attf-href="/mi-grupo/pagos/#{p.id}/recibo"><i class="fa fa-file-pdf-o"/> Recibo</a></td>
+                        </tr>
+                        <tr t-if="not payments"><td colspan="6" class="o_rssp_muted text-center">Aún no hay pagos registrados.</td></tr>
+                    </tbody>
+                </table>
+            </div>
         </t>
     </template>
 </odoo>

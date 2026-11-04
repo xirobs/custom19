@@ -63,7 +63,7 @@ class RssGroupAlta(RssGroupPortal):
         member, denied = self._guard()
         if denied:
             return denied
-        if not member.is_capturer:
+        if not member.can_capture:
             return self._back('/mi-grupo/asegurados',
                               error=_('Solo el capturista de tu grupo puede dar de alta asegurados.'))
         return self._render('red_seguro_scout.group_insured_alta', member, 'insured', **self._alta_values())
@@ -73,7 +73,7 @@ class RssGroupAlta(RssGroupPortal):
         member, denied = self._guard()
         if denied:
             return denied
-        if not member.is_capturer:
+        if not member.can_capture:
             return self._back('/mi-grupo/asegurados',
                               error=_('Solo el capturista de tu grupo puede dar de alta asegurados.'))
         form, vals = _clean_form(post)

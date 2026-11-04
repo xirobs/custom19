@@ -61,6 +61,7 @@ class RssGroupPortal(http.Controller):
             'error': request.params.get('error'),
             'ok': request.params.get('ok'),
             'fmt_date': lambda d: d.strftime('%d/%m/%Y') if d else '',
+            'money': lambda v: '$ {:,.2f}'.format(v or 0.0),
             'labels': lambda model, field: dict(sudo_env[model]._fields[field]._description_selection(sudo_env)),
             'capture_open': self._capture_window(member)[0],
             'capture_msg': self._capture_window(member)[1],
@@ -111,8 +112,12 @@ class RssGroupPortal(http.Controller):
         }
         team = env['rss.group.member'].search([('group_id', '=', member.group_id.id), ('active', '=', True)])
         batches = env['rss.import.batch'].search([('group_id', '=', member.group_id.id)], limit=5)
+        month_start = fields.Date.context_today(member).replace(day=1)
+        report = env['rss.report'].search([('company_id', '=', member.company_id.id), ('state', '!=', 'draft'),
+                                           ('period_date', '>=', month_start)], limit=1)
+        report_stats = report.with_context(rss_only_group_ids=member.group_id.ids)._export_stats() if report else {}
         return self._render('red_seguro_scout.group_home', member, 'home', stats=stats, team=team,
-                            batches=batches)
+                            batches=batches, report=report, report_stats=report_stats)
 
     # ------------------------------------------------------------------ asegurados
     @http.route(['/mi-grupo/asegurados'], type='http', auth='user', website=True, sitemap=False)
@@ -194,7 +199,7 @@ class RssGroupPortal(http.Controller):
         member, denied = self._guard()
         if denied:
             return denied
-        if not member.is_capturer:
+        if not member.can_capture:
             return self._back('/mi-grupo/importar', error=_('Solo el capturista de tu grupo puede cargar asegurados.'))
         is_open, msg = self._capture_window(member)
         if not is_open:
@@ -247,7 +252,7 @@ class RssGroupPortal(http.Controller):
         batch = self._batch_or_none(member, batch_id)
         if not batch:
             return request.redirect('/mi-grupo/importar')
-        if not member.is_capturer:
+        if not member.can_capture:
             return self._back(url, error=_('Solo el capturista de tu grupo puede guardar asegurados.'))
         if action == 'cancel' and batch.state == 'payment':
             batch.action_cancel()
@@ -300,7 +305,7 @@ class RssGroupPortal(http.Controller):
         member, denied = self._guard()
         if denied:
             return denied
-        if not member.is_capturer:
+        if not member.can_capture:
             return self._back('/mi-grupo/importar', error=_('Solo el capturista de tu grupo puede capturar asegurados.'))
         is_open, msg = self._capture_window(member)
         if not is_open:
@@ -329,7 +334,7 @@ class RssGroupPortal(http.Controller):
         if denied:
             return denied
         batch = self._payable_batch(member, batch_id)
-        if batch and member.is_capturer:
+        if batch and member.can_capture:
             batch.action_back_to_review()
         return request.redirect('/mi-grupo/importar/%s' % batch_id)
 
@@ -341,7 +346,7 @@ class RssGroupPortal(http.Controller):
             return denied
         url = '/mi-grupo/importar/%s' % batch_id
         batch = self._payable_batch(member, batch_id)
-        if not batch or not member.is_capturer:
+        if not batch or not member.can_capture:
             return request.redirect('/mi-grupo/importar')
         files = []
         for upload in request.httprequest.files.getlist('proof'):
@@ -365,7 +370,7 @@ class RssGroupPortal(http.Controller):
             return denied
         url = '/mi-grupo/importar/%s' % batch_id
         batch = self._payable_batch(member, batch_id)
-        if not batch or not member.is_capturer:
+        if not batch or not member.can_capture:
             return request.redirect('/mi-grupo/importar')
         if batch.state != 'payment':
             return self._back(url, error=_('Esta carga ya no está esperando pago.'))
@@ -402,12 +407,155 @@ class RssGroupPortal(http.Controller):
         claims = request.env['rss.claim'].sudo().search([('group_id', '=', member.group_id.id)], limit=200)
         return self._render('red_seguro_scout.group_claims', member, 'claims', claims=claims)
 
-    @http.route(['/mi-grupo/siniestros/<int:claim_id>'], type='http', auth='user', website=True, sitemap=False)
+    def _group_claim(self, member, claim_id):
+        claim = request.env['rss.claim'].sudo().browse(int(claim_id)).exists()
+        if not claim or claim.group_id != member.group_id:
+            return None
+        return claim
+
+    @http.route(['/mi-grupo/siniestros/<int:claim_id>'], type='http', auth='user', website=True,
+                methods=['GET'], sitemap=False)
     def group_claim(self, claim_id, **kw):
         member, denied = self._guard()
         if denied:
             return denied
-        claim = request.env['rss.claim'].sudo().browse(claim_id).exists()
-        if not claim or claim.group_id != member.group_id:
+        claim = self._group_claim(member, claim_id)
+        if not claim:
             return request.redirect('/mi-grupo/siniestros')
-        return self._render('red_seguro_scout.group_claim', member, 'claims', claim=claim)
+        messages = claim.message_ids.filtered(lambda m: m.message_type == 'comment')[:20]
+        return self._render('red_seguro_scout.group_claim', member, 'claims', claim=claim, messages=messages,
+                            states=('reported', 'in_process', 'approved', 'paid', 'rejected'))
+
+    @http.route(['/mi-grupo/siniestros/<int:claim_id>'], type='http', auth='user', website=True,
+                methods=['POST'], sitemap=False)
+    def group_claim_update(self, claim_id, **post):
+        """Seguimiento del siniestro por el representante (lo mismo que puede hacer el asesor)."""
+        member, denied = self._guard()
+        if denied:
+            return denied
+        url = '/mi-grupo/siniestros/%s' % claim_id
+        claim = self._group_claim(member, claim_id)
+        if not claim:
+            return request.redirect('/mi-grupo/siniestros')
+        vals = {}
+        state = post.get('state')
+        if state in ('reported', 'in_process', 'approved', 'paid', 'rejected') and state != claim.state:
+            vals['state'] = state
+        number = (post.get('insurer_claim_number') or '').strip()
+        if number != (claim.insurer_claim_number or ''):
+            vals['insurer_claim_number'] = number or False
+        for key in ('amount_claimed', 'amount_paid'):
+            raw = (post.get(key) or '').replace(',', '').replace('$', '').strip()
+            if raw:
+                try:
+                    amount = float(raw)
+                except ValueError:
+                    return self._back(url, error=_('El monto "%s" no es un número.', raw))
+                if amount < 0:
+                    return self._back(url, error=_('Los montos no pueden ser negativos.'))
+                if amount != claim[key]:
+                    vals[key] = amount
+        if vals.get('state') == 'paid' and not (vals.get('amount_paid') or claim.amount_paid):
+            return self._back(url, error=_('Captura el monto pagado antes de marcarlo como pagado.'))
+        note = (post.get('note') or '').strip()
+        try:
+            if vals:
+                claim.write(vals)
+            attachments = request.env['ir.attachment'].sudo()
+            for upload in request.httprequest.files.getlist('documents'):
+                if upload and upload.filename:
+                    attachments |= attachments.create({'name': upload.filename, 'raw': upload.read(),
+                                                       'mimetype': upload.mimetype, 'res_model': 'rss.claim',
+                                                       'res_id': claim.id})
+            if attachments:
+                claim.attachment_ids = [fields.Command.link(a.id) for a in attachments]
+            if note or vals or attachments:
+                claim.message_post(body=note or _('Actualización del grupo.'), author_id=member.partner_id.id,
+                                   message_type='comment', subtype_xmlid='mail.mt_note',
+                                   attachment_ids=attachments.ids)
+        except (UserError, ValidationError) as exc:
+            return self._back(url, error=str(exc))
+        return self._back(url, ok=_('Siniestro actualizado.'))
+
+    @http.route(['/mi-grupo/siniestros/<int:claim_id>/documento/<int:attachment_id>'], type='http',
+                auth='user', sitemap=False)
+    def group_claim_document(self, claim_id, attachment_id, **kw):
+        member = request.env['rss.group.member']._for_user(request.env.user)
+        claim = self._group_claim(member, claim_id) if member else None
+        att = claim and claim.attachment_ids.filtered(lambda a: a.id == attachment_id)
+        if not att:
+            return request.not_found()
+        return request.make_response(att.raw, headers=[
+            ('Content-Type', att.mimetype or 'application/octet-stream'),
+            ('Content-Disposition', content_disposition(att.name))])
+
+    # ------------------------------------------------------------------ relaciones (solo su grupo)
+    def _group_reports(self, member):
+        reports = request.env['rss.report'].sudo().search([
+            ('company_id', '=', member.company_id.id), ('state', '!=', 'draft')], limit=36)
+        return reports.filtered(lambda r: member.group_id in r.line_ids.group_id)
+
+    @http.route(['/mi-grupo/relaciones'], type='http', auth='user', website=True, sitemap=False)
+    def group_reports(self, **kw):
+        member, denied = self._guard()
+        if denied:
+            return denied
+        reports = self._group_reports(member)
+        stats = {r.id: r.with_context(rss_only_group_ids=member.group_id.ids)._export_stats() for r in reports}
+        return self._render('red_seguro_scout.group_reports', member, 'reports', reports=reports, rstats=stats)
+
+    def _group_report(self, member, report_id):
+        report = request.env['rss.report'].sudo().browse(int(report_id)).exists()
+        if not report or report not in self._group_reports(member):
+            return None
+        return report.with_context(rss_only_group_ids=member.group_id.ids)
+
+    @http.route(['/mi-grupo/relaciones/<int:report_id>/excel'], type='http', auth='user', sitemap=False)
+    def group_report_xlsx(self, report_id, **kw):
+        member = request.env['rss.group.member']._for_user(request.env.user)
+        report = self._group_report(member, report_id) if member else None
+        if not report:
+            return request.not_found()
+        return request.make_response(report._build_xlsx(), headers=[
+            ('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'),
+            ('Content-Disposition', content_disposition(report._get_xlsx_filename()))])
+
+    @http.route(['/mi-grupo/relaciones/<int:report_id>/pdf'], type='http', auth='user', sitemap=False)
+    def group_report_pdf(self, report_id, **kw):
+        member = request.env['rss.group.member']._for_user(request.env.user)
+        report = self._group_report(member, report_id) if member else None
+        if not report:
+            return request.not_found()
+        pdf, _fmt = request.env['ir.actions.report'].sudo().with_context(
+            rss_only_group_ids=member.group_id.ids)._render_qweb_pdf(
+            'red_seguro_scout.action_report_relacion_mensual', report.ids)
+        name = 'Relacion_%s_%s_%02d.pdf' % ((member.group_id.number or member.group_id.id),
+                                             report.date_from.year, report.date_from.month)
+        return request.make_response(pdf, headers=[
+            ('Content-Type', 'application/pdf'), ('Content-Disposition', content_disposition(name))])
+
+    # ------------------------------------------------------------------ pagos (solo su grupo)
+    @http.route(['/mi-grupo/pagos'], type='http', auth='user', website=True, sitemap=False)
+    def group_payments(self, **kw):
+        member, denied = self._guard()
+        if denied:
+            return denied
+        payments = request.env['rss.payment'].sudo().search([
+            ('group_id', '=', member.group_id.id), ('state', 'in', ('confirmed', 'remitted'))], limit=100)
+        pending = request.env['rss.import.batch'].sudo().search([
+            ('group_id', '=', member.group_id.id), ('state', 'in', ('payment', 'verifying'))])
+        return self._render('red_seguro_scout.group_payments', member, 'payments', payments=payments,
+                            pending_batches=pending)
+
+    @http.route(['/mi-grupo/pagos/<int:payment_id>/recibo'], type='http', auth='user', sitemap=False)
+    def group_payment_receipt(self, payment_id, **kw):
+        member = request.env['rss.group.member']._for_user(request.env.user)
+        payment = request.env['rss.payment'].sudo().browse(payment_id).exists()
+        if (not member or not payment or payment.group_id != member.group_id
+                or payment.state not in ('confirmed', 'remitted')):
+            return request.not_found()
+        pdf, _fmt = request.env['ir.actions.report'].sudo()._render_qweb_pdf(
+            'red_seguro_scout.action_report_recibo_pago', payment.ids)
+        name = 'Recibo_%s.pdf' % (payment.name or '').replace('/', '_')
+        return request.make_response(pdf, headers=[
+            ('Content-Type', 'application/pdf'), ('Content-Disposition', content_disposition(name))])
