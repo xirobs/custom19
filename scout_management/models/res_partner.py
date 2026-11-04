@@ -55,9 +55,9 @@ class ResPartner(models.Model):
     scout_guardian_id = fields.Many2one('res.partner', string='Padre, madre o tutor', tracking=True,
                                         help='Recibe avisos, paga los registros y accede al portal.')
     scout_guardian_relationship = fields.Char(string='Parentesco')
-    scout_leader_child = fields.Boolean(string='Hijo(a) de dirigente', tracking=True,
-                                        help='Paga la cuota de dirigentes. Se detecta sola cuando el tutor es '
-                                             'dirigente; márcalo si el dirigente no aparece como su tutor.')
+    scout_leader_child = fields.Boolean(string='Hijo(a) de jefe scout', tracking=True,
+                                        help='Paga la cuota de jefes y subjefes. Se detecta sola cuando el tutor es jefe o subjefe '
+                                             '(o tiene su mismo correo o teléfono); márcalo si no se detecta.')
     scout_guardian_phone = fields.Char(related='scout_guardian_id.phone', string='Teléfono del tutor', readonly=False)
     scout_guardian_email = fields.Char(related='scout_guardian_id.email', string='Correo del tutor', readonly=False)
     scout_guardian_same_address = fields.Boolean(string='Mismo domicilio que el miembro', default=True)

@@ -17,8 +17,8 @@ class ScoutCycle(models.Model):
                                 help='Cuota más baja mientras dura el periodo anticipado (ej. octubre a diciembre).')
     early_from = fields.Date(string='Anticipada desde')
     early_until = fields.Date(string='Anticipada hasta', help='Después de esta fecha se cobra la cuota normal.')
-    leader_fee = fields.Monetary(string='Cuota dirigentes e hijos de dirigentes', currency_field='currency_id',
-                                 help='Se aplica a dirigentes y a los miembros cuyo tutor es dirigente '
+    leader_fee = fields.Monetary(string='Cuota jefes, subjefes e hijos', currency_field='currency_id',
+                                 help='Se aplica a jefes y subjefes (dirigentes) y a los miembros cuyo tutor es jefe o subjefe '
                                       '(o marcados como "Hijo(a) de dirigente"), en cualquier fecha.')
     is_current = fields.Boolean(string='Ciclo actual', help='Ciclo que se usa por defecto en reportes y credenciales.')
     registration_open = fields.Boolean(
@@ -59,8 +59,19 @@ class ScoutCycle(models.Model):
         if member.scout_type == 'leader' or getattr(member, 'scout_leader_child', False):
             return True
         guardian = member.scout_guardian_id
-        return bool(guardian and guardian.is_scout and guardian.scout_type == 'leader'
-                    and guardian.scout_state != 'inactive')
+        if not guardian:
+            return False
+        if guardian.is_scout and guardian.scout_type == 'leader' and guardian.scout_state != 'inactive':
+            return True
+        # el tutor está capturado como contacto aparte del jefe: se reconoce por su correo o teléfono
+        Partner = member.env['res.partner'].sudo()
+        leaders = Partner.search([('is_scout', '=', True), ('scout_type', '=', 'leader'),
+                                  ('scout_state', '!=', 'inactive')])
+        digits = lambda v: ''.join(c for c in (v or '') if c.isdigit())[-10:]
+        email = (guardian.email or '').strip().lower()
+        phone = digits(guardian.phone)
+        return any((email and (l.email or '').strip().lower() == email) or
+                   (len(phone) == 10 and digits(l.phone) == phone) for l in leaders)
 
     def _in_early(self, on_date=None):
         self.ensure_one()
@@ -113,7 +124,7 @@ class ScoutCycle(models.Model):
         elif self.registration_fee:
             parts.append('Cuota de registro: %s' % self._money(self.registration_fee))
         if self.leader_fee:
-            parts.append('Dirigentes e hijos de dirigentes: %s' % self._money(self.leader_fee))
+            parts.append('Jefes, subjefes e hijos de jefes scout: %s' % self._money(self.leader_fee))
         text = '. '.join(parts)
         if text and member:
             fee = self._fee_for(member)
