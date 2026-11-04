@@ -245,7 +245,8 @@
                     <div t-attf-class="o_sl_card o_sl_st_#{status_labels.get(line.status, ('', 'na'))[1]} #{'o_sl_card_leader' if line.member_type == 'leader' else ''}" t-att-data-line="line.id" t-att-data-status="line.status">
                         <button type="button" class="o_sl_card_tap" t-att-disabled="event.scout_attendance_closed or None">
                             <t t-call="scout_management.leader_avatar"/>
-                            <span class="o_sl_card_name" t-out="person.scout_name or person.name.split(' ')[0]"/>
+                            <span class="o_sl_card_name" t-out="person._scout_list_name()"/>
+                            <span t-if="person.scout_name" class="o_sl_card_scoutname" t-out="person.scout_name"/>
                             <span class="o_sl_card_sub" t-out="line.member_role or ''"/>
                             <span class="o_sl_card_state" t-out="status_labels.get(line.status, (line.status, ''))[0]"/>
                             <span t-if="person.scout_trial_attendance"
@@ -370,7 +371,7 @@
                                 <tr t-if="r['section'] != last_sec" class="o_sl_grid_head"><td t-att-colspan="2 + len(data['type_labels'])" t-out="r['section'].name if r['section'] else 'Sin sección'"/></tr>
                                 <t t-set="last_sec" t-value="r['section']"/>
                                 <tr>
-                                    <td class="o_sl_mx_name"><b t-out="r['member'].scout_name or r['member'].name"/>
+                                    <td class="o_sl_mx_name"><b t-out="r['member']._scout_list_name()"/><small t-if="r['member'].scout_name" class="o_sl_card_scoutname ms-1" t-out="r['member'].scout_name"/>
                                         <small class="d-block text-muted" t-out="r['member'].scout_position_id.name or svc.leader_title(r['member'])"/></td>
                                     <td><t t-call="scout_management.leader_pct_badge"><t t-set="value" t-value="r['pct']"/></t>
                                         <small class="d-block text-muted" t-out="'%s/%s' % (r['total']['attended'], r['total']['counted'])"/></td>
@@ -681,7 +682,8 @@
                             <input type="checkbox" name="member_ids" t-att-value="person.id" t-att-disabled="(p and p.state == 'achieved') or None"/>
                             <span class="o_sl_card_tap">
                                 <t t-call="scout_management.leader_avatar"/>
-                                <span class="o_sl_card_name" t-out="person.scout_name or person.name.split(' ')[0]"/>
+                                <span class="o_sl_card_name" t-out="person._scout_list_name()"/>
+                            <span t-if="person.scout_name" class="o_sl_card_scoutname" t-out="person.scout_name"/>
                                 <span class="o_sl_card_sub" t-if="p" t-out="'✓ %s' % p.date_achieved.strftime('%d/%m/%y') if p.state == 'achieved' else 'En curso'"/>
                                 <span class="o_sl_card_sub" t-else="" t-out="person.scout_patrol_id.name or ''"/>
                                 <span t-if="stage.stage_type == 'link' and person.scout_age_alert in ('soon', 'over')" class="o_sl_card_alert o_sl_card_alert_red">Le toca por edad</span>
@@ -1010,7 +1012,8 @@
                             <t t-call="scout_management.leader_avatar"/>
                             <t t-set="rl" t-value="svc.role_label(section, person)"/>
                             <div class="o_sl_tcard_txt">
-                                <span class="o_sl_card_name" t-out="person.scout_name or person.name.split(' ')[0]"/>
+                                <span class="o_sl_card_name" t-out="person._scout_list_name()"/>
+                            <span t-if="person.scout_name" class="o_sl_card_scoutname" t-out="person.scout_name"/>
                                 <small class="text-muted" t-out="'%s años' % person.scout_age if person.scout_age else ''"/>
                                 <span t-attf-class="o_sl_role #{'d-none' if not rl else ''}" t-out="rl"/>
                             </div>

@@ -90,6 +90,35 @@ class ScoutSectionRouteConfig(models.Model):
         candidates.sort(key=lambda c: (c[0], c[1]))
         return candidates[0][2] if candidates else self.browse()
 
+    @api.model
+    def _scout_over_age(self, birthdate, gender=None, on_date=None):
+        """True si ya pasó la edad de todas las secciones juveniles (le toca entrar como aspirante a jefe)."""
+        if not birthdate or self._scout_suggest(birthdate, gender, on_date):
+            return False
+        on_date = on_date or fields.Date.context_today(self)
+        delta = relativedelta(on_date, birthdate)
+        months = delta.years * 12 + delta.months
+        uppers = []
+        for section in self.search([('is_leadership', '=', False)]):
+            if gender and section.gender and section.gender != gender:
+                continue
+            _route, pass_, stay = section._route_offsets()
+            if pass_ or stay:
+                uppers.append(pass_ or stay)
+        return bool(uppers) and months >= max(uppers)
+
+    @api.model
+    def _scout_aspirant(self, company=None):
+        """(sección de jefatura, cargo 'Aspirante a jefe') para quien ya no tiene sección por edad."""
+        domain = [('is_leadership', '=', True)]
+        if company:
+            domain += ['|', ('company_id', '=', False), ('company_id', '=', company.id)]
+        leadership = self.sudo().search(domain, limit=1)
+        position = self.env.ref('scout_management.position_leader_aspirant', raise_if_not_found=False)
+        if not position:
+            position = self.env['scout.position'].sudo().search([('kind', '=', 'candidate')], limit=1)
+        return leadership, position.sudo()
+
     @api.constrains('route_age_months', 'pass_age_months', 'max_stay_months')
     def _check_route_months(self):
         for section in self:

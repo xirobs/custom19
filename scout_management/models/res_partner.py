@@ -263,6 +263,18 @@ class ResPartner(models.Model):
     def _scout_compose_name(first, last, last2):
         return ' '.join(p.strip() for p in (first, last, last2) if p and p.strip())
 
+    def _scout_list_name(self):
+        """Primer nombre y primer apellido (para listas y pase de lista): 'Ana García'."""
+        self.ensure_one()
+        first = (self.scout_first_name or '').split()
+        last = (self.scout_last_name or '').split()
+        if first:
+            return ' '.join([first[0]] + last[:1]) if last else first[0]
+        words = (self.name or '').split()
+        if len(words) >= 4:  # Nombre1 Nombre2 Paterno Materno
+            return f'{words[0]} {words[2]}'
+        return ' '.join(words[:2])
+
     @api.onchange('scout_first_name', 'scout_last_name', 'scout_last_name2')
     def _onchange_scout_name_parts(self):
         name = self._scout_compose_name(self.scout_first_name, self.scout_last_name, self.scout_last_name2)

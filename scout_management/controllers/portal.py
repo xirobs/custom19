@@ -308,12 +308,22 @@ def scout_save_registration(post, member, guardian=None):
     # jefes) y uno nuevo va a la que le corresponde por edad y sexo.
     section = member.scout_section_id if member and member.scout_section_id \
         and not member.scout_section_id.is_leadership else Section._scout_suggest(birthdate, gender)
+    aspirant_position = env['scout.position']
+    if member and member.scout_type == 'leader' and member.scout_section_id.is_leadership:
+        section = member.scout_section_id  # un dirigente que renueva conserva su jefatura
+    elif member and section and not section.is_leadership and member.scout_type != 'leader' \
+            and Section._scout_over_age(birthdate, gender):
+        section = Section.browse()  # ya pasó la edad de su sección: entra como aspirante a jefe
+    if not section and Section._scout_over_age(birthdate, gender):
+        # Ya no le corresponde ninguna sección por edad: queda como aspirante a jefe en la jefatura
+        # y después la jefatura de grupo le asigna su cargo.
+        section, aspirant_position = Section._scout_aspirant(member.company_id if member else None)
     if not section:
         return None, _('No hay una sección del grupo para esa edad; revisa la fecha de nacimiento o contacta a '
                        'la jefatura.')
     Registration = env['scout.registration'].sudo()
-    existing = Registration.search([('member_id', '=', member.id), ('cycle_id', '=', cycle.id),
-                                    ('state', '!=', 'cancel')], limit=1) if member else Registration
+    # una sola ficha por miembro: si tiene una abierta de un ciclo anterior, esa misma pasa al ciclo nuevo
+    existing = Registration._scout_find_for_cycle(member, cycle, move=False) if member else Registration
     if existing and existing.state in ('reviewed', 'validated'):
         return None, _('%(name)s ya tiene su ficha del ciclo %(cycle)s en revisión o validada. Si falta el pago, '
                        'pide la liga de pago a la jefatura.', name=member.name, cycle=cycle.name)
@@ -329,6 +339,7 @@ def scout_save_registration(post, member, guardian=None):
         'first_name': post.get('first_name', '').strip(), 'last_name': post.get('last_name', '').strip(),
         'last_name2': post.get('last_name2', '').strip(), 'birthdate': birthdate, 'gender': gender,
         'section_id': section.id, 'street': post.get('street'),
+        'leadership_position_id': aspirant_position.id or False,
         'guardian_id': guardian.id if guardian and not guardian._is_public() else False,
         'guardian_name': post.get('guardian_name'), 'guardian_relationship': post.get('guardian_relationship'),
         'guardian_phone': post.get('guardian_phone'), 'guardian_phone_alt': post.get('guardian_phone_alt'),
@@ -384,6 +395,8 @@ def scout_save_registration(post, member, guardian=None):
             vals.update({'payment_proof': base64.b64encode(content), 'payment_proof_name': proof.filename})
     try:
         if existing:
+            if existing.cycle_id != cycle:
+                existing._scout_move_to_cycle(cycle)
             existing.write(vals)
             registration = existing
         else:

@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo noupdate="1">
+    <record id="position_leader_aspirant" model="scout.position">
+        <field name="name">Aspirante a jefe</field>
+        <field name="kind">candidate</field>
+        <field name="applies_to">leader</field>
+        <field name="sequence">10</field>
+    </record>
+</odoo>

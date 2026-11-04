@@ -123,6 +123,7 @@ $scout-wa: #25d366;
         }
         .o_sl_avatar { width: 56px; height: 56px; }
         .o_sl_card_name { font-weight: 800; font-size: 0.92rem; line-height: 1.1; }
+        .o_sl_card_scoutname { font-size: 0.74rem; font-weight: 800; color: #e8672c; letter-spacing: .03em; text-transform: uppercase; line-height: 1.1; }
         .o_sl_card_sub { font-size: 0.72rem; color: #5c6b7a; min-height: 0.9rem; }
         .o_sl_card_state { font-size: 0.75rem; font-weight: 800; border-radius: 999px; padding: 0.05rem 0.5rem; }
         .o_sl_more {
@@ -821,3 +822,5 @@ html.o_scout_standalone #wrapwrap { overscroll-behavior-y: none; }
 .o_scout_id_wait { color: #5c6b7a; }
 .o_scout_leader .o_sl_spec_board .o_sl_spec_path { font-size: 0.68rem; white-space: normal; min-width: 4.2rem; vertical-align: bottom; border-left: 1px solid rgba(255,255,255,0.15); }
 .o_scout_leader .o_sl_spec_board .o_sl_spec_cat:first-of-type { border-left: 2px solid #fff; }
+
+.o_sl_mx_name .o_sl_card_scoutname, .o_sl_card_scoutname { color: #e8672c; font-weight: 800; text-transform: uppercase; }

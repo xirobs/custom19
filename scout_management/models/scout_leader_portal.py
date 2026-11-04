@@ -1037,8 +1037,7 @@ class ScoutLeaderPortal(models.AbstractModel):
         if not cycle:
             raise UserError(_('No hay un ciclo scout abierto; pide a secretaría que lo cree.'))
         Registration = self.env['scout.registration'].sudo()
-        reg = Registration.search([('member_id', '=', member.id), ('cycle_id', '=', cycle.id),
-                                   ('state', '!=', 'cancel')], limit=1)
+        reg = Registration._scout_find_for_cycle(member, cycle)
         guardian = member.scout_guardian_id
         vals = {
             'cycle_id': cycle.id, 'member_id': member.id, 'source': 'portal', 'state': 'submitted',
@@ -1086,9 +1085,7 @@ class ScoutLeaderPortal(models.AbstractModel):
     def registration(self, member, cycle=None):
         """Ficha del miembro en el ciclo con inscripciones abiertas (o en el ciclo indicado)."""
         cycle = cycle or self.env['scout.cycle'].sudo()._get_registration()
-        return self.env['scout.registration'].sudo().search(
-            [('member_id', '=', member.id), ('cycle_id', '=', cycle.id), ('state', '!=', 'cancel')], limit=1) \
-            if cycle else self.env['scout.registration'].sudo()
+        return self.env['scout.registration'].sudo()._scout_find_for_cycle(member, cycle, move=False)
 
     @api.model
     def payment_info(self, member):

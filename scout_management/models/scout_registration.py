@@ -177,9 +177,14 @@ class ScoutRegistration(models.Model):
     def _onchange_suggest_section(self):
         """Propone la sección que le corresponde por edad y sexo (se puede cambiar)."""
         if self.birthdate and not self.leadership_position_id:
-            section = self.env['scout.section']._scout_suggest(self.birthdate, self.gender)
+            Section = self.env['scout.section']
+            section = Section._scout_suggest(self.birthdate, self.gender)
             if section:
                 self.section_id = section
+            elif Section._scout_over_age(self.birthdate, self.gender):
+                leadership, position = Section._scout_aspirant(self.company_id)
+                self.section_id = leadership
+                self.leadership_position_id = position
 
     @api.onchange('guardian_id')
     def _onchange_guardian_id(self):
@@ -236,6 +241,84 @@ class ScoutRegistration(models.Model):
                        'kind': 'return' if member.scout_state == 'inactive' else 'renewal'})
             reg.message_post(body=_('Se ligó al miembro existente %s (mismo nombre y fecha de nacimiento); '
                                     'no se creó un duplicado.', member.name))
+
+    # ------------------------------------------------------------------ una sola ficha por miembro
+    @api.model
+    def _scout_find_for_cycle(self, member, cycle, move=True):
+        """Ficha del miembro para el ciclo. Si no tiene una de ese ciclo pero sí una abierta (sin validar y sin
+        pagar) de un ciclo anterior, esa misma se actualiza y pasa al nuevo ciclo: no se crea otra ficha."""
+        Reg = self.sudo()
+        if not member or not cycle:
+            return Reg.browse()
+        reg = Reg.search([('member_id', '=', member.id), ('cycle_id', '=', cycle.id), ('state', '!=', 'cancel')],
+                         limit=1)
+        if reg:
+            return reg
+        old = Reg.search([('member_id', '=', member.id), ('cycle_id', '!=', cycle.id),
+                          ('state', 'not in', ('cancel', 'validated'))], order='id desc', limit=1)
+        if old and old.payment_state not in ('paid', 'exempt'):
+            if move:
+                old._scout_move_to_cycle(cycle)
+            return old
+        return Reg.browse()
+
+    def _scout_drop_unpaid_invoice(self):
+        """Quita el cargo de la cuota si no tiene ningún pago (para volverlo a generar con la cuota correcta)."""
+        for reg in self.sudo():
+            inv = reg.invoice_id
+            if not inv:
+                continue
+            if inv.state == 'cancel' or (inv.currency_id.is_zero(inv.amount_total - inv.amount_residual)
+                                         and inv.payment_state in ('not_paid', False)):
+                if inv.state == 'posted':
+                    inv.button_draft()
+                if inv.state == 'draft':
+                    inv.button_cancel()
+                reg.invoice_id = False
+
+    def _scout_move_to_cycle(self, cycle):
+        for reg in self.sudo():
+            previous = reg.cycle_id
+            member = reg.member_id
+            reg._scout_drop_unpaid_invoice()
+            # una ficha cancelada del mismo miembro en el ciclo nuevo estorba (una ficha por ciclo): se elimina
+            stale = self.sudo().search([('member_id', '=', member.id), ('cycle_id', '=', cycle.id),
+                                        ('id', '!=', reg.id), ('state', '=', 'cancel')])
+            if stale:
+                member.message_post(body=_('Se eliminó la ficha cancelada %(old)s del ciclo %(cycle)s al pasar %(reg)s a '
+                                           'ese ciclo.', old=', '.join(stale.mapped('name')), cycle=cycle.name,
+                                           reg=reg.name))
+                stale.unlink()
+            reg.write({'cycle_id': cycle.id,
+                       'kind': 'return' if member.scout_state == 'inactive' else (
+                           'renewal' if member.scout_state == 'active' else reg.kind)})
+            reg._compute_registration_fee()
+            reg.message_post(body=_('Ficha actualizada del ciclo %(old)s al ciclo %(new)s (renovación): se usa la '
+                                    'misma ficha, no se generó otra.', old=previous.name, new=cycle.name))
+
+    @api.model
+    def _scout_merge_duplicates(self):
+        """Miembros con una ficha abierta de un ciclo anterior y otra del ciclo nuevo: se queda la del ciclo
+        nuevo y la anterior (sin pagos) se cancela con una nota. Devuelve las fichas canceladas."""
+        Reg = self.sudo()
+        cancelled = Reg.browse()
+        for reg in Reg.search([('state', '!=', 'cancel'), ('member_id', '!=', False)], order='id desc'):
+            if reg in cancelled:
+                continue
+            olds = Reg.search([('member_id', '=', reg.member_id.id), ('id', '!=', reg.id),
+                               ('state', 'not in', ('cancel', 'validated')),
+                               ('cycle_id.date_start', '<', reg.cycle_id.date_start)])
+            for old in olds.filtered(lambda r: r.payment_state not in ('paid', 'exempt')):
+                if old.invoice_id and not old.invoice_id.currency_id.is_zero(
+                        old.invoice_id.amount_total - old.invoice_id.amount_residual):
+                    continue  # ya tiene un abono: se deja para revisión manual
+                old._scout_drop_unpaid_invoice()
+                old.write({'state': 'cancel'})
+                old.message_post(body=_('Ficha reemplazada por %(new)s (renovación al ciclo %(cycle)s).',
+                                        new=reg.name, cycle=reg.cycle_id.name))
+                reg.message_post(body=_('Esta ficha reemplaza a %s del ciclo anterior.', old.name))
+                cancelled |= old
+        return cancelled
 
     def _scout_prepare_for_payment(self):
         """Deja listos tutor, miembro (en prueba) y cargo de la cuota para poder pagar en línea o en efectivo."""
@@ -418,8 +501,11 @@ class ScoutRegistration(models.Model):
                 if member.scout_state == 'inactive':
                     # Reingreso: la validación del jefe de grupo lo reactiva (puede volver a otra sección)
                     member_vals.update({'scout_state': 'active', 'scout_leave_date': False})
-                elif member.scout_section_id and member.scout_section_id != reg.section_id:
-                    member_vals.pop('scout_section_id', None)  # el cambio de sección va por solicitud aparte
+                elif member.scout_section_id and member.scout_section_id != reg.section_id \
+                        and not (reg.section_id.is_leadership and reg.leadership_position_id):
+                    # el cambio de sección va por solicitud aparte (salvo quien pasó la edad y entra como
+                    # aspirante a jefe: ese pasa a la jefatura al validar su ficha)
+                    member_vals.pop('scout_section_id', None)
                 Partner.browse(member.id).write(member_vals)
             else:
                 member_vals.setdefault('scout_state', 'trial')

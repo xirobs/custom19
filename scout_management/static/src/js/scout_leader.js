@@ -431,7 +431,11 @@ function isPdfLink(a) {
         return true;
     }
     const href = a.getAttribute("href") || "";
-    return /^\/(?!\/)/.test(href) && /(\.pdf|\/pdf)(\?|#|$)/i.test(href);
+    if (!/^\/(?!\/)/.test(href) || href.startsWith("/scouts/pdf") || href.startsWith("/web/content")) {
+        return false;
+    }
+    return /(\.pdf|\/pdf)(\?|#|$)/i.test(href) || /[?&]report_type=pdf/i.test(href) ||
+        href.startsWith("/report/pdf/") || href.startsWith("/scout/recibo/");
 }
 
 function setupAppNavigation() {
@@ -463,14 +467,11 @@ function setupAppNavigation() {
             banner.remove();
         });
     });
-    if (!isStandaloneApp()) {
-        return;
-    }
-    document.documentElement.classList.add("o_scout_standalone");
-    // Los PDF se abren en un visor con botón para regresar (sin él, la app se quedaba atorada en el PDF)
+    // Todos los PDF (fichas, credenciales, reportes, actas, recibos, certificados...) se abren en un visor con
+    // botones para regresar y para ir a la pantalla principal, en el celular y en la computadora.
     document.addEventListener("click", (ev) => {
         const a = ev.target.closest("a[href]");
-        if (!a || !isPdfLink(a) || a.hasAttribute("download")) {
+        if (!a || !isPdfLink(a) || a.hasAttribute("download") || ev.ctrlKey || ev.metaKey || ev.shiftKey) {
             return;
         }
         ev.preventDefault();
@@ -478,6 +479,10 @@ function setupAppNavigation() {
         window.location.href = "/scouts/pdf?u=" + encodeURIComponent(a.getAttribute("href")) +
             "&back=" + encodeURIComponent(back);
     }, true);
+    if (!isStandaloneApp()) {
+        return;
+    }
+    document.documentElement.classList.add("o_scout_standalone");
     // Páginas fuera del portal de dirigentes (familias, chat, aula): botón flotante para regresar
     const roots = ["/", "/scouts/app", "/dirigentes", "/my", "/my/home", "/my/scouts", "/web/login", "/odoo"];
     const path = window.location.pathname.replace(/\/$/, "") || "/";
