@@ -129,11 +129,11 @@
                     </group>
                     <group string="Padre, madre o tutor">
                         <group>
-                            <field name="tutor_name" required="is_minor and state == 'active'"/>
+                            <field name="tutor_name"/>
                             <field name="tutor_relationship"/>
                         </group>
                         <group>
-                            <field name="tutor_phone" widget="phone" required="is_minor and state == 'active'"/>
+                            <field name="tutor_phone" widget="phone"/>
                             <field name="tutor_email" widget="email"/>
                         </group>
                     </group>

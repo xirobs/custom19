@@ -1,0 +1,97 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Portal del asesor: cargar lista de asegurados en Excel o PDF (queda en preinscripción) -->
+    <template id="advisor_import" name="Asesor: cargar lista">
+        <t t-call="red_seguro_scout.advisor_layout">
+            <a href="/seguro/asegurados" class="o_rssp_back"><i class="fa fa-arrow-left"/> Asegurados</a>
+            <section class="o_rssp_card">
+                <h4 class="o_rssp_h"><i class="fa fa-upload"/> Cargar lista de asegurados</h4>
+                <p class="o_rssp_muted">Sube la lista en <b>Excel (.xlsx)</b> o <b>PDF</b>. Se revisan errores y personas repetidas
+                    y luego la guardas: quedan en <b>preinscripción</b>, igual que al darlos de alta en la plataforma.
+                    Para varios grupos en un solo archivo, deja «Grupo» en <i>Según la columna Grupo</i> y agrega esa columna con el
+                    número o nombre del grupo.</p>
+                <form t-if="advisor.can_register_insured" method="post" enctype="multipart/form-data" action="/seguro/cargar" class="o_rssp_form">
+                    <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
+                    <label for="rssp_group">Grupo</label>
+                    <select id="rssp_group" name="group_id" class="form-select">
+                        <option value="">Según la columna «Grupo» del archivo</option>
+                        <option t-foreach="import_groups" t-as="g" t-att-value="g.id" t-att-selected="str(g.id) == str(grupo or '')" t-out="g.name"/>
+                    </select>
+                    <label for="rssp_file">Archivo Excel o PDF</label>
+                    <input id="rssp_file" type="file" name="file" class="form-control" required="required"
+                           accept=".xlsx,.xls,.pdf,application/pdf,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"/>
+                    <div class="o_rssp_actions">
+                        <button type="submit" class="btn o_rssp_btn"><i class="fa fa-search"/> Leer lista</button>
+                        <a href="/seguro/plantilla.xlsx" class="btn o_rssp_btn_ghost"><i class="fa fa-download"/> Plantilla de Excel</a>
+                    </div>
+                </form>
+                <p t-else="" class="o_rssp_muted">No tienes permiso para cargar asegurados; pídelo a la administración central.</p>
+            </section>
+            <section class="o_rssp_card" t-if="batches">
+                <h5>Cargas recientes de tus grupos</h5>
+                <a t-foreach="batches" t-as="b" class="o_rssp_list_item"
+                   t-att-href="('/seguro/cargas/%s' % b.id) if b.office_load else None">
+                    <div>
+                        <b t-out="b.group_id.name"/>
+                        <div class="o_rssp_muted"><t t-out="b.filename or 'Captura'"/> · <t t-out="fmt_date(b.create_date)"/> ·
+                            <t t-out="b.line_count"/> filas<t t-if="b.state == 'done'"> · <t t-out="b.created_count"/> guardados</t>
+                            · <t t-out="'Asesor / plataforma' if b.office_load else 'Grupo'"/></div>
+                    </div>
+                    <span t-attf-class="o_rssp_pill o_rssp_pill_imp_#{b.state}" t-out="labels('rss.import.batch', 'state').get(b.state)"/>
+                </a>
+            </section>
+        </t>
+    </template>
+
+    <template id="advisor_import_batch" name="Asesor: revisar carga">
+        <t t-call="red_seguro_scout.advisor_layout">
+            <a href="/seguro/cargar" class="o_rssp_back"><i class="fa fa-arrow-left"/> Cargar lista</a>
+            <t t-set="editable" t-value="batch.state == 'review' and batch.office_load"/>
+            <section class="o_rssp_card">
+                <div class="o_rssp_row">
+                    <div>
+                        <h4 class="o_rssp_h mb-0" t-out="batch.group_id.name"/>
+                        <div class="o_rssp_muted"><t t-out="batch.filename or 'Lista'"/> · <t t-out="batch.line_count"/> filas</div>
+                    </div>
+                    <span t-attf-class="o_rssp_pill o_rssp_pill_imp_#{batch.state}" t-out="labels('rss.import.batch', 'state').get(batch.state)"/>
+                </div>
+                <div class="o_rssp_kpis mt-2">
+                    <div class="o_rssp_kpi"><b t-out="batch.ok_count"/><span>Listos</span></div>
+                    <div class="o_rssp_kpi"><b t-out="batch.duplicate_count"/><span>Repetidos</span></div>
+                    <div class="o_rssp_kpi"><b t-out="batch.error_count"/><span>Con error</span></div>
+                    <div class="o_rssp_kpi" t-if="batch.state == 'done'"><b t-out="batch.created_count"/><span>Guardados</span></div>
+                </div>
+                <p class="o_rssp_muted" t-if="editable">Se guardan los marcados que estén <b>listos</b>. Los repetidos ya existen y
+                    los que tienen error no se guardan: corrígelos en el archivo y vuelve a cargarlo, o dalos de alta uno por uno.</p>
+            </section>
+            <form method="post" t-attf-action="/seguro/cargas/#{batch.id}">
+                <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
+                <div class="o_rssp_table_wrap">
+                    <table class="table o_rssp_table">
+                        <thead><tr><th>Incluir</th><th>Nombre</th><th>Nacimiento</th><th>Sexo</th><th>Padre o tutor</th><th>Teléfono</th><th>Resultado</th></tr></thead>
+                        <tbody>
+                            <tr t-foreach="batch.line_ids" t-as="l" t-attf-class="o_rssp_line_#{l.status}">
+                                <td><input type="checkbox" t-attf-name="l#{l.id}_include" value="1" t-att-checked="l.include and l.status == 'ok'"
+                                           t-att-disabled="None if (editable and l.status == 'ok') else 'disabled'"/></td>
+                                <td><b t-out="' '.join(x for x in (l.first_name, l.second_name, l.last_name_father, l.last_name_mother) if x) or '—'"/>
+                                    <div class="o_rssp_muted" t-if="l.curp" t-out="l.curp"/></td>
+                                <td t-out="fmt_date(l.birthdate) or (l.raw_birthdate or '—')"/>
+                                <td t-out="{'male': 'Hombre', 'female': 'Mujer'}.get(l.sex, l.raw_sex or '—')"/>
+                                <td t-out="l.tutor_name or ''"/>
+                                <td t-out="l.tutor_phone or ''"/>
+                                <td><span t-attf-class="o_rssp_pill o_rssp_pill_line_#{l.status}" t-out="labels('rss.import.line', 'status').get(l.status)"/>
+                                    <div class="o_rssp_muted" t-if="l.message" t-out="l.message"/>
+                                    <a t-if="l.insured_id" class="o_rssp_muted" t-attf-href="/seguro/asegurados?q=#{l.insured_id.name}">ver asegurado</a></td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+                <div class="o_rssp_actions" t-if="editable">
+                    <button type="submit" name="action" value="save" class="btn o_rssp_btn"><i class="fa fa-check"/> Guardar en preinscripción</button>
+                    <button type="submit" name="action" value="validate" class="btn o_rssp_btn_ghost"><i class="fa fa-refresh"/> Revisar de nuevo</button>
+                    <button type="submit" name="action" value="cancel" class="btn o_rssp_btn_ghost">Cancelar carga</button>
+                </div>
+            </form>
+        </t>
+    </template>
+</odoo>

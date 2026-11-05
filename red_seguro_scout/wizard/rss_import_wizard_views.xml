@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="rss_import_wizard_view_form" model="ir.ui.view">
+        <field name="name">rss.import.wizard.form</field>
+        <field name="model">rss.import.wizard</field>
+        <field name="arch" type="xml">
+            <form string="Cargar lista de asegurados" class="o_rss">
+                <div class="alert alert-info" role="status">
+                    Sube la lista en <b>Excel (.xlsx)</b> o <b>PDF</b>. Se revisan errores y personas repetidas;
+                    después presionas <b>Guardar en preinscripción</b>. Para cargar varios grupos de una vez,
+                    deja el grupo vacío y agrega al archivo una columna <b>Grupo</b> con su número o nombre.
+                    <a href="/red-seguro-scout/plantilla.xlsx" class="ms-1"><i class="fa fa-download"/> Descargar plantilla</a>
+                </div>
+                <group>
+                    <field name="group_id" options="{'no_create': True}" placeholder="Según la columna «Grupo» del archivo"/>
+                    <field name="file" filename="filename"/>
+                    <field name="filename" invisible="1"/>
+                </group>
+                <footer>
+                    <button name="action_load" type="object" string="Leer lista" class="btn-primary"/>
+                    <button string="Cancelar" special="cancel"/>
+                </footer>
+            </form>
+        </field>
+    </record>
+    <record id="action_rss_import_wizard" model="ir.actions.act_window">
+        <field name="name">Cargar lista (Excel / PDF)</field>
+        <field name="res_model">rss.import.wizard</field>
+        <field name="view_mode">form</field>
+        <field name="target">new</field>
+    </record>
+</odoo>

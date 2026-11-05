@@ -104,16 +104,15 @@ class TestGroupMembersAndImport(_RssPortalCommon, TransactionCase):
             [2, 'Flores', 'Vega', 'Regina', '05/11/2015', 10, 'M', 'Mónica Vega', '2223334455', 'm@x.com'],
             [3, 'Flores', 'Vega', 'Regina', '05/11/2015', 10, 'M', 'Mónica Vega', '2223334455', 'm@x.com'],     # repetida
             [4, 'Ruiz', 'Paz', 'Tomás', 'no sé', 9, 'H', 'Raúl Ruiz', '2225556677', 'r@x.com'],                # error fecha
-            [5, 'Solís', 'Mar', 'Iker', '09/01/2016', 10, 'H', '', '', ''],                                     # falta tutor
+            [5, 'Solís', 'Mar', 'Iker', '09/01/2016', 10, 'H', '', '', ''],                                     # sin tutor: válido
         ]
         batch = self.env['rss.import.batch'].create_from_file(self.g7, 'lista.xlsx', _xlsx(rows, headers))
         lines = batch.line_ids.sorted('sequence')
-        self.assertEqual(lines.mapped('status'), ['duplicate', 'ok', 'duplicate', 'error', 'error'])
+        self.assertEqual(lines.mapped('status'), ['duplicate', 'ok', 'duplicate', 'error', 'ok'])
         self.assertEqual(lines[0].duplicate_insured_id, self.maria)
         self.assertEqual(lines[1].sex, 'female', 'Con H/M en la columna, la M es Mujer')
         # Corrige en la tabla y guarda
         lines[3].birthdate = date(2017, 2, 2)
-        lines[4].write({'tutor_name': 'Ana Mar', 'tutor_phone': '2229990000'})
         batch.action_request_payment()
         self.assertEqual(batch.state, 'payment')
         self.assertFalse(self.env['rss.insured'].search([('import_batch_id', '=', batch.id)]),
@@ -125,6 +124,8 @@ class TestGroupMembersAndImport(_RssPortalCommon, TransactionCase):
         self.assertEqual(set(new.mapped('state')), {'active'})
         self.assertEqual(set(new.mapped('capture_source')), {'excel'})
         self.assertEqual(set(new.group_id.ids), {self.g7.id})
+        iker = new.filtered(lambda i: i.first_name == 'Iker')
+        self.assertTrue(iker and not iker.tutor_name, 'Menor sin tutor queda asegurado con el campo en blanco')
 
     def test_03_pdf_import(self):
         pdf = _pdf([[
@@ -705,6 +706,14 @@ class TestPortalAlta(_RssPortalCommon, HttpCase):
         res = self.url_open('/mi-grupo/alta', data=dict(self._person(first_name=''), csrf_token=self._csrf('/mi-grupo/alta')))
         self.assertIn('Falta', res.text)
         self.assertEqual(len(batch.line_ids), 2)
+        # menor sin tutor: sí se agrega, con el tutor en blanco
+        self.url_open('/mi-grupo/alta', data=dict(self._person(first_name='Leo', sex='male', tutor_name='', tutor_phone='',
+                                                               tutor_relationship=''),
+                                                  csrf_token=self._csrf('/mi-grupo/alta')))
+        leo = batch.line_ids.filtered(lambda l: l.first_name == 'Leo')
+        self.assertTrue(leo)
+        self.assertNotEqual(leo.status, 'error')
+        self.assertFalse(leo.tutor_name)
 
     def test_advisor_sees_preinscritos_and_registers(self):
         self.authenticate('asesora.alta@example.com', 'asesora-alta-1')
@@ -836,3 +845,86 @@ class TestDashboard(_RssPortalCommon, HttpCase):
         self.authenticate('admin', 'admin')
         x = self.url_open('/red-seguro-scout/tablero.xlsx')
         self.assertTrue(x.content.startswith(b'PK'))
+
+
+@tagged('post_install', '-at_install', 'red_seguro_scout')
+class TestOfficeListLoad(_RssPortalCommon, HttpCase):
+    """La plataforma y el asesor cargan listas en Excel/PDF: quedan en preinscripción, sin cobro."""
+
+    HEADERS = ['Grupo', 'Nombre', 'Apellido paterno', 'Apellido materno', 'Fecha de nacimiento', 'Sexo',
+               'Padre o tutor', 'Teléfono de emergencia', 'Correo', 'CURP']
+    ROWS = [
+        ['7', 'Lucía', 'Mora', 'Paz', '04/04/2015', 'Mujer', '', '', '', ''],
+        ['Lan Nakuh', 'Diego', 'Cano', 'Ríos', '07/07/2012', 'Hombre', 'Ana Ríos', '2221112233', '', ''],
+        ['3', 'Sara', 'Cano', 'Ríos', '01/01/2014', 'Mujer', '', '', '', ''],
+        ['99', 'Nadie', 'Sin', 'Grupo', '01/01/2014', 'Mujer', '', '', '', ''],
+        ['7', 'María Fernanda', 'García', 'López', '12/03/2014', 'Mujer', '', '', '', ''],   # ya existe
+    ]
+
+    @classmethod
+    def setUpClass(cls):
+        super().setUpClass()
+        cls._setup_data()
+        partner = cls.env['res.partner'].create({'name': 'Asesor Carga', 'email': 'asesor.carga@example.com'})
+        cls.advisor = cls.env['rss.advisor'].create({'partner_id': partner.id})
+        cls.advisor.action_grant_portal()
+        cls.advisor.user_id.password = 'asesor-carga-1'
+
+    def test_platform_multi_group_file(self):
+        import base64
+        wiz = self.env['rss.import.wizard'].create({'file': base64.b64encode(_xlsx(self.ROWS, self.HEADERS)),
+                                                    'filename': 'base.xlsx'})
+        action = wiz.action_load()
+        batches = self.env['rss.import.batch'].search([('office_load', '=', True)])
+        self.assertEqual(set(batches.group_id.ids), {self.g7.id, self.g3.id}, 'Una carga por grupo')
+        self.assertEqual(action['res_model'], 'rss.import.batch')
+        b7 = batches.filtered(lambda b: b.group_id == self.g7)
+        self.assertEqual(b7.line_count, 2)
+        self.assertEqual(b7.duplicate_count, 1, 'María ya existía')
+        self.assertFalse(b7.amount_total if 'amount_total' in b7._fields and b7.state != 'review' else 0)
+        batches.action_save_draft()
+        new = self.env['rss.insured'].search([('import_batch_id', 'in', batches.ids)])
+        self.assertEqual(sorted(new.mapped('first_name')), ['Diego', 'Lucía', 'Sara'])
+        self.assertEqual(set(new.mapped('state')), {'draft'})
+        self.assertEqual(set(new.mapped('capture_source')), {'backend'})
+        self.assertFalse(self.env['rss.payment'].search([('import_batch_id', 'in', batches.ids)]), 'Sin cobro')
+        self.assertFalse(new.filtered(lambda i: i.first_name == 'Lucía').tutor_name, 'Tutor opcional')
+
+    def test_platform_single_group_and_template(self):
+        import base64
+        from odoo.addons.red_seguro_scout.models.rss_parsers import build_template_xlsx, parse_excel
+        rows, err = parse_excel(build_template_xlsx(with_group=True))
+        self.assertFalse(err)
+        self.assertEqual(rows[0]['group'], '7')
+        rows = [r[1:] for r in self.ROWS[:3]]
+        wiz = self.env['rss.import.wizard'].create({'group_id': self.g3.id, 'filename': 'g3.xlsx',
+                                                    'file': base64.b64encode(_xlsx(rows, self.HEADERS[1:]))})
+        wiz.action_load()
+        batch = self.env['rss.import.batch'].search([('office_load', '=', True)])
+        self.assertEqual(batch.group_id, self.g3, 'Con grupo elegido, todo va a ese grupo')
+        self.assertEqual(batch.line_count, 3)
+
+    def _csrf(self, url):
+        return re.search(r'name="csrf_token" value="([^"]+)"', self.url_open(url).text).group(1)
+
+    def test_advisor_uploads_and_saves(self):
+        self.authenticate('asesor.carga@example.com', 'asesor-carga-1')
+        self.assertIn('/seguro/cargar', self.url_open('/seguro/asegurados').text)
+        self.assertTrue(self.url_open('/seguro/plantilla.xlsx').content.startswith(b'PK'))
+        res = self.url_open('/seguro/cargar', data={'csrf_token': self._csrf('/seguro/cargar'), 'group_id': ''},
+                            files={'file': ('base.xlsx', _xlsx(self.ROWS, self.HEADERS), 'application/octet-stream')})
+        self.assertEqual(res.status_code, 200)
+        batches = self.env['rss.import.batch'].search([('office_load', '=', True)])
+        self.assertEqual(len(batches), 2)
+        self.assertEqual(batches.advisor_id, self.advisor)
+        b3 = batches.filtered(lambda b: b.group_id == self.g3)
+        page = self.url_open('/seguro/cargas/%s' % b3.id).text
+        self.assertIn('Guardar en preinscripción', page)
+        form = {'csrf_token': self._csrf('/seguro/cargas/%s' % b3.id), 'action': 'save'}
+        for line in b3.line_ids:
+            form['l%s_include' % line.id] = '1'
+        self.url_open('/seguro/cargas/%s' % b3.id, data=form)
+        self.assertEqual(b3.state, 'done')
+        saved = self.env['rss.insured'].search([('import_batch_id', '=', b3.id)])
+        self.assertEqual(len(saved), 2)
+        self.assertEqual(set(saved.mapped('capture_source')), {'excel'})

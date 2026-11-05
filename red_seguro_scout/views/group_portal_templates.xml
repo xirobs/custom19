@@ -183,7 +183,7 @@
                     <ol>
                         <li><b>Presiona «Dar de alta un asegurado»</b> para capturar a una persona con su formulario, o <b>«Cargar lista»</b> para subir varias. <t t-if="member.can_capture">Lo puede hacer el jefe de grupo, el secretario o el tesorero.</t><t t-else="">En tu grupo solo lo hace el <b>capturista</b>; pídeselo a él o a la administración central.</t></li>
                         <li><b>Elige cómo cargarlos:</b> <a href="/mi-grupo/alta">formulario</a> (uno por uno, con «Guardar y dar de alta otro»), <a href="/mi-grupo/importar#excel">Excel</a> (descarga la plantilla) o <a href="/mi-grupo/importar#pdf">PDF</a> con la lista.</li>
-                        <li><b>Revisa la lista:</b> nombre, dos apellidos, fecha de nacimiento, sexo y padre o tutor con teléfono de emergencia. El sistema avisa de errores y de personas repetidas.</li>
+                        <li><b>Revisa la lista:</b> nombre, dos apellidos, fecha de nacimiento, sexo y, si lo tienes, padre o tutor con teléfono de emergencia (es opcional). El sistema avisa de errores y de personas repetidas.</li>
                         <li><b>Paga el mismo día</b> con Mercado Pago o transferencia (subes el comprobante). Si no se paga hoy, la carga vence.</li>
                         <li><b>Listo:</b> al confirmarse el pago quedan <b>Asegurados</b> en esta lista; después llega su certificado.</li>
                     </ol>

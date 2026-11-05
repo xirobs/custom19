@@ -106,6 +106,8 @@
                     <button name="action_new_payment" type="object" string="Registrar pago del seguro"
                             class="btn-primary" icon="fa-money"/>
                     <button name="action_attach_pdf" type="object" string="Adjuntar PDF" icon="fa-file-pdf-o"/>
+                    <button name="%(red_seguro_scout.action_rss_import_wizard)d" type="action" string="Cargar lista (Excel / PDF)"
+                            icon="fa-upload" context="{'default_group_id': id}"/>
                 </header>
                 <sheet>
                     <div class="oe_button_box" name="button_box">

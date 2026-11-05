@@ -37,8 +37,7 @@ def _clean_form(post):
 
 def _missing(vals):
     labels = {'first_name': _('primer nombre'), 'last_name_father': _('apellido paterno'),
-              'birthdate': _('fecha de nacimiento'), 'sex': _('sexo'), 'tutor_name': _('nombre del tutor'),
-              'tutor_phone': _('teléfono de emergencia')}
+              'birthdate': _('fecha de nacimiento'), 'sex': _('sexo')}
     missing = [label for key, label in labels.items() if not vals.get(key)]
     if vals.get('birthdate') and vals['birthdate'] > date.today():
         missing.append(_('fecha de nacimiento (no puede ser futura)'))

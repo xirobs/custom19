@@ -105,7 +105,9 @@
 
             <section class="o_rssp_card">
                 <div class="o_rssp_row"><h5 class="mb-0">Grupos</h5>
-                    <a t-if="advisor.can_register_insured" href="/seguro/alta" class="btn o_rssp_btn"><i class="fa fa-user-plus"/> Dar de alta un asegurado</a></div>
+                    <div class="o_rssp_actions m-0" t-if="advisor.can_register_insured">
+                        <a href="/seguro/alta" class="btn o_rssp_btn"><i class="fa fa-user-plus"/> Dar de alta</a>
+                        <a href="/seguro/cargar" class="btn o_rssp_btn_ghost"><i class="fa fa-upload"/> Cargar lista</a></div></div>
                 <a t-foreach="groups" t-as="g" class="o_rssp_list_item" t-attf-href="/seguro/asegurados?grupo=#{g.id}">
                     <div>
                         <b t-out="g.name"/>
@@ -128,7 +130,10 @@
                         <h4 class="o_rssp_h mb-0">Asegurados de tus grupos</h4>
                         <div class="o_rssp_muted">Todos: los dados de alta en la plataforma y los cargados en el portal, en preinscripción o vigentes, con su certificado.</div>
                     </div>
-                    <a t-if="advisor.can_register_insured" t-attf-href="/seguro/alta#{'?grupo=%s' % group.id if group else ''}" class="btn o_rssp_btn"><i class="fa fa-user-plus"/> Dar de alta un asegurado</a>
+<div class="o_rssp_actions m-0" t-if="advisor.can_register_insured">
+                        <a t-attf-href="/seguro/alta#{'?grupo=%s' % group.id if group else ''}" class="btn o_rssp_btn"><i class="fa fa-user-plus"/> Dar de alta un asegurado</a>
+                        <a t-attf-href="/seguro/cargar#{'?grupo=%s' % group.id if group else ''}" class="btn o_rssp_btn_ghost"><i class="fa fa-upload"/> Cargar lista (Excel / PDF)</a>
+                    </div>
                 </div>
             </section>
             <form class="o_rssp_filters" method="get" action="/seguro/asegurados">

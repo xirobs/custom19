@@ -31,6 +31,8 @@ HEADERS = {
                     'tel', 'tel emergencia', 'telefono del tutor', 'numero de emergencia',
                     'numero telefono en caso de emergencia', 'telefono en caso de emergencia'],
     'tutor_email': ['correo', 'correo electronico', 'email', 'e mail', 'correo del tutor', 'mail'],
+    'group': ['grupo', 'no grupo', 'num grupo', 'numero de grupo', 'grupo scout', 'grupo no', 'n grupo'],
+    'curp': ['curp'],
 }
 
 EMAIL_RE = re.compile(r'[\w.+-]+@[\w-]+(?:\.[\w-]+)+')
@@ -198,6 +200,8 @@ def _finish_row(raw, sex_column):
     row['tutor_phone'] = phone
     email = EMAIL_RE.search(clean(raw.get('tutor_email')) or '')
     row['tutor_email'] = email.group(0).lower() if email else clean(raw.get('tutor_email')).lower()
+    row['group'] = clean(raw.get('group'))
+    row['curp'] = clean(raw.get('curp')).upper().replace(' ', '')
     row['raw_sex'] = clean(raw.get('sex'))
     row['raw_birthdate'] = clean(raw.get('birthdate')) if not isinstance(raw.get('birthdate'), (date, datetime)) else ''
     return row
@@ -382,32 +386,43 @@ TEMPLATE_HEADERS = ['Nombre(s)', 'Apellido paterno', 'Apellido materno', 'Fecha 
                     'Correo electrónico']
 
 
-def build_template_xlsx(group_name=''):
+def build_template_xlsx(group_name='', with_group=False):
+    """Plantilla de Excel. ``with_group`` agrega al inicio la columna «Grupo» (para cargar
+    varios grupos en un solo archivo desde la plataforma o el portal del asesor)."""
     import xlsxwriter
     output = io.BytesIO()
     book = xlsxwriter.Workbook(output, {'in_memory': True})
     ws = book.add_worksheet('Asegurados')
     head = book.add_format({'bold': True, 'font_color': 'white', 'bg_color': '#6E0B14', 'border': 1,
                             'text_wrap': True, 'valign': 'vcenter', 'align': 'center'})
-    note = book.add_format({'italic': True, 'font_color': '#5A6478'})
     date_f = book.add_format({'num_format': 'dd/mm/yyyy'})
-    widths = [22, 18, 18, 16, 12, 32, 18, 30]
-    for col, (label, width) in enumerate(zip(TEMPLATE_HEADERS, widths)):
+    headers = list(TEMPLATE_HEADERS) + ['CURP']
+    widths = [22, 18, 18, 16, 12, 32, 18, 30, 22]
+    example = ['Ana Sofía', 'Pérez', 'López', '01/05/2014', 'Mujer', 'Laura López García',
+               '2221234567', 'laura@correo.com', '']
+    date_col, sex_col = 3, 4
+    if with_group:
+        headers, widths, example = ['Grupo'] + headers, [10] + widths, [group_name or '7'] + example
+        date_col, sex_col = 4, 5
+    for col, (label, width) in enumerate(zip(headers, widths)):
         ws.write(0, col, label, head)
-        ws.set_column(col, col, width, date_f if col == 3 else None)
+        ws.set_column(col, col, width, date_f if col == date_col else None)
     ws.set_row(0, 30)
-    ws.write_row(1, 0, ['Ana Sofía', 'Pérez', 'López', '01/05/2014', 'Mujer', 'Laura López García',
-                        '2221234567', 'laura@correo.com'])
-    ws.data_validation(1, 4, 2000, 4, {'validate': 'list', 'source': ['Hombre', 'Mujer']})
+    ws.write_row(1, 0, example)
+    ws.data_validation(1, sex_col, 3000, sex_col, {'validate': 'list', 'source': ['Hombre', 'Mujer']})
     help_ws = book.add_worksheet('Instrucciones')
     tips = [
         'Una persona por renglón, a partir del renglón 2 (borra el ejemplo).',
+        'Obligatorios: nombre, apellido paterno, fecha de nacimiento y sexo.',
         'Fecha de nacimiento en formato día/mes/año, p. ej. 01/05/2014.',
         'Sexo: Hombre o Mujer. La edad se calcula sola.',
-        'Padre o tutor: nombre completo; teléfono para emergencias y correo electrónico.',
+        'Padre o tutor (opcional): nombre completo, teléfono para emergencias y correo; si no lo tienes, déjalo en blanco.',
+        'CURP (opcional).',
         'Si una persona ya está registrada (mismo nombre y fecha de nacimiento) se marca como repetida.',
     ]
-    if group_name:
+    if with_group:
+        tips.insert(0, 'Grupo: número del grupo (p. ej. 7) o su nombre. Así se cargan varios grupos en un solo archivo.')
+    elif group_name:
         tips.insert(0, 'Grupo: %s' % group_name)
     for i, tip in enumerate(tips):
         help_ws.write(i, 0, tip)

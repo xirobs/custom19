@@ -134,14 +134,6 @@ class RssInsured(models.Model):
             if rec.curp and not CURP_RE.match(rec.curp):
                 raise ValidationError(_('La CURP "%s" no tiene un formato válido.', rec.curp))
 
-    @api.constrains('birthdate', 'tutor_name', 'tutor_phone', 'state')
-    def _check_tutor(self):
-        for rec in self:
-            if rec.is_minor and rec.state == 'active' and not (rec.tutor_name and rec.tutor_phone):
-                raise ValidationError(_(
-                    '%s es menor de edad: captura el nombre y teléfono del tutor antes '
-                    'de darlo de alta en el seguro.', rec.name))
-
     # ------------------------------------------------------------------
     # ORM
     # ------------------------------------------------------------------

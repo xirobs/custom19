@@ -123,6 +123,11 @@
         <field name="model">rss.import.batch</field>
         <field name="arch" type="xml">
             <list string="Cargas de asegurados" class="o_rss" create="0">
+                <header>
+                    <button name="%(red_seguro_scout.action_rss_import_wizard)d" type="action" string="Cargar lista (Excel / PDF)"
+                            display="always" class="btn-primary" icon="fa-upload"/>
+                    <button name="action_save_draft" type="object" string="Guardar en preinscripción"/>
+                </header>
                 <field name="create_date" string="Fecha"/>
                 <field name="group_id"/>
                 <field name="member_id"/>
@@ -149,7 +154,9 @@
             <form string="Carga de asegurados" class="o_rss" create="0">
                 <header>
                     <button name="action_validate" type="object" string="Revisar de nuevo" invisible="state != 'review'"/>
-                    <button name="action_request_payment" type="object" string="Calcular pago" class="btn-primary" invisible="state != 'review'"/>
+                    <button name="action_save_draft" type="object" string="Guardar en preinscripción" class="btn-primary"
+                            invisible="state != 'review' or not office_load"/>
+                    <button name="action_request_payment" type="object" string="Calcular pago" class="btn-primary" invisible="state != 'review' or office_load"/>
                     <button name="action_validate_transfer" type="object" string="Validar pago: sí llegó" class="btn-primary"
                             invisible="state != 'verifying'" groups="red_seguro_scout.group_rss_manager"
                             confirm="Se crean y activan los asegurados y se emite el recibo. ¿El depósito sí está en la cuenta?"/>
@@ -167,6 +174,8 @@
                             <field name="member_id" readonly="1"/>
                             <field name="user_id" readonly="1"/>
                             <field name="privacy_accepted"/>
+                            <field name="office_load" readonly="1"/>
+                            <field name="advisor_id" readonly="1" invisible="not advisor_id"/>
                         </group>
                         <group>
                             <field name="source" readonly="1"/>
@@ -177,7 +186,7 @@
                             <field name="created_count"/>
                         </group>
                     </group>
-                    <group string="Pago" invisible="state == 'review'">
+                    <group string="Pago" invisible="state == 'review' or office_load">
                         <group>
                             <field name="reference"/>
                             <field name="tariff_name"/>
@@ -215,6 +224,7 @@
                             <field name="tutor_name"/>
                             <field name="tutor_phone"/>
                             <field name="tutor_email" optional="show"/>
+                            <field name="curp" optional="hide"/>
                             <field name="status" readonly="1"/>
                             <field name="message" readonly="1"/>
                             <field name="duplicate_insured_id" readonly="1" optional="show"/>
@@ -433,6 +443,8 @@
         <field name="arch" type="xml">
             <xpath expr="//list" position="inside">
                 <header>
+                    <button name="%(red_seguro_scout.action_rss_import_wizard)d" type="action" string="Cargar lista (Excel / PDF)"
+                            display="always" class="btn-secondary" icon="fa-upload"/>
                     <button name="action_activate" type="object" string="Dar de alta en el seguro"
                             confirm="Los seleccionados pasan a «Asegurado» y entran en la relación mensual. ¿Continuar?"/>
                     <button name="action_reread_certificate" type="object" string="Releer datos del certificado"/>

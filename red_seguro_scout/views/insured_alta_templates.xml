@@ -34,8 +34,8 @@
                     </label>
                     <label class="o_rssp_span2">CURP <small class="o_rssp_muted">(opcional)</small>
                         <input name="curp" class="form-control" maxlength="18" style="text-transform: uppercase" t-att-value="form.get('curp')"/></label>
-                    <div class="o_rssp_form_sub o_rssp_span2">Padre, madre o tutor</div>
-                    <label class="o_rssp_span2">Nombre completo *<input name="tutor_name" class="form-control" required="required" t-att-value="form.get('tutor_name')"/></label>
+                    <div class="o_rssp_form_sub o_rssp_span2">Padre, madre o tutor <small class="o_rssp_muted">(opcional: captúralo si lo tienes)</small></div>
+                    <label class="o_rssp_span2">Nombre completo<input name="tutor_name" class="form-control" t-att-value="form.get('tutor_name')"/></label>
                     <label>Parentesco
                         <select name="tutor_relationship" class="form-select">
                             <option value="">—</option>
@@ -45,12 +45,12 @@
                             <option value="other" t-att-selected="form.get('tutor_relationship') == 'other'">Otro</option>
                         </select>
                     </label>
-                    <label>Teléfono de emergencia *<input type="tel" name="tutor_phone" class="form-control" required="required" t-att-value="form.get('tutor_phone')"/></label>
+                    <label>Teléfono de emergencia<input type="tel" name="tutor_phone" class="form-control" t-att-value="form.get('tutor_phone')"/></label>
                     <label class="o_rssp_span2">Correo del tutor<input type="email" name="tutor_email" class="form-control" t-att-value="form.get('tutor_email')"/></label>
                 </div>
                 <label class="o_rssp_check">
                     <input type="checkbox" name="privacy" value="1" required="required"/>
-                    Tengo la autorización del padre, madre o tutor y acepto el
+                    Acepto el
                     <a href="/aviso-de-privacidad-seguro" target="_blank">aviso de privacidad</a>.
                 </label>
                 <div class="o_rssp_actions">

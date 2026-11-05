@@ -53,10 +53,12 @@ class TestRedSeguroScout(TransactionCase):
         self.assertTrue(ins.is_minor)
         self.assertEqual(ins.section, 'tropa')
 
-    def test_02_minor_requires_tutor_to_activate(self):
+    def test_02_minor_without_tutor_can_be_activated(self):
         ins = self._insured(self.group_a, tutor_name=False, tutor_phone=False)
-        with self.assertRaises(ValidationError):
-            ins.action_activate()
+        self.assertTrue(ins.is_minor)
+        ins.action_activate()
+        self.assertEqual(ins.state, 'active', 'El tutor es opcional, también para menores')
+        self.assertFalse(ins.tutor_name)
 
     def test_03_invalid_email_and_future_birthdate(self):
         with self.assertRaises(ValidationError):

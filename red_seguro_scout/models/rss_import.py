@@ -164,6 +164,28 @@ class RssImportBatch(models.Model):
                 line._validate(seen)
         return True
 
+    def _line_insured_vals(self, line, source, today):
+        """Valores del asegurado que nace de una fila de la carga (queda en preinscripción)."""
+        return {
+            'first_name': line.first_name,
+            'second_name': line.second_name or False,
+            'last_name_father': line.last_name_father,
+            'last_name_mother': line.last_name_mother or False,
+            'birthdate': line.birthdate,
+            'sex': line.sex,
+            'tutor_name': line.tutor_name or False,
+            'tutor_phone': line.tutor_phone or False,
+            'tutor_email': line.tutor_email or False,
+            'curp': (line.curp or '').strip().upper() or False,
+            'tutor_relationship': line.tutor_relationship or False,
+            'group_id': line.batch_id.group_id.id,
+            'state': 'draft',
+            'date_start': today,
+            'capture_source': source,
+            'captured_by_id': line.batch_id.user_id.id or self.env.user.id,
+            'import_batch_id': line.batch_id.id,
+        }
+
     def _ready_lines(self):
         self.ensure_one()
         return self.line_ids.filtered(lambda l: l.status == 'ok' and l.include)
@@ -316,25 +338,8 @@ class RssImportBatch(models.Model):
             return self.env['rss.payment']
         created = Insured.browse()
         for line in lines:
-            created |= Insured.with_context(mail_create_nolog=True).create({
-                'first_name': line.first_name,
-                'second_name': line.second_name or False,
-                'last_name_father': line.last_name_father,
-                'last_name_mother': line.last_name_mother or False,
-                'birthdate': line.birthdate,
-                'sex': line.sex,
-                'tutor_name': line.tutor_name,
-                'tutor_phone': line.tutor_phone,
-                'tutor_email': line.tutor_email or False,
-                'curp': (line.curp or '').strip().upper() or False,
-                'tutor_relationship': line.tutor_relationship or False,
-                'group_id': self.group_id.id,
-                'state': 'draft',
-                'date_start': today,
-                'capture_source': source,
-                'captured_by_id': self.user_id.id,
-                'import_batch_id': self.id,
-            })
+            created |= Insured.with_context(mail_create_nolog=True).create(
+                self._line_insured_vals(line, source, today))
             line.insured_id = created[-1]
         payment = self.env['rss.payment'].sudo().create({
             'group_id': self.group_id.id,
@@ -459,6 +464,7 @@ class RssImportLine(models.Model):
             'tutor_name': row.get('tutor_name') or False,
             'tutor_phone': row.get('tutor_phone') or False,
             'tutor_email': row.get('tutor_email') or False,
+            'curp': row.get('curp') or False,
             'raw_sex': row.get('raw_sex') or False,
             'raw_birthdate': row.get('raw_birthdate') or False,
         }
@@ -482,11 +488,6 @@ class RssImportLine(models.Model):
         if not self.sex:
             problems.append(_('sexo no reconocido%s, usa Hombre o Mujer') %
                             (' ("%s")' % self.raw_sex if self.raw_sex else ''))
-        if self.birthdate and age_on(self.birthdate) < 18:
-            if not self.tutor_name:
-                problems.append(_('falta el padre o tutor'))
-            if not self.tutor_phone:
-                problems.append(_('falta el teléfono de emergencia'))
         if self.tutor_email and not EMAIL_RE.match(self.tutor_email.strip()):
             problems.append(_('correo no válido'))
         vals = {'duplicate_insured_id': False}

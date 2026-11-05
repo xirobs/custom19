@@ -19,7 +19,9 @@
               action="rss_group_cluster_action" sequence="30"/>
     <menuitem id="menu_rss_group_members" name="Representantes de grupo" parent="menu_rss_members"
               action="rss_group_member_action" sequence="40"/>
-    <menuitem id="menu_rss_import_batches" name="Cargas de los grupos" parent="menu_rss_members"
+    <menuitem id="menu_rss_import_wizard" name="Cargar lista (Excel / PDF)" parent="menu_rss_members"
+              action="action_rss_import_wizard" sequence="45"/>
+    <menuitem id="menu_rss_import_batches" name="Cargas de listas" parent="menu_rss_members"
               action="rss_import_batch_action" sequence="50"/>
 
     <menuitem id="menu_rss_insurance" name="Seguro" parent="menu_rss_root" sequence="20"/>
