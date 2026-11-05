@@ -189,7 +189,7 @@ class ScoutResource(models.Model):
         path = portal.path_stages(section)
         resources = self._scout_for_section(section, scouts=True)
         progress = self.env['scout.member.progress'].sudo().search([('member_id', '=', member.id)])
-        achieved = progress.filtered(lambda p: p.state == 'achieved').stage_id
+        achieved = portal.canon(progress.filtered(lambda p: p.state == 'achieved').stage_id, section)
         seen = set(self.env['scout.resource.view'].sudo().search(
             [('member_id', '=', member.id), ('resource_id', 'in', resources.ids)]).resource_id.ids)
         current_index = next((i for i, s in enumerate(path) if s not in achieved), len(path))
@@ -208,9 +208,9 @@ class ScoutResource(models.Model):
             state = 'done' if stage in achieved else ('current' if index == current_index else
                                                      ('open' if index < current_index else 'locked'))
             units.append({'key': stage.id, 'name': portal.stage_label(stage, section), 'stage': stage, 'state': state,
-                          'items': items(resources.filtered(lambda r, s=stage: r.stage_id == s)),
+                          'items': items(resources.filtered(lambda r, s=stage: r.stage_id and portal.canon(r.stage_id, section) == s)),
                           'icon': 'fa-star', 'locked_by': path[index - 1] if state == 'locked' and index else Stage})
-        extra = resources.filtered(lambda r: r.stage_id and r.stage_id not in path) | spec_items
+        extra = resources.filtered(lambda r: r.stage_id and portal.canon(r.stage_id, section) not in path) | spec_items
         if extra:
             spec = portal.progression_path(member).get('specialties') if section.sequential_path else None
             spec_open = spec['open'] if spec else True

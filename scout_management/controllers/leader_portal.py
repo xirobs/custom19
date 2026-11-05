@@ -935,7 +935,7 @@ class ScoutLeaderPortal(http.Controller):
             # Especialidades; se muestran todos los niveles aunque todavía no tengan material
             ruta = svc.progression_path(None, section)
             for level in ruta['levels']:
-                items = resources.filtered(lambda r, s=level['stage']: r.stage_id == s)
+                items = resources.filtered(lambda r, s=level['stage']: r.stage_id and svc.canon(r.stage_id, section) == s)
                 structure.append({'key': level['stage'].id, 'title': '%s. %s' % (level['num'], level['label']),
                                   'summary': level['summary'], 'items': items, 'icon': 'fa-book',
                                   'manual': level['has_manual'] and '/dirigentes/%s/ruta/%s/manual.pdf' % (
@@ -951,7 +951,7 @@ class ScoutLeaderPortal(http.Controller):
                                   'manual': sp['has_manual'] and '/dirigentes/%s/ruta/especialidades/manual.pdf' % section.id})
             path = svc.path_stages(section)
             resources = resources.filtered(lambda r: not r.stage_id and not r.for_specialties
-                                           or (r.stage_id and r.stage_id not in path
+                                           or (r.stage_id and svc.canon(r.stage_id, section) not in path
                                                and r.stage_id.stage_type != 'specialty'))
         for cat in categories:
             items = resources.filtered(lambda r: r.category_id == cat)

@@ -4,6 +4,7 @@ clasifican por tipo de actividad (relevos, técnica, trabajo en equipo, nudos...
 o todas."""
 import base64
 import re
+import unicodedata
 
 from odoo import _, api, fields, models
 from odoo.exceptions import AccessError, UserError
@@ -37,6 +38,49 @@ class ScoutResourceActivity(models.Model):
     uploaded_by_id = fields.Many2one('res.users', string='Subido por', default=lambda self: self.env.user,
                                      readonly=True, copy=False)
     uploaded_section_id = fields.Many2one('scout.section', string='Sección que lo subió', readonly=True, copy=False)
+
+    @staticmethod
+    def _scout_norm(text):
+        text = unicodedata.normalize('NFKD', text or '').encode('ascii', 'ignore').decode().lower()
+        words = [w for w in re.split(r'[^a-z0-9]+', text) if w and w not in ('manual', 'de', 'del', 'la', 'el', 'scout', 'scouts')]
+        return ' '.join(w[:-1] if len(w) > 4 and w.endswith('s') else w for w in words)
+
+    def _scout_autoplace(self):
+        """Si el material no tiene nivel pero su categoría se llama como un nivel de la ruta ("Tercera Clase",
+        "Manual Cordón Scouts", "Manual de Especialidades"...), se ubica solo en ese nivel."""
+        portal = self.env['scout.leader.portal'].sudo()
+        all_sections = self.env['scout.section'].sudo().search([('is_leadership', '=', False)])
+        for res in self.sudo():
+            if res.stage_id or res.for_specialties or not res.category_id:
+                continue
+            cat = self._scout_norm(res.category_id.name)
+            if not cat:
+                continue
+            if 'especialidad' in cat:
+                res.with_context(scout_autoplace=True).for_specialties = True
+                continue
+            sections = all_sections if res.all_sections else res.section_ids
+            for section in sections:
+                stage = next((st for st in portal.path_stages(section)
+                              if cat in {self._scout_norm(portal.path_label(st, section)),
+                                         self._scout_norm(portal.stage_label(st, section)),
+                                         self._scout_norm(st.name)}), None)
+                if stage:
+                    res.with_context(scout_autoplace=True).stage_id = stage
+                    break
+
+    @api.model_create_multi
+    def create(self, vals_list):
+        records = super().create(vals_list)
+        records._scout_autoplace()
+        return records
+
+    def write(self, vals):
+        res = super().write(vals)
+        if not self.env.context.get('scout_autoplace') and {'category_id', 'stage_id', 'for_specialties',
+                                                             'section_ids', 'all_sections'} & set(vals):
+            self._scout_autoplace()
+        return res
 
     def _scout_can_edit(self, user=None):
         self.ensure_one()

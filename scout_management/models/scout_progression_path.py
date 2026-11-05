@@ -59,7 +59,9 @@ class ScoutMemberProgressSequence(models.Model):
             return False
         portal = self.env['scout.leader.portal'].sudo()
         path = self._scout_sequence_path(section)
-        achieved = self.sudo().search([('member_id', '=', member.id), ('state', '=', 'achieved')]).stage_id
+        achieved = portal.canon(self.sudo().search([('member_id', '=', member.id), ('state', '=', 'achieved')]).stage_id,
+                                section)
+        stage = portal.canon(stage, section)
         target = stage
         if stage.stage_type == 'specialty':
             target = section.specialty_start_stage_id
@@ -98,9 +100,13 @@ class ScoutMemberProgressSequence(models.Model):
                 if not section.sequential_path or progress.stage_id.stage_type not in SEQUENCE_TYPES:
                     continue
                 path = list(self._scout_sequence_path(section))
-                if progress.stage_id not in path:
+                current = self.env['scout.leader.portal'].sudo().canon(progress.stage_id, section)
+                if current not in path:
                     continue
-                later = path[path.index(progress.stage_id) + 1:]
+                later = path[path.index(current) + 1:]
+                raw = self.env['scout.leader.portal'].sudo()._path_raw(section)
+                mapping = self.env['scout.leader.portal'].sudo().path_canonical(section)
+                later = [st for st in raw if mapping.get(st.id) in later]
                 if later and self.sudo().search_count([('member_id', '=', progress.member_id.id),
                                                        ('stage_id', 'in', [s.id for s in later]),
                                                        ('id', 'not in', self.ids)]):
@@ -112,6 +118,49 @@ class ScoutMemberProgressSequence(models.Model):
 
 class ScoutLeaderPortalPath(models.AbstractModel):
     _inherit = 'scout.leader.portal'
+
+    @api.model
+    def _path_raw(self, section):
+        return super().path_stages(section)
+
+    @api.model
+    def _path_key(self, stage, section):
+        return self.env['scout.resource']._scout_norm(self.path_label(stage, section))
+
+    @api.model
+    def path_canonical(self, section):
+        """{id de etapa: etapa que la representa en la ruta}. Dos etapas que son el mismo nivel (por ejemplo
+        "Promesa (Tercera clase)" y "Tercera clase") cuentan como una sola: se muestra una y los avances de
+        cualquiera de las dos valen. Se prefiere la de tipo Promesa y la propia de la sección."""
+        memo = self.env.__dict__.setdefault('_scout_path_canon', {})
+        if section.id in memo:
+            return memo[section.id]
+        groups = {}
+        for stage in self._path_raw(section):
+            key = ('link' if stage.stage_type == 'link' else 'path', self._path_key(stage, section))
+            groups.setdefault(key, []).append(stage)
+        mapping = {}
+        for stages in groups.values():
+            keep = max(stages, key=lambda st: (st.stage_type == 'promise', bool(st.section_ids), -st.id))
+            for st in stages:
+                mapping[st.id] = keep
+        memo[section.id] = mapping
+        return mapping
+
+    @api.model
+    def path_stages(self, section):
+        raw = self._path_raw(section)
+        mapping = self.path_canonical(section)
+        return raw.filtered(lambda s: mapping.get(s.id) == s)
+
+    @api.model
+    def canon(self, stages, section):
+        """Etapas (registros de avance o material) traducidas a la etapa que se muestra en la ruta."""
+        mapping = self.path_canonical(section) if section else {}
+        result = self.env['scout.progression.stage']
+        for stage in stages:
+            result |= mapping.get(stage.id, stage)
+        return result
 
     @api.model
     def path_label(self, stage, section):
@@ -143,8 +192,8 @@ class ScoutLeaderPortalPath(models.AbstractModel):
         Progress = self.env['scout.member.progress'].sudo()
         path = Progress._scout_sequence_path(section) if section else self.env['scout.progression.stage']
         records = Progress.search([('member_id', '=', member.id)]) if member else Progress
-        achieved = records.filtered(lambda p: p.state == 'achieved').stage_id
-        started = records.filtered(lambda p: p.state == 'in_progress').stage_id
+        achieved = self.canon(records.filtered(lambda p: p.state == 'achieved').stage_id, section)
+        started = self.canon(records.filtered(lambda p: p.state == 'in_progress').stage_id, section)
         sequential = bool(section and section.sequential_path)
         levels, current_found = [], False
         for index, stage in enumerate(path):
@@ -161,7 +210,7 @@ class ScoutLeaderPortalPath(models.AbstractModel):
                 'num': index + 1, 'stage': stage, 'label': self.path_label(stage, section),
                 'summary': self.stage_summary(stage, section), 'state': state, 'has_manual': bool(stage.manual),
                 'started': stage in started,
-                'date': records.filtered(lambda p, s=stage: p.stage_id == s)[:1].date_achieved,
+                'date': records.filtered(lambda p, s=stage: self.canon(p.stage_id, section) == s)[:1].date_achieved,
                 'locked_by': self.path_label(path[index - 1], section) if index else '',
             })
         start = section.specialty_start_stage_id if section else False
@@ -183,7 +232,8 @@ class ScoutLeaderPortalPath(models.AbstractModel):
         if section:
             resources = resources._scout_for_section(section, scouts=bool(member))
         for level in levels:
-            items = resources.filtered(lambda r, s=level['stage']: r.stage_id == s).sorted(lambda r: (r.sequence, r.id))
+            items = resources.filtered(lambda r, s=level['stage']: r.stage_id and self.canon(r.stage_id, section) == s
+                                       ).sorted(lambda r: (r.sequence, r.id))
             level['diagrams'] = items.filtered(lambda r: r.kind == 'image' and r.file)
             level['materials'] = items - level['diagrams']
         if specialties is not None:
