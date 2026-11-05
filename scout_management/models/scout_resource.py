@@ -198,6 +198,8 @@ class ScoutResource(models.Model):
             return [{'resource': r, 'seen': r.id in seen} for r in recs.sorted(lambda r: (r.sequence, r.id))]
 
         units = []
+        spec_items = resources.filtered(lambda r: r.for_specialties and not r.stage_id)
+        resources = resources - spec_items
         intro = resources.filtered(lambda r: not r.stage_id)
         if intro:
             units.append({'key': 'intro', 'name': _('Bienvenida'), 'stage': Stage, 'state': 'open',
@@ -208,10 +210,16 @@ class ScoutResource(models.Model):
             units.append({'key': stage.id, 'name': portal.stage_label(stage, section), 'stage': stage, 'state': state,
                           'items': items(resources.filtered(lambda r, s=stage: r.stage_id == s)),
                           'icon': 'fa-star', 'locked_by': path[index - 1] if state == 'locked' and index else Stage})
-        extra = resources.filtered(lambda r: r.stage_id and r.stage_id not in path)
+        extra = resources.filtered(lambda r: r.stage_id and r.stage_id not in path) | spec_items
         if extra:
-            units.append({'key': 'extra', 'name': _('Especialidades y retos'), 'stage': Stage, 'state': 'open',
-                          'items': items(extra), 'icon': 'fa-trophy'})
+            spec = portal.progression_path(member).get('specialties') if section.sequential_path else None
+            spec_open = spec['open'] if spec else True
+            units.append({'key': 'extra', 'name': _('Manual de Especialidades') if spec else _('Especialidades y retos'),
+                          'stage': Stage, 'state': 'open' if spec_open else 'locked',
+                          'items': items(extra), 'icon': 'fa-trophy',
+                          'locked_by': (path[list(path).index(section.specialty_start_stage_id) - 1]
+                                        if section.specialty_start_stage_id in path
+                                        and list(path).index(section.specialty_start_stage_id) > 0 else Stage)})
         unlocked = [i for u in units if u['state'] != 'locked' for i in u['items']]
         total, done = len(unlocked), len([i for i in unlocked if i['seen']])
         return {'units': units, 'total': total, 'seen': done, 'pct': round(done * 100.0 / total) if total else 0,

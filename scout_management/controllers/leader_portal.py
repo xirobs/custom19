@@ -929,17 +929,30 @@ class ScoutLeaderPortal(http.Controller):
         svc = self._svc()
         vista = kw.get('vista') or ('ruta' if not (category or tipo or q or activity) else 'categorias')
         groups = []
+        structure = []
         if vista == 'ruta' and not section.is_leadership:
-            # en el orden de la estructura de la sección: nivel 1, 2, 3... y luego especialidades
-            for index, stage in enumerate(svc.path_stages(section)):
-                items = resources.filtered(lambda r, s=stage: r.stage_id == s)
-                if items:
-                    groups.append(('%s. %s' % (index + 1, svc.stage_label(stage, section)), 'fa-star', items))
-            spec = resources.filtered(lambda r: r.stage_id.stage_type == 'specialty')
-            if spec:
-                groups.append((_('Especialidades'), 'fa-trophy', spec.sorted(lambda r: (r.stage_id.sequence, r.sequence))))
-            resources = resources.filtered(lambda r: not r.stage_id or (r.stage_id not in svc.path_stages(section)
-                                                                         and r.stage_id.stage_type != 'specialty'))
+            # la estructura de la sección en orden (1. Tercera clase ... 7. Manual Piloto Scout) y el Manual de
+            # Especialidades; se muestran todos los niveles aunque todavía no tengan material
+            ruta = svc.progression_path(None, section)
+            for level in ruta['levels']:
+                items = resources.filtered(lambda r, s=level['stage']: r.stage_id == s)
+                structure.append({'key': level['stage'].id, 'title': '%s. %s' % (level['num'], level['label']),
+                                  'summary': level['summary'], 'items': items, 'icon': 'fa-book',
+                                  'manual': level['has_manual'] and '/dirigentes/%s/ruta/%s/manual.pdf' % (
+                                      section.id, level['stage'].id)})
+            spec = resources.filtered(lambda r: r.stage_id.stage_type == 'specialty' or r.for_specialties)
+            if ruta['specialties'] is not None:
+                sp = ruta['specialties']
+                structure.append({'key': 'especialidades', 'title': _('Manual de Especialidades'),
+                                  'summary': _('Simultáneo: pueden entrar desde el nivel %(a)s (%(b)s) hasta el %(c)s (%(d)s).',
+                                               a=sp['from_num'], b=sp['from'], c=sp['to_num'], d=sp['to']),
+                                  'items': spec.sorted(lambda r: (r.stage_id.sequence, r.sequence, r.id)),
+                                  'icon': 'fa-trophy', 'special': True,
+                                  'manual': sp['has_manual'] and '/dirigentes/%s/ruta/especialidades/manual.pdf' % section.id})
+            path = svc.path_stages(section)
+            resources = resources.filtered(lambda r: not r.stage_id and not r.for_specialties
+                                           or (r.stage_id and r.stage_id not in path
+                                               and r.stage_id.stage_type != 'specialty'))
         for cat in categories:
             items = resources.filtered(lambda r: r.category_id == cat)
             if items:
@@ -950,7 +963,7 @@ class ScoutLeaderPortal(http.Controller):
         counts = {cat.id: len(everything.filtered(lambda r: r.category_id == cat)) for cat in categories}
         return self._render('scout_management.leader_resources', section, 'resources', groups=groups,
                             categories=categories, counts=counts, category=category, tipo=tipo or '', q=q or '',
-                            activity=activity, vista=vista, activity_types=everything.activity_type_ids.sorted(
+                            activity=activity, vista=vista, structure=structure, activity_types=everything.activity_type_ids.sorted(
                                 lambda t: (t.sequence, t.name or '')),
                             pinned=everything.filtered('pinned') if not (category or tipo or q or activity)
                             else everything.browse(),
@@ -975,8 +988,9 @@ class ScoutLeaderPortal(http.Controller):
                 return self._back(url, error=str(e.args[0]))
             return self._back(f'/dirigentes/{section.id}/recursos/{resource.id}',
                               ok=_('Material guardado. Ya lo ven las secciones que elegiste.'))
+        stages = svc.progression_path(None, section)['levels'] if not section.is_leadership else []
         return self._render('scout_management.leader_resource_form', section, 'resources', resource=resource,
-                            options=svc.resource_options(), stages=svc.path_stages(section))
+                            options=svc.resource_options(), levels=stages, preset=post.get('nivel') or '')
 
     @http.route(['/dirigentes/<int:section_id>/recursos/<int:resource_id>/borrar'], type='http', auth='user',
                 website=True, methods=['POST'])

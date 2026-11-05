@@ -2289,6 +2289,34 @@
                 <a t-attf-class="o_sl_res_type #{'active' if vista == 'ruta' else ''}" t-att-href="'/dirigentes/%s/recursos?vista=ruta&amp;categoria=%s&amp;tipo=%s&amp;actividad=%s&amp;q=%s' % (section.id, category.id or '', tipo, activity.id or '', url_quote(q))"><i class="fa fa-map-signs"/> Por ruta de la sección</a>
                 <a t-attf-class="o_sl_res_type #{'active' if vista != 'ruta' else ''}" t-att-href="'/dirigentes/%s/recursos?vista=categorias&amp;categoria=%s&amp;tipo=%s&amp;actividad=%s&amp;q=%s' % (section.id, category.id or '', tipo, activity.id or '', url_quote(q))"><i class="fa fa-folder-open"/> Por categoría</a>
             </div>
+            <div t-if="structure" class="o_sl_struct mb-3">
+                <details t-foreach="structure" t-as="lv" t-attf-class="o_sl_struct_lv #{'o_sl_struct_spec' if lv.get('special') else ''}" t-att-open="'open' if lv['items'] else None">
+                    <summary>
+                        <span class="o_sl_struct_num"><i t-if="lv.get('special')" class="fa fa-trophy"/><t t-else="" t-out="lv['title'].split('.')[0]"/></span>
+                        <span class="o_sl_struct_txt"><b t-out="lv['title'].split('. ', 1)[-1] if not lv.get('special') else lv['title']"/>
+                            <small t-out="lv['summary']"/></span>
+                        <span class="o_sl_struct_count" t-out="len(lv['items'])"/>
+                    </summary>
+                    <div class="o_sl_struct_body">
+                        <div class="d-flex gap-2 flex-wrap mb-2">
+                            <a t-if="lv['manual']" class="btn btn-sm o_sl_btn" t-att-href="lv['manual']"><i class="fa fa-book"/> Manual</a>
+                            <a class="btn btn-sm o_sl_btn_outline" t-att-href="'/dirigentes/%s/recursos/nuevo?nivel=%s' % (section.id, lv['key'])"><i class="fa fa-cloud-upload"/> Subir aquí</a>
+                        </div>
+                        <t t-set="_diagrams" t-value="lv['items'].filtered(lambda r: r.kind == 'image' and r.file)"/>
+                        <div t-if="_diagrams" class="o_path_material mb-2">
+                            <a t-foreach="_diagrams" t-as="r" class="o_path_diagram" t-att-href="'/dirigentes/%s/recursos/%s' % (section.id, r.id)">
+                                <img t-att-src="'/dirigentes/%s/recursos/%s/archivo' % (section.id, r.id)" t-att-alt="r.name" loading="lazy"/>
+                                <span><i class="fa fa-sitemap"/> <t t-out="r.name"/></span>
+                            </a>
+                        </div>
+                        <div t-if="lv['items'] - _diagrams" class="o_sl_res_grid">
+                            <t t-foreach="lv['items'] - _diagrams" t-as="r"><t t-call="scout_management.leader_resource_card"/></t>
+                        </div>
+                        <div t-if="not lv['items']" class="small text-muted">Sin material todavía.</div>
+                    </div>
+                </details>
+                <h6 t-if="groups" class="o_sl_h mt-3"><i class="fa fa-folder-open"/> Material general</h6>
+            </div>
             <t t-foreach="groups" t-as="g">
                 <h6 class="o_sl_h"><i t-attf-class="fa #{g[1]}"/> <t t-out="g[0]"/></h6>
                 <t t-set="_diagrams" t-value="g[2].filtered(lambda r: r.kind == 'image' and r.file)"/>
@@ -2302,7 +2330,7 @@
                     <t t-foreach="g[2] - _diagrams" t-as="r"><t t-call="scout_management.leader_resource_card"/></t>
                 </div>
             </t>
-            <div t-if="not groups" class="o_sl_card_box text-center text-muted">
+            <div t-if="not groups and not structure" class="o_sl_card_box text-center text-muted">
                 <i class="fa fa-folder-open-o fa-2x d-block mb-2"/>
                 <t t-if="total">No hay recursos con ese filtro.</t>
                 <t t-else="">Todavía no hay recursos. Súbelos con el botón "Subir material".</t>
@@ -2414,12 +2442,14 @@
                 </div>
                 <small class="text-muted">"Secciones que elija" usa las casillas de arriba.</small>
 
-                <label t-if="stages" class="form-label mt-3">¿En qué nivel de la ruta va?</label>
-                <select t-if="stages" name="stage_id" class="form-select">
-                    <option value="">General (no es de un nivel)</option>
-                    <option t-foreach="stages" t-as="st" t-att-value="st.id" t-att-selected="resource and resource.stage_id == st or None"><t t-out="st_index + 1"/>. <t t-out="svc.stage_label(st, section)"/></option>
+                <t t-set="cur_level" t-value="(str(resource.stage_id.id) if resource.stage_id else ('especialidades' if resource.for_specialties else '')) if resource else preset"/>
+                <label t-if="levels" class="form-label mt-3">¿En qué parte de la ruta va?</label>
+                <select t-if="levels" name="stage_id" class="form-select">
+                    <option value="">Material general (no es de un nivel)</option>
+                    <option t-foreach="levels" t-as="lv" t-att-value="lv['stage'].id" t-att-selected="cur_level == str(lv['stage'].id) or None"><t t-out="lv['num']"/>. <t t-out="lv['label']"/></option>
+                    <option value="especialidades" t-att-selected="cur_level == 'especialidades' or None">Manual de Especialidades (niveles 2 al <t t-out="len(levels)"/>)</option>
                 </select>
-                <small t-if="stages" class="text-muted d-block">Así aparece en la Ruta de progresión en ese nivel (los diagramas se ven abiertos).</small>
+                <small t-if="levels" class="text-muted d-block">Así aparece en esa parte de la estructura (los diagramas se ven abiertos).</small>
                 <label class="o_sl_res_check mt-3"><input type="checkbox" name="for_scouts" value="1" t-att-checked="resource and resource.for_scouts or None"/>
                     <b>Mostrarlo también a los scouts</b> en su aula virtual y su ruta (se les abre al llegar a ese nivel)</label>
                 <button class="btn o_sl_btn w-100 mt-3"><i class="fa fa-check"/> Guardar</button>

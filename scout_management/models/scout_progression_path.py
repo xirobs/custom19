@@ -34,6 +34,8 @@ class ScoutSectionProgressionPath(models.Model):
 class ScoutProgressionStageManual(models.Model):
     _inherit = 'scout.progression.stage'
 
+    path_label = fields.Char(string='Nombre en la ruta', translate=True,
+                             help='Cómo se llama el nivel en la ruta de progresión, ej. "Manual Cordón Scout".')
     summary = fields.Char(string='Descripción corta', translate=True,
                           help='Lo que se muestra en la ruta, por ejemplo "Manual de progresión Scout – Tercera Clase".')
     manual = fields.Binary(string='Manual (PDF)', attachment=True)
@@ -112,6 +114,19 @@ class ScoutLeaderPortalPath(models.AbstractModel):
     _inherit = 'scout.leader.portal'
 
     @api.model
+    def path_label(self, stage, section):
+        """Nombre del nivel en la ruta (como en la infografía): 'Tercera clase', 'Manual Cordón Scout'..."""
+        if not stage:
+            return ''
+        if stage.path_label:
+            return stage.path_label
+        label = self.stage_label(stage, section)
+        if stage.stage_type == 'promise' and '(' in label:  # "Promesa (Tercera clase)" -> "Tercera clase"
+            label = label.split('(')[-1].rstrip(')').strip()
+            label = label[:1].upper() + label[1:]
+        return label
+
+    @api.model
     def stage_summary(self, stage, section):
         if stage.summary:
             return stage.summary
@@ -143,21 +158,23 @@ class ScoutLeaderPortalPath(models.AbstractModel):
             else:
                 state = 'locked' if sequential else ('current' if stage in started else 'open')
             levels.append({
-                'num': index + 1, 'stage': stage, 'label': self.stage_label(stage, section),
+                'num': index + 1, 'stage': stage, 'label': self.path_label(stage, section),
                 'summary': self.stage_summary(stage, section), 'state': state, 'has_manual': bool(stage.manual),
                 'started': stage in started,
                 'date': records.filtered(lambda p, s=stage: p.stage_id == s)[:1].date_achieved,
-                'locked_by': self.stage_label(path[index - 1], section) if index else '',
+                'locked_by': self.path_label(path[index - 1], section) if index else '',
             })
         start = section.specialty_start_stage_id if section else False
         specialties = None
-        if section and (start or section.specialty_manual):
+        if section and (start or section.specialty_manual or section.sequential_path):
             open_ = True
             if member and sequential and start and start in path:
                 idx = list(path).index(start)
                 open_ = idx == 0 or path[idx - 1] in achieved
             last = levels[-1]['label'] if levels else ''
-            specialties = {'open': open_, 'from': self.stage_label(start, section) if start else '', 'to': last,
+            specialties = {'open': open_, 'from': self.path_label(start, section) if start else '', 'to': last,
+                           'from_num': (list(path).index(start) + 1) if start and start in path else 1,
+                           'to_num': len(levels),
                            'has_manual': bool(section.specialty_manual),
                            'count': len(records.filtered(lambda p: p.stage_id.stage_type == 'specialty'
                                                          and p.state == 'achieved'))}
@@ -170,7 +187,7 @@ class ScoutLeaderPortalPath(models.AbstractModel):
             level['diagrams'] = items.filtered(lambda r: r.kind == 'image' and r.file)
             level['materials'] = items - level['diagrams']
         if specialties is not None:
-            items = resources.filtered(lambda r: r.stage_id.stage_type == 'specialty').sorted(
+            items = resources.filtered(lambda r: r.stage_id.stage_type == 'specialty' or r.for_specialties).sorted(
                 lambda r: (r.stage_id.sequence, r.sequence, r.id))
             specialties['diagrams'] = items.filtered(lambda r: r.kind == 'image' and r.file)
             specialties['materials'] = items - specialties['diagrams']

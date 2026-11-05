@@ -31,6 +31,9 @@ class ScoutResourceActivity(models.Model):
     activity_type_ids = fields.Many2many('scout.activity.type', 'scout_resource_activity_type_rel', 'resource_id',
                                          'type_id', string='Tipo de actividad',
                                          help='Relevos, técnica, trabajo en equipo, nudos... para encontrarlo rápido.')
+    for_specialties = fields.Boolean(string='Manual de especialidades',
+                                     help='Material del Manual de Especialidades (se abre a los scouts desde el nivel '
+                                          'en que empiezan las especialidades).')
     uploaded_by_id = fields.Many2one('res.users', string='Subido por', default=lambda self: self.env.user,
                                      readonly=True, copy=False)
     uploaded_section_id = fields.Many2one('scout.section', string='Sección que lo subió', readonly=True, copy=False)
@@ -105,7 +108,9 @@ class ScoutLeaderPortalResources(models.AbstractModel):
             'for_scouts': bool(post.get('for_scouts')),
             'url': url or False,
         }
-        vals['stage_id'] = int(post['stage_id']) if str(post.get('stage_id') or '').isdigit() else False
+        level = post.get('stage_id') or ''
+        vals['stage_id'] = int(level) if str(level).isdigit() else False
+        vals['for_specialties'] = level == 'especialidades'
         upload = files.get('file') if files else None
         if upload and upload.filename:
             data = upload.read()
