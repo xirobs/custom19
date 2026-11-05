@@ -95,7 +95,8 @@ class RssDashboard(models.AbstractModel):
                 row['certificates'] += 1 if rec.has_certificate else 0
 
         # --- Distribuciones de los asegurados vigentes (si no hay vigentes, de todos)
-        base = active or insured
+        # Distribuciones y tablas dinámicas: todos los registrados (vigentes y preinscripción), sin bajas
+        base = insured.filtered(lambda i: i.state in ('active', 'draft'))
         dist_sex = OrderedDict([('Hombres', len(base.filtered(lambda i: i.sex == 'male'))),
                                 ('Mujeres', len(base.filtered(lambda i: i.sex == 'female')))])
         dist_section = OrderedDict((label, 0) for _k, label in SECTION_SELECTION)
@@ -200,8 +201,7 @@ class RssDashboard(models.AbstractModel):
             },
             'pivots': {
                 'group_section': {'rows': list(pivot_group_section.keys()),
-                                  'cols': [lab.split(' (')[0].replace('Dirigente / Adulto', 'Dirigentes')
-                                           for _k, lab in SECTION_SELECTION],
+                                  'cols': [lab.split(' (')[0] for _k, lab in SECTION_SELECTION],
                                   'values': [list(v.values()) for v in pivot_group_section.values()]},
                 'age_sex': {'rows': list(pivot_age_sex.keys()), 'cols': ['Hombres', 'Mujeres'],
                             'values': [[v['Hombres'], v['Mujeres']] for v in pivot_age_sex.values()]},

@@ -100,6 +100,7 @@
                     <widget name="web_ribbon" title="Baja" bg_color="text-bg-secondary" invisible="state != 'inactive'"/>
                     <field name="active" invisible="1"/>
                     <field name="is_minor" invisible="1"/>
+                    <field name="photo" widget="image" class="oe_avatar" options="{'preview_image': 'photo', 'size': [90, 110]}"/>
                     <div class="oe_title">
                         <h1><field name="name" readonly="1" placeholder="Nombre del scout"/></h1>
                         <div class="o_rss_subtitle">

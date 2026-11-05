@@ -21,3 +21,5 @@ from . import rss_policy_billing
 from . import rss_payment_tx
 from . import rss_dashboard
 from . import rss_import_office
+from . import rss_board
+from . import rss_credential

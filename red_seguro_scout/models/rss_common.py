@@ -22,11 +22,11 @@ SEX_SELECTION = [
 ]
 
 SECTION_SELECTION = [
-    ('manada', 'Manada (Lobatos)'),
-    ('tropa', 'Tropa (Scouts)'),
-    ('comunidad', 'Comunidad (Caminantes)'),
-    ('clan', 'Clan (Rovers)'),
-    ('dirigente', 'Dirigente / Adulto'),
+    ('castores', 'Castores'),
+    ('manada', 'Manada (Lobatos y Gacelas)'),
+    ('tropa', 'Tropa'),
+    ('clan', 'Clan'),
+    ('dirigente', 'Jefatura y Adultos'),
 ]
 
 INJURY_SELECTION = [
@@ -78,13 +78,13 @@ def age_on(birthdate, on_day=None):
 
 def section_for_age(age):
     """Rama sugerida según la edad (esquema típico en México)."""
+    if age < 6:
+        return 'castores'
     if age < 11:
         return 'manada'
-    if age < 15:
-        return 'tropa'
     if age < 18:
-        return 'comunidad'
-    if age < 22:
+        return 'tropa'
+    if age < 25:
         return 'clan'
     return 'dirigente'
 

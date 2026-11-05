@@ -1,5 +1,5 @@
 /** @odoo-module **/
-import { Component, onMounted, onPatched, onWillStart, onWillUnmount, useRef, useState } from "@odoo/owl";
+import { Component, markup, onMounted, onPatched, onWillStart, onWillUnmount, useRef, useState } from "@odoo/owl";
 import { loadBundle } from "@web/core/assets";
 import { registry } from "@web/core/registry";
 import { useService } from "@web/core/utils/hooks";
@@ -17,10 +17,15 @@ export class RssDashboard extends Component {
         this.root = useRef("root");
         this.charts = [];
         this.money = money;
-        this.state = useState({ data: null, groups: [], groupId: "", loading: true });
+        const startBoard = this.props.action?.params?.board_id || 0;
+        this.state = useState({ data: null, groups: [], groupId: "", loading: true, boards: [], board: startBoard, html: "" });
         onWillStart(async () => {
             await loadBundle("web.chartjs_lib");
             this.state.groups = await this.orm.searchRead("rss.scout.group", [], ["id", "name"], { order: "number, name" });
+            this.state.boards = await this.orm.call("rss.board", "platform_boards", []);
+            if (!startBoard && this.state.boards.length) {
+                this.state.board = this.state.boards[0].id;
+            }
             await this.load();
         });
         onMounted(() => this.draw());
@@ -31,12 +36,32 @@ export class RssDashboard extends Component {
     async load() {
         this.state.loading = true;
         const ids = this.state.groupId ? [parseInt(this.state.groupId)] : false;
-        this.state.data = await this.orm.call("rss.dashboard", "get_data", [ids]);
+        if (this.state.board) {
+            this.state.html = markup(await this.orm.call("rss.board", "render_html", [[this.state.board], ids]));
+        } else {
+            this.state.data = await this.orm.call("rss.dashboard", "get_data", [ids]);
+        }
         this.state.loading = false;
     }
 
+    async selectBoard(id) {
+        this.state.board = id;
+        await this.load();
+    }
+
+    async printBoard() {
+        const ids = this.state.groupId ? [parseInt(this.state.groupId)] : false;
+        const action = await this.orm.call("rss.board", "action_print", [[this.state.board], ids]);
+        await this.action.doAction(action);
+    }
+
+    configureBoard() {
+        this.action.doAction({ type: "ir.actions.act_window", res_model: "rss.board", res_id: this.state.board,
+            views: [[false, "form"]], name: "Tablero" });
+    }
+
     draw() {
-        if (this.root.el && this.state.data) {
+        if (this.root.el && this.state.data && !this.state.board) {
             this.charts = drawCharts(this.root.el, this.state.data, this.charts);
         }
     }

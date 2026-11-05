@@ -110,10 +110,34 @@
         <script type="text/javascript" src="/web/static/lib/Chart/Chart.js"/>
     </template>
 
+    <!-- Pestañas: tableros configurables + indicadores con gráficas -->
+    <template id="rss_board_portal" name="Tableros: pestañas">
+        <div class="o_rss_ptabs">
+            <a t-foreach="boards" t-as="b" t-attf-class="#{'active' if board and board.id == b.id else ''}"
+               t-attf-href="#{board_base}?tablero=#{b.id}#{board_query}" t-out="b.name"/>
+            <a t-attf-class="#{'' if board else 'active'}" t-attf-href="#{board_base}?tablero=kpi#{board_query}"><i class="fa fa-line-chart"/> Indicadores</a>
+        </div>
+        <t t-if="board">
+            <div class="o_rssp_row o_rss_ptools">
+                <form t-if="filter_groups" method="get" t-att-action="action_url" class="o_rss_dash_filter">
+                    <input type="hidden" name="tablero" t-att-value="board.id"/>
+                    <select name="grupo" class="form-select" onchange="this.form.submit()">
+                        <option value="">Todos mis grupos</option>
+                        <option t-foreach="filter_groups" t-as="g" t-att-value="g.id" t-att-selected="str(g.id) == str(grupo or '')" t-out="g.name"/>
+                    </select>
+                </form>
+                <span t-else=""/>
+                <a class="btn o_rssp_btn_ghost" t-attf-href="#{board_base}/#{board.id}.pdf#{('?grupo=%s' % grupo) if grupo else ''}" target="_blank"><i class="fa fa-file-pdf-o"/> Descargar PDF</a>
+            </div>
+            <div class="o_rss_pboard"><t t-out="board_html"/></div>
+        </t>
+        <t t-else=""><t t-call="red_seguro_scout.rss_dashboard_body"/></t>
+    </template>
+
     <template id="group_dashboard" name="Grupo: tablero">
-        <t t-call="red_seguro_scout.group_layout"><t t-call="red_seguro_scout.rss_dashboard_body"/></t>
+        <t t-call="red_seguro_scout.group_layout"><t t-call="red_seguro_scout.rss_board_portal"/></t>
     </template>
     <template id="advisor_dashboard" name="Asesor: tablero">
-        <t t-call="red_seguro_scout.advisor_layout"><t t-call="red_seguro_scout.rss_dashboard_body"/></t>
+        <t t-call="red_seguro_scout.advisor_layout"><t t-call="red_seguro_scout.rss_board_portal"/></t>
     </template>
 </odoo>

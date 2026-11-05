@@ -136,6 +136,7 @@
                             <field name="cluster_id"/>
                             <field name="policy_id"/>
                             <field name="city"/>
+                            <field name="state_id" options="{'no_create': True}"/>
                             <field name="meeting_place"/>
                             <field name="company_id" groups="base.group_multi_company"/>
                         </group>

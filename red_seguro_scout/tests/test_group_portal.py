@@ -827,7 +827,7 @@ class TestDashboard(_RssPortalCommon, HttpCase):
 
     def test_group_portal_dashboard(self):
         self.authenticate('dash7@example.com', 'clave-dash7')
-        res = self.url_open('/mi-grupo/tablero')
+        res = self.url_open('/mi-grupo/tablero?tablero=kpi')
         self.assertEqual(res.status_code, 200)
         self.assertIn('data-rss-chart="sex"', res.text)
         self.assertIn('Tablas dinámicas', res.text)
@@ -928,3 +928,90 @@ class TestOfficeListLoad(_RssPortalCommon, HttpCase):
         saved = self.env['rss.insured'].search([('import_batch_id', '=', b3.id)])
         self.assertEqual(len(saved), 2)
         self.assertEqual(set(saved.mapped('capture_source')), {'excel'})
+
+
+@tagged('post_install', '-at_install', 'red_seguro_scout')
+class TestBoardsAndCredential(_RssPortalCommon, HttpCase):
+
+    @classmethod
+    def setUpClass(cls):
+        super().setUpClass()
+        cls._setup_data()
+        cls._member(cls.g7, 'leader', 'cred7@example.com')
+        mx = cls.env.ref('base.mx')
+        puebla = cls.env['res.country.state'].search([('country_id', '=', mx.id), ('name', 'ilike', 'Puebla')], limit=1)
+        cls.g7.write({'city': 'Puebla', 'state_id': puebla.id})
+        partner = cls.env['res.partner'].create({'name': 'Asesor Cred', 'email': 'asesor.cred@example.com'})
+        cls.advisor = cls.env['rss.advisor'].create({'partner_id': partner.id})
+        cls.advisor.action_grant_portal()
+        cls.advisor.user_id.password = 'asesor-cred-1'
+
+    def test_board_data_and_render(self):
+        board = self.env.ref('red_seguro_scout.board_padron')
+        groups = self.env['rss.scout.group'].search([])
+        data = board._board_data(groups, 'active_draft')
+        self.assertEqual(data['total'], sum(r['count'] for r in data['groups']))
+        self.assertEqual(sum(s['count'] for s in data['sections']), data['total'])
+        self.assertNotIn('comunidad', [s['key'] for s in data['sections']])
+        labels = [s['name'] for s in data['sections_sex']]
+        self.assertIn('Gacelas', labels)
+        self.assertIn('Tropa Femenil', labels)
+        self.assertTrue(data['findings'])
+        self.assertEqual(self.g7.seat_label, 'Puebla, Pue.')
+        html = board.render_html(self.g7.ids)
+        self.assertIn('Asegurados por Grupo', html)
+        self.assertIn('Padrón Oficial de la Red', html)
+        self.assertNotIn('Lan Nakuh', html, 'Filtrado a un grupo')
+        # bloque nuevo creado por la administración
+        self.env['rss.board.block'].create({'board_id': board.id, 'block_type': 'text', 'title': 'Avisos',
+                                            'body': 'Renovación en agosto'})
+        self.assertIn('Renovación en agosto', board.render_html())
+
+    def test_section_by_age(self):
+        from odoo.addons.red_seguro_scout.models.rss_common import section_for_age
+        self.assertEqual([section_for_age(a) for a in (4, 8, 16, 20, 30)],
+                         ['castores', 'manada', 'tropa', 'clan', 'dirigente'])
+
+    def test_credential_values_and_pages(self):
+        vals = self.maria._credential_values()
+        self.assertIn('María', vals['first'])
+        self.assertTrue(vals['qr'].startswith('data:image/png;base64,'))
+        self.assertFalse(vals['photo'])
+        self.assertTrue(self.maria.credential_token)
+        # sin tutor: contacto de emergencia = jefe de grupo
+        self.maria.write({'tutor_name': False, 'tutor_phone': False})
+        self.g7.write({'leader_name': 'Jefe Siete', 'leader_phone': '2220001111'})
+        vals = self.maria._credential_values()
+        self.assertEqual((vals['em_name'], vals['em_role'], vals['em_phone']), ('Jefe Siete', 'Jefe de grupo', '2220001111'))
+        # página pública del QR
+        public = self.url_open('/credencial/%s' % self.maria.credential_token)
+        self.assertEqual(public.status_code, 200)
+        self.assertIn('Datos del Seguro', public.text)
+        self.assertIn('no existe', self.url_open('/credencial/xxxxxxxxxxxxxxxx').text)
+        # portal del grupo: ver y subir foto
+        self.authenticate('cred7@example.com', 'clave-cred7')
+        url = '/mi-grupo/asegurados/%s/credencial' % self.maria.id
+        page = self.url_open(url)
+        self.assertIn('Credencial del seguro', page.text)
+        self.assertIn('nophoto', page.text, 'Sin foto usa el acomodo centrado')
+        csrf = re.search(r'name="csrf_token" value="([^"]+)"', page.text).group(1)
+        import base64, io
+        from PIL import Image
+        buf = io.BytesIO()
+        Image.new('RGB', (60, 80), (200, 120, 90)).save(buf, 'PNG')
+        self.url_open(url, data={'csrf_token': csrf}, files={'photo': ('foto.png', buf.getvalue(), 'image/png')})
+        self.assertTrue(self.maria.photo)
+        self.assertNotIn('who nophoto', self.url_open(url).text)
+        # otro grupo: no
+        self.assertIn('/mi-grupo/asegurados', self.url_open('/mi-grupo/asegurados/%s/credencial' % self.ana_a.id).url)
+        # tablero del portal con pestañas
+        res = self.url_open('/mi-grupo/tablero')
+        self.assertIn('Informe de Asegurados', res.text)
+        self.assertIn('Indicadores', res.text)
+
+    def test_advisor_board_tabs(self):
+        self.authenticate('asesor.cred@example.com', 'asesor-cred-1')
+        res = self.url_open('/seguro/tablero')
+        self.assertIn('Asegurados por Grupo', res.text)
+        self.assertIn('Operación del Seguro', res.text)
+        self.assertIn('/credencial', self.url_open('/seguro/asegurados').text)

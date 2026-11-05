@@ -325,3 +325,8 @@ body:has(.o_rssp_modal) { overflow: hidden; }
         input { margin-top: .25rem; } }
     @media (max-width: 640px) { .o_rssp_form_grid { grid-template-columns: 1fr; } }
 }
+
+.o_rss_cred_preview { margin: 1rem 0; overflow-x: auto; padding: 4px; text-align: center;
+    .rssc-pair { transform-origin: top center; } }
+@media (max-width: 560px) { .o_rss_cred_preview .rssc-pair { white-space: normal; }
+    .o_rss_cred_preview .rssc { margin: 0 auto 3mm !important; display: block; } }

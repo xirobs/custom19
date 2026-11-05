@@ -133,6 +133,7 @@
 <div class="o_rssp_actions m-0" t-if="advisor.can_register_insured">
                         <a t-attf-href="/seguro/alta#{'?grupo=%s' % group.id if group else ''}" class="btn o_rssp_btn"><i class="fa fa-user-plus"/> Dar de alta un asegurado</a>
                         <a t-attf-href="/seguro/cargar#{'?grupo=%s' % group.id if group else ''}" class="btn o_rssp_btn_ghost"><i class="fa fa-upload"/> Cargar lista (Excel / PDF)</a>
+                        <a t-attf-href="/seguro/credenciales.pdf#{'?grupo=%s' % group.id if group else ''}" target="_blank" class="btn o_rssp_btn_ghost"><i class="fa fa-id-card-o"/> Credenciales</a>
                     </div>
                 </div>
             </section>
@@ -176,7 +177,7 @@
                             <td t-out="fmt_date(i.date_start)"/>
                             <td><span t-attf-class="o_rssp_pill o_rssp_pill_#{i.state}" t-out="labels('rss.insured', 'state').get(i.state)"/><div><span t-attf-class="o_rssp_origin o_rssp_origin_#{'platform' if i.capture_source in (False, 'backend') else 'portal'}"
       t-out="{'backend': 'Plataforma', 'portal': 'Portal · a mano', 'excel': 'Portal · Excel', 'pdf': 'Portal · PDF'}.get(i.capture_source, 'Plataforma')"/></div></td>
-                            <td><a t-if="i.certificate_attachment_id" class="btn btn-sm o_rssp_btn_ghost" t-attf-href="/seguro/asegurados/#{i.id}/certificado"><i class="fa fa-file-pdf-o"/> <t t-out="i.certificate_number or 'PDF'"/></a><t t-call="red_seguro_scout.rss_cert_info"/></td>
+                            <td><a class="btn btn-sm o_rssp_btn_ghost" t-attf-href="/seguro/asegurados/#{i.id}/credencial"><i class="fa fa-id-card-o"/> Credencial</a> <a t-if="i.certificate_attachment_id" class="btn btn-sm o_rssp_btn_ghost" t-attf-href="/seguro/asegurados/#{i.id}/certificado"><i class="fa fa-file-pdf-o"/> <t t-out="i.certificate_number or 'PDF'"/></a><t t-call="red_seguro_scout.rss_cert_info"/></td>
                         </tr>
                         <tr t-if="not insured"><td colspan="10" class="o_rssp_muted text-center">Sin resultados.</td></tr>
                     </tbody>

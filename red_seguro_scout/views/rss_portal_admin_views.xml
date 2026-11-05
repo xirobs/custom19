@@ -388,6 +388,7 @@
             <xpath expr="//header" position="inside">
                 <button name="action_download_certificate" type="object" string="Certificado" icon="fa-file-pdf-o"
                         invisible="not certificate_attachment_id"/>
+                <button name="action_print_credential" type="object" string="Credencial" icon="fa-id-card-o"/>
                 <button name="action_reread_certificate" type="object" string="Releer datos del certificado" icon="fa-refresh"
                         invisible="not certificate_attachment_id"/>
             </xpath>

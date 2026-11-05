@@ -45,6 +45,9 @@ class RssPayment(models.Model):
         ('other', 'Otro'),
     ], string='Forma de pago', default='transfer', required=True, tracking=True)
     reference = fields.Char('Referencia / folio bancario', tracking=True)
+    tracking_key = fields.Char('Clave de rastreo SPEI', tracking=True, copy=False,
+                               help='Viene en el comprobante de transferencia; sirve para verificarla en '
+                                    'https://www.banxico.org.mx/cep/')
 
     member_ids = fields.Many2many('rss.insured', 'rss_payment_insured_rel', 'payment_id',
                                   'insured_id', string='Miembros cubiertos',
@@ -77,7 +80,7 @@ class RssPayment(models.Model):
         'CHECK (amount >= 0)', 'El importe no puede ser negativo.',
     )
 
-    @api.depends('group_id')
+    @api.depends('group_id', 'date')
     def _compute_policy(self):
         for pay in self:
             if pay.group_id:
@@ -85,7 +88,12 @@ class RssPayment(models.Model):
                 pay.company_id = pay.group_id.company_id
             elif not pay.company_id:
                 pay.company_id = self.env.company
-            pay.amount_per_member = pay.policy_id.premium_per_member
+            # Cuota según la tarifa vigente en la fecha del pago (trimestral) o la cuota anual
+            policy = pay.policy_id
+            if policy and hasattr(policy, '_tariff_for'):
+                pay.amount_per_member = policy._tariff_for(pay.date or fields.Date.context_today(pay))[1]
+            else:
+                pay.amount_per_member = policy.premium_per_member
 
     @api.depends('member_ids', 'amount_per_member', 'amount')
     def _compute_amounts(self):
@@ -102,9 +110,9 @@ class RssPayment(models.Model):
 
     @api.onchange('group_id')
     def _onchange_group_load_members(self):
+        # Propone solo a los que faltan por pagar (preinscripción); se pueden quitar o agregar.
         if self.group_id and not self.member_ids:
-            self.member_ids = self.group_id.member_ids.filtered(
-                lambda m: m.state in ('active', 'draft'))
+            self.member_ids = self.group_id.member_ids.filtered(lambda m: m.state == 'draft')
 
     @api.onchange('amount_expected')
     def _onchange_amount_expected(self):

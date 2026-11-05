@@ -1,0 +1,101 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="rss_board_view_list" model="ir.ui.view">
+        <field name="name">rss.board.list</field>
+        <field name="model">rss.board</field>
+        <field name="arch" type="xml">
+            <list string="Tableros">
+                <field name="sequence" widget="handle"/>
+                <field name="name"/>
+                <field name="subtitle"/>
+                <field name="scope"/>
+                <field name="show_platform"/>
+                <field name="show_advisor"/>
+                <field name="show_group"/>
+            </list>
+        </field>
+    </record>
+    <record id="rss_board_view_form" model="ir.ui.view">
+        <field name="name">rss.board.form</field>
+        <field name="model">rss.board</field>
+        <field name="arch" type="xml">
+            <form string="Tablero" class="o_rss">
+                <header>
+                    <button name="action_preview" type="object" string="Ver tablero" class="btn-primary" icon="fa-eye"/>
+                    <button name="action_print" type="object" string="PDF" icon="fa-file-pdf-o"/>
+                </header>
+                <sheet>
+                    <div class="oe_title">
+                        <label for="name"/>
+                        <h1><field name="name" placeholder="p. ej. Informe de Asegurados"/></h1>
+                        <field name="subtitle" placeholder="p. ej. Padrón Oficial de la Red"/>
+                    </div>
+                    <group>
+                        <group>
+                            <field name="scope"/>
+                            <field name="active" invisible="1"/>
+                        </group>
+                        <group string="Dónde se ve">
+                            <field name="show_platform"/>
+                            <field name="show_advisor"/>
+                            <field name="show_group"/>
+                        </group>
+                    </group>
+                    <div class="alert alert-info" role="status">
+                        Agrega, quita y ordena los bloques arrastrando. «Media página» acomoda dos bloques lado a lado;
+                        el encabezado y los totales siempre van a lo ancho. En el portal del grupo solo se ven sus datos;
+                        en el del asesor, los de sus grupos.
+                    </div>
+                    <field name="block_ids">
+                        <list editable="bottom">
+                            <field name="sequence" widget="handle"/>
+                            <field name="block_type"/>
+                            <field name="title" placeholder="Título sugerido"/>
+                            <field name="width"/>
+                            <field name="split_sex" invisible="block_type not in ('table_section', 'bar_section')"/>
+                            <field name="body" invisible="block_type != 'text'"/>
+                        </list>
+                    </field>
+                </sheet>
+            </form>
+        </field>
+    </record>
+    <record id="action_rss_board" model="ir.actions.act_window">
+        <field name="name">Tableros</field>
+        <field name="res_model">rss.board</field>
+        <field name="view_mode">list,form</field>
+        <field name="help" type="html"><p class="o_view_nocontent_smiling_face">Crea un tablero y arma sus bloques</p></field>
+    </record>
+
+    <!-- Tableros de inicio (se pueden editar o copiar) -->
+    <record id="board_padron" model="rss.board" forcecreate="1">
+        <field name="name">Informe de Asegurados</field>
+        <field name="subtitle">Padrón Oficial de la Red</field>
+        <field name="sequence">1</field>
+        <field name="scope">active_draft</field>
+    </record>
+    <record id="board_padron_b1" model="rss.board.block"><field name="board_id" ref="board_padron"/><field name="sequence">1</field><field name="block_type">header</field><field name="width">full</field></record>
+    <record id="board_padron_b2" model="rss.board.block"><field name="board_id" ref="board_padron"/><field name="sequence">2</field><field name="block_type">kpi_padron</field><field name="width">full</field></record>
+    <record id="board_padron_b3" model="rss.board.block"><field name="board_id" ref="board_padron"/><field name="sequence">3</field><field name="block_type">table_group</field></record>
+    <record id="board_padron_b4" model="rss.board.block"><field name="board_id" ref="board_padron"/><field name="sequence">4</field><field name="block_type">table_section</field></record>
+    <record id="board_padron_b5" model="rss.board.block"><field name="board_id" ref="board_padron"/><field name="sequence">5</field><field name="block_type">bar_section</field></record>
+    <record id="board_padron_b6" model="rss.board.block"><field name="board_id" ref="board_padron"/><field name="sequence">6</field><field name="block_type">bar_group</field></record>
+    <record id="board_padron_b7" model="rss.board.block"><field name="board_id" ref="board_padron"/><field name="sequence">7</field><field name="block_type">findings</field></record>
+    <record id="board_padron_b8" model="rss.board.block"><field name="board_id" ref="board_padron"/><field name="sequence">8</field><field name="block_type">locations</field></record>
+
+    <record id="board_operacion" model="rss.board" forcecreate="1">
+        <field name="name">Operación del Seguro</field>
+        <field name="subtitle">Pagos, certificados y siniestros</field>
+        <field name="sequence">2</field>
+        <field name="scope">active_draft</field>
+        <field name="show_group" eval="False"/>
+    </record>
+    <record id="board_oper_b1" model="rss.board.block"><field name="board_id" ref="board_operacion"/><field name="sequence">1</field><field name="block_type">header</field><field name="width">full</field></record>
+    <record id="board_oper_b2" model="rss.board.block"><field name="board_id" ref="board_operacion"/><field name="sequence">2</field><field name="block_type">kpi_operacion</field><field name="width">full</field></record>
+    <record id="board_oper_b3" model="rss.board.block"><field name="board_id" ref="board_operacion"/><field name="sequence">3</field><field name="block_type">kpi_certificados</field><field name="width">full</field></record>
+    <record id="board_oper_b4" model="rss.board.block"><field name="board_id" ref="board_operacion"/><field name="sequence">4</field><field name="block_type">payments_group</field></record>
+    <record id="board_oper_b5" model="rss.board.block"><field name="board_id" ref="board_operacion"/><field name="sequence">5</field><field name="block_type">claims_summary</field></record>
+    <record id="board_oper_b6" model="rss.board.block"><field name="board_id" ref="board_operacion"/><field name="sequence">6</field><field name="block_type">bar_age</field></record>
+    <record id="board_oper_b7" model="rss.board.block"><field name="board_id" ref="board_operacion"/><field name="sequence">7</field><field name="block_type">table_age_sex</field></record>
+    <record id="board_oper_b8" model="rss.board.block"><field name="board_id" ref="board_operacion"/><field name="sequence">8</field><field name="block_type">table_group_section</field><field name="width">full</field></record>
+</odoo>

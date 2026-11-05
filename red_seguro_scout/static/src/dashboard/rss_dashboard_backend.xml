@@ -2,7 +2,24 @@
 <templates xml:space="preserve">
     <t t-name="red_seguro_scout.RssDashboard">
         <div class="o_action o_rss_backend_dash" t-ref="root">
-            <div class="o_rss_dash" t-if="state.data">
+            <div class="o_rss_board_tabs">
+                <t t-foreach="state.boards" t-as="b" t-key="b.id">
+                    <button t-attf-class="btn {{ state.board === b.id ? 'btn-primary' : 'btn-light' }}" t-on-click="() => this.selectBoard(b.id)" t-esc="b.name"/>
+                </t>
+                <button t-attf-class="btn {{ !state.board ? 'btn-primary' : 'btn-light' }}" t-on-click="() => this.selectBoard(0)"><i class="fa fa-line-chart"/> Indicadores y gráficas</button>
+                <span class="o_rss_board_tools" t-if="state.board">
+                    <select class="form-select d-inline-block w-auto" t-on-change="onGroup">
+                        <option value="">Todos los grupos</option>
+                        <t t-foreach="state.groups" t-as="g" t-key="g.id">
+                            <option t-att-value="g.id" t-att-selected="g.id == state.groupId" t-esc="g.name"/>
+                        </t>
+                    </select>
+                    <button class="btn btn-secondary" t-on-click="printBoard"><i class="fa fa-file-pdf-o"/> PDF</button>
+                    <button class="btn btn-link" t-on-click="configureBoard"><i class="fa fa-cog"/> Configurar</button>
+                </span>
+            </div>
+            <div t-if="state.board" class="o_rss_board_html"><t t-out="state.html"/></div>
+            <div class="o_rss_dash" t-elif="state.data">
                 <t t-set="d" t-value="state.data"/>
                 <t t-set="k" t-value="d.kpis"/>
                 <t t-set="multi" t-value="d.groups.length > 1"/>
@@ -99,7 +116,7 @@
                     </table>
                 </div>
             </div>
-            <div t-else="" class="o_rssp_muted p-4">Cargando tablero…</div>
+            <div t-elif="!state.board" class="o_rssp_muted p-4">Cargando tablero…</div>
         </div>
     </t>
 </templates>

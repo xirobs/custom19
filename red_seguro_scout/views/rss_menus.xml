@@ -46,6 +46,8 @@
 
     <menuitem id="menu_rss_config" name="Configuración" parent="menu_rss_root" sequence="90"
               groups="group_rss_manager"/>
+    <menuitem id="menu_rss_boards" name="Tableros" parent="menu_rss_config"
+              action="action_rss_board" sequence="5" groups="red_seguro_scout.group_rss_manager"/>
     <menuitem id="menu_rss_policies" name="Pólizas" parent="menu_rss_config"
               action="rss_policy_action" sequence="10"/>
     <menuitem id="menu_rss_advisors" name="Asesores de seguros" parent="menu_rss_config"

@@ -91,15 +91,32 @@
                             <field name="payer_name" readonly="state != 'draft'"/>
                             <field name="received_by" readonly="state != 'draft'"/>
                             <field name="payment_method" readonly="state != 'draft'"/>
-                            <field name="reference" readonly="state != 'draft'"/>
+                            <field name="reference" string="Folio de la operación" readonly="state != 'draft'"/>
+                            <field name="tracking_key" readonly="state not in ('draft', 'confirmed')"
+                                   invisible="payment_method not in ('transfer', 'deposit')"/>
                             <field name="currency_id" invisible="1"/>
+                        </group>
+                    </group>
+                    <group string="Importe y comprobante">
+                        <group>
+                            <field name="amount" string="Importe recibido" readonly="state != 'draft'"
+                                   class="fs-4 fw-bold" placeholder="Escribe el importe del comprobante"/>
+                            <field name="amount_per_member" readonly="state != 'draft'"/>
+                        </group>
+                        <group>
+                            <field name="attachment_ids" widget="many2many_binary" string="Comprobante(s)"
+                                   readonly="state not in ('draft', 'confirmed')"/>
+                            <div colspan="2" class="text-muted small" invisible="state != 'draft'">
+                                Captura el importe que dice el comprobante (el que te mandan por WhatsApp) y súbelo aquí
+                                como prueba. No es obligatorio que coincida con el esperado: la diferencia queda registrada.
+                            </div>
                         </group>
                     </group>
                     <div class="o_rss_stats">
                         <div><span class="o_rss_stat_v"><field name="member_count" nolabel="1"/></span><span>Miembros</span></div>
-                        <div><span class="o_rss_stat_v"><field name="amount_per_member" nolabel="1" readonly="state != 'draft'"/></span><span>Cuota por miembro</span></div>
+                        <div><span class="o_rss_stat_v"><field name="amount_per_member" nolabel="1" readonly="1"/></span><span>Cuota por miembro</span></div>
                         <div><span class="o_rss_stat_v"><field name="amount_expected" nolabel="1"/></span><span>Esperado</span></div>
-                        <div class="o_rss_stat_main"><span class="o_rss_stat_v"><field name="amount" nolabel="1" readonly="state != 'draft'"/></span><span>Recibido</span></div>
+                        <div class="o_rss_stat_main"><span class="o_rss_stat_v"><field name="amount" nolabel="1" readonly="1"/></span><span>Recibido</span></div>
                         <div invisible="not amount_difference"><span class="o_rss_stat_v"><field name="amount_difference" nolabel="1"/></span><span>Diferencia</span></div>
                     </div>
                     <group string="Remisión a la aseguradora" invisible="state == 'draft'">
@@ -126,9 +143,6 @@
                                            decoration-info="state == 'draft'"/>
                                 </list>
                             </field>
-                        </page>
-                        <page string="Comprobantes" name="proofs">
-                            <field name="attachment_ids" widget="many2many_binary"/>
                         </page>
                         <page string="Notas" name="notes">
                             <field name="notes"/>

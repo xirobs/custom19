@@ -32,3 +32,7 @@ access_rss_policy_tariff_manager,rss.policy.tariff.manager,model_rss_policy_tari
 access_rss_portal_password_manager,rss.portal.password.manager,model_rss_portal_password,group_rss_manager,1,1,1,1
 access_rss_insured_coverage_user,rss.insured.coverage.user,model_rss_insured_coverage,group_rss_user,1,1,1,1
 access_rss_import_wizard_user,rss.import.wizard.user,model_rss_import_wizard,group_rss_user,1,1,1,1
+access_rss_board_user,rss.board.user,model_rss_board,group_rss_user,1,0,0,0
+access_rss_board_manager,rss.board.manager,model_rss_board,group_rss_manager,1,1,1,1
+access_rss_board_block_user,rss.board.block.user,model_rss_board_block,group_rss_user,1,0,0,0
+access_rss_board_block_manager,rss.board.block.manager,model_rss_board_block,group_rss_manager,1,1,1,1

@@ -1,0 +1,310 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Tablero configurable. HTML + CSS sin JavaScript (igual en pantalla y en PDF).
+         Variables: board, d (datos), rows (bloques acomodados), cut_label, money, max_of -->
+    <template id="rss_board_styles" name="Tablero: estilos">
+        <style>
+            .rssb { --w: #6E0B14; --w2: #8E1B26; --g: #E9A825; --n: #253447; --tx: #1f2a37; --mu: #6b7280; --ln: #e5e7eb;
+                font-family: "Montserrat", "Segoe UI", Helvetica, Arial, sans-serif; color: var(--tx); background: #f7f8fa;
+                padding: 18px; border-radius: 14px; }
+            .rssb * { box-sizing: border-box; }
+            .rssb table { border-collapse: collapse; }
+            .rssb .rssb-row { width: 100%; table-layout: fixed; margin: 0 0 14px 0; }
+            .rssb .rssb-row > tbody > tr > td { vertical-align: top; padding: 0; }
+            .rssb .rssb-row > tbody > tr > td.rssb-gap { width: 16px; }
+            .rssb .rssb-card { background: #fff; border: 1px solid #d9dde3; border-radius: 10px; overflow: hidden;
+                box-shadow: 0 2px 6px rgba(15, 23, 42, .06); page-break-inside: avoid; }
+            .rssb .rssb-card-h { background: #2b3a4d; background: linear-gradient(180deg, #33445a, #22303f); color: #fff;
+                font-weight: 800; font-size: 19px; padding: 9px 16px; letter-spacing: .01em; }
+            .rssb .rssb-card-b { padding: 10px 14px 14px; }
+            /* Encabezado */
+            .rssb .rssb-head { width: 100%; margin-bottom: 14px; }
+            .rssb .rssb-head td { vertical-align: middle; }
+            .rssb .rssb-logo { width: 150px; height: 150px; object-fit: contain; border-radius: 26px; }
+            .rssb .rssb-vline { width: 3px; background: #4b5563; height: 120px; margin: 0 22px; }
+            .rssb .rssb-title { font-size: 44px; font-weight: 900; color: var(--n); line-height: 1.02; margin: 0; }
+            .rssb .rssb-sub { font-size: 30px; font-weight: 600; color: var(--n); margin: 2px 0 8px; }
+            .rssb .rssb-cut { font-size: 22px; color: var(--mu); border-top: 2px solid #c9ced6; padding-top: 6px; position: relative; }
+            .rssb .rssb-cut b { display: inline-block; float: right; width: 45%; height: 9px; background: var(--w); margin-top: -12px; border-radius: 2px; }
+            /* KPIs */
+            .rssb .rssb-kpis { width: 100%; table-layout: fixed; }
+            .rssb .rssb-kpis > tbody > tr > td { padding: 0 6px; }
+            .rssb .rssb-kpi { background: #fff; border: 1px solid #d0d5dc; border-radius: 10px; padding: 12px 16px;
+                box-shadow: 0 2px 6px rgba(15, 23, 42, .07); width: 100%; }
+            .rssb .rssb-kpi td { vertical-align: middle; }
+            .rssb .rssb-kpi .ico { width: 54px; color: var(--n); }
+            .rssb .rssb-kpi .lbl { font-size: 19px; font-weight: 700; color: var(--n); line-height: 1.15; }
+            .rssb .rssb-kpi .num { font-size: 52px; font-weight: 900; color: var(--w); text-align: right; line-height: 1; white-space: nowrap; }
+            .rssb .rssb-kpi .num.money { font-size: 34px; }
+            .rssb .rssb-kpi .aside { font-size: 15px; color: var(--n); padding-left: 10px; line-height: 1.2; }
+            /* Tablas */
+            .rssb .rssb-t { width: 100%; font-size: 15px; }
+            .rssb .rssb-t th { background: #2b3a4d; color: #fff; font-weight: 700; padding: 6px 8px; text-align: center; border: 1px solid #44546a; }
+            .rssb .rssb-t td { padding: 4px 8px; border-bottom: 1px solid var(--ln); border-right: 1px solid var(--ln); }
+            .rssb .rssb-t tbody tr:nth-child(even) td { background: #f6f7f9; }
+            .rssb .rssb-t .c { text-align: center; } .rssb .rssb-t .r { text-align: right; }
+            .rssb .rssb-t .big { font-size: 21px; font-weight: 900; text-align: center; color: #111827; }
+            .rssb .rssb-t tfoot td { background: var(--w); background: linear-gradient(180deg, var(--w2), var(--w)); color: #fff;
+                font-weight: 800; font-size: 20px; padding: 7px 10px; border: 0; }
+            .rssb .rssb-t tfoot td.big { font-size: 26px; color: #fff; }
+            .rssb .rssb-zero { color: #c0c4cc; }
+            /* Barras horizontales */
+            .rssb .rssb-hbar { width: 100%; font-size: 16px; }
+            .rssb .rssb-hbar td { padding: 3px 4px; vertical-align: middle; }
+            .rssb .rssb-hbar .lab { width: 34%; text-align: right; color: var(--w); font-weight: 600; white-space: nowrap; padding-right: 8px;
+                border-right: 2px solid #9ca3af; }
+            .rssb .rssb-hbar .bar { height: 20px; background: var(--w); background: linear-gradient(90deg, #7a1019, #a3202d);
+                display: inline-block; vertical-align: middle; border-radius: 0 2px 2px 0; }
+            .rssb .rssb-hbar .val { display: inline-block; vertical-align: middle; padding-left: 8px; white-space: nowrap; }
+            .rssb .rssb-hbar .val b { font-weight: 900; }
+            /* Columnas */
+            .rssb .rssb-vbar { width: 100%; table-layout: fixed; }
+            .rssb .rssb-vbar td { vertical-align: bottom; text-align: center; padding: 0 5px; }
+            .rssb .rssb-vbar .col { background: #253447; background: linear-gradient(180deg, #34475e, #1e2b3a); margin: 0 auto; width: 76%; }
+            .rssb .rssb-vbar .top { font-weight: 900; font-size: 17px; margin-bottom: 2px; }
+            .rssb .rssb-vbar .axis td { border-top: 2px solid #6b7280; padding-top: 4px; font-weight: 700; font-size: 14px; vertical-align: top; }
+            .rssb .rssb-grid { background: #fff; }
+            /* Hallazgos y ubicación */
+            .rssb .rssb-find td { vertical-align: top; }
+            .rssb .rssb-find .ico { width: 92px; text-align: center; padding-top: 18px; }
+            .rssb .rssb-circle { display: inline-block; width: 66px; height: 66px; border-radius: 50%; background: var(--w);
+                background: radial-gradient(circle at 35% 30%, #a3202d, #5c0911); }
+            .rssb .rssb-find ul { margin: 0; padding: 4px 0 4px 26px; border-left: 2px solid #9ca3af; font-size: 16px; line-height: 1.45; }
+            .rssb .rssb-loc { width: 100%; font-size: 17px; }
+            .rssb .rssb-loc td { padding: 9px 6px; border-bottom: 1px solid #d1d5db; }
+            .rssb .rssb-loc tr:last-child td { border-bottom: 0; }
+            .rssb .rssb-loc .st { font-weight: 800; width: 42%; border-right: 2px solid #6b7280; }
+            .rssb .rssb-pin { width: 70px; text-align: center; vertical-align: middle !important; border: 0 !important; }
+            .rssb .rssb-text { font-size: 16px; line-height: 1.5; white-space: pre-line; }
+            .rssb .rssb-foot { text-align: right; color: var(--mu); font-size: 12px; margin-top: 4px; }
+            @media (max-width: 760px) {
+                .rssb.rssb-screen { padding: 10px; }
+                .rssb.rssb-screen .rssb-row, .rssb.rssb-screen .rssb-row > tbody, .rssb.rssb-screen .rssb-row > tbody > tr, .rssb.rssb-screen .rssb-row > tbody > tr > td { display: block; width: 100% !important; }
+                .rssb.rssb-screen .rssb-row > tbody > tr > td.rssb-gap { height: 12px; }
+                .rssb.rssb-screen .rssb-kpis, .rssb.rssb-screen .rssb-kpis > tbody, .rssb.rssb-screen .rssb-kpis > tbody > tr, .rssb.rssb-screen .rssb-kpis > tbody > tr > td { display: block; width: 100%; padding: 0 0 8px; }
+                .rssb.rssb-screen .rssb-title { font-size: 28px; } .rssb.rssb-screen .rssb-sub { font-size: 20px; } .rssb.rssb-screen .rssb-cut { font-size: 16px; }
+                .rssb.rssb-screen .rssb-logo { width: 84px; height: 84px; } .rssb.rssb-screen .rssb-vline { height: 80px; margin: 0 12px; }
+                .rssb.rssb-screen .rssb-kpi .num { font-size: 40px; }
+                .rssb.rssb-screen .rssb-t { font-size: 13px; }
+            }
+        </style>
+    </template>
+
+    <!-- Iconos (SVG en línea; funcionan en pantalla y en PDF) -->
+    <template id="rss_board_icon" name="Tablero: icono">
+        <svg t-if="icon == 'people'" width="46" height="36" viewBox="0 0 46 36"><g fill="#253447"><circle cx="23" cy="9" r="7"/><circle cx="9" cy="12" r="5.5"/><circle cx="37" cy="12" r="5.5"/><path d="M11 34c0-8 5-13 12-13s12 5 12 13z"/><path d="M0 34c0-6 3.5-10 9-10 2 0 3.6.5 5 1.4C11.6 27.8 10 31 10 34z"/><path d="M46 34c0-6-3.5-10-9-10-2 0-3.6.5-5 1.4 2.4 2.4 4 5.6 4 8.6z"/></g></svg>
+        <svg t-elif="icon == 'tent'" width="46" height="38" viewBox="0 0 46 38"><path fill="#253447" d="M23 2l3 4-3 4 20 26H33L23 20 13 36H3L23 10l-3-4z"/></svg>
+        <svg t-elif="icon == 'pin'" width="34" height="44" viewBox="0 0 34 44"><path t-att-fill="color or '#253447'" d="M17 0C7.6 0 0 7.4 0 16.6 0 29 17 44 17 44s17-15 17-27.4C34 7.4 26.4 0 17 0zm0 23a7 7 0 110-14 7 7 0 010 14z"/></svg>
+        <svg t-elif="icon == 'money'" width="46" height="32" viewBox="0 0 46 32"><rect x="1" y="3" width="44" height="26" rx="4" fill="none" stroke="#253447" stroke-width="3"/><circle cx="23" cy="16" r="7" fill="#253447"/></svg>
+        <svg t-elif="icon == 'hourglass'" width="34" height="40" viewBox="0 0 34 40"><path fill="#253447" d="M3 0h28v4h-3v6c0 4-4 8-8 10 4 2 8 6 8 10v6h3v4H3v-4h3v-6c0-4 4-8 8-10-4-2-8-6-8-10V4H3z"/></svg>
+        <svg t-elif="icon == 'medkit'" width="42" height="38" viewBox="0 0 42 38"><rect x="1" y="8" width="40" height="29" rx="4" fill="#253447"/><rect x="14" y="2" width="14" height="8" rx="2" fill="none" stroke="#253447" stroke-width="3"/><path fill="#fff" d="M18 14h6v6h6v6h-6v6h-6v-6h-6v-6h6z"/></svg>
+        <svg t-elif="icon == 'cert'" width="38" height="42" viewBox="0 0 38 42"><path fill="#253447" d="M19 0l18 7v12c0 11-8 19-18 23C9 38 1 30 1 19V7z"/><path fill="#fff" d="M16 27l-7-7 3-3 4 4 10-10 3 3z"/></svg>
+        <svg t-elif="icon == 'chart'" width="36" height="32" viewBox="0 0 36 32"><g fill="#fff"><rect x="3" y="18" width="7" height="12" rx="1"/><rect x="14" y="10" width="7" height="20" rx="1"/><rect x="25" y="3" width="7" height="27" rx="1"/></g></svg>
+    </template>
+
+    <template id="rss_board_body" name="Tablero: cuerpo">
+        <t t-call="red_seguro_scout.rss_board_styles"/>
+        <t t-set="color" t-value="False"/><t t-set="icon" t-value="False"/>
+        <div t-attf-class="rssb #{'' if print_mode else 'rssb-screen'}">
+            <t t-foreach="rows" t-as="row">
+                <table class="rssb-row"><tbody><tr>
+                    <t t-foreach="row" t-as="block">
+                        <td t-if="not block_first" class="rssb-gap" style="width: 2%"/>
+                        <td t-attf-style="width: #{'49%' if len(row) == 2 else '100%'}"><t t-call="red_seguro_scout.rss_board_block"/></td>
+                    </t>
+                </tr></tbody></table>
+            </t>
+            <div class="rssb-foot">Red Seguro Scout · Rumbo Seguro · <t t-out="today.strftime('%d/%m/%Y')"/></div>
+        </div>
+    </template>
+
+    <template id="rss_board_block" name="Tablero: bloque">
+        <t t-set="bt" t-value="block.block_type"/>
+        <!-- Encabezado -->
+        <table t-if="bt == 'header'" class="rssb-head"><tr>
+            <td style="width: 160px"><img class="rssb-logo" t-att-src="logo" alt="Red Seguro Scout"/></td>
+            <td style="width: 50px"><div class="rssb-vline"/></td>
+            <td>
+                <div class="rssb-title" t-out="board.name"/>
+                <div class="rssb-sub" t-if="board.subtitle" t-out="board.subtitle"/>
+                <div class="rssb-cut">Corte: <t t-out="cut_label"/> <b/></div>
+            </td>
+        </tr></table>
+        <!-- Totales -->
+        <table t-elif="bt in ('kpi_padron', 'kpi_operacion', 'kpi_certificados')" class="rssb-kpis"><tbody><tr>
+            <t t-if="bt == 'kpi_padron'">
+                <t t-set="kpis" t-value="[('people', 'Total de asegurados', d['total'], False, ''), ('tent', 'Grupos participantes', d['group_count'], False, ''), ('pin', 'Estados', d['state_count'], False, ' y '.join(d['states'][:3]))]"/>
+            </t>
+            <t t-elif="bt == 'kpi_operacion'">
+                <t t-set="kpis" t-value="[('money', 'Cobrado', money(d['paid_total']), True, ''), ('hourglass', 'Pagos en trámite', d['pending_count'], False, money(d['pending_amount'])), ('medkit', 'Siniestros abiertos', d['claims_open'], False, 'de %s' % d['claims'])]"/>
+            </t>
+            <t t-else="">
+                <t t-set="kpis" t-value="[('cert', 'Con certificado', str(d['cert_pct']) + ' %', True, '%s de %s' % (d['certificates'], d['total'])), ('people', 'Edad promedio', d['avg_age'], False, 'años'), ('people', 'Hombres / Mujeres', '%s / %s' % (d['male'], d['female']), True, '')]"/>
+            </t>
+            <td t-foreach="kpis" t-as="k">
+                <table class="rssb-kpi"><tr>
+                    <td class="ico"><t t-call="red_seguro_scout.rss_board_icon"><t t-set="icon" t-value="k[0]"/><t t-set="color" t-value="False"/></t></td>
+                    <td class="lbl" t-out="k[1]"/>
+                    <td t-attf-class="num #{'money' if k[3] else ''}" t-out="k[2]"/>
+                    <td t-if="k[4]" class="aside" t-out="k[4]"/>
+                </tr></table>
+            </td>
+        </tr></tbody></table>
+        <!-- Tarjetas con encabezado -->
+        <div t-else="" class="rssb-card">
+            <div class="rssb-card-h" t-out="block.display_title()"/>
+            <div class="rssb-card-b">
+                <!-- Asegurados por grupo -->
+                <table t-if="bt == 'table_group'" class="rssb-t">
+                    <thead><tr><th style="width: 9%">No.</th><th>Grupo Scout</th><th style="width: 24%">Sede</th><th style="width: 18%">Asegurados</th></tr></thead>
+                    <tbody><tr t-foreach="d['groups']" t-as="g">
+                        <td class="c"><b t-out="g['n']"/></td><td><b t-out="g['name']"/></td><td class="c" t-out="g['seat']"/><td class="big" t-out="g['count']"/>
+                    </tr></tbody>
+                    <tfoot><tr><td colspan="3">Total general</td><td class="big" t-out="d['total']"/></tr></tfoot>
+                </table>
+                <!-- Asegurados por sección -->
+                <t t-elif="bt == 'table_section'">
+                    <t t-set="secs" t-value="[s for s in (d['sections_sex'] if block.split_sex else d['sections']) if s['count'] or not block.split_sex]"/>
+                    <table class="rssb-t">
+                        <thead><tr><th>Sección</th><th style="width: 22%">Integrantes</th><th style="width: 22%">% del total</th></tr></thead>
+                        <tbody><tr t-foreach="secs" t-as="s">
+                            <td t-out="s['label']"/><td class="big" t-out="s['count']"/><td class="r" t-out="str(s['pct']) + ' %'"/>
+                        </tr></tbody>
+                        <tfoot><tr><td>Total</td><td class="big" t-out="d['total']"/><td class="big">100 %</td></tr></tfoot>
+                    </table>
+                </t>
+                <!-- Barras por sección / edad -->
+                <t t-elif="bt in ('bar_section', 'bar_age')">
+                    <t t-if="bt == 'bar_section'">
+                        <t t-set="items" t-value="sorted([(s['label'].split(' (')[0], s['count'], s['pct']) for s in (d['sections_sex'] if block.split_sex else d['sections']) if s['count']], key=lambda x: -x[1])"/>
+                    </t>
+                    <t t-else="">
+                        <t t-set="items" t-value="[(k, v['total'], round(100.0 * v['total'] / d['total'], 1) if d['total'] else 0) for k, v in d['ages'].items()]"/>
+                    </t>
+                    <t t-set="top" t-value="max_of([i[1] for i in items])"/>
+                    <table class="rssb-hbar">
+                        <tr t-foreach="items" t-as="i">
+                            <td class="lab" t-out="i[0]"/>
+                            <td><span class="bar" t-attf-style="width: #{int(70.0 * i[1] / top)}%"/><span class="val"><b t-out="i[1]"/> (<t t-out="i[2]"/> %)</span></td>
+                        </tr>
+                        <tr t-if="not items"><td colspan="2" class="text-center" style="color: #9ca3af">Sin datos</td></tr>
+                    </table>
+                </t>
+                <!-- Columnas por grupo -->
+                <t t-elif="bt == 'bar_group'">
+                    <t t-set="top" t-value="max_of([g['count'] for g in d['groups']])"/>
+                    <table class="rssb-vbar rssb-grid">
+                        <tr style="height: 210px">
+                            <td t-foreach="d['groups']" t-as="g">
+                                <div class="top" t-out="g['count']"/>
+                                <div class="col" t-attf-style="height: #{max(int(180.0 * g['count'] / top), 2 if g['count'] else 0)}px"/>
+                            </td>
+                        </tr>
+                        <tr class="axis"><td t-foreach="d['groups']" t-as="g" t-out="g['short']"/></tr>
+                    </table>
+                </t>
+                <!-- Edad × sexo -->
+                <table t-elif="bt == 'table_age_sex'" class="rssb-t">
+                    <thead><tr><th>Edad</th><th>Hombres</th><th>Mujeres</th><th>Total</th></tr></thead>
+                    <tbody><tr t-foreach="d['ages'].items()" t-as="a">
+                        <td t-out="a[0]"/><td class="c" t-out="a[1]['male']"/><td class="c" t-out="a[1]['female']"/><td class="big" t-out="a[1]['total']"/>
+                    </tr></tbody>
+                    <tfoot><tr><td>Total</td><td class="big" t-out="d['male']"/><td class="big" t-out="d['female']"/><td class="big" t-out="d['total']"/></tr></tfoot>
+                </table>
+                <!-- Grupo × sección -->
+                <table t-elif="bt == 'table_group_section'" class="rssb-t">
+                    <thead><tr><th>Grupo</th><th t-foreach="d['section_cols']" t-as="c" t-out="c"/><th>Total</th></tr></thead>
+                    <tbody><tr t-foreach="d['group_section']" t-as="r">
+                        <td><b t-out="r['name']"/></td>
+                        <td t-foreach="r['values']" t-as="v" t-attf-class="c #{'rssb-zero' if not v else ''}" t-out="v"/>
+                        <td class="big" t-out="sum(r['values'])"/>
+                    </tr></tbody>
+                    <tfoot><tr><td>Total</td>
+                        <td t-foreach="range(len(d['section_cols']))" t-as="ci" class="big" t-out="sum(r['values'][ci] for r in d['group_section'])"/>
+                        <td class="big" t-out="sum(sum(r['values']) for r in d['group_section'])"/></tr></tfoot>
+                </table>
+                <!-- Pagos por grupo -->
+                <table t-elif="bt == 'payments_group'" class="rssb-t">
+                    <thead><tr><th>Grupo</th><th>Pagos</th><th>Último</th><th>Cobrado</th></tr></thead>
+                    <tbody><tr t-foreach="d['payments']" t-as="p">
+                        <td><b t-out="p['short']"/> <t t-out="p['name']"/></td><td class="c" t-out="p['count']"/>
+                        <td class="c" t-out="p['last'] and p['last'].strftime('%d/%m/%Y') or '—'"/><td class="r"><b t-out="money(p['amount'])"/></td>
+                    </tr></tbody>
+                    <tfoot><tr><td colspan="3">Total cobrado</td><td class="r" t-out="money(d['paid_total'])"/></tr></tfoot>
+                </table>
+                <!-- Siniestros -->
+                <t t-elif="bt == 'claims_summary'">
+                    <table class="rssb-t" style="margin-bottom: 10px">
+                        <thead><tr><th>Estatus</th><th>Siniestros</th></tr></thead>
+                        <tbody><tr t-foreach="d['claims_by_state'].items()" t-as="c"><td t-out="c[0]"/><td class="big" t-out="c[1]"/></tr></tbody>
+                        <tfoot><tr><td>Total</td><td class="big" t-out="d['claims']"/></tr></tfoot>
+                    </table>
+                    <t t-set="items" t-value="list(d['claims_by_injury'].items())"/>
+                    <t t-set="top" t-value="max_of([i[1] for i in items])"/>
+                    <table class="rssb-hbar" t-if="items">
+                        <tr t-foreach="items" t-as="i"><td class="lab" t-out="i[0]"/>
+                            <td><span class="bar" t-attf-style="width: #{int(70.0 * i[1] / top)}%"/><span class="val"><b t-out="i[1]"/></span></td></tr>
+                    </table>
+                    <p style="margin: 8px 0 0; color: #6b7280">Reclamado <b t-out="money(d['claims_claimed'])"/> · pagado <b t-out="money(d['claims_paid'])"/></p>
+                </t>
+                <!-- Hallazgos -->
+                <table t-elif="bt == 'findings'" class="rssb-find" style="width: 100%"><tr>
+                    <td class="ico"><span class="rssb-circle"><span style="display: block; padding: 17px 0 0 15px"><t t-call="red_seguro_scout.rss_board_icon"><t t-set="icon" t-value="'chart'"/></t></span></span></td>
+                    <td><ul><li t-foreach="d['findings']" t-as="f" t-out="f"/></ul></td>
+                </tr></table>
+                <!-- Ubicación -->
+                <table t-elif="bt == 'locations'" class="rssb-loc">
+                    <tr t-foreach="d['locations'].items()" t-as="loc">
+                        <td t-if="loc_first" class="rssb-pin" t-att-rowspan="len(d['locations'])">
+                            <t t-call="red_seguro_scout.rss_board_icon"><t t-set="icon" t-value="'pin'"/><t t-set="color" t-value="'#8E1B26'"/></t>
+                        </td>
+                        <td class="st" t-out="loc[1]['seat'] or loc[0]"/>
+                        <td t-out="', '.join(loc[1]['groups'][:-1]) + (' y ' if len(loc[1]['groups']) &gt; 1 else '') + loc[1]['groups'][-1]"/>
+                    </tr>
+                </table>
+                <div t-elif="bt == 'text'" class="rssb-text" t-out="block.body or ''"/>
+            </div>
+        </div>
+    </template>
+
+    <!-- PDF -->
+    <record id="paperformat_rss_board" model="report.paperformat">
+        <field name="name">Tablero Red Seguro Scout (carta)</field>
+        <field name="format">Letter</field>
+        <field name="orientation">Portrait</field>
+        <field name="margin_top">8</field>
+        <field name="margin_bottom">8</field>
+        <field name="margin_left">7</field>
+        <field name="margin_right">7</field>
+        <field name="header_line" eval="False"/>
+        <field name="header_spacing">0</field>
+        <field name="dpi">110</field>
+    </record>
+    <record id="action_report_rss_board" model="ir.actions.report">
+        <field name="name">Tablero (PDF)</field>
+        <field name="model">rss.board</field>
+        <field name="report_type">qweb-pdf</field>
+        <field name="report_name">red_seguro_scout.report_rss_board</field>
+        <field name="report_file">red_seguro_scout.report_rss_board</field>
+        <field name="print_report_name">'Tablero - %s' % object.name</field>
+        <field name="paperformat_id" ref="paperformat_rss_board"/>
+        <field name="binding_model_id" ref="model_rss_board"/>
+        <field name="binding_type">report</field>
+    </record>
+    <template id="report_rss_board" name="Tablero (PDF)">
+        <t t-call="web.html_container"><t t-call="web.basic_layout">
+            <t t-foreach="docs" t-as="board">
+                <t t-set="group_ids" t-value="(data or {}).get('group_ids')"/>
+                <t t-set="vals" t-value="board._render_values(board.env['rss.dashboard']._scope_groups(group_ids))"/>
+                <div class="page" style="zoom: 0.7">
+                    <t t-call="red_seguro_scout.rss_board_body">
+                        <t t-set="logo" t-value="vals['logo']"/><t t-set="print_mode" t-value="True"/>
+                        <t t-set="d" t-value="vals['d']"/><t t-set="rows" t-value="vals['rows']"/>
+                        <t t-set="cut_label" t-value="vals['cut_label']"/><t t-set="today" t-value="vals['today']"/>
+                        <t t-set="money" t-value="vals['money']"/><t t-set="max_of" t-value="vals['max_of']"/>
+                    </t>
+                </div>
+            </t>
+        </t></t>
+    </template>
+</odoo>

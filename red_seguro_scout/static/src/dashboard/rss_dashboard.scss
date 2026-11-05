@@ -51,3 +51,15 @@
     .o_rssp_h { font-weight: 800; color: var(--rssd-wine); }
     .o_rss_open { cursor: pointer; &:hover { box-shadow: 0 4px 14px rgba(110, 11, 20, .15); } }
 }
+
+.o_rss_backend_dash .o_rss_board_tabs { display: flex; flex-wrap: wrap; gap: .4rem; align-items: center; max-width: 1400px; margin: 0 auto 1rem; }
+.o_rss_backend_dash .o_rss_board_tools { margin-left: auto; display: flex; gap: .4rem; align-items: center; }
+.o_rss_backend_dash .o_rss_board_html { max-width: 1400px; margin: 0 auto; }
+
+// Pestañas de tableros en los portales
+.o_rss_ptabs { display: flex; gap: .4rem; flex-wrap: wrap; margin: .5rem 0 1rem;
+    a { padding: .45rem .9rem; border-radius: 99px; border: 1px solid rgba(110, 11, 20, .25); color: #6E0B14;
+        font-weight: 700; text-decoration: none; font-size: .9rem; background: #fff;
+        &.active { background: #6E0B14; color: #fff; border-color: #6E0B14; } } }
+.o_rss_ptools { margin-bottom: .8rem; gap: .5rem; flex-wrap: wrap; }
+.o_rss_pboard { overflow-x: auto; }
