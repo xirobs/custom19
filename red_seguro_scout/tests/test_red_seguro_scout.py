@@ -301,3 +301,22 @@ class TestRedSeguroScout(TransactionCase):
         html = self.env['ir.actions.report']._render_qweb_html(
             'red_seguro_scout.action_report_recibo_pago', pay.ids)[0]
         self.assertIn(b'450', html)
+
+    def test_98_payment_autoloads_insured(self):
+        """Al pagar sin lista, se cargan los asegurados del grupo; los ya pagados no se repiten."""
+        members = self._insured(self.group_a)
+        members.filtered(lambda m: m.state == 'draft').action_activate()
+        self.assertTrue(members)
+        pay = self.env['rss.payment'].create({'group_id': self.group_a.id, 'amount': 342.96, 'year': 2026})
+        self.assertEqual(pay.member_ids, self.group_a.member_ids.filtered(lambda m: m.state in ('active', 'draft')))
+        pay.member_ids = [(5,)]
+        pay.action_confirm()
+        self.assertEqual(pay.state, 'confirmed')
+        self.assertTrue(pay.member_ids)
+        # Segundo pago del mismo año: todos ya cubiertos -> propone el grupo completo
+        pay2 = self.env['rss.payment'].create({'group_id': self.group_a.id, 'amount': 100, 'year': 2026})
+        self.assertTrue(pay2.member_ids)
+        new = self._insured(self.group_a, first_name='Nuevo', last_name_father='Miembro')
+        pay2.member_ids = [(5,)]
+        pay2.action_load_members()
+        self.assertEqual(pay2.member_ids, new, 'Solo el que falta por pagar')

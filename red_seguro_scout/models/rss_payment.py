@@ -115,11 +115,31 @@ class RssPayment(models.Model):
             if pay.year < 2000 or pay.year > 2100:
                 raise ValidationError(_('El ejercicio %s no es válido.', pay.year))
 
-    @api.onchange('group_id')
+    def _members_to_pay(self):
+        """Asegurados del grupo que cubre el pago: preinscritos y asegurados que aún no
+        están en otro pago del mismo ejercicio. Si todos ya están pagados, todo el grupo vigente."""
+        self.ensure_one()
+        members = self.group_id.member_ids.filtered(lambda m: m.state in ('active', 'draft'))
+        if not members:
+            return members
+        others = self.search([
+            ('group_id', '=', self.group_id.id), ('year', '=', self.year),
+            ('state', 'in', ('confirmed', 'remitted')), ('id', 'not in', self._origin.ids)])
+        pending = members - others.member_ids
+        return pending or members
+
+    @api.onchange('group_id', 'year')
     def _onchange_group_load_members(self):
-        # Propone solo a los que faltan por pagar (preinscripción); se pueden quitar o agregar.
+        # Propone a todos los asegurados del grupo que faltan por pagar; se pueden quitar o agregar.
         if self.group_id and not self.member_ids:
-            self.member_ids = self.group_id.member_ids.filtered(lambda m: m.state == 'draft')
+            self.member_ids = self._members_to_pay()
+
+    @api.model_create_multi
+    def create(self, vals_list):
+        records = super().create(vals_list)
+        for pay in records.filtered(lambda p: p.group_id and not p.member_ids and p.state == 'draft'):
+            pay.member_ids = pay._members_to_pay()
+        return records
 
     @api.onchange('amount_expected')
     def _onchange_amount_expected(self):
@@ -138,8 +158,9 @@ class RssPayment(models.Model):
         for pay in self:
             if pay.state != 'draft':
                 raise UserError(_('Solo se pueden cargar miembros en borrador.'))
-            pay.member_ids = pay.group_id.member_ids.filtered(
-                lambda m: m.state in ('active', 'draft'))
+            pay.member_ids = pay._members_to_pay()
+            if not pay.member_ids:
+                raise UserError(_('El grupo %s no tiene asegurados ni preinscritos.', pay.group_id.name))
 
     def action_confirm(self):
         for pay in self:
@@ -148,7 +169,11 @@ class RssPayment(models.Model):
             if pay.amount <= 0:
                 raise UserError(_('Captura el importe recibido antes de emitir el recibo.'))
             if not pay.member_ids:
-                raise UserError(_('Agrega los miembros cubiertos por el pago.'))
+                # Sin lista capturada: se toman automáticamente los asegurados del grupo
+                pay.member_ids = pay._members_to_pay()
+            if not pay.member_ids:
+                raise UserError(_('El grupo %s no tiene asegurados ni preinscritos para cubrir con este pago.',
+                                  pay.group_id.name))
             vals = {'state': 'confirmed', 'date_confirmed': fields.Datetime.now()}
             if pay.name in (False, _('Nuevo'), 'Nuevo'):
                 vals['name'] = self.env['ir.sequence'].with_company(pay.company_id).next_by_code(
