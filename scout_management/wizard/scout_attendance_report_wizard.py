@@ -59,7 +59,12 @@ class ReportScoutAttendance(models.AbstractModel):
         if not include_inactive:
             member_domain.append(('scout_state', 'in', ('trial', 'active')))
         members = self.env['res.partner'].sudo().search(member_domain)
-        members |= all_lines.member_id.filtered(lambda m: include_inactive or m.scout_state != 'inactive')
+        # Quien ya no es de la sección (se cambió o quedó en la lista por error) solo aparece si de verdad asistió
+        # a alguna sesión de esta sección; si solo tiene faltas aquí, no se cuenta.
+        attended_here = all_lines.filtered(lambda l: l.status in ATTENDED_STATUSES).member_id
+        members |= all_lines.member_id.filtered(
+            lambda m: (include_inactive or m.scout_state != 'inactive')
+            and (m.scout_section_id == section or m in attended_here))
         members = members.sorted(lambda m: (m.scout_type != 'youth', m.scout_patrol_id.sequence or 0,
                                             m.scout_patrol_id.id or 0, m.scout_patrol_role != 'leader', m.name or ''))
 
