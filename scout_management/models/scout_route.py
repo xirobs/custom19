@@ -105,7 +105,8 @@ class ScoutSectionRouteConfig(models.Model):
             _route, pass_, stay = section._route_offsets()
             if pass_ or stay:
                 uppers.append(pass_ or stay)
-        return bool(uppers) and months >= max(uppers)
+        # adulto (18+) al que no le toca ninguna sección juvenil: también entra como aspirante a jefe
+        return (bool(uppers) and months >= max(uppers)) or months >= 18 * 12
 
     @api.model
     def _scout_aspirant(self, company=None):

@@ -115,6 +115,17 @@ function setupSectionSuggestion(form) {
                     (g ? "" : "Elige también el sexo para confirmar la sección. ") +
                     "La sección se asigna automáticamente y no se puede cambiar.";
             }
+        } else if (months >= 18 * 12 || Object.values(rules).some((r) => r.upper) &&
+                months >= Math.max(...Object.values(rules).filter((r) => !g || !r.gender || r.gender === g).map((r) => r.upper || 0))) {
+            select.value = "";
+            if (hidden) {
+                hidden.value = "";
+            }
+            if (hint) {
+                hint.className = "alert alert-info py-2 px-3 mb-0 small o_scout_section_hint";
+                hint.innerHTML = `<i class="fa fa-user-plus"></i> Con ${age} ya pasó la edad de las secciones: ` +
+                    "se registrará como <b>Aspirante a jefe</b> y la jefatura de grupo le asignará su cargo.";
+            }
         } else {
             select.value = "";
             if (hidden) {

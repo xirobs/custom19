@@ -1146,6 +1146,10 @@ class ScoutLeaderPortal(http.Controller):
                                       'el cambio de sección si aplica.', name=member.name, sec=suggested.display_name))
         if post.get('then') == 'registro':
             return request.redirect(f'/dirigentes/{section.id}/miembro/{member.id}/registro')
+        if member.scout_type == 'leader':
+            return self._back(f'/dirigentes/{section.id}/miembro/{member.id}',
+                              ok=_('Por su edad, %s quedó como Aspirante a jefe (apoyando en tu sección). La jefatura '
+                                   'de grupo le asigna su cargo.', member.name))
         return self._back(f'/dirigentes/{section.id}/miembro/{member.id}',
                           ok=_('%s ya aparece en el pase de lista (en prueba).', member.name))
 

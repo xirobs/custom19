@@ -581,7 +581,6 @@
             <form t-if="summary['draft'] + summary['changes']" t-att-action="'/dirigentes/%s/plan/enviar' % section.id" method="post" class="mb-3">
                 <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
                 <input type="hidden" name="tipo" t-att-value="tipo"/><input type="hidden" name="mes" t-att-value="mes or 0"/>
-                <input type="hidden" name="actividad" t-att-value="activity.id or ''"/><input type="hidden" name="todo" value="1"/>
                 <input type="hidden" name="q" t-att-value="str(offset)"/>
                 <button class="btn o_sl_btn w-100" type="submit"><i class="fa fa-paper-plane"/> Enviar el programa al consejo</button>
             </form>
@@ -733,14 +732,12 @@
             <form t-if="draft" t-att-action="'/dirigentes/%s/informe' % section.id" method="post" class="mb-3">
                 <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
                 <input type="hidden" name="tipo" t-att-value="tipo"/><input type="hidden" name="mes" t-att-value="mes or 0"/>
-                <input type="hidden" name="actividad" t-att-value="activity.id or ''"/><input type="hidden" name="todo" value="1"/>
                 <button class="btn o_sl_btn_outline w-100" type="submit" name="op" value="refresh"><i class="fa fa-refresh"/> Actualizar con asistencia y adelantos</button>
             </form>
             <div t-else="" class="alert alert-info o_sl_alert">Ya se presentó al Consejo; solo lectura.</div>
             <form t-att-action="'/dirigentes/%s/informe' % section.id" method="post" class="o_sl_form">
                 <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
                 <input type="hidden" name="tipo" t-att-value="tipo"/><input type="hidden" name="mes" t-att-value="mes or 0"/>
-                <input type="hidden" name="actividad" t-att-value="activity.id or ''"/><input type="hidden" name="todo" value="1"/>
                 <fieldset t-att-disabled="not draft or None">
                     <label class="form-label fw-bold" t-out="'Resumen del ciclo de la sección' if tipo == 'anual' else 'Situación actual de la sección'"/>
                     <textarea name="situation" class="form-control" rows="3" t-out="report.situation or ''"/>

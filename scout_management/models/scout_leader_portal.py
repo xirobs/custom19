@@ -993,6 +993,9 @@ class ScoutLeaderPortal(models.AbstractModel):
             if not guardian:
                 guardian = Partner.create({'name': g_name or _('Tutor de %s', first), 'phone': g_phone or False,
                                            'email': g_email or False})
+        Section = self.env['scout.section'].sudo()
+        gender = post.get('gender') if post.get('gender') in ('m', 'f') else False
+        aspirant = birthdate and not Section._scout_suggest(birthdate, gender) and Section._scout_over_age(birthdate, gender)
         vals = {
             'is_scout': True, 'scout_type': 'youth', 'scout_state': 'trial',
             'scout_first_name': first, 'scout_last_name': last,
@@ -1009,11 +1012,19 @@ class ScoutLeaderPortal(models.AbstractModel):
             patrol = self.env['scout.patrol'].sudo().browse(int(post['patrol_id'])).exists()
             if patrol and patrol.section_id == section:
                 vals['scout_patrol_id'] = patrol.id
+        if aspirant:
+            # ya pasó la edad de las secciones juveniles: entra como Aspirante a jefe (la jefatura le asigna cargo)
+            leadership, position = Section._scout_aspirant(section.company_id)
+            vals.update({'scout_type': 'leader', 'scout_section_id': leadership.id or section.id,
+                         'scout_position_id': position.id or False, 'scout_patrol_id': False,
+                         'scout_leading_section_ids': [fields.Command.link(section.id)]})
         image = self._image_from_post(photo) if photo else False
         if image:
             vals['image_1920'] = image
         member = Partner.with_context(scout_change_approved=True).create(vals)
-        self._note(member, _('Nuevo ingreso registrado en %s', section.display_name))
+        self._note(member, _('Nuevo ingreso registrado en %s', section.display_name) if not aspirant else
+                   _('Nuevo ingreso como Aspirante a jefe (apoya en %s); la jefatura le asigna su cargo.',
+                     section.display_name))
         return member
 
     @api.model
