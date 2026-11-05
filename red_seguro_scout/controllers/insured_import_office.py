@@ -106,9 +106,12 @@ class RssAdvisorImport(RssAdvisorPortal):
 
     @http.route(['/seguro/plantilla.xlsx'], type='http', auth='user', sitemap=False)
     def advisor_template(self, **kw):
-        if not request.env['rss.advisor']._for_user(request.env.user):
+        advisor = request.env['rss.advisor']._for_user(request.env.user)
+        if not advisor:
             return request.not_found()
-        return _xlsx(build_template_xlsx(with_group=True), 'Plantilla_asegurados_varios_grupos.xlsx')
+        names = self._groups(advisor).sorted(lambda g: (g.number or 999, g.name)).mapped('name')
+        return _xlsx(build_template_xlsx(with_group=True, group_names=names),
+                     'Plantilla_asegurados_varios_grupos.xlsx')
 
 
 class RssBackendTemplate(http.Controller):
@@ -117,4 +120,6 @@ class RssBackendTemplate(http.Controller):
     def backend_template(self, **kw):
         if not request.env.user.has_group('red_seguro_scout.group_rss_user'):
             return request.not_found()
-        return _xlsx(build_template_xlsx(with_group=True), 'Plantilla_asegurados_varios_grupos.xlsx')
+        names = request.env['rss.scout.group'].search([]).sorted(lambda g: (g.number or 999, g.name)).mapped('name')
+        return _xlsx(build_template_xlsx(with_group=True, group_names=names),
+                     'Plantilla_asegurados_varios_grupos.xlsx')

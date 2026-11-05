@@ -1015,3 +1015,24 @@ class TestBoardsAndCredential(_RssPortalCommon, HttpCase):
         self.assertIn('Asegurados por Grupo', res.text)
         self.assertIn('Operación del Seguro', res.text)
         self.assertIn('/credencial', self.url_open('/seguro/asegurados').text)
+
+
+@tagged('post_install', '-at_install', 'red_seguro_scout')
+class TestCredentialDownload(_RssPortalCommon, HttpCase):
+
+    @classmethod
+    def setUpClass(cls):
+        super().setUpClass()
+        cls._setup_data()
+
+    def test_backend_download_filename(self):
+        """La descarga desde la plataforma (botón Credencial / Imprimir) arma el nombre del archivo."""
+        from odoo.tools.safe_eval import safe_eval, time
+        report = self.env.ref('red_seguro_scout.action_report_rss_credential')
+        name = safe_eval(report.print_report_name, {'object': self.maria, 'time': time})
+        self.assertIn('Credencial - ', name)
+        board = self.env.ref('red_seguro_scout.action_report_rss_board')
+        self.assertIn('Tablero', safe_eval(board.print_report_name,
+                                           {'object': self.env.ref('red_seguro_scout.board_padron'), 'time': time}))
+        action = self.maria.action_print_credential()
+        self.assertIn(action['type'], ('ir.actions.report', 'ir.actions.act_window'))  # sin diseño de documento configurado, Odoo pide configurarlo primero

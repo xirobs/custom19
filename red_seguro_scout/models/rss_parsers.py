@@ -386,47 +386,84 @@ TEMPLATE_HEADERS = ['Nombre(s)', 'Apellido paterno', 'Apellido materno', 'Fecha 
                     'Correo electrónico']
 
 
-def build_template_xlsx(group_name='', with_group=False):
-    """Plantilla de Excel. ``with_group`` agrega al inicio la columna «Grupo» (para cargar
-    varios grupos en un solo archivo desde la plataforma o el portal del asesor)."""
+def build_template_xlsx(group_name='', with_group=False, group_names=None, rows=500):
+    """Plantilla de Excel lista para capturar.
+
+    * ``with_group``: agrega al inicio la columna «Grupo» (para cargar varios grupos en un archivo),
+      como lista desplegable con ``group_names``.
+    * Sexo: lista desplegable Femenino / Masculino.
+    * Fecha de nacimiento: celda de fecha real (dd/mm/aaaa) con validación, que el sistema lee sin
+      ambigüedad.
+    """
+    import datetime
     import xlsxwriter
     output = io.BytesIO()
     book = xlsxwriter.Workbook(output, {'in_memory': True})
     ws = book.add_worksheet('Asegurados')
     head = book.add_format({'bold': True, 'font_color': 'white', 'bg_color': '#6E0B14', 'border': 1,
                             'text_wrap': True, 'valign': 'vcenter', 'align': 'center'})
-    date_f = book.add_format({'num_format': 'dd/mm/yyyy'})
+    date_f = book.add_format({'num_format': 'dd/mm/yyyy', 'align': 'center'})
+    text_f = book.add_format({'num_format': '@'})
     headers = list(TEMPLATE_HEADERS) + ['CURP']
     widths = [22, 18, 18, 16, 12, 32, 18, 30, 22]
-    example = ['Ana Sofía', 'Pérez', 'López', '01/05/2014', 'Mujer', 'Laura López García',
+    example = ['Ana Sofía', 'Pérez', 'López', datetime.date(2014, 5, 1), 'Femenino', 'Laura López García',
                '2221234567', 'laura@correo.com', '']
-    date_col, sex_col = 3, 4
+    date_col, sex_col, phone_col = 3, 4, 6
+    names = [n for n in (group_names or []) if n]
     if with_group:
-        headers, widths, example = ['Grupo'] + headers, [10] + widths, [group_name or '7'] + example
-        date_col, sex_col = 4, 5
+        headers = ['Grupo'] + headers
+        widths = [max([len(n) for n in names] + [12]) + 2] + widths
+        example = [names[0] if names else (group_name or '7')] + example
+        date_col, sex_col, phone_col = date_col + 1, sex_col + 1, phone_col + 1
     for col, (label, width) in enumerate(zip(headers, widths)):
         ws.write(0, col, label, head)
-        ws.set_column(col, col, width, date_f if col == date_col else None)
+        fmt = date_f if col == date_col else (text_f if col in (phone_col, len(headers) - 1) else None)
+        ws.set_column(col, col, width, fmt)
     ws.set_row(0, 30)
-    ws.write_row(1, 0, example)
-    ws.data_validation(1, sex_col, 3000, sex_col, {'validate': 'list', 'source': ['Hombre', 'Mujer']})
+    for col, value in enumerate(example):
+        if col == date_col:
+            ws.write_datetime(1, col, datetime.datetime.combine(value, datetime.time()), date_f)
+        else:
+            ws.write(1, col, value)
+    last = max(rows, 2)
+    # Sexo: Femenino / Masculino
+    ws.data_validation(1, sex_col, last, sex_col, {
+        'validate': 'list', 'source': ['Femenino', 'Masculino'],
+        'error_title': 'Sexo', 'error_message': 'Elige Femenino o Masculino.'})
+    # Fecha de nacimiento: fecha real entre 1920 y hoy
+    ws.data_validation(1, date_col, last, date_col, {
+        'validate': 'date', 'criteria': 'between',
+        'minimum': datetime.date(1920, 1, 1), 'maximum': datetime.date.today(),
+        'input_title': 'Fecha de nacimiento', 'input_message': 'Escríbela como dd/mm/aaaa, p. ej. 01/05/2014.',
+        'error_title': 'Fecha no válida', 'error_message': 'Escribe una fecha dd/mm/aaaa entre 1920 y hoy.'})
+    # Grupo: lista desplegable con los nombres de los grupos (hoja auxiliar oculta)
+    if with_group and names:
+        lists = book.add_worksheet('Listas')
+        for i, name in enumerate(names):
+            lists.write(i, 0, name)
+        lists.hide()
+        book.define_name('Grupos', "=Listas!$A$1:$A$%s" % len(names))
+        ws.data_validation(1, 0, last, 0, {
+            'validate': 'list', 'source': '=Grupos',
+            'error_title': 'Grupo', 'error_message': 'Elige uno de los grupos de la lista.'})
     help_ws = book.add_worksheet('Instrucciones')
     tips = [
-        'Una persona por renglón, a partir del renglón 2 (borra el ejemplo).',
+        'Una persona por renglón, a partir del renglón 2 (borra o reemplaza el ejemplo).',
         'Obligatorios: nombre, apellido paterno, fecha de nacimiento y sexo.',
-        'Fecha de nacimiento en formato día/mes/año, p. ej. 01/05/2014.',
-        'Sexo: Hombre o Mujer. La edad se calcula sola.',
+        'Fecha de nacimiento: escríbela como dd/mm/aaaa (p. ej. 01/05/2014); la celda ya tiene formato de fecha.',
+        'Sexo: elige Femenino o Masculino de la lista. La edad y la sección se calculan solas.',
         'Padre o tutor (opcional): nombre completo, teléfono para emergencias y correo; si no lo tienes, déjalo en blanco.',
         'CURP (opcional).',
         'Si una persona ya está registrada (mismo nombre y fecha de nacimiento) se marca como repetida.',
     ]
     if with_group:
-        tips.insert(0, 'Grupo: número del grupo (p. ej. 7) o su nombre. Así se cargan varios grupos en un solo archivo.')
+        tips.insert(0, 'Grupo: elígelo de la lista desplegable. Así se cargan varios grupos en un solo archivo.')
     elif group_name:
         tips.insert(0, 'Grupo: %s' % group_name)
     for i, tip in enumerate(tips):
         help_ws.write(i, 0, tip)
-    help_ws.set_column(0, 0, 100)
+    help_ws.set_column(0, 0, 110)
     ws.freeze_panes(1, 0)
+    ws.activate()
     book.close()
     return output.getvalue()
