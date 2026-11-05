@@ -60,6 +60,8 @@
                 <field name="pinned" widget="boolean_toggle"/>
                 <field name="name"/>
                 <field name="category_id"/>
+                <field name="activity_type_ids" widget="many2many_tags" optional="show"/>
+                <field name="uploaded_by_id" optional="hide"/>
                 <field name="kind"/>
                 <field name="section_ids" widget="many2many_tags" optional="show"/>
                 <field name="all_sections" optional="hide"/>
@@ -85,6 +87,8 @@
                     <group>
                         <group>
                             <field name="category_id"/>
+                            <field name="activity_type_ids" widget="many2many_tags" options="{'no_create_edit': True}"/>
+                            <field name="uploaded_by_id"/>
                             <field name="file" filename="file_name"/>
                             <field name="file_name" invisible="1"/>
                             <field name="url" widget="url" placeholder="https://www.youtube.com/watch?v=…"/>
@@ -124,6 +128,7 @@
                 <field name="name"/>
                 <field name="description"/>
                 <field name="category_id"/>
+                <field name="activity_type_ids"/>
                 <field name="section_ids"/>
                 <filter name="pinned" string="Destacados" domain="[('pinned', '=', True)]"/>
                 <filter name="for_scouts" string="Aula virtual (scouts)" domain="[('for_scouts', '=', True)]"/>
@@ -151,5 +156,23 @@
             <p>Manuales, PDF, presentaciones, formatos, canciones, juegos y videos de apoyo. Los jefes los ven en su
                 portal, en el cuadro "Recursos para dirigentes", filtrados por su sección.</p>
         </field>
+    </record>
+    <record id="view_scout_activity_type_list" model="ir.ui.view">
+        <field name="name">scout.activity.type.list</field>
+        <field name="model">scout.activity.type</field>
+        <field name="arch" type="xml">
+            <list editable="bottom">
+                <field name="sequence" widget="handle"/>
+                <field name="name"/>
+                <field name="icon"/>
+                <field name="active" widget="boolean_toggle"/>
+            </list>
+        </field>
+    </record>
+    <record id="action_scout_activity_type" model="ir.actions.act_window">
+        <field name="name">Tipos de actividad</field>
+        <field name="res_model">scout.activity.type</field>
+        <field name="view_mode">list</field>
+        <field name="context">{'active_test': False}</field>
     </record>
 </odoo>

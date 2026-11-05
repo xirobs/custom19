@@ -158,6 +158,7 @@
                 <a class="o_sl_tile" t-att-href="'/dirigentes/%s/equipos' % section.id"><i class="fa fa-th-large"/><span t-out="'%ss y cargos' % (section.patrol_label or 'Equipo')"/><small>Mover miembros y cambiar guía</small></a>
                 <a class="o_sl_tile" t-att-href="'/dirigentes/%s/rutas' % section.id"><i class="fa fa-road"/><span>Rutas de enlace y permanencia</span><small>Tiempo restante de cada scout</small></a>
                 <a class="o_sl_tile" t-att-href="'/dirigentes/%s/logros' % section.id"><i class="fa fa-trophy"/><span>Cuadro de adelantos</span><small>Adelantos, especialidades y correas</small></a>
+                <a class="o_sl_tile" t-att-href="'/dirigentes/%s/ruta' % section.id"><i class="fa fa-map-signs"/><span>Ruta de progresión</span><small>Secuencia de niveles y manuales</small></a>
                 <a class="o_sl_tile" t-att-href="'/dirigentes/%s/calendario' % section.id"><i class="fa fa-calendar-check-o"/><span>Calendario del grupo</span><small>Todas las secciones por colores</small></a>
                 <a class="o_sl_tile o_sl_tile_council" href="/scouts/consejo"><i class="fa fa-clock-o"/><span>Consejo de grupo</span><small>Reloj de turnos, firma de asistencia y acta</small></a>
                 <a class="o_sl_tile" t-att-href="'/dirigentes/%s/plan' % section.id"><i class="fa fa-calendar"/><span>Planificación trimestral</span>
@@ -580,6 +581,7 @@
             <form t-if="summary['draft'] + summary['changes']" t-att-action="'/dirigentes/%s/plan/enviar' % section.id" method="post" class="mb-3">
                 <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
                 <input type="hidden" name="tipo" t-att-value="tipo"/><input type="hidden" name="mes" t-att-value="mes or 0"/>
+                <input type="hidden" name="actividad" t-att-value="activity.id or ''"/><input type="hidden" name="todo" value="1"/>
                 <input type="hidden" name="q" t-att-value="str(offset)"/>
                 <button class="btn o_sl_btn w-100" type="submit"><i class="fa fa-paper-plane"/> Enviar el programa al consejo</button>
             </form>
@@ -731,12 +733,14 @@
             <form t-if="draft" t-att-action="'/dirigentes/%s/informe' % section.id" method="post" class="mb-3">
                 <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
                 <input type="hidden" name="tipo" t-att-value="tipo"/><input type="hidden" name="mes" t-att-value="mes or 0"/>
+                <input type="hidden" name="actividad" t-att-value="activity.id or ''"/><input type="hidden" name="todo" value="1"/>
                 <button class="btn o_sl_btn_outline w-100" type="submit" name="op" value="refresh"><i class="fa fa-refresh"/> Actualizar con asistencia y adelantos</button>
             </form>
             <div t-else="" class="alert alert-info o_sl_alert">Ya se presentó al Consejo; solo lectura.</div>
             <form t-att-action="'/dirigentes/%s/informe' % section.id" method="post" class="o_sl_form">
                 <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
                 <input type="hidden" name="tipo" t-att-value="tipo"/><input type="hidden" name="mes" t-att-value="mes or 0"/>
+                <input type="hidden" name="actividad" t-att-value="activity.id or ''"/><input type="hidden" name="todo" value="1"/>
                 <fieldset t-att-disabled="not draft or None">
                     <label class="form-label fw-bold" t-out="'Resumen del ciclo de la sección' if tipo == 'anual' else 'Situación actual de la sección'"/>
                     <textarea name="situation" class="form-control" rows="3" t-out="report.situation or ''"/>
@@ -889,6 +893,7 @@
                    t-att-href="svc.family_form_whatsapp(member, request.env['scout.cycle'].sudo()._get_registration())['whatsapp']"><i class="fa fa-whatsapp"/> Liga de ficha a la familia</a>
                 <button type="button" class="btn o_sl_btn_outline" t-att-data-sl-copy="flink" title="Copiar liga"><i class="fa fa-copy"/></button>
             </div>
+            <a t-if="member.scout_type == 'youth'" class="btn btn-sm o_sl_btn_outline w-100 mb-2" t-att-href="'/dirigentes/%s/miembro/%s/ruta' % (section.id, member.id)"><i class="fa fa-map-signs"/> Ruta de progresión y manuales</a>
             <t t-set="leave_req" t-value="svc.pending_leave(member)"/>
             <div t-if="leave_req" class="alert alert-warning o_sl_alert mx-0"><i class="fa fa-hourglass-half"/>
                 Baja solicitada (<t t-out="leave_req.reason"/>), a partir del <t t-out="leave_req.effective_date.strftime('%d/%m/%Y')"/>.
@@ -1793,6 +1798,7 @@
         <t t-call="scout_management.leader_layout">
             <div class="o_sl_title_row">
                 <h5 class="o_sl_h mb-0"><i class="fa fa-book"/> Recursos por sección</h5>
+                <a class="btn btn-sm o_sl_btn" t-att-href="'/dirigentes/%s/recursos/nuevo' % section.id"><i class="fa fa-cloud-upload"/> Subir</a>
                 <a class="btn btn-sm o_sl_btn_outline" t-att-href="'/dirigentes/%s/recursos?tipo=' % section.id + 'pdf'"><i class="fa fa-search"/> Buscar</a>
             </div>
             <p class="o_sl_hint">Toca una sección: verás su plan de adelantos con el material de cada uno, los recursos y los videos de actividades.</p>
@@ -2220,6 +2226,7 @@
         <a class="o_sl_res_card" t-att-href="'/dirigentes/%s/recursos/%s' % ((res_section or section).id, r.id)">
             <div t-attf-class="o_sl_res_thumb o_sl_res_#{r.kind}">
                 <img t-if="r.thumbnail_url" t-att-src="r.thumbnail_url" alt="" loading="lazy"/>
+                <img t-elif="r.kind == 'image' and r.file" t-att-src="'/dirigentes/%s/recursos/%s/archivo' % ((res_section or section).id, r.id)" alt="" loading="lazy"/>
                 <i t-else="" t-attf-class="fa #{r._scout_icon()}"/>
                 <span t-if="r.kind == 'video' and r.thumbnail_url" class="o_sl_res_play"><i class="fa fa-play"/></span>
             </div>
@@ -2228,6 +2235,7 @@
                 <div class="o_sl_res_desc" t-if="r.description" t-out="r.description"/>
                 <div class="o_sl_res_meta"><span class="o_sl_res_kind" t-out="r._scout_kind_label()"/><t t-if="r.category_id"> · <t t-out="r.category_id.name"/></t>
                     <span t-if="r.for_scouts" class="o_sl_res_aula"><i class="fa fa-graduation-cap"/> Aula<t t-if="r.stage_id">: <t t-out="r.stage_id.name"/></t></span></div>
+                <div t-if="r.activity_type_ids" class="o_sl_res_tags"><span t-foreach="r.activity_type_ids" t-as="at" class="o_sl_res_tag" t-out="at.name"/></div>
             </div>
         </a>
     </template>
@@ -2236,26 +2244,37 @@
         <t t-call="scout_management.leader_layout">
             <div class="o_sl_title_row">
                 <h5 class="o_sl_h mb-0"><i class="fa fa-book"/> Recursos para dirigentes</h5>
-                <small class="text-muted" t-out="'%s de %s' % (found, total) if (category or tipo or q) else '%s recursos' % total"/>
+                <small class="text-muted" t-out="'%s de %s' % (found, total) if (category or tipo or q or activity) else '%s recursos' % total"/>
             </div>
+            <a class="btn o_sl_btn w-100 mb-2" t-att-href="'/dirigentes/%s/recursos/nuevo' % section.id"><i class="fa fa-cloud-upload"/> Subir material</a>
             <form method="get" class="o_sl_res_search mb-2">
                 <input type="hidden" name="categoria" t-att-value="category.id or ''"/>
                 <input type="hidden" name="tipo" t-att-value="tipo"/><input type="hidden" name="mes" t-att-value="mes or 0"/>
+                <input type="hidden" name="actividad" t-att-value="activity.id or ''"/><input type="hidden" name="todo" value="1"/>
                 <div class="input-group">
                     <input type="search" name="q" class="form-control" placeholder="Buscar manual, juego, video…" t-att-value="q"/>
                     <button class="btn o_sl_btn" type="submit" aria-label="Buscar"><i class="fa fa-search"/></button>
                 </div>
             </form>
             <div class="o_sl_res_cats">
-                <a t-attf-class="o_sl_res_cat #{'active' if not category else ''}" t-att-href="'/dirigentes/%s/recursos?tipo=%s&amp;q=%s' % (section.id, tipo, url_quote(q))">Todo</a>
+                <a t-attf-class="o_sl_res_cat #{'active' if not category else ''}" t-att-href="'/dirigentes/%s/recursos?todo=1&amp;tipo=%s&amp;actividad=%s&amp;q=%s' % (section.id, tipo, activity.id or '', url_quote(q))">Todo</a>
                 <a t-foreach="categories" t-as="c" t-attf-class="o_sl_res_cat #{'active' if c == category else ''}"
-                   t-att-href="'/dirigentes/%s/recursos?categoria=%s&amp;tipo=%s&amp;q=%s' % (section.id, c.id, tipo, url_quote(q))">
+                   t-att-href="'/dirigentes/%s/recursos?categoria=%s&amp;tipo=%s&amp;actividad=%s&amp;q=%s' % (section.id, c.id, tipo, activity.id or '', url_quote(q))">
                     <i t-attf-class="fa #{c.icon or 'fa-folder-open'}"/> <t t-out="c.name"/> <b t-out="counts.get(c.id, 0)"/></a>
             </div>
             <div class="o_sl_res_types mb-2">
-                <t t-foreach="[('', 'Todos'), ('pdf', 'PDF'), ('video', 'Videos'), ('document', 'Documentos'), ('presentation', 'Presentaciones'), ('link', 'Ligas')]" t-as="opt">
+                <t t-foreach="[('', 'Todos'), ('pdf', 'PDF'), ('video', 'Videos'), ('image', 'Imágenes'), ('document', 'Documentos'), ('presentation', 'Presentaciones'), ('link', 'Ligas')]" t-as="opt">
                     <a t-attf-class="o_sl_res_type #{'active' if tipo == opt[0] else ''}"
-                       t-att-href="'/dirigentes/%s/recursos?categoria=%s&amp;tipo=%s&amp;q=%s' % (section.id, category.id or '', opt[0], url_quote(q))" t-out="opt[1]"/>
+                       t-att-href="'/dirigentes/%s/recursos?todo=1&amp;categoria=%s&amp;tipo=%s&amp;actividad=%s&amp;q=%s' % (section.id, category.id or '', opt[0], activity.id or '', url_quote(q))" t-out="opt[1]"/>
+                </t>
+            </div>
+            <div t-if="activity_types" class="o_sl_res_types o_sl_res_acts mb-2">
+                <span class="small text-muted me-1"><i class="fa fa-tags"/> Actividad:</span>
+                <a t-attf-class="o_sl_res_type #{'active' if not activity else ''}"
+                   t-att-href="'/dirigentes/%s/recursos?todo=1&amp;categoria=%s&amp;tipo=%s&amp;q=%s' % (section.id, category.id or '', tipo, url_quote(q))">Todas</a>
+                <t t-foreach="activity_types" t-as="at">
+                    <a t-attf-class="o_sl_res_type #{'active' if at == activity else ''}"
+                       t-att-href="'/dirigentes/%s/recursos?todo=1&amp;categoria=%s&amp;tipo=%s&amp;actividad=%s&amp;q=%s' % (section.id, category.id or '', tipo, at.id, url_quote(q))"><i t-attf-class="fa #{at.icon or 'fa-tag'}"/> <t t-out="at.name"/></a>
                 </t>
             </div>
 
@@ -2265,16 +2284,28 @@
                     <t t-foreach="pinned" t-as="r"><t t-call="scout_management.leader_resource_card"/></t>
                 </div>
             </t>
+            <div t-if="not section.is_leadership" class="o_sl_res_types mb-2">
+                <span class="small text-muted me-1">Ordenar:</span>
+                <a t-attf-class="o_sl_res_type #{'active' if vista == 'ruta' else ''}" t-att-href="'/dirigentes/%s/recursos?vista=ruta&amp;categoria=%s&amp;tipo=%s&amp;actividad=%s&amp;q=%s' % (section.id, category.id or '', tipo, activity.id or '', url_quote(q))"><i class="fa fa-map-signs"/> Por ruta de la sección</a>
+                <a t-attf-class="o_sl_res_type #{'active' if vista != 'ruta' else ''}" t-att-href="'/dirigentes/%s/recursos?vista=categorias&amp;categoria=%s&amp;tipo=%s&amp;actividad=%s&amp;q=%s' % (section.id, category.id or '', tipo, activity.id or '', url_quote(q))"><i class="fa fa-folder-open"/> Por categoría</a>
+            </div>
             <t t-foreach="groups" t-as="g">
-                <h6 class="o_sl_h"><i t-attf-class="fa #{g[0].icon or 'fa-folder-open'}"/> <t t-out="g[0].name or 'Otros'"/></h6>
-                <div class="o_sl_res_grid mb-3">
-                    <t t-foreach="g[1]" t-as="r"><t t-call="scout_management.leader_resource_card"/></t>
+                <h6 class="o_sl_h"><i t-attf-class="fa #{g[1]}"/> <t t-out="g[0]"/></h6>
+                <t t-set="_diagrams" t-value="g[2].filtered(lambda r: r.kind == 'image' and r.file)"/>
+                <div t-if="_diagrams" class="o_path_material mb-2">
+                    <a t-foreach="_diagrams" t-as="r" class="o_path_diagram" t-att-href="'/dirigentes/%s/recursos/%s' % (section.id, r.id)">
+                        <img t-att-src="'/dirigentes/%s/recursos/%s/archivo' % (section.id, r.id)" t-att-alt="r.name" loading="lazy"/>
+                        <span><i class="fa fa-sitemap"/> <t t-out="r.name"/></span>
+                    </a>
+                </div>
+                <div t-if="g[2] - _diagrams" class="o_sl_res_grid mb-3">
+                    <t t-foreach="g[2] - _diagrams" t-as="r"><t t-call="scout_management.leader_resource_card"/></t>
                 </div>
             </t>
             <div t-if="not groups" class="o_sl_card_box text-center text-muted">
                 <i class="fa fa-folder-open-o fa-2x d-block mb-2"/>
                 <t t-if="total">No hay recursos con ese filtro.</t>
-                <t t-else="">Todavía no hay recursos. La jefatura de grupo los sube en Grupo Scout → Programa → Recursos para dirigentes.</t>
+                <t t-else="">Todavía no hay recursos. Súbelos con el botón "Subir material".</t>
             </div>
         </t>
     </template>
@@ -2318,6 +2349,97 @@
                     <i class="fa fa-link"/> <t t-out="'Ver en YouTube / Vimeo' if resource.video_embed_url else 'Abrir liga'"/></a>
             </div>
             <div t-if="resource.description" class="o_sl_card_box" style="white-space: pre-line" t-out="resource.description"/>
+            <div class="o_sl_card_box small">
+                <div t-if="resource.activity_type_ids" class="o_sl_res_tags mb-1"><span t-foreach="resource.activity_type_ids" t-as="at" class="o_sl_res_tag"><i t-attf-class="fa #{at.icon or 'fa-tag'}"/> <t t-out="at.name"/></span></div>
+                <div><i class="fa fa-users"/> <t t-if="resource.all_sections">Todas las secciones</t><t t-else="" t-out="', '.join(resource.sudo().section_ids.mapped('name'))"/>
+                    <t t-if="resource.for_scouts"> · <i class="fa fa-graduation-cap"/> también en el aula virtual de los scouts</t></div>
+                <div t-if="resource.sudo().uploaded_by_id" class="text-muted">Subido por <t t-out="resource.sudo().uploaded_by_id.name"/></div>
+            </div>
+            <div t-if="resource._scout_can_edit()" class="d-flex gap-2 mt-2">
+                <a class="btn btn-sm o_sl_btn_outline flex-fill" t-att-href="'/dirigentes/%s/recursos/%s/editar' % (section.id, resource.id)"><i class="fa fa-pencil"/> Editar</a>
+                <form method="post" t-att-action="'/dirigentes/%s/recursos/%s/borrar' % (section.id, resource.id)" class="flex-fill">
+                    <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
+                    <button class="btn btn-sm btn-light w-100" onclick="return confirm('¿Quitar este material?');"><i class="fa fa-trash"/> Quitar</button>
+                </form>
+            </div>
+        </t>
+    </template>
+
+    <template id="leader_resource_form" name="Dirigentes: subir o editar material">
+        <t t-call="scout_management.leader_layout">
+            <a class="o_sl_link d-inline-block mb-2" t-att-href="'/dirigentes/%s/recursos' % section.id"><i class="fa fa-chevron-left"/> Recursos</a>
+            <h5 class="o_sl_h"><i class="fa fa-cloud-upload"/> <t t-out="'Editar material' if resource else 'Subir material'"/></h5>
+            <form method="post" enctype="multipart/form-data" class="o_sl_card_box o_sl_res_form"
+                  t-att-action="'/dirigentes/%s/recursos/%s/editar' % (section.id, resource.id) if resource else '/dirigentes/%s/recursos/nuevo' % section.id">
+                <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
+                <label class="form-label">Título</label>
+                <input name="name" class="form-control" required="required" maxlength="200" t-att-value="resource.name if resource else ''"
+                       placeholder="Ej. Relevo de nudos por patrullas"/>
+                <label class="form-label mt-2">Descripción</label>
+                <textarea name="description" class="form-control" rows="3" placeholder="Para qué sirve, materiales, duración…" t-out="resource.description if resource else ''"/>
+
+                <label class="form-label mt-3">Archivo <small class="text-muted">(manual, guía, imagen, diagrama, presentación o video corto · máx. 60 MB)</small></label>
+                <input type="file" name="file" class="form-control" accept=".pdf,.doc,.docx,.ppt,.pptx,.xls,.xlsx,.odt,.odp,.ods,.txt,image/*,video/*,audio/*"/>
+                <div t-if="resource and resource.file_name" class="small mt-1">Actual: <b t-out="resource.file_name"/>
+                    <label class="ms-2"><input type="checkbox" name="remove_file" value="1"/> quitar archivo</label></div>
+                <label class="form-label mt-2">o liga (video de YouTube/Vimeo, Drive, página)</label>
+                <input name="url" type="url" class="form-control" placeholder="https://youtu.be/…" t-att-value="resource.url if resource else ''"/>
+                <small class="text-muted">Para videos largos súbelos a YouTube como "oculto" y pega la liga.</small>
+
+                <label class="form-label mt-3">Categoría</label>
+                <select name="category_id" class="form-select">
+                    <option value="">—</option>
+                    <option t-foreach="options['categories']" t-as="c" t-att-value="c.id" t-att-selected="resource and resource.category_id == c or None" t-out="c.name"/>
+                </select>
+                <input name="new_category" class="form-control form-control-sm mt-1" placeholder="…o crea una categoría nueva"/>
+
+                <label class="form-label mt-3">Tipo de actividad</label>
+                <div class="o_sl_res_checks">
+                    <label t-foreach="options['activity_types']" t-as="at" class="o_sl_res_check">
+                        <input type="checkbox" name="activity_type_ids" t-att-value="at.id" t-att-checked="resource and at in resource.activity_type_ids or None"/>
+                        <i t-attf-class="fa #{at.icon or 'fa-tag'}"/> <t t-out="at.name"/></label>
+                </div>
+                <input name="new_types" class="form-control form-control-sm mt-1" placeholder="…o crea tipos nuevos, separados por coma (ej. Pionerismo, Rastreo)"/>
+
+                <label class="form-label mt-3">¿Quién lo ve?</label>
+                <t t-set="aud" t-value="('all' if resource.all_sections else ('mine' if resource.section_ids == section else 'some')) if resource else ('all' if section.is_leadership else 'mine')"/>
+                <div class="o_sl_res_checks">
+                    <label t-if="not section.is_leadership" class="o_sl_res_check"><input type="radio" name="audience" value="mine" t-att-checked="aud == 'mine' or None"/> Solo <t t-out="section.name"/></label>
+                    <label class="o_sl_res_check"><input type="radio" name="audience" value="some" t-att-checked="aud == 'some' or None"/> Secciones que elija</label>
+                    <label class="o_sl_res_check"><input type="radio" name="audience" value="all" t-att-checked="aud == 'all' or None"/> Todas las secciones</label>
+                </div>
+                <div class="o_sl_res_checks mt-1 o_sl_res_sections">
+                    <label t-foreach="options['sections']" t-as="sec" class="o_sl_res_check small">
+                        <input type="checkbox" name="section_ids" t-att-value="sec.id" t-att-checked="(resource and sec in resource.section_ids) or (not resource and sec == section) or None"/> <t t-out="sec.name"/></label>
+                </div>
+                <small class="text-muted">"Secciones que elija" usa las casillas de arriba.</small>
+
+                <label t-if="stages" class="form-label mt-3">¿En qué nivel de la ruta va?</label>
+                <select t-if="stages" name="stage_id" class="form-select">
+                    <option value="">General (no es de un nivel)</option>
+                    <option t-foreach="stages" t-as="st" t-att-value="st.id" t-att-selected="resource and resource.stage_id == st or None"><t t-out="st_index + 1"/>. <t t-out="svc.stage_label(st, section)"/></option>
+                </select>
+                <small t-if="stages" class="text-muted d-block">Así aparece en la Ruta de progresión en ese nivel (los diagramas se ven abiertos).</small>
+                <label class="o_sl_res_check mt-3"><input type="checkbox" name="for_scouts" value="1" t-att-checked="resource and resource.for_scouts or None"/>
+                    <b>Mostrarlo también a los scouts</b> en su aula virtual y su ruta (se les abre al llegar a ese nivel)</label>
+                <button class="btn o_sl_btn w-100 mt-3"><i class="fa fa-check"/> Guardar</button>
+            </form>
+        </t>
+    </template>
+    <template id="leader_path" name="Dirigentes: ruta de progresión">
+        <t t-call="scout_management.leader_layout">
+            <h5 class="o_sl_h"><i class="fa fa-map-signs"/> Ruta de progresión
+                <t t-if="member"> · <t t-out="member._scout_list_name()"/><t t-if="member.scout_name"> (<t t-out="member.scout_name"/>)</t></t></h5>
+            <p class="small text-muted">Secuencia que sigue cada scout de <t t-out="section.display_name"/>.
+                <t t-if="ruta['sequential']">Cada nivel se le abre solo cuando termina el anterior; en el Cuadro de adelantos no se puede marcar un nivel si el anterior no está logrado.</t></p>
+            <t t-call="scout_management.scout_path_body">
+                <t t-set="image_url" t-value="'%s/imagen' % base"/>
+                <t t-set="for_member" t-value="bool(member)"/>
+                <t t-set="res_url" t-value="'/dirigentes/%s/recursos/' % section.id"/>
+            </t>
+            <a class="btn btn-sm o_sl_btn mt-2" t-att-href="'/dirigentes/%s/recursos/nuevo' % section.id"><i class="fa fa-cloud-upload"/> Subir material o diagrama</a>
+            <a t-if="member" class="btn btn-sm o_sl_btn_outline mt-2" t-att-href="'/dirigentes/%s/miembro/%s' % (section.id, member.id)"><i class="fa fa-chevron-left"/> Volver a la ficha</a>
+            <a class="btn btn-sm o_sl_btn_outline mt-2" t-att-href="'/dirigentes/%s/logros' % section.id"><i class="fa fa-trophy"/> Cuadro de adelantos</a>
         </t>
     </template>
 </odoo>

@@ -28,6 +28,7 @@
                     <div><span><b t-out="aula['seen']"/> de <b t-out="aula['total']"/></span><small>materiales vistos</small></div>
                     <div><span><b t-out="aula['path_done']"/> de <b t-out="aula['path_total']"/></span><small>adelantos logrados</small></div>
                     <a t-attf-href="/my/scouts/#{member.id}/avances"><i class="fa fa-trophy"/><small>Ver avances de mi sección</small></a>
+                    <a t-attf-href="/my/scouts/#{member.id}/ruta"><i class="fa fa-map-signs"/><small>Ver mi ruta de progresión</small></a>
                 </div>
 
                 <div t-if="not aula['units']" class="o_aula_empty">
@@ -180,5 +181,98 @@
                 <p class="small text-muted mt-3">Cada adelanto que logras sube tu barra y la de tu <t t-out="(section.patrol_label or 'equipo').lower()"/>. ¡Échale ganas! ⚜</p>
             </div>
         </t>
+    </template>
+    <!-- ===================== Ruta de progresión (sistema de adelanto) ===================== -->
+    <template id="scout_path_body" name="Ruta de progresión: contenido">
+        <!-- parámetros: ruta (progression_path), base (url base), image_url, for_member -->
+        <div class="o_path">
+            <div t-if="ruta['has_image']" class="o_path_img">
+                <a t-att-href="image_url" target="_blank" title="Ver en grande">
+                    <img t-att-src="image_url" alt="Secuencia de la ruta de progresión" loading="lazy"/>
+                </a>
+                <small class="text-muted d-block text-center mt-1"><i class="fa fa-search-plus"/> Toca la imagen para verla en grande</small>
+            </div>
+            <div class="o_path_levels">
+                <div t-if="for_member and ruta['total']" class="o_path_count">
+                    <b t-out="ruta['done']"/> de <b t-out="ruta['total']"/> niveles logrados
+                    <div class="o_path_bar"><span t-attf-style="width: #{round(ruta['done'] * 100.0 / ruta['total'])}%"/></div>
+                </div>
+                <div t-if="ruta['sequential']" class="small text-muted mb-2"><i class="fa fa-info-circle"/>
+                    Cada nivel se abre al terminar el anterior.</div>
+                <t t-foreach="ruta['levels']" t-as="lv">
+                    <div t-attf-class="o_path_level o_path_#{lv['state']}">
+                        <span class="o_path_num">
+                            <i t-if="lv['state'] == 'done'" class="fa fa-check"/>
+                            <i t-elif="lv['state'] == 'locked'" class="fa fa-lock"/>
+                            <t t-else="" t-out="lv['num']"/>
+                        </span>
+                        <span class="o_path_txt">
+                            <b t-out="lv['label']"/>
+                            <small t-if="lv['summary']" class="d-block" t-out="lv['summary']"/>
+                            <small t-if="lv['state'] == 'locked'" class="d-block o_path_hint">Se abre al terminar <t t-out="lv['locked_by']"/></small>
+                            <small t-elif="lv['state'] == 'done' and lv['date']" class="d-block o_path_hint">Logrado el <t t-out="lv['date'].strftime('%d/%m/%Y')"/></small>
+                            <small t-elif="lv['state'] == 'current'" class="d-block o_path_hint"><t t-out="'En curso' if lv['started'] else '¡Te toca!'"/></small>
+                        </span>
+                        <a t-if="lv['has_manual'] and lv['state'] != 'locked'" class="btn btn-sm o_path_manual"
+                           t-att-href="'%s/%s/manual.pdf' % (base, lv['stage'].id)"><i class="fa fa-book"/> Manual</a>
+                        <span t-elif="not lv['has_manual']" class="small text-muted o_path_nomanual">Manual pendiente</span>
+                    </div>
+                    <t t-if="lv['state'] != 'locked'">
+                        <t t-set="_diagrams" t-value="lv['diagrams']"/><t t-set="_materials" t-value="lv['materials']"/>
+                        <t t-call="scout_management.scout_path_level_material"/>
+                    </t>
+                </t>
+                <div t-if="ruta['specialties']" t-attf-class="o_path_level o_path_spec o_path_#{'current' if ruta['specialties']['open'] else 'locked'}">
+                    <span class="o_path_num"><i t-attf-class="fa #{'fa-trophy' if ruta['specialties']['open'] else 'fa-lock'}"/></span>
+                    <span class="o_path_txt">
+                        <b>Manual de Especialidades</b>
+                        <small class="d-block">Simultáneo: aplica desde <t t-out="ruta['specialties']['from']"/> hasta <t t-out="ruta['specialties']['to']"/>.</small>
+                        <small t-if="not ruta['specialties']['open']" class="d-block o_path_hint">Se abre al llegar a <t t-out="ruta['specialties']['from']"/></small>
+                        <small t-elif="for_member" class="d-block o_path_hint"><t t-out="ruta['specialties']['count']"/> especialidad(es) logradas</small>
+                    </span>
+                    <a t-if="ruta['specialties']['has_manual'] and ruta['specialties']['open']" class="btn btn-sm o_path_manual"
+                       t-att-href="'%s/especialidades/manual.pdf' % base"><i class="fa fa-book"/> Manual</a>
+                    <span t-elif="not ruta['specialties']['has_manual']" class="small text-muted o_path_nomanual">Manual pendiente</span>
+                </div>
+                <t t-if="ruta['specialties'] and ruta['specialties']['open']">
+                    <t t-set="_diagrams" t-value="ruta['specialties']['diagrams']"/><t t-set="_materials" t-value="ruta['specialties']['materials']"/>
+                    <t t-call="scout_management.scout_path_level_material"/>
+                </t>
+                <p t-if="not ruta['levels']" class="text-muted">La sección todavía no tiene niveles configurados.</p>
+            </div>
+        </div>
+    </template>
+
+    <template id="portal_scout_path" name="Ruta de progresión del scout">
+        <t t-call="portal.portal_layout">
+            <t t-set="breadcrumbs_searchbar" t-value="True"/>
+            <div class="o_scout_aula my-3">
+                <a class="small" t-attf-href="/my/scouts/#{member.id}"><i class="fa fa-chevron-left"/> <t t-out="member.name"/></a>
+                <div t-if="request.params.get('bloqueado')" class="alert alert-warning mt-2"><i class="fa fa-lock"/> Ese manual todavía no está abierto: primero termina el nivel anterior.</div>
+                <h3 class="mt-2 mb-1"><i class="fa fa-map-signs"/> Mi ruta de progresión</h3>
+                <div class="text-muted mb-3"><t t-out="member.scout_section_id.display_name or ''"/> · la secuencia que debes seguir</div>
+                <t t-call="scout_management.scout_path_body">
+                    <t t-set="image_url" t-value="'%s/imagen' % base"/>
+                    <t t-set="for_member" t-value="True"/>
+                    <t t-set="res_url" t-value="'/my/scouts/%s/aula/' % member.id"/>
+                </t>
+                <a class="btn btn-primary mt-3" t-attf-href="/my/scouts/#{member.id}/aula"><i class="fa fa-graduation-cap"/> Ir a mi aula virtual</a>
+            </div>
+        </t>
+    </template>
+    <!-- Material de un nivel: los diagramas (imágenes) se ven abiertos; lo demás como ligas -->
+    <template id="scout_path_level_material" name="Ruta: material del nivel">
+        <div t-if="_diagrams or _materials" class="o_path_material">
+            <a t-foreach="_diagrams" t-as="r" class="o_path_diagram" t-att-href="res_url + str(r.id)">
+                <img t-att-src="res_url + str(r.id) + '/archivo'" t-att-alt="r.name" loading="lazy"/>
+                <span><i class="fa fa-sitemap"/> <t t-out="r.name"/></span>
+            </a>
+            <div t-if="_materials" class="o_path_links">
+                <a t-foreach="_materials" t-as="r" class="o_path_link" t-att-href="res_url + str(r.id)">
+                    <i t-attf-class="fa #{r._scout_icon()}"/> <t t-out="r.name"/>
+                    <small t-if="r.activity_type_ids" class="text-muted"> · <t t-out="', '.join(r.activity_type_ids.mapped('name'))"/></small>
+                </a>
+            </div>
+        </div>
     </template>
 </odoo>

@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo noupdate="1">
+    <record id="activity_type_relays" model="scout.activity.type"><field name="name">Relevos</field><field name="sequence">1</field><field name="icon">fa-flag-checkered</field></record>
+    <record id="activity_type_technique" model="scout.activity.type"><field name="name">Técnica scout</field><field name="sequence">2</field><field name="icon">fa-wrench</field></record>
+    <record id="activity_type_teamwork" model="scout.activity.type"><field name="name">Trabajo en equipo</field><field name="sequence">3</field><field name="icon">fa-users</field></record>
+    <record id="activity_type_knots" model="scout.activity.type"><field name="name">Nudos y amarres</field><field name="sequence">4</field><field name="icon">fa-chain</field></record>
+    <record id="activity_type_games" model="scout.activity.type"><field name="name">Juegos</field><field name="sequence">5</field><field name="icon">fa-gamepad</field></record>
+    <record id="activity_type_songs" model="scout.activity.type"><field name="name">Cantos y fogata</field><field name="sequence">6</field><field name="icon">fa-music</field></record>
+    <record id="activity_type_first_aid" model="scout.activity.type"><field name="name">Primeros auxilios</field><field name="sequence">7</field><field name="icon">fa-medkit</field></record>
+    <record id="activity_type_camping" model="scout.activity.type"><field name="name">Campismo</field><field name="sequence">8</field><field name="icon">fa-tree</field></record>
+    <record id="activity_type_orientation" model="scout.activity.type"><field name="name">Orientación y cartografía</field><field name="sequence">9</field><field name="icon">fa-compass</field></record>
+    <record id="activity_type_crafts" model="scout.activity.type"><field name="name">Manualidades</field><field name="sequence">10</field><field name="icon">fa-scissors</field></record>
+    <record id="activity_type_service" model="scout.activity.type"><field name="name">Servicio y comunidad</field><field name="sequence">11</field><field name="icon">fa-heart</field></record>
+    <record id="activity_type_ceremony" model="scout.activity.type"><field name="name">Ceremonias</field><field name="sequence">12</field><field name="icon">fa-fire</field></record>
+</odoo>

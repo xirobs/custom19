@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo noupdate="1">
+    <!-- Sistema de adelanto de Tropa: niveles 4, 5 y 7 (los demás ya existen) -->
+    <record id="stage_tropa_cordon" model="scout.progression.stage">
+        <field name="name">Cordón Scout</field>
+        <field name="stage_type">stage</field>
+        <field name="sequence">40</field>
+        <field name="summary">Requisitos, técnicas y especialidades para obtener el Cordón Scout.</field>
+        <field name="section_ids" eval="[Command.link(ref('section_tropa_hydra')), Command.link(ref('section_tropa_atlas'))]"/>
+    </record>
+    <record id="stage_tropa_correa" model="scout.progression.stage">
+        <field name="name">Correa de Manigua</field>
+        <field name="stage_type">stage</field>
+        <field name="sequence">50</field>
+        <field name="summary">Requisitos, técnicas y especialidades para la Correa de Manigua.</field>
+        <field name="section_ids" eval="[Command.link(ref('section_tropa_hydra')), Command.link(ref('section_tropa_atlas'))]"/>
+    </record>
+    <record id="stage_tropa_piloto" model="scout.progression.stage">
+        <field name="name">Piloto Scout</field>
+        <field name="stage_type">terminal</field>
+        <field name="sequence">95</field>
+        <field name="summary">Formación, liderazgo y especialidades del Piloto Scout.</field>
+        <field name="section_ids" eval="[Command.link(ref('section_tropa_hydra')), Command.link(ref('section_tropa_atlas'))]"/>
+    </record>
+</odoo>

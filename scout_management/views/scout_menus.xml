@@ -100,6 +100,7 @@
     <menuitem id="menu_scout_config_section" name="Secciones" parent="menu_scout_config" action="action_scout_section" sequence="20"/>
     <menuitem id="menu_scout_stage" name="Adelantos e insignias" parent="menu_scout_config" action="action_scout_progression_stage" sequence="30"/>
     <menuitem id="menu_scout_resource_category" name="Categorías de recursos" parent="menu_scout_config" action="action_scout_resource_category" sequence="32"/>
+    <menuitem id="menu_scout_activity_type" name="Tipos de actividad (recursos)" parent="menu_scout_config" action="action_scout_activity_type" sequence="33"/>
     <menuitem id="menu_scout_stage_category" name="Categorías de especialidades" parent="menu_scout_config" action="action_scout_progression_category" sequence="31"/>
     <menuitem id="menu_scout_setup_treasury" name="Preparar cajas y bancos" parent="menu_scout_config"
               action="action_scout_setup_treasury" sequence="50" groups="group_scout_treasurer"/>

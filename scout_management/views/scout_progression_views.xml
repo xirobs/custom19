@@ -12,6 +12,9 @@
                 <field name="category_id" optional="show" invisible="stage_type != 'specialty'"/>
                 <field name="section_ids" widget="many2many_tags"/>
                 <field name="description" optional="hide"/>
+                <field name="summary" optional="show" invisible="stage_type == 'specialty'"/>
+                <field name="manual" filename="manual_name" widget="binary" optional="show"/>
+                <field name="manual_name" column_invisible="1"/>
             </list>
         </field>
     </record>

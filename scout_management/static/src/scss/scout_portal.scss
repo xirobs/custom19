@@ -538,6 +538,7 @@ $aula-green: #2e9e5b;
     &:hover { transform: translateY(-1px); } }
 .o_aula_entry_class { background: linear-gradient(135deg, $aula-navy, #1f5f8b); }
 .o_aula_entry_board { background: linear-gradient(135deg, $aula-orange, #f5a03a); }
+.o_aula_entry_path { background: linear-gradient(135deg, #1d6b45, $aula-green); }
 .o_scout_aula { max-width: 760px; margin: 0 auto; }
 .o_aula_kicker { color: $aula-orange; font-weight: 800; font-size: 0.8rem; letter-spacing: 0.04em; text-transform: uppercase; }
 .o_aula_hero { display: flex; align-items: center; gap: 1rem; padding: 1.1rem; border-radius: 18px; color: #fff;
@@ -549,7 +550,7 @@ $aula-green: #2e9e5b;
     background: conic-gradient($aula-orange calc(var(--p) * 1%), rgba(255, 255, 255, 0.2) 0);
     &::before { content: ""; position: absolute; inset: 9px; border-radius: 50%; background: #17476b; }
     b, small { position: relative; } b { font-size: 1.3rem; line-height: 1; } small { font-size: 0.7rem; opacity: 0.85; } }
-.o_aula_stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.5rem; margin: 0.8rem 0 1rem;
+.o_aula_stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 0.5rem; margin: 0.8rem 0 1rem;
     > div, > a { background: #fff; border: 1px solid #e1e7ee; border-radius: 14px; padding: 0.6rem; text-align: center;
         color: $aula-navy; text-decoration: none; display: flex; flex-direction: column; justify-content: center; }
     b { font-size: 1.1rem; } small { color: #5c6b7a; font-size: 0.72rem; } a i { color: $aula-orange; font-size: 1.3rem; } }
@@ -824,3 +825,44 @@ html.o_scout_standalone #wrapwrap { overscroll-behavior-y: none; }
 .o_scout_leader .o_sl_spec_board .o_sl_spec_cat:first-of-type { border-left: 2px solid #fff; }
 
 .o_sl_mx_name .o_sl_card_scoutname, .o_sl_card_scoutname { color: #e8672c; font-weight: 800; text-transform: uppercase; }
+
+// ===================== Ruta de progresión (sistema de adelanto) =====================
+.o_path { display: grid; gap: 1rem; grid-template-columns: minmax(0, 1fr);
+    @media (min-width: 992px) { &:has(.o_path_img) { grid-template-columns: minmax(0, 5fr) minmax(0, 6fr); } } }
+.o_path_img img { width: 100%; height: auto; border-radius: 14px; box-shadow: 0 4px 14px rgba(15, 48, 73, 0.18); }
+.o_path_count { font-size: 0.9rem; color: #0f3049; margin-bottom: 0.4rem; }
+.o_path_bar { height: 8px; background: #e1e7ee; border-radius: 99px; overflow: hidden; margin-top: 0.25rem;
+    span { display: block; height: 100%; background: #2e9e5b; } }
+.o_path_level { display: flex; align-items: center; gap: 0.7rem; background: #fff; border: 1px solid #e1e7ee; border-left: 5px solid #0f3049;
+    border-radius: 14px; padding: 0.6rem 0.75rem; margin-bottom: 0.5rem; box-shadow: 0 2px 6px rgba(15, 48, 73, 0.06); color: #0f3049; }
+.o_path_num { width: 2.2rem; height: 2.2rem; flex: 0 0 auto; border-radius: 50%; display: flex; align-items: center; justify-content: center;
+    font-weight: 900; font-size: 1.1rem; background: #ffc72c; color: #0f3049; }
+.o_path_txt { flex: 1; min-width: 0; b { font-size: 1rem; } small { color: #5c6b7a; } }
+.o_path_hint { font-weight: 700; }
+.o_path_manual { background: #0f3049; color: #fff !important; border-radius: 99px; white-space: nowrap; }
+.o_path_nomanual { white-space: nowrap; }
+.o_path_done { border-left-color: #2e9e5b; .o_path_num { background: #2e9e5b; color: #fff; } .o_path_hint { color: #2e9e5b; } }
+.o_path_current { border-left-color: #f36f45; box-shadow: 0 0 0 2px rgba(243, 111, 69, 0.35);
+    .o_path_num { background: #f36f45; color: #fff; } .o_path_hint { color: #f36f45; } }
+.o_path_locked { opacity: 0.6; border-left-color: #a9b6c3; .o_path_num { background: #dfe5eb; color: #6c7a89; } }
+.o_path_spec { border-style: dashed; border-left-style: solid; border-left-color: #ffc72c; }
+
+// ===================== Recursos: subir material y tipos de actividad =====================
+.o_sl_res_tags { display: flex; flex-wrap: wrap; gap: 0.25rem; margin-top: 0.25rem; }
+.o_sl_res_tag { background: #fff3d6; color: #8a5a00; border-radius: 99px; padding: 0.05rem 0.5rem; font-size: 0.72rem; font-weight: 700; }
+.o_sl_res_acts { display: flex; flex-wrap: wrap; align-items: center; gap: 0.3rem; overflow-x: auto; }
+.o_sl_res_checks { display: flex; flex-wrap: wrap; gap: 0.35rem; }
+.o_sl_res_check { display: inline-flex; align-items: center; gap: 0.35rem; border: 1px solid #d9e1e8; border-radius: 99px;
+    padding: 0.25rem 0.7rem; background: #fff; cursor: pointer; font-size: 0.85rem;
+    &:has(input:checked) { background: #0f3049; color: #fff; border-color: #0f3049; } input { accent-color: #f36f45; } }
+.o_sl_res_form:has(input[name="audience"][value="some"]:not(:checked)) .o_sl_res_sections { opacity: 0.45; pointer-events: none; }
+
+// Diagramas abiertos (se ven de primera vista)
+.o_path_material { margin: -0.2rem 0 0.7rem 0.6rem; padding-left: 0.6rem; border-left: 2px dashed #c8d2dc; }
+.o_path_diagram { display: block; background: #fff; border: 1px solid #e1e7ee; border-radius: 12px; overflow: hidden; margin-bottom: 0.5rem;
+    text-decoration: none !important; color: #0f3049 !important;
+    img { display: block; width: 100%; height: auto; max-height: 70vh; object-fit: contain; background: #f6f8fa; }
+    span { display: block; padding: 0.35rem 0.6rem; font-weight: 700; font-size: 0.85rem; } }
+.o_path_links { display: flex; flex-direction: column; gap: 0.3rem; }
+.o_path_link { background: #fff; border: 1px solid #e1e7ee; border-radius: 10px; padding: 0.4rem 0.6rem; font-size: 0.88rem;
+    color: #0f3049 !important; text-decoration: none !important; i { color: #f36f45; } }

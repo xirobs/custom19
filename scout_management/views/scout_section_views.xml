@@ -151,6 +151,23 @@
                             </group>
                             <div class="text-muted small">El periodo extraordinario (con autorización de la jefatura de grupo) es de máximo 3 meses sobre cada fecha oficial. En el Clan no hay periodo extraordinario.</div>
                         </page>
+                        <page string="Ruta de progresión" name="progression_path">
+                            <group>
+                                <group>
+                                    <field name="sequential_path"/>
+                                    <field name="specialty_start_stage_id" options="{'no_create': True}"
+                                           domain="[('stage_type', '!=', 'specialty'), '|', ('section_ids', '=', False), ('section_ids', 'in', [id])]"/>
+                                    <field name="specialty_manual" filename="specialty_manual_name"/>
+                                    <field name="specialty_manual_name" invisible="1"/>
+                                </group>
+                                <group>
+                                    <field name="path_image" widget="image" options="{'size': [0, 260]}"/>
+                                </group>
+                            </group>
+                            <div class="text-muted small">Con la ruta secuencial, cada nivel (adelanto, insignia terminal…) se abre al
+                                scout solo cuando terminó el anterior. Los manuales de cada nivel se suben en Configuración › Adelantos y
+                                especialidades (columna "Manual"). El scout y su familia ven la imagen y los manuales en el portal.</div>
+                        </page>
                         <page string="Equipos (seisenas / patrullas)" name="patrols">
                             <field name="patrol_ids">
                                 <list editable="bottom">

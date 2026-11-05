@@ -165,6 +165,49 @@ class ScoutPortal(CustomerPortal):
             resource, 'file', filename=resource.file_name or resource.name, mimetype=resource._scout_mimetype())
         return stream.get_response(as_attachment=bool(descargar))
 
+    # ------------------------------------------------------------------ ruta de progresión (sistema de adelanto)
+    @http.route(['/my/scouts/<int:member_id>/ruta'], type='http', auth='user', website=True)
+    def portal_scout_path(self, member_id, **kw):
+        try:
+            member = self._scout_member_check(member_id)
+        except (AccessError, MissingError):
+            return request.redirect('/my/scouts')
+        values = self._prepare_portal_layout_values()
+        values.update({'member': member, 'ruta': request.env['scout.leader.portal'].sudo().progression_path(member),
+                       'base': f'/my/scouts/{member.id}/ruta', 'page_name': 'scout_path'})
+        return request.render('scout_management.portal_scout_path', values)
+
+    @http.route(['/my/scouts/<int:member_id>/ruta/imagen'], type='http', auth='user')
+    def portal_scout_path_image(self, member_id, **kw):
+        try:
+            member = self._scout_member_check(member_id)
+        except (AccessError, MissingError):
+            return request.not_found()
+        section = member.sudo().scout_section_id
+        if not section.path_image:
+            return request.not_found()
+        return request.env['ir.binary']._get_image_stream_from(section.sudo(), 'path_image').get_response()
+
+    @http.route(['/my/scouts/<int:member_id>/ruta/<int:stage_id>/manual.pdf',
+                 '/my/scouts/<int:member_id>/ruta/especialidades/manual.pdf'], type='http', auth='user')
+    def portal_scout_path_manual(self, member_id, stage_id=None, **kw):
+        try:
+            member = self._scout_member_check(member_id)
+        except (AccessError, MissingError):
+            return request.not_found()
+        svc = request.env['scout.leader.portal'].sudo()
+        if stage_id:
+            record = svc.path_manual_allowed(member, stage_id)
+            field, name = 'manual', record and (record.manual_name or '%s.pdf' % record.name)
+        else:
+            data = svc.progression_path(member)
+            spec = data['specialties']
+            record = data['section'] if spec and spec['open'] and spec['has_manual'] else None
+            field, name = 'specialty_manual', record and (record.specialty_manual_name or 'Manual de especialidades.pdf')
+        if not record:
+            return request.redirect(f'/my/scouts/{member.id}/ruta?bloqueado=1')
+        return request.env['ir.binary']._get_stream_from(record.sudo(), field, filename=name).get_response()
+
     @http.route(['/my/scouts/<int:member_id>/avances'], type='http', auth='user', website=True)
     def portal_scout_section_board(self, member_id, **kw):
         """Tablero de avances de la sección (para motivar): cómo va cada scout y cada equipo."""

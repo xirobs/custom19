@@ -480,8 +480,13 @@ class ScoutLeaderPortal(models.AbstractModel):
         leader = self.env.user.partner_id
         Progress = self.env['scout.member.progress'].sudo()
         done = self.env['res.partner'].sudo()
+        blocked = []
         for member_id in member_ids:
             member = self._member(member_id, section)
+            reason = Progress._scout_sequence_block(member, stage)
+            if reason:
+                blocked.append(reason)
+                continue
             progress = Progress.search([('member_id', '=', member.id), ('stage_id', '=', stage.id)], limit=1)
             vals = {'state': state, 'date_achieved': day if state == 'achieved' else False}
             if not progress:
@@ -495,6 +500,8 @@ class ScoutLeaderPortal(models.AbstractModel):
         for member in done:
             self._note(member, _('%(stage)s: %(state)s', stage=stage.name,
                                  state=_('logrado') if state == 'achieved' else _('en curso')))
+        if blocked and not done:
+            raise UserError('\n'.join(blocked[:5]))
         return done
 
     # ------------------------------------------------------------------ planificación

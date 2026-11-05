@@ -116,6 +116,8 @@
             <div class="o_aula_entry mb-3">
                 <a t-attf-href="/my/scouts/#{member.id}/aula" class="o_aula_entry_btn o_aula_entry_class">
                     <i class="fa fa-graduation-cap"/><span><b>Aula virtual</b><small>Videos, juegos y guías de su ruta de adelantos</small></span></a>
+                <a t-attf-href="/my/scouts/#{member.id}/ruta" class="o_aula_entry_btn o_aula_entry_path">
+                    <i class="fa fa-map-signs"/><span><b>Ruta de progresión</b><small>Secuencia de niveles y manuales</small></span></a>
                 <a t-attf-href="/my/scouts/#{member.id}/avances" class="o_aula_entry_btn o_aula_entry_board">
                     <i class="fa fa-trophy"/><span><b>Avances de su sección</b><small>Cómo va él y sus compañeros</small></span></a>
             </div>

@@ -275,7 +275,11 @@ class ScoutLeaderPortal(http.Controller):
                                               post.get('date'))
         except (UserError, AccessError) as e:
             return request.redirect(url + '&' + urlencode({'error': str(e.args[0])}))
-        return request.redirect(url + '&' + urlencode({'ok': _('Registrado para %s miembro(s).', len(done))}))
+        msg = _('Registrado para %s miembro(s).', len(done))
+        if len(done) < len(member_ids):
+            msg += ' ' + _('%s se omitieron (ya lo tenían o todavía no terminan el nivel anterior).',
+                           len(member_ids) - len(done))
+        return request.redirect(url + '&' + urlencode({'ok': msg}))
 
     # ------------------------------------------------------------------ planificación
     def _plan_period(self, section, tipo, q):
@@ -894,11 +898,11 @@ class ScoutLeaderPortal(http.Controller):
         return resource[:1]
 
     @http.route(['/dirigentes/<int:section_id>/recursos'], type='http', auth='user', website=True)
-    def leader_resources(self, section_id, categoria=None, tipo=None, q=None, **kw):
+    def leader_resources(self, section_id, categoria=None, tipo=None, q=None, actividad=None, **kw):
         section, redirect = self._section_or_redirect(section_id)
         if redirect:
             return redirect
-        if section.is_leadership and not (categoria or tipo or q):
+        if section.is_leadership and not (categoria or tipo or q or actividad or kw.get('todo')):
             groups = self._svc().group_resources()
             sel = int(kw.get('seccion') or 0) if str(kw.get('seccion') or '').isdigit() else 0
             return self._render('scout_management.leader_group_resources', section, 'resources', groups=groups,
@@ -911,25 +915,82 @@ class ScoutLeaderPortal(http.Controller):
             resources = resources.filtered(lambda r: r.category_id == category)
         if tipo:
             resources = resources.filtered(lambda r: r.kind == tipo)
+        activity = request.env['scout.activity.type'].sudo().browse(int(actividad)).exists() \
+            if str(actividad or '').isdigit() else request.env['scout.activity.type']
+        if activity:
+            resources = resources.filtered(lambda r: activity in r.activity_type_ids)
         if q:
             needle = q.strip().lower()
             resources = resources.filtered(lambda r: needle in (r.name or '').lower()
                                            or needle in (r.description or '').lower()
-                                           or needle in (r.category_id.name or '').lower())
+                                           or needle in (r.category_id.name or '').lower()
+                                           or any(needle in (t.name or '').lower() for t in r.activity_type_ids))
         categories = everything.category_id.sorted(lambda c: (c.sequence, c.name or ''))
+        svc = self._svc()
+        vista = kw.get('vista') or ('ruta' if not (category or tipo or q or activity) else 'categorias')
         groups = []
+        if vista == 'ruta' and not section.is_leadership:
+            # en el orden de la estructura de la sección: nivel 1, 2, 3... y luego especialidades
+            for index, stage in enumerate(svc.path_stages(section)):
+                items = resources.filtered(lambda r, s=stage: r.stage_id == s)
+                if items:
+                    groups.append(('%s. %s' % (index + 1, svc.stage_label(stage, section)), 'fa-star', items))
+            spec = resources.filtered(lambda r: r.stage_id.stage_type == 'specialty')
+            if spec:
+                groups.append((_('Especialidades'), 'fa-trophy', spec.sorted(lambda r: (r.stage_id.sequence, r.sequence))))
+            resources = resources.filtered(lambda r: not r.stage_id or (r.stage_id not in svc.path_stages(section)
+                                                                         and r.stage_id.stage_type != 'specialty'))
         for cat in categories:
             items = resources.filtered(lambda r: r.category_id == cat)
             if items:
-                groups.append((cat, items))
+                groups.append((cat.name, cat.icon or 'fa-folder-open', items))
         loose = resources.filtered(lambda r: not r.category_id)
         if loose:
-            groups.append((request.env['scout.resource.category'], loose))
+            groups.append((_('Otros'), 'fa-folder-open', loose))
         counts = {cat.id: len(everything.filtered(lambda r: r.category_id == cat)) for cat in categories}
         return self._render('scout_management.leader_resources', section, 'resources', groups=groups,
                             categories=categories, counts=counts, category=category, tipo=tipo or '', q=q or '',
-                            pinned=everything.filtered('pinned') if not (category or tipo or q) else everything.browse(),
+                            activity=activity, vista=vista, activity_types=everything.activity_type_ids.sorted(
+                                lambda t: (t.sequence, t.name or '')),
+                            pinned=everything.filtered('pinned') if not (category or tipo or q or activity)
+                            else everything.browse(),
                             total=len(everything), found=len(resources))
+
+    @http.route(['/dirigentes/<int:section_id>/recursos/nuevo',
+                 '/dirigentes/<int:section_id>/recursos/<int:resource_id>/editar'],
+                type='http', auth='user', website=True, methods=['GET', 'POST'])
+    def leader_resource_edit(self, section_id, resource_id=None, **post):
+        section, redirect = self._section_or_redirect(section_id)
+        if redirect:
+            return redirect
+        svc = self._svc()
+        resource = self._resource_or_404(section, resource_id) if resource_id else None
+        if resource_id and (not resource or not resource._scout_can_edit()):
+            return self._back(f'/dirigentes/{section.id}/recursos', error=_('No puedes editar ese material.'))
+        if request.httprequest.method == 'POST':
+            url = request.httprequest.path
+            try:
+                resource = svc.save_resource(section, request.httprequest.form, request.httprequest.files, resource)
+            except (UserError, AccessError, ValidationError) as e:
+                return self._back(url, error=str(e.args[0]))
+            return self._back(f'/dirigentes/{section.id}/recursos/{resource.id}',
+                              ok=_('Material guardado. Ya lo ven las secciones que elegiste.'))
+        return self._render('scout_management.leader_resource_form', section, 'resources', resource=resource,
+                            options=svc.resource_options(), stages=svc.path_stages(section))
+
+    @http.route(['/dirigentes/<int:section_id>/recursos/<int:resource_id>/borrar'], type='http', auth='user',
+                website=True, methods=['POST'])
+    def leader_resource_delete(self, section_id, resource_id, **post):
+        section, redirect = self._section_or_redirect(section_id)
+        if redirect:
+            return redirect
+        resource = self._resource_or_404(section, resource_id)
+        try:
+            if resource:
+                self._svc().delete_resource(resource)
+        except (UserError, AccessError) as e:
+            return self._back(f'/dirigentes/{section.id}/recursos/{resource_id}', error=str(e.args[0]))
+        return self._back(f'/dirigentes/{section.id}/recursos', ok=_('Material quitado.'))
 
     @http.route(['/dirigentes/<int:section_id>/recursos/<int:resource_id>'], type='http', auth='user', website=True)
     def leader_resource(self, section_id, resource_id, **kw):
@@ -964,6 +1025,41 @@ class ScoutLeaderPortal(http.Controller):
             return request.redirect('/dirigentes')
         section = sections.filtered('is_leadership')[:1] or sections[:1]
         return request.redirect('/dirigentes/%s/logros' % section.id)
+
+    # ------------------------------------------------------------------ ruta de progresión (sistema de adelanto)
+    @http.route(['/dirigentes/<int:section_id>/ruta', '/dirigentes/<int:section_id>/miembro/<int:member_id>/ruta'],
+                type='http', auth='user', website=True)
+    def leader_path(self, section_id, member_id=None, **kw):
+        section, redirect = self._section_or_redirect(section_id)
+        if redirect:
+            return redirect
+        svc = self._svc()
+        member = svc._member(member_id, section) if member_id else None
+        return self._render('scout_management.leader_path', section, 'progress', member=member,
+                            ruta=svc.progression_path(member, section), base=f'/dirigentes/{section.id}/ruta')
+
+    @http.route(['/dirigentes/<int:section_id>/ruta/imagen'], type='http', auth='user')
+    def leader_path_image(self, section_id, **kw):
+        section, redirect = self._section_or_redirect(section_id)
+        if redirect or not section.path_image:
+            return request.not_found()
+        return request.env['ir.binary']._get_image_stream_from(section.sudo(), 'path_image').get_response()
+
+    @http.route(['/dirigentes/<int:section_id>/ruta/<int:stage_id>/manual.pdf',
+                 '/dirigentes/<int:section_id>/ruta/especialidades/manual.pdf'], type='http', auth='user')
+    def leader_path_manual(self, section_id, stage_id=None, **kw):
+        section, redirect = self._section_or_redirect(section_id)
+        if redirect:
+            return request.not_found()
+        if stage_id:
+            record = self._svc().stages(section).filtered(lambda s: s.id == stage_id and s.manual)
+            field, name = 'manual', record and (record.manual_name or '%s.pdf' % record.name)
+        else:
+            record = section if section.specialty_manual else None
+            field, name = 'specialty_manual', record and (section.specialty_manual_name or 'Manual de especialidades.pdf')
+        if not record:
+            return request.not_found()
+        return request.env['ir.binary']._get_stream_from(record.sudo(), field, filename=name).get_response()
 
     @http.route(['/dirigentes/<int:section_id>/logros'], type='http', auth='user', website=True)
     def leader_achievements(self, section_id, ver='adelantos', **kw):
