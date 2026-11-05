@@ -1,0 +1,53 @@
+// Tablero de KPIs (portal y plataforma). Colores con variables para modo oscuro.
+.o_rss_dash {
+    --rssd-wine: #6E0B14; --rssd-gold: #E9A825; --rssd-card: #fffaf3; --rssd-border: rgba(110, 11, 20, .12);
+    --rssd-text: #3b2a24; --rssd-muted: #7a6458;
+    color: var(--rssd-text);
+    .o_rss_dash_head { flex-wrap: wrap; gap: .75rem; margin-bottom: 1rem; }
+    .o_rss_dash_filter select { min-width: 220px; }
+    .o_rss_dash_sec { margin: 1.6rem 0 .7rem; font-weight: 800; color: var(--rssd-wine); text-transform: uppercase;
+        letter-spacing: .06em; font-size: .85rem; border-bottom: 2px solid var(--rssd-gold); padding-bottom: .3rem; }
+    .o_rss_kpis { display: grid; grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); gap: .75rem; }
+    .o_rss_kpi { background: var(--rssd-card); border: 1px solid var(--rssd-border); border-left: 4px solid var(--rssd-gold);
+        border-radius: 14px; padding: .8rem .9rem; display: flex; flex-direction: column; gap: .1rem;
+        b { font-size: 1.55rem; line-height: 1.1; color: var(--rssd-wine); font-variant-numeric: tabular-nums; }
+        span { font-size: .78rem; font-weight: 700; text-transform: uppercase; letter-spacing: .04em; }
+        small { color: var(--rssd-muted); font-size: .76rem; }
+        &.o_rss_kpi_main { background: var(--rssd-wine); border-left-color: var(--rssd-gold);
+            b, span { color: #fff; } small { color: rgba(255, 255, 255, .75); } }
+    }
+    .o_rss_charts { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: .9rem; }
+    .o_rss_chart { background: var(--rssd-card); border: 1px solid var(--rssd-border); border-radius: 14px; padding: .8rem;
+        h6 { font-weight: 700; margin-bottom: .5rem; color: var(--rssd-wine); }
+        .o_rss_canvas { position: relative; height: 230px; }
+        .o_rss_canvas_tall { height: 320px; }
+        .o_rss_nodata { display: none; color: var(--rssd-muted); text-align: center; margin: 3rem 0; font-size: .9rem; }
+        &.o_rss_chart_empty { .o_rss_canvas { display: none; } .o_rss_nodata { display: block; } }
+        &.o_rss_chart_wide { grid-column: 1 / -1; }
+    }
+    .o_rss_pivots { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: .9rem; }
+    .o_rss_pivot:first-child { grid-column: 1 / -1; }
+    .o_rss_pivot { background: var(--rssd-card); border: 1px solid var(--rssd-border); border-radius: 14px; padding: .8rem;
+        h6 { font-weight: 700; color: var(--rssd-wine); } }
+    .o_rss_pivot_table { font-variant-numeric: tabular-nums; margin: 0;
+        th, td { padding: .35rem .5rem; white-space: nowrap; }
+        thead th { font-size: .78rem; }
+        tfoot th, tfoot td { border-top: 2px solid var(--rssd-gold); }
+        .o_rss_zero { color: var(--rssd-muted); opacity: .55; } }
+}
+// Barra inferior con 7 opciones: desliza en pantallas angostas
+.o_rssp_nav { gap: 0;
+    a { flex: 1 1 0; min-width: 0; padding: 2px 1px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+        span { max-width: 100%; overflow: hidden; text-overflow: ellipsis; } }
+    @media (max-width: 480px) { a { font-size: .56rem !important; .fa { font-size: 1.05rem; } } }
+}
+
+// Plataforma (cliente web de Odoo)
+.o_rss_backend_dash { padding: 1rem 1.5rem 3rem; overflow: auto; height: 100%;
+    .o_rss_dash { max-width: 1400px; margin: 0 auto; }
+    .o_rssp_row { display: flex; justify-content: space-between; align-items: center; }
+    .o_rssp_muted { color: var(--rssd-muted); font-size: .85rem; }
+    .o_rssp_actions { display: flex; gap: .5rem; flex-wrap: wrap; align-items: center; }
+    .o_rssp_h { font-weight: 800; color: var(--rssd-wine); }
+    .o_rss_open { cursor: pointer; &:hover { box-shadow: 0 4px 14px rgba(110, 11, 20, .15); } }
+}

@@ -790,3 +790,49 @@ class TestRepresentativesLikeAdvisor(_RssPortalCommon, HttpCase):
             self.assertEqual((self.claim.state, self.claim.insurer_claim_number), ('in_process', 'SIN-77'))
             att = self.claim.attachment_ids[:1]
             self.assertEqual(self.url_open('%s/documento/%s' % (url, att.id)).status_code, 200)
+
+
+@tagged('post_install', '-at_install', 'red_seguro_scout')
+class TestDashboard(_RssPortalCommon, HttpCase):
+
+    @classmethod
+    def setUpClass(cls):
+        super().setUpClass()
+        cls._setup_data()
+        cls._member(cls.g7, 'treasurer', 'dash7@example.com')
+        cls.env['rss.claim'].create({'insured_id': cls.maria.id, 'injury_type': 'fracture', 'date_accident': date(2026, 10, 1)})
+
+    def test_data_scoped_and_consistent(self):
+        D = self.env['rss.dashboard']
+        all_data = D.get_data()
+        g7 = D.get_data(self.g7.ids)
+        self.assertEqual(len(g7['groups']), 1)
+        self.assertEqual(g7['kpis']['insured'], self.env['rss.insured'].search_count(
+            [('group_id', '=', self.g7.id), ('state', '=', 'active')]))
+        self.assertGreater(all_data['kpis']['total'], g7['kpis']['total'])
+        self.assertEqual(g7['kpis']['claims'], 1)
+        piv = g7['pivots']['age_sex']
+        self.assertEqual(sum(map(sum, piv['values'])), g7['kpis']['male'] + g7['kpis']['female'])
+        xlsx = D.export_xlsx(all_data)
+        self.assertTrue(xlsx.startswith(b'PK'))
+
+    def test_group_portal_dashboard(self):
+        self.authenticate('dash7@example.com', 'clave-dash7')
+        res = self.url_open('/mi-grupo/tablero')
+        self.assertEqual(res.status_code, 200)
+        self.assertIn('data-rss-chart="sex"', res.text)
+        self.assertIn('Tablas dinámicas', res.text)
+        self.assertNotIn('Lan Nakuh', res.text, 'Solo su grupo')
+        x = self.url_open('/mi-grupo/tablero.xlsx')
+        self.assertTrue(x.content.startswith(b'PK'))
+        import io
+        import openpyxl
+        wb = openpyxl.load_workbook(io.BytesIO(x.content))
+        names = ' '.join(str(c.value) for c in wb['Por grupo']['A'] if c.value)
+        self.assertIn('Ethnos', names)
+        self.assertNotIn('Lan Nakuh', names)
+
+    def test_backend_dashboard_tour_free(self):
+        self.authenticate('admin', 'admin')
+        x = self.url_open('/red-seguro-scout/tablero.xlsx')
+        self.assertTrue(x.content.startswith(b'PK'))

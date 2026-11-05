@@ -1,0 +1,105 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<templates xml:space="preserve">
+    <t t-name="red_seguro_scout.RssDashboard">
+        <div class="o_action o_rss_backend_dash" t-ref="root">
+            <div class="o_rss_dash" t-if="state.data">
+                <t t-set="d" t-value="state.data"/>
+                <t t-set="k" t-value="d.kpis"/>
+                <t t-set="multi" t-value="d.groups.length > 1"/>
+                <div class="o_rssp_row o_rss_dash_head">
+                    <div>
+                        <h3 class="o_rssp_h mb-0"><i class="fa fa-line-chart"/> Tablero Red Seguro Scout</h3>
+                        <div class="o_rssp_muted">Cifras al día · <t t-esc="k.groups"/> grupo<t t-if="k.groups != 1">s</t> · clic en un indicador para ver los registros</div>
+                    </div>
+                    <div class="o_rssp_actions">
+                        <select class="form-select o_rss_dash_filter" t-on-change="onGroup" t-att-value="state.groupId">
+                            <option value="">Todos los grupos</option>
+                            <t t-foreach="state.groups" t-as="g" t-key="g.id">
+                                <option t-att-value="g.id" t-att-selected="g.id == state.groupId" t-esc="g.name"/>
+                            </t>
+                        </select>
+                        <button class="btn btn-secondary" t-on-click="downloadXlsx"><i class="fa fa-file-excel-o"/> Excel</button>
+                    </div>
+                </div>
+
+                <div class="o_rss_kpis">
+                    <div class="o_rss_kpi o_rss_kpi_main o_rss_open" t-on-click="() => this.openInsured([['state','=','active']], 'Asegurados vigentes')"><b t-esc="k.insured"/><span>Asegurados vigentes</span><small><t t-esc="k.male"/> H · <t t-esc="k.female"/> M</small></div>
+                    <div class="o_rss_kpi o_rss_open" t-on-click="() => this.openInsured([['state','=','draft']], 'En preinscripción')"><b t-esc="k.draft"/><span>En preinscripción</span><small>pendientes de alta</small></div>
+                    <div class="o_rss_kpi o_rss_open" t-on-click="() => this.openInsured([['state','=','active'],['has_certificate','=',false]], 'Vigentes sin certificado')"><b><t t-esc="k.certificates_pct"/>%</b><span>Con certificado</span><small><t t-esc="k.without_certificate"/> vigentes sin certificado</small></div>
+                    <div class="o_rss_kpi o_rss_open" t-on-click="() => this.openPivot('age')"><b t-esc="k.avg_age"/><span>Edad promedio</span><small>asegurados vigentes</small></div>
+                    <div class="o_rss_kpi o_rss_open" t-on-click="() => this.openPivot('payments')"><b t-esc="money(k.paid_total)"/><span>Cobrado</span><small><t t-esc="k.payments"/> pagos</small></div>
+                    <div class="o_rss_kpi o_rss_open" t-on-click="() => this.open('rss.import.batch', 'Pagos en trámite', [['state','in',['payment','verifying']]], ['list','form'])"><b t-esc="k.pending_payments"/><span>Pagos en trámite</span><small t-esc="money(k.pending_amount)"/></div>
+                    <div class="o_rss_kpi o_rss_open" t-on-click="() => this.open('rss.claim', 'Siniestros abiertos', [['state','in',['reported','in_process','approved']]])"><b t-esc="k.claims_open"/><span>Siniestros abiertos</span><small><t t-esc="k.claims"/> en total</small></div>
+                    <div class="o_rss_kpi o_rss_open" t-on-click="() => this.openPivot('claims')"><b><t t-esc="k.claim_rate"/>%</b><span>Siniestralidad</span><small>siniestros / asegurados</small></div>
+                    <div class="o_rss_kpi"><b t-esc="money(k.claims_paid_total)"/><span>Pagado en siniestros</span><small>de <t t-esc="money(k.claimed_total)"/></small></div>
+                    <div class="o_rss_kpi"><b t-esc="k.new_this_month"/><span>Altas este mes</span><small><t t-esc="k.portal_share"/>% cargados en portal</small></div>
+                    <div t-if="multi" class="o_rss_kpi"><b t-esc="k.groups_without_payment"/><span>Grupos sin pago</span><small>de <t t-esc="k.groups"/></small></div>
+                    <div t-if="k.coverage_total" class="o_rss_kpi"><b t-esc="money(k.coverage_total)"/><span>Suma asegurada vigente</span><small>según certificados</small></div>
+                </div>
+
+                <h5 class="o_rss_dash_sec">Asegurados <a href="#" class="ms-2 small" t-on-click.prevent="() => this.openPivot('insured')">abrir pivote</a></h5>
+                <div class="o_rss_charts">
+                    <div t-if="multi" class="o_rss_chart o_rss_chart_wide"><h6>Por grupo y estatus</h6><div class="o_rss_canvas o_rss_canvas_tall"><canvas data-rss-chart="by_group"/></div><p class="o_rss_nodata">Sin datos</p></div>
+                    <div class="o_rss_chart"><h6>Por sexo</h6><div class="o_rss_canvas"><canvas data-rss-chart="sex"/></div><p class="o_rss_nodata">Sin datos</p></div>
+                    <div class="o_rss_chart"><h6>Por rama</h6><div class="o_rss_canvas"><canvas data-rss-chart="section"/></div><p class="o_rss_nodata">Sin datos</p></div>
+                    <div class="o_rss_chart"><h6>Por edad</h6><div class="o_rss_canvas"><canvas data-rss-chart="age"/></div><p class="o_rss_nodata">Sin datos</p></div>
+                    <div t-if="multi" class="o_rss_chart"><h6>Por ciudad</h6><div class="o_rss_canvas"><canvas data-rss-chart="city"/></div><p class="o_rss_nodata">Sin datos</p></div>
+                    <div class="o_rss_chart"><h6>Altas por mes</h6><div class="o_rss_canvas"><canvas data-rss-chart="new_by_month"/></div><p class="o_rss_nodata">Sin altas en el periodo</p></div>
+                </div>
+                <h5 class="o_rss_dash_sec">Pagos <a href="#" class="ms-2 small" t-on-click.prevent="() => this.openPivot('payments')">abrir pivote</a></h5>
+                <div class="o_rss_charts">
+                    <div class="o_rss_chart"><h6>Cobrado por mes</h6><div class="o_rss_canvas"><canvas data-rss-chart="paid_by_month"/></div><p class="o_rss_nodata">Sin pagos en el periodo</p></div>
+                    <div t-if="multi" class="o_rss_chart"><h6>Cobrado por grupo</h6><div class="o_rss_canvas"><canvas data-rss-chart="paid_by_group"/></div><p class="o_rss_nodata">Sin pagos</p></div>
+                </div>
+                <h5 class="o_rss_dash_sec">Siniestros <a href="#" class="ms-2 small" t-on-click.prevent="() => this.openPivot('claims')">abrir pivote</a></h5>
+                <div class="o_rss_charts">
+                    <div class="o_rss_chart"><h6>Por estatus</h6><div class="o_rss_canvas"><canvas data-rss-chart="claims_by_state"/></div><p class="o_rss_nodata">Sin siniestros</p></div>
+                    <div class="o_rss_chart"><h6>Por tipo de lesión</h6><div class="o_rss_canvas"><canvas data-rss-chart="claims_by_injury"/></div><p class="o_rss_nodata">Sin siniestros</p></div>
+                    <div class="o_rss_chart"><h6>Por actividad</h6><div class="o_rss_canvas"><canvas data-rss-chart="claims_by_activity"/></div><p class="o_rss_nodata">Sin siniestros</p></div>
+                    <div class="o_rss_chart"><h6>Por mes del accidente</h6><div class="o_rss_canvas"><canvas data-rss-chart="claims_by_month"/></div><p class="o_rss_nodata">Sin siniestros en el periodo</p></div>
+                </div>
+
+                <h5 class="o_rss_dash_sec">Tablas dinámicas</h5>
+                <div class="o_rss_pivots">
+                    <t t-foreach="[['group_section', 'Grupo × rama', 'insured'], ['age_sex', 'Edad × sexo', 'age']]" t-as="pv" t-key="pv[0]">
+                        <t t-set="p" t-value="d.pivots[pv[0]]"/>
+                        <div class="o_rss_pivot">
+                            <h6><t t-esc="pv[1]"/> <a href="#" class="small ms-2" t-on-click.prevent="() => this.openPivot(pv[2])">abrir en pivote</a></h6>
+                            <div class="table-responsive">
+                                <table class="table table-sm o_rss_pivot_table">
+                                    <thead><tr><th/><t t-foreach="p.cols" t-as="c" t-key="c_index"><th class="text-end" t-esc="c"/></t><th class="text-end">Total</th></tr></thead>
+                                    <tbody>
+                                        <t t-foreach="p.rows" t-as="r" t-key="r_index">
+                                            <tr><th t-esc="r"/>
+                                                <t t-foreach="p.values[r_index]" t-as="v" t-key="v_index"><td t-attf-class="text-end {{ v ? '' : 'o_rss_zero' }}" t-esc="v"/></t>
+                                                <td class="text-end"><b t-esc="sum(p.values[r_index])"/></td></tr>
+                                        </t>
+                                    </tbody>
+                                    <tfoot><tr><th>Total</th>
+                                        <t t-foreach="p.cols" t-as="c" t-key="c_index"><td class="text-end"><b t-esc="colSum(p.values, c_index)"/></td></t>
+                                        <td class="text-end"><b t-esc="sum(p.values.map((row) => sum(row)))"/></td></tr></tfoot>
+                                </table>
+                            </div>
+                        </div>
+                    </t>
+                </div>
+
+                <h5 class="o_rss_dash_sec">Resumen por grupo</h5>
+                <div class="table-responsive">
+                    <table class="table table-sm table-hover">
+                        <thead><tr><th>Grupo</th><th class="text-end">Asegurados</th><th class="text-end">Preinscripción</th><th class="text-end">Bajas</th>
+                            <th class="text-end">Con certificado</th><th class="text-end">Cobrado</th><th class="text-end">Siniestros</th></tr></thead>
+                        <tbody>
+                            <t t-foreach="d.groups" t-as="g" t-key="g_index">
+                                <tr><td><b t-esc="g.name"/><div class="o_rssp_muted" t-esc="g.city"/></td>
+                                    <td class="text-end" t-esc="g.active"/><td class="text-end" t-esc="g.draft"/><td class="text-end" t-esc="g.inactive"/>
+                                    <td class="text-end" t-esc="g.certificates"/><td class="text-end" t-esc="money(g.paid)"/><td class="text-end" t-esc="g.claims"/></tr>
+                            </t>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            <div t-else="" class="o_rssp_muted p-4">Cargando tablero…</div>
+        </div>
+    </t>
+</templates>

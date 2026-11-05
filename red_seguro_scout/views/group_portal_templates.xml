@@ -75,6 +75,7 @@
                 <t t-call="red_seguro_scout.rss_privacy_footer"/>
                 <nav t-if="member" class="o_rssp_nav">
                     <a href="/mi-grupo" t-attf-class="#{'active' if group_page == 'home' else ''}"><i class="fa fa-home"/><span>Inicio</span></a>
+                    <a href="/mi-grupo/tablero" t-attf-class="#{'active' if group_page == 'dashboard' else ''}"><i class="fa fa-line-chart"/><span>Tablero</span></a>
                     <a href="/mi-grupo/asegurados" t-attf-class="#{'active' if group_page in ('insured', 'import') else ''}"><i class="fa fa-users"/><span>Asegurados</span></a>
                     <a href="/mi-grupo/relaciones" t-attf-class="#{'active' if group_page == 'reports' else ''}"><i class="fa fa-file-excel-o"/><span>Relaciones</span></a>
                     <a href="/mi-grupo/pagos" t-attf-class="#{'active' if group_page == 'payments' else ''}"><i class="fa fa-money"/><span>Pagos</span></a>

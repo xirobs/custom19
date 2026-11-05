@@ -1,0 +1,119 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Cuerpo del tablero (portal del asesor y del grupo).
+         Variables: dash (datos de rss.dashboard.get_data), dash_json, money, xlsx_url,
+         filter_groups (opcional, para elegir grupo), grupo (id elegido), action_url -->
+    <template id="rss_dashboard_body" name="Tablero: cuerpo">
+        <t t-set="k" t-value="dash['kpis']"/>
+        <t t-set="multi" t-value="len(dash['groups']) &gt; 1"/>
+        <div class="o_rss_dash">
+            <div class="o_rssp_row o_rss_dash_head">
+                <div>
+                    <h4 class="o_rssp_h mb-0"><i class="fa fa-line-chart"/> Tablero</h4>
+                    <div class="o_rssp_muted">Cifras al día de hoy · <t t-out="k['groups']"/> grupo<t t-if="k['groups'] != 1">s</t></div>
+                </div>
+                <div class="o_rssp_actions m-0">
+                    <form t-if="filter_groups" method="get" t-att-action="action_url" class="o_rss_dash_filter">
+                        <select name="grupo" class="form-select" onchange="this.form.submit()">
+                            <option value="">Todos mis grupos</option>
+                            <option t-foreach="filter_groups" t-as="g" t-att-value="g.id" t-att-selected="str(g.id) == str(grupo or '')" t-out="g.name"/>
+                        </select>
+                    </form>
+                    <a class="btn o_rssp_btn_ghost" t-att-href="xlsx_url"><i class="fa fa-file-excel-o"/> Descargar Excel</a>
+                </div>
+            </div>
+
+            <!-- KPIs -->
+            <div class="o_rss_kpis">
+                <div class="o_rss_kpi o_rss_kpi_main"><b t-out="k['insured']"/><span>Asegurados vigentes</span>
+                    <small><t t-out="k['male']"/> H · <t t-out="k['female']"/> M</small></div>
+                <div class="o_rss_kpi"><b t-out="k['draft']"/><span>En preinscripción</span><small>pendientes de alta</small></div>
+                <div class="o_rss_kpi"><b><t t-out="k['certificates_pct']"/>%</b><span>Con certificado</span>
+                    <small><t t-out="k['certificates']"/> de <t t-out="k['total']"/></small></div>
+                <div class="o_rss_kpi"><b t-out="k['avg_age']"/><span>Edad promedio</span><small>asegurados vigentes</small></div>
+                <div class="o_rss_kpi"><b t-out="money(k['paid_total'])"/><span>Cobrado</span><small><t t-out="k['payments']"/> pagos</small></div>
+                <div class="o_rss_kpi"><b t-out="k['pending_payments']"/><span>Pagos en trámite</span><small t-out="money(k['pending_amount'])"/></div>
+                <div class="o_rss_kpi"><b t-out="k['claims_open']"/><span>Siniestros abiertos</span><small><t t-out="k['claims']"/> en total</small></div>
+                <div class="o_rss_kpi"><b><t t-out="k['claim_rate']"/>%</b><span>Siniestralidad</span><small>siniestros / asegurados</small></div>
+                <div class="o_rss_kpi"><b t-out="money(k['claims_paid_total'])"/><span>Pagado en siniestros</span><small>de <t t-out="money(k['claimed_total'])"/> reclamado</small></div>
+                <div class="o_rss_kpi"><b t-out="k['new_this_month']"/><span>Altas este mes</span><small><t t-out="k['portal_share']"/>% cargados en portal</small></div>
+                <div t-if="multi" class="o_rss_kpi"><b t-out="k['groups_without_payment']"/><span>Grupos sin pago</span><small>de <t t-out="k['groups']"/></small></div>
+                <div t-if="k['coverage_total']" class="o_rss_kpi"><b t-out="money(k['coverage_total'])"/><span>Suma asegurada vigente</span><small>según certificados</small></div>
+            </div>
+
+            <!-- Gráficas -->
+            <h5 class="o_rss_dash_sec">Asegurados</h5>
+            <div class="o_rss_charts">
+                <div t-if="multi" class="o_rss_chart o_rss_chart_wide"><h6>Por grupo y estatus</h6><div class="o_rss_canvas o_rss_canvas_tall"><canvas data-rss-chart="by_group"/></div><p class="o_rss_nodata">Sin datos</p></div>
+                <div class="o_rss_chart"><h6>Por sexo</h6><div class="o_rss_canvas"><canvas data-rss-chart="sex"/></div><p class="o_rss_nodata">Sin datos</p></div>
+                <div class="o_rss_chart"><h6>Por rama</h6><div class="o_rss_canvas"><canvas data-rss-chart="section"/></div><p class="o_rss_nodata">Sin datos</p></div>
+                <div class="o_rss_chart"><h6>Por edad</h6><div class="o_rss_canvas"><canvas data-rss-chart="age"/></div><p class="o_rss_nodata">Sin datos</p></div>
+                <div t-if="multi" class="o_rss_chart"><h6>Por ciudad</h6><div class="o_rss_canvas"><canvas data-rss-chart="city"/></div><p class="o_rss_nodata">Sin datos</p></div>
+                <div class="o_rss_chart"><h6>Altas por mes</h6><div class="o_rss_canvas"><canvas data-rss-chart="new_by_month"/></div><p class="o_rss_nodata">Sin altas en el periodo</p></div>
+            </div>
+            <h5 class="o_rss_dash_sec">Pagos</h5>
+            <div class="o_rss_charts">
+                <div class="o_rss_chart"><h6>Cobrado por mes</h6><div class="o_rss_canvas"><canvas data-rss-chart="paid_by_month"/></div><p class="o_rss_nodata">Sin pagos en el periodo</p></div>
+                <div t-if="multi" class="o_rss_chart"><h6>Cobrado por grupo</h6><div class="o_rss_canvas"><canvas data-rss-chart="paid_by_group"/></div><p class="o_rss_nodata">Sin pagos</p></div>
+            </div>
+            <h5 class="o_rss_dash_sec">Siniestros</h5>
+            <div class="o_rss_charts">
+                <div class="o_rss_chart"><h6>Por estatus</h6><div class="o_rss_canvas"><canvas data-rss-chart="claims_by_state"/></div><p class="o_rss_nodata">Sin siniestros</p></div>
+                <div class="o_rss_chart"><h6>Por tipo de lesión</h6><div class="o_rss_canvas"><canvas data-rss-chart="claims_by_injury"/></div><p class="o_rss_nodata">Sin siniestros</p></div>
+                <div class="o_rss_chart"><h6>Por actividad</h6><div class="o_rss_canvas"><canvas data-rss-chart="claims_by_activity"/></div><p class="o_rss_nodata">Sin siniestros</p></div>
+                <div class="o_rss_chart"><h6>Por mes del accidente</h6><div class="o_rss_canvas"><canvas data-rss-chart="claims_by_month"/></div><p class="o_rss_nodata">Sin siniestros en el periodo</p></div>
+            </div>
+
+            <!-- Pivotes -->
+            <h5 class="o_rss_dash_sec">Tablas dinámicas</h5>
+            <div class="o_rss_pivots">
+                <t t-foreach="[('group_section', 'Grupo × rama'), ('age_sex', 'Edad × sexo')]" t-as="pv">
+                    <t t-set="p" t-value="dash['pivots'][pv[0]]"/>
+                    <div class="o_rss_pivot">
+                        <h6 t-out="pv[1]"/>
+                        <div class="o_rssp_table_wrap">
+                            <table class="table o_rssp_table o_rss_pivot_table">
+                                <thead><tr><th/><th t-foreach="p['cols']" t-as="c" class="text-end" t-out="c"/><th class="text-end">Total</th></tr></thead>
+                                <tbody>
+                                    <tr t-foreach="range(len(p['rows']))" t-as="ri">
+                                        <th t-out="p['rows'][ri]"/>
+                                        <td t-foreach="p['values'][ri]" t-as="v" t-attf-class="text-end #{'o_rss_zero' if not v else ''}" t-out="v"/>
+                                        <td class="text-end"><b t-out="sum(p['values'][ri])"/></td>
+                                    </tr>
+                                </tbody>
+                                <tfoot><tr><th>Total</th>
+                                    <td t-foreach="range(len(p['cols']))" t-as="ci" class="text-end"><b t-out="sum(row[ci] for row in p['values'])"/></td>
+                                    <td class="text-end"><b t-out="sum(sum(row) for row in p['values'])"/></td></tr></tfoot>
+                            </table>
+                        </div>
+                    </div>
+                </t>
+            </div>
+
+            <!-- Resumen por grupo -->
+            <h5 class="o_rss_dash_sec">Resumen por grupo</h5>
+            <div class="o_rssp_table_wrap">
+                <table class="table o_rssp_table">
+                    <thead><tr><th>Grupo</th><th class="text-end">Asegurados</th><th class="text-end">Preinscripción</th><th class="text-end">Bajas</th>
+                        <th class="text-end">Con certificado</th><th class="text-end">Cobrado</th><th class="text-end">Siniestros</th></tr></thead>
+                    <tbody>
+                        <tr t-foreach="dash['groups']" t-as="g">
+                            <td><b t-out="g['name']"/><div class="o_rssp_muted" t-if="g['city']" t-out="g['city']"/></td>
+                            <td class="text-end" t-out="g['active']"/><td class="text-end" t-out="g['draft']"/><td class="text-end" t-out="g['inactive']"/>
+                            <td class="text-end" t-out="g['certificates']"/><td class="text-end" t-out="money(g['paid'])"/><td class="text-end" t-out="g['claims']"/>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        <div class="o_rss_dash_data d-none" t-att-data-json="dash_json"/>
+        <script type="text/javascript" src="/web/static/lib/Chart/Chart.js"/>
+    </template>
+
+    <template id="group_dashboard" name="Grupo: tablero">
+        <t t-call="red_seguro_scout.group_layout"><t t-call="red_seguro_scout.rss_dashboard_body"/></t>
+    </template>
+    <template id="advisor_dashboard" name="Asesor: tablero">
+        <t t-call="red_seguro_scout.advisor_layout"><t t-call="red_seguro_scout.rss_dashboard_body"/></t>
+    </template>
+</odoo>

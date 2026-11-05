@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 {
     'name': 'Red Seguro Scout',
-    'version': '19.0.1.10.0',
+    'version': '19.0.1.11.0',
     'category': 'Services',
     'summary': 'Rumbo Seguro · Altas y control del seguro de accidentes personales de grupos scouts, '
                'con la identidad de cada grupo',
@@ -57,6 +57,7 @@ que cubre a los miembros de los grupos scouts durante sus actividades.
         'views/rss_login_templates.xml',
         'views/certificate_portal_templates.xml',
         'views/insured_alta_templates.xml',
+        'views/dashboard_portal_templates.xml',
         'views/rss_menus.xml',
     ],
     'demo': [
@@ -65,13 +66,21 @@ que cubre a los miembros de los grupos scouts durante sus actividades.
     'assets': {
         'web.assets_backend': [
             'red_seguro_scout/static/src/scss/red_seguro_scout.scss',
+            'red_seguro_scout/static/src/dashboard/rss_dashboard.scss',
+            'red_seguro_scout/static/src/dashboard/rss_charts.js',
+            'red_seguro_scout/static/src/dashboard/rss_dashboard_backend.js',
+            'red_seguro_scout/static/src/dashboard/rss_dashboard_backend.xml',
         ],
         'web.assets_frontend': [
             'red_seguro_scout/static/src/scss/rss_advisor_portal.scss',
+            'red_seguro_scout/static/src/dashboard/rss_dashboard.scss',
             'red_seguro_scout/static/src/js/rss_app_install.js',
+            'red_seguro_scout/static/src/dashboard/rss_charts.js',
+            'red_seguro_scout/static/src/dashboard/rss_dashboard_portal.js',
         ],
         'web.assets_web_dark': [
             'red_seguro_scout/static/src/scss/red_seguro_scout.dark.scss',
+            'red_seguro_scout/static/src/dashboard/rss_dashboard.dark.scss',
         ],
     },
     'application': True,

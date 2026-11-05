@@ -40,6 +40,7 @@
                 <main class="o_rssp_main"><t t-out="0"/></main>
                 <nav t-if="advisor" class="o_rssp_nav">
                     <a href="/seguro" t-attf-class="#{'active' if advisor_page == 'home' else ''}"><i class="fa fa-home"/><span>Inicio</span></a>
+                    <a href="/seguro/tablero" t-attf-class="#{'active' if advisor_page == 'dashboard' else ''}"><i class="fa fa-line-chart"/><span>Tablero</span></a>
                     <a href="/seguro/asegurados" t-attf-class="#{'active' if advisor_page == 'insured' else ''}"><i class="fa fa-users"/><span>Asegurados</span></a>
                     <a href="/seguro/relaciones" t-attf-class="#{'active' if advisor_page == 'reports' else ''}"><i class="fa fa-file-excel-o"/><span>Relaciones</span></a>
                     <a href="/seguro/pagos" t-attf-class="#{'active' if advisor_page == 'payments' else ''}"><i class="fa fa-money"/><span>Pagos</span></a>

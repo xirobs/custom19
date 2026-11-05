@@ -4,3 +4,4 @@ from . import group_portal
 from . import app
 from . import certificate_portal
 from . import insured_alta
+from . import dashboard_portal

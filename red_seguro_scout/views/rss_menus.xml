@@ -4,6 +4,12 @@
               web_icon="red_seguro_scout,static/description/icon.png"
               groups="group_rss_user" sequence="45"/>
 
+    <record id="action_rss_dashboard" model="ir.actions.client">
+        <field name="name">Tablero</field>
+        <field name="tag">rss_dashboard</field>
+    </record>
+    <menuitem id="menu_rss_dashboard" name="Tablero" parent="menu_rss_root" sequence="5"
+              action="action_rss_dashboard"/>
     <menuitem id="menu_rss_members" name="Asegurados" parent="menu_rss_root" sequence="10"/>
     <menuitem id="menu_rss_insured" name="Asegurados" parent="menu_rss_members"
               action="rss_insured_action" sequence="10"/>
