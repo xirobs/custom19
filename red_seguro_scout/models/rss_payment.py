@@ -26,7 +26,7 @@ class RssPayment(models.Model):
                                 store=True, readonly=False, tracking=True)
     company_id = fields.Many2one('res.company', string='Organización',
                                  compute='_compute_policy', store=True, readonly=False)
-    currency_id = fields.Many2one(related='company_id.currency_id', string='Moneda')
+    currency_id = fields.Many2one('res.currency', string='Moneda', compute='_compute_currency')
     year = fields.Integer('Ejercicio', required=True, tracking=True,
                           default=lambda self: fields.Date.context_today(self).year,
                           aggregator=None)
@@ -85,7 +85,8 @@ class RssPayment(models.Model):
         for pay in self:
             if pay.group_id:
                 pay.policy_id = pay.group_id.policy_id
-                pay.company_id = pay.group_id.company_id
+                pay.company_id = (pay.group_id.company_id or pay.group_id.policy_id.company_id
+                                  or pay.company_id or self.env.company)
             elif not pay.company_id:
                 pay.company_id = self.env.company
             # Cuota según la tarifa vigente en la fecha del pago (trimestral) o la cuota anual
@@ -94,6 +95,12 @@ class RssPayment(models.Model):
                 pay.amount_per_member = policy._tariff_for(pay.date or fields.Date.context_today(pay))[1]
             else:
                 pay.amount_per_member = policy.premium_per_member
+
+    @api.depends('company_id')
+    def _compute_currency(self):
+        fallback = self.env.company.currency_id or self.env.ref('base.MXN', raise_if_not_found=False)
+        for pay in self:
+            pay.currency_id = pay.company_id.currency_id or fallback
 
     @api.depends('member_ids', 'amount_per_member', 'amount')
     def _compute_amounts(self):

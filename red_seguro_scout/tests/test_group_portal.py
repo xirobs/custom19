@@ -986,7 +986,7 @@ class TestBoardsAndCredential(_RssPortalCommon, HttpCase):
         # página pública del QR
         public = self.url_open('/credencial/%s' % self.maria.credential_token)
         self.assertEqual(public.status_code, 200)
-        self.assertIn('Datos del Seguro', public.text)
+        self.assertIn('Datos del<br/>Seguro', public.text)
         self.assertIn('no existe', self.url_open('/credencial/xxxxxxxxxxxxxxxx').text)
         # portal del grupo: ver y subir foto
         self.authenticate('cred7@example.com', 'clave-cred7')

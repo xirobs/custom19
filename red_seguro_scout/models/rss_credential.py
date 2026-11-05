@@ -3,7 +3,11 @@
 import base64
 import secrets
 
+from markupsafe import Markup
+
 from odoo import _, api, fields, models
+
+from .rss_common import section_for_age
 from odoo.tools.image import image_data_uri
 
 _STATIC_CACHE = {}
@@ -16,6 +20,30 @@ def static_data_uri(path):
         with file_open('red_seguro_scout/' + path, 'rb') as f:
             _STATIC_CACHE[path] = 'data:image/png;base64,%s' % base64.b64encode(f.read()).decode()
     return _STATIC_CACHE[path]
+
+
+def font_face_css():
+    """@font-face de Poppins incrustada (la credencial se ve igual en pantalla y en PDF)."""
+    if 'fonts' not in _STATIC_CACHE:
+        from odoo.tools.misc import file_open
+        css = []
+        for weight, name in ((400, 'Regular'), (500, 'Medium'), (700, 'Bold')):
+            with file_open('red_seguro_scout/static/src/fonts/Poppins-%s.ttf' % name, 'rb') as f:
+                data = base64.b64encode(f.read()).decode()
+            css.append("@font-face { font-family: 'RSS Poppins'; font-weight: %s; font-style: normal; "
+                       "src: url(data:font/truetype;charset=utf-8;base64,%s) format('truetype'); }" % (weight, data))
+        _STATIC_CACHE['fonts'] = Markup('\n'.join(css))
+    return _STATIC_CACHE['fonts']
+
+
+def _nice(text):
+    """JULIETA ARRIAGA -> Julieta Arriaga (respeta «de», «la», «del»)."""
+    if not text:
+        return ''
+    small = {'de', 'del', 'la', 'las', 'los', 'y', 'e'}
+    words = text.split()
+    return ' '.join(w.lower() if (i and w.lower() in small) else w[:1].upper() + w[1:].lower()
+                    for i, w in enumerate(words))
 
 
 MONTHS_SHORT = ['ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', 'oct', 'nov', 'dic']
@@ -55,22 +83,28 @@ class RssInsuredCredential(models.Model):
             main_cov = policy.coverage_type or _('Accidentes personales (según condiciones de la póliza de la Red de Scouts).')
         start = rec.cert_date_start or rec.date_start or policy.date_start
         end = rec.cert_date_end or policy.date_end
+        if not end and start:
+            # Toda la cobertura termina el 18 de agosto siguiente al alta
+            from datetime import date
+            end = date(start.year + (1 if (start.month, start.day) > (8, 18) else 0), 8, 18)
         if rec.tutor_name or rec.tutor_phone:
             em_name = rec.tutor_name or _('Padre, madre o tutor')
             em_role = RELATION.get(rec.tutor_relationship) or _('Tutor(a)')
             em_phone = rec.tutor_phone or ''
         else:
-            em_name = rec.group_id.leader_name or rec.group_id.name
+            em_name = rec.group_id.leader_name or (rec.group_id.name or '').split('–')[0].strip()
             em_role = _('Jefe de grupo')
             em_phone = rec.group_id.leader_phone or ''
         qr_png = self._credential_qr_png(rec._credential_url())
-        first = ' '.join(x for x in (rec.first_name, rec.second_name) if x)
-        last = ' '.join(x for x in (rec.last_name_father, rec.last_name_mother) if x)
+        second = rec.second_name if (rec.second_name or '').strip().lower() != (rec.first_name or '').strip().lower() else ''
+        first = _nice(' '.join(x for x in (rec.first_name, second) if x))
+        last = _nice(' '.join(x for x in (rec.last_name_father, rec.last_name_mother) if x))
         return {
             'first': first, 'last': last,
             'initials': ''.join(x[0] for x in (rec.first_name, rec.last_name_father) if x).upper(),
             'badge': _('Jefatura / Adulto') if rec.section == 'dirigente' else _('Miembro Scout'),
-            'section': dict(rec._fields['section']._description_selection(self.env)).get(rec.section, ''),
+            'section': (dict(rec._fields['section']._description_selection(self.env)).get(
+                rec.section or (section_for_age(rec.age) if rec.birthdate else False)) or '').split(' (')[0],
             'group': rec.group_id.name.split('–')[0].strip() if rec.group_id else '',
             'city': (rec.group_id.seat_label or rec.group_id.city or '') if rec.group_id else '',
             'group_logo': image_data_uri(rec.group_id.logo) if rec.group_id.logo else False,
@@ -83,7 +117,8 @@ class RssInsuredCredential(models.Model):
             'insurer': rec.cert_insurer or policy.insurer_id.name or '—',
             'certificate': rec.certificate_number or '',
             'coverage': main_cov,
-            'em_name': em_name, 'em_role': em_role, 'em_phone': em_phone,
+            'em_name': _nice(em_name) if em_name and em_name.isupper() else em_name,
+            'em_role': em_role, 'em_phone': em_phone, 'fonts': font_face_css(),
             'qr': 'data:image/png;base64,%s' % base64.b64encode(qr_png).decode(),
             'logo': static_data_uri('static/description/red_seguro_scout_logo.png'),
             'emblem': static_data_uri('static/src/img/emblema_red_seguro_scout.png'),
@@ -101,6 +136,10 @@ class RssInsuredCredential(models.Model):
             return out.getvalue()
         except ImportError:
             return self.env['ir.actions.report'].barcode('QR', value, width=320, height=320)
+
+    @api.model
+    def _credential_fonts(self):
+        return font_face_css()
 
     def action_print_credential(self):
         self._credential_ensure_token()

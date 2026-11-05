@@ -283,3 +283,21 @@ class TestRedSeguroScout(TransactionCase):
         self.assertEqual(sub.payment_method, 'group')
         pay.action_cancel()
         self.assertNotIn(rss_user, user.group_ids)
+
+    def test_99_receipt_without_company(self):
+        """Grupo sin organización: el pago toma una compañía y el recibo imprime con moneda."""
+        self.group_a.company_id = False
+        pay = self.env['rss.payment'].create({
+            'group_id': self.group_a.id, 'amount': 450, 'year': 2026,
+            'member_ids': [(6, 0, self._insured(self.group_a).ids)],
+        })
+        self.assertTrue(pay.company_id)
+        self.assertTrue(pay.currency_id)
+        # Pago viejo guardado sin compañía (como en producción)
+        self.env.cr.execute('UPDATE rss_payment SET company_id = NULL WHERE id = %s', [pay.id])
+        pay.invalidate_recordset()
+        self.assertTrue(pay.currency_id, 'Respaldo de moneda')
+        pay.action_confirm()
+        html = self.env['ir.actions.report']._render_qweb_html(
+            'red_seguro_scout.action_report_recibo_pago', pay.ids)[0]
+        self.assertIn(b'450', html)

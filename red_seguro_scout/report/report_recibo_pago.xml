@@ -38,7 +38,7 @@
                 <tr>
                     <td class="k">La cantidad de</td>
                     <td>
-                        <span class="rs-amount" t-out="doc.amount" t-options="{'widget': 'monetary', 'display_currency': doc.currency_id}"/>
+                        <span class="rs-amount" t-out="doc.amount" t-options="{'widget': 'monetary', 'display_currency': doc.currency_id or doc.env.company.currency_id}"/>
                         <div style="font-size: 10.5px; color: #4A5568;" t-out="doc._amount_in_words()"/>
                     </td>
                 </tr>
@@ -47,7 +47,7 @@
                     <td>Seguro de <t t-out="(doc.policy_id.coverage_type or 'accidentes personales').lower()"/>,
                         ejercicio <t t-out="doc.year"/>, para <strong t-out="doc.member_count"/> miembros
                         <t t-if="doc.amount_per_member">(cuota de
-                            <t t-out="doc.amount_per_member" t-options="{'widget': 'monetary', 'display_currency': doc.currency_id}"/> por miembro)</t>.
+                            <t t-out="doc.amount_per_member" t-options="{'widget': 'monetary', 'display_currency': doc.currency_id or doc.env.company.currency_id}"/> por miembro)</t>.
                     </td>
                 </tr>
                 <tr>
