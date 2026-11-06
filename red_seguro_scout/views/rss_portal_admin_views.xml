@@ -176,6 +176,7 @@
                             <field name="privacy_accepted"/>
                             <field name="office_load" readonly="1"/>
                             <field name="advisor_id" readonly="1" invisible="not advisor_id"/>
+                            <field name="rss_request_payment_id" readonly="1" invisible="not rss_request_payment_id"/>
                         </group>
                         <group>
                             <field name="source" readonly="1"/>

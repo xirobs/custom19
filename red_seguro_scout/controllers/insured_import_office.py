@@ -93,9 +93,11 @@ class RssAdvisorImport(RssAdvisorPortal):
         try:
             if post.get('action') == 'save':
                 count = batch.action_save_draft()
+                sent = batch.rss_request_payment_id.request_sent_date if 'rss_request_payment_id' in batch._fields else False
                 return self._back('/seguro/asegurados?grupo=%s&estatus=draft' % batch.group_id.id,
                                   ok=_('%(n)s personas guardadas en preinscripción en %(g)s.',
-                                       n=count, g=batch.group_id.name))
+                                       n=count, g=batch.group_id.name)
+                                  + (_(' Se envió al grupo la liga para pagar.') if sent else ''))
             if post.get('action') == 'cancel':
                 batch.action_cancel()
                 return self._back('/seguro/cargar', ok=_('Carga cancelada.'))

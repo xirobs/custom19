@@ -43,6 +43,8 @@
 }
 
 // Plataforma (cliente web de Odoo)
+// Odoo pone overflow:hidden en .o_action_manager > .o_action; sin esto la vista no se desplaza
+.o_action_manager > .o_action.o_rss_backend_dash, .o_rss_backend_dash { overflow-y: auto !important; }
 .o_rss_backend_dash { padding: 1rem 1.5rem 3rem; overflow: auto; height: 100%;
     .o_rss_dash { max-width: 1400px; margin: 0 auto; }
     .o_rssp_row { display: flex; justify-content: space-between; align-items: center; }

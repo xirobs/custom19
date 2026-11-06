@@ -105,3 +105,37 @@ class TestPaymentRequest(_RssPortalCommon, HttpCase):
         tx._set_done()
         tx._rss_close_payment_requests()
         self.assertEqual(pay.state, 'draft')
+
+    def test_05_platform_list_sends_payment_link(self):
+        """Lista cargada desde la plataforma: los preinscritos quedan en un pago pendiente y la liga
+        les llega a los representantes."""
+        from .test_group_portal import _xlsx, TestOfficeListLoad
+        wiz = self.env['rss.import.wizard'].create({
+            'file': base64.b64encode(_xlsx(TestOfficeListLoad.ROWS[:1], TestOfficeListLoad.HEADERS)),
+            'filename': 'g7.xlsx'})
+        wiz.action_load()
+        batch = self.env['rss.import.batch'].search([('office_load', '=', True), ('group_id', '=', self.g7.id)])
+        batch.action_save_draft()
+        pay = batch.rss_request_payment_id
+        self.assertTrue(pay)
+        self.assertEqual(pay.member_ids.mapped('first_name'), ['Lucía'])
+        self.assertEqual(pay.amount_expected, 100)
+        self.assertTrue(pay.request_sent_date)
+        msg = pay.message_ids.filtered(lambda m: self.tesorero.partner_id in m.partner_ids)[:1]
+        self.assertTrue(msg)
+        self.assertIn('012180001234567891', msg.body)
+        self.assertIn(pay.access_token, msg.body)
+
+    def test_06_group_capture_sends_payment_info(self):
+        """El grupo captura su lista en el portal: al pasar a pago, les llega el importe y la cuenta."""
+        from datetime import date
+        batch = self.env['rss.import.batch'].create_manual(self.g7, rows=1)
+        batch.line_ids.write({'first_name': 'Nueva', 'last_name_father': 'Persona', 'last_name_mother': 'Grupo',
+                              'birthdate': date(2014, 2, 2), 'sex': 'female'})
+        batch.action_request_payment()
+        self.assertEqual(batch.state, 'payment')
+        msg = batch.message_ids.filtered(lambda m: self.tesorero.partner_id in m.partner_ids)[:1]
+        self.assertTrue(msg)
+        self.assertIn('012180001234567891', msg.body)
+        self.assertIn(batch.reference, msg.body)
+        self.assertIn('/mi-grupo/importar/%s' % batch.id, msg.body)

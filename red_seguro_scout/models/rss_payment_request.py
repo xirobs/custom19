@@ -240,3 +240,101 @@ class PaymentTransactionRssPayment(models.Model):
                 _logger.exception('Red Seguro Scout: no se pudo cerrar el pago %s', pay.id)
                 pay.message_post(body=_('El pago %s se recibió pero no se pudo emitir el recibo '
                                         'automáticamente; revísalo.', tx.reference))
+
+
+class RssPaymentRequestAuto(models.Model):
+    _inherit = 'rss.payment'
+
+    def _send_payment_request_auto(self):
+        """Envía sin intervención los datos de pago a los representantes (cargas de la plataforma/asesor)."""
+        template = self.env.ref('red_seguro_scout.mail_template_rss_payment_request', raise_if_not_found=False)
+        for pay in self:
+            pay._check_requestable()
+            pay._ensure_access_token()
+            if not pay.representative_ids:
+                pay.message_post(body=_('No se enviaron los datos de pago: el grupo no tiene representantes con '
+                                        'correo. Usa «Enviar por WhatsApp» o agrega sus correos.'))
+                continue
+            if not template:
+                continue
+            pay.message_post(
+                subject=template._render_field('subject', pay.ids)[pay.id],
+                body=template._render_field('body_html', pay.ids)[pay.id],
+                partner_ids=pay.representative_ids.ids, subtype_xmlid='mail.mt_comment',
+                email_layout_xmlid='mail.mail_notification_light')
+            pay.request_sent_date = fields.Datetime.now()
+
+
+class RssImportBatchPaymentInfo(models.Model):
+    _inherit = 'rss.import.batch'
+
+    rss_request_payment_id = fields.Many2one('rss.payment', string='Solicitud de pago enviada', readonly=True,
+                                             copy=False)
+
+    def _rss_representatives(self):
+        self.ensure_one()
+        members = self.group_id.sudo().portal_member_ids.filtered('active') \
+            if 'portal_member_ids' in self.group_id._fields else self.env['rss.group.member']
+        return members.mapped('partner_id').filtered('email')
+
+    def _rss_mp_available(self):
+        self.ensure_one()
+        currency = self.currency_id or self.env.company.currency_id
+        partner = self._rss_representatives()[:1] or self.env.user.partner_id
+        providers = self.env['payment.provider'].sudo()._get_compatible_providers(
+            (self.company_id or self.env.company).id, partner.id, self.amount_mp_total or 1.0,
+            currency_id=currency.id, rss_mercado_pago_only=True)
+        return bool(providers)
+
+    def _rss_portal_url(self):
+        base = self.env['ir.config_parameter'].sudo().get_param('web.base.url', '').rstrip('/')
+        return '%s/mi-grupo/importar/%s' % (base, self.id)
+
+    def _rss_notify_payment_info(self):
+        """Lista del grupo lista para pagar: les llega el importe, la liga de Mercado Pago y la cuenta."""
+        template = self.env.ref('red_seguro_scout.mail_template_rss_batch_payment', raise_if_not_found=False)
+        for batch in self.filtered(lambda b: b.state == 'payment'):
+            partners = batch._rss_representatives()
+            if not template or not partners:
+                continue
+            try:
+                batch.sudo().message_post(
+                    subject=template._render_field('subject', batch.ids)[batch.id],
+                    body=template._render_field('body_html', batch.ids)[batch.id],
+                    partner_ids=partners.ids, subtype_xmlid='mail.mt_comment',
+                    email_layout_xmlid='mail.mail_notification_light')
+            except Exception:  # noqa: BLE001 - el aviso no debe impedir el pago
+                _logger.exception('Red Seguro Scout: no se pudo avisar el pago de la carga %s', batch.id)
+
+    def action_request_payment(self):
+        res = super().action_request_payment()
+        self._rss_notify_payment_info()
+        return res
+
+    def action_save_draft(self):
+        """Cargas de la plataforma o del asesor: los preinscritos quedan en un pago pendiente y al grupo
+        le llega la liga para pagarlo."""
+        pending = self.filtered(lambda b: b.office_load and b.state == 'review')
+        res = super().action_save_draft()
+        if self.env.context.get('rss_no_payment_request'):
+            return res
+        for batch in pending.filtered(lambda b: b.state == 'done'):
+            insured = batch.line_ids.mapped('insured_id').filtered(lambda i: i.state == 'draft')
+            if not insured or not batch.group_id.policy_id:
+                continue
+            try:
+                pay = self.env['rss.payment'].sudo().create({
+                    'group_id': batch.group_id.id, 'amount': 0,
+                    'member_ids': [(6, 0, insured.ids)],
+                    'notes': _('Generado al cargar la lista %s.', batch.filename or batch.display_name),
+                })
+                if pay.amount_expected > 0:
+                    pay._send_payment_request_auto()
+                batch.rss_request_payment_id = pay
+                batch.message_post(body=_('Pago pendiente %(ref)s por %(amt)s creado%(sent)s.',
+                                          ref=pay.request_reference, amt='$ {:,.2f}'.format(pay.amount_expected),
+                                          sent=_(' y enviado a los representantes del grupo')
+                                          if pay.request_sent_date else ''))
+            except Exception:  # noqa: BLE001 - los preinscritos ya se guardaron
+                _logger.exception('Red Seguro Scout: no se pudo crear el pago de la carga %s', batch.id)
+        return res
