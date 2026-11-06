@@ -229,7 +229,6 @@ class RssDashboard(models.AbstractModel):
         ('pending_amount', 'Importe en trámite ($)'), ('groups_without_payment', 'Grupos sin pago'),
         ('claims', 'Siniestros'), ('claims_open', 'Siniestros abiertos'), ('claimed_total', 'Reclamado ($)'),
         ('claims_paid_total', 'Pagado en siniestros ($)'), ('claim_rate', 'Siniestralidad (%)'),
-        ('coverage_total', 'Suma asegurada vigente ($)'),
     ]
 
     @api.model

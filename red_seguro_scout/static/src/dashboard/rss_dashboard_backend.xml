@@ -51,7 +51,6 @@
                     <div class="o_rss_kpi"><b t-esc="money(k.claims_paid_total)"/><span>Pagado en siniestros</span><small>de <t t-esc="money(k.claimed_total)"/></small></div>
                     <div class="o_rss_kpi"><b t-esc="k.new_this_month"/><span>Altas este mes</span><small><t t-esc="k.portal_share"/>% cargados en portal</small></div>
                     <div t-if="multi" class="o_rss_kpi"><b t-esc="k.groups_without_payment"/><span>Grupos sin pago</span><small>de <t t-esc="k.groups"/></small></div>
-                    <div t-if="k.coverage_total" class="o_rss_kpi"><b t-esc="money(k.coverage_total)"/><span>Suma asegurada vigente</span><small>según certificados</small></div>
                 </div>
 
                 <h5 class="o_rss_dash_sec">Asegurados <a href="#" class="ms-2 small" t-on-click.prevent="() => this.openPivot('insured')">abrir pivote</a></h5>
