@@ -14,30 +14,16 @@
                 <!-- active in stage for name -->
                 <xpath expr="//field[@name='active']" position="after">
                     <field name="stage_name" invisible="1"/>
+                    <field name="stage_progress" invisible="1"/>
                 </xpath>
                 <!-- Prioridad duplicada: solo arriba junto al nombre, no en Expected Closing -->
                 <xpath expr="//label[@for='date_deadline']/following-sibling::div/field[@name='priority']" position="replace"/>
                 <xpath expr="//button[@name='action_set_won_rainbowman']" position="attributes">
                     <attribute name="invisible">1</attribute>
                 </xpath>
-                <!-- invisible button won -->
-                <xpath expr="//notebook" position="before">
-                    <group string="Perfil del cliente">
-                        <group>
-                            <field name="client_type"/>
-                            <field name="buyer_persona"/>
-                        </group>
-                        <group>
-                            <field name="sector_tag_ids" widget="many2many_tags"
-                                   options="{'color_field': 'color', 'no_create': True}"/>
-                            <field name="urgency_tag_ids" widget="many2many_tags"
-                                   options="{'color_field': 'color', 'no_create': True}"/>
-                        </group>
-                        <group>
-                            <field name="source_id"/>
-                            <field name="create_date"/>
-                        </group>
-                    </group>
+                <xpath expr="//header" position="inside">
+                    <button name="action_open_whatsapp" type="object" string="WhatsApp" class="btn-secondary"
+                            invisible="not phone and not whatsapp_phone"/>
                 </xpath>
             </field>
         </record>
@@ -48,7 +34,23 @@
             <field name="inherit_id" ref="crm.crm_lead_view_form"/>
             <field name="arch" type="xml">
                 <xpath expr="//page[@name='extra']" position="before">
-                    <page string="Información del pedido 3D" name="order_info">
+                    <page string="Pedido y cliente" name="order_info">
+                        <group string="Perfil del cliente">
+                            <group>
+                                <field name="client_type"/>
+                                <field name="buyer_persona"/>
+                            </group>
+                            <group>
+                                <field name="sector_tag_ids" widget="many2many_tags"
+                                       options="{'color_field': 'color', 'no_create': True}"/>
+                                <field name="urgency_tag_ids" widget="many2many_tags"
+                                       options="{'color_field': 'color', 'no_create': True}"/>
+                            </group>
+                            <group>
+                                <field name="source_id"/>
+                                <field name="create_date"/>
+                            </group>
+                        </group>
                         <group string="Datos del pedido">
                             <field string="Fecha de pedido" name="order_date"/>
                             <field string="Fecha de entrega" name="delivery_date" readonly="1"/>
@@ -68,7 +70,7 @@
             <field name="arch" type="xml">
                 <xpath expr="//button[@name='action_sale_quotations_new']" position="replace">
                     <button string="New Quotation" name="action_sale_quotations_new" type="object" class="oe_highlight" data-hotkey="q" 
-                    title="Create new quotation" invisible="stage_name in ['Solicitud','Conceptualización/Diseño','Propuesta enviada','Ganada/Pendiente pago','Imprimiendo','PostProcesado','Control de Calidad','Listo para Entregar','Entregado/Cerrado','Bloque/Pausado']"/>
+                    title="Create new quotation" invisible="stage_name in ['Solicitud','Conceptualización/Diseño','Propuesta enviada','Ganada/Pendiente pago','Imprimiendo','PostProcesado','Control de Calidad','Listo para Entregar','Entregado/Cerrado','Bloqueado/Pausado']"/>
                 </xpath> 
             </field>
         </record>
@@ -273,7 +275,7 @@
             <field name="arch" type="xml">
                 <xpath expr="//page[@name='extra']" position="before">
                     <!-- Proceso de impresión 3D: diseño → entrega -->
-                    <page string="Operaciones" name="print_process" invisible="stage_name in ['Leads','Calificados']">
+                    <page string="Operaciones" name="print_process" invisible="stage_progress &lt; 45 and not print_process_step_ids">
                         <div class="mb-2">
                             <button name="action_create_default_process_steps" type="object" string="Crear pasos por defecto" class="btn-link" invisible="print_process_step_ids"/>
                         </div>

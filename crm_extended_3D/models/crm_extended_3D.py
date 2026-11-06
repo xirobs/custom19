@@ -23,7 +23,7 @@ class CrmExtended3D(models.Model):
     target_company_id = fields.Many2one(comodel_name='res.company', string='Target Company',help="Select the company to duplicate the opportunity to when won.")  # type: ignore
     product_id = fields.Many2one('product.product', string='Product')  # type: ignore
     quantity = fields.Float(string='Quantity', default=1.0)
-    order_date = fields.Date(string='Fecha de pedido',default=fields.Date.today())
+    order_date = fields.Date(string='Fecha de pedido', default=fields.Date.context_today)
     delivery_date = fields.Date(string='Fecha de entrega',compute="_compute_delivery_date",store=True)
     advance_payment = fields.Float(string="Abono del Cliente")
     remaining_payment = fields.Float(string="Restante",compute="_compute_remaining",store=True)
@@ -93,7 +93,90 @@ class CrmExtended3D(models.Model):
     )
 
 
-    lead_sequence = fields.Char(string='Nro. Solicitud',readonly=True,copy=False,default=lambda self: _('New'))    
+    lead_sequence = fields.Char(
+        string='Nro. Solicitud',
+        readonly=True,
+        copy=False,
+        default=lambda self: _('New'),
+        index=True,
+    )
+
+    @api.model
+    def _is_valid_lead_sequence(self, value):
+        """Correlativo CreArt: YYYYMM + padding (p. ej. 2026070006)."""
+        if not value or not isinstance(value, str):
+            return False
+        value = value.strip()
+        return value.isdigit() and len(value) >= 6
+
+    @api.model
+    def _lead_sequence_placeholder_values(self):
+        """Valores temporales antes de asignar correlativo (multi-idioma)."""
+        return {_('New'), 'New', 'Nuevo', 'Nuevo'}
+
+    @api.model
+    def _needs_lead_sequence(self, value):
+        if self._is_valid_lead_sequence(value):
+            return False
+        if not value:
+            return True
+        return str(value).strip() in self._lead_sequence_placeholder_values()
+
+    @api.model
+    def _next_lead_sequence(self):
+        self._ensure_lead_sequence_record()
+        return (
+            self.env['ir.sequence'].next_by_code('crm.lead.sequence')
+            or self.env['ir.sequence'].next_by_code('crm.lead.sequence', sequence_date=fields.Date.today())
+        )
+
+    @api.model
+    def _ensure_lead_sequence_record(self):
+        Sequence = self.env['ir.sequence'].sudo()
+        seq = Sequence.search([('code', '=', 'crm.lead.sequence')], limit=1)
+        if seq:
+            return seq
+        return Sequence.create({
+            'name': 'CRM Lead Sequence',
+            'code': 'crm.lead.sequence',
+            'prefix': '%(year)s%(month)s',
+            'padding': 4,
+            'implementation': 'standard',
+            'company_id': False,
+        })
+
+    @api.model
+    def _assign_missing_lead_sequences(self):
+        """Asigna correlativo a oportunidades que quedaron en New / sin número."""
+        domain = [
+            ('type', '=', 'opportunity'),
+            '|', ('lead_sequence', '=', False),
+            ('lead_sequence', 'in', list(self._lead_sequence_placeholder_values())),
+        ]
+        leads = self.search(domain)
+        # También registros con texto no numérico (p. ej. "New" en otro idioma)
+        leads |= self.search([
+            ('type', '=', 'opportunity'),
+            ('lead_sequence', '!=', False),
+        ]).filtered(lambda l: self._needs_lead_sequence(l.lead_sequence))
+        for lead in leads:
+            next_seq = lead._next_lead_sequence()
+            if next_seq:
+                lead.lead_sequence = next_seq
+        return len(leads)
+
+    def action_repair_lead_sequences(self):
+        count = self._assign_missing_lead_sequences()
+        return {
+            'type': 'ir.actions.client',
+            'tag': 'display_notification',
+            'params': {
+                'title': _('Correlativos reparados'),
+                'message': _('%s oportunidad(es) actualizada(s).') % count,
+                'type': 'success',
+                'sticky': False,
+            },
+        }
     
     @api.depends('order_date')
     def _compute_delivery_date(self):
@@ -121,9 +204,9 @@ class CrmExtended3D(models.Model):
         for rec in self:
             rec.remaining_payment = (rec.selected_total_price or 0.0) - (rec.advance_payment or 0.0)
     
-    #asignación fija de moneda en las oportunidades
+    # Moneda de la oportunidad: la de la empresa (CreArt 3DP trabaja en MXN)
     def _default_currency(self):
-        return self.env.ref('base.USD').id  # type: ignore
+        return self.env.company.currency_id.id
     
     currency_id = fields.Many2one('res.currency',string='Moneda oportunidad',default=_default_currency)  # type: ignore
     
@@ -232,9 +315,17 @@ class CrmExtended3D(models.Model):
     def create(self, vals_list):
         """Asigna secuencia de solicitud y sincroniza color por etapa."""
         for vals in vals_list:
-            if not vals.get('lead_sequence') or vals.get('lead_sequence') == _('New'):
-                vals['lead_sequence'] = self.env['ir.sequence'].next_by_code('crm.lead.sequence') or _('New')
+            if self._needs_lead_sequence(vals.get('lead_sequence')):
+                next_seq = self._next_lead_sequence()
+                if next_seq:
+                    vals['lead_sequence'] = next_seq
         records = super().create(vals_list)
+        # Por si el valor por defecto «New» se aplicó después del write inicial
+        to_fix = records.filtered(lambda l: l._needs_lead_sequence(l.lead_sequence))
+        for lead in to_fix:
+            next_seq = lead._next_lead_sequence()
+            if next_seq:
+                lead.lead_sequence = next_seq
         records._sync_color_with_stage()
         records._sync_creart_tags()
         return records
@@ -282,7 +373,7 @@ class CrmExtended3D(models.Model):
             'Listo para entregar': 92,
             'Entregado/Cerrado': 100,
             'Entregado/cerrado': 100,
-            'Bloque/Pausado': 0,
+            'Bloqueado/Pausado': 0,
             # Compatibilidad con nombres anteriores
             'Diseño/Ajustes': 10,
             'Aprobada propuesta': 35,
@@ -361,7 +452,7 @@ class CrmExtended3D(models.Model):
             'Control de Calidad': 9,            # Verde
             'Listo para Entregar': 8,           # Verde intenso
             'Entregado/Cerrado': 0,             # Gris
-            'Bloque/Pausado': 6,                # Rojo
+            'Bloqueado/Pausado': 6,                # Rojo
 
             # Compatibilidad con nombres anteriores
             'Diseño/Ajustes': 5,
@@ -382,7 +473,8 @@ class CrmExtended3D(models.Model):
                     lead.color = color
 
 class Source(models.Model):
-    _name = "source"    
+    _name = "source"
+    _description = "Origen de la oportunidad"
 
     name = fields.Char(string='Source')
 

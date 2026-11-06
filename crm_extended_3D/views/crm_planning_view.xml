@@ -72,7 +72,7 @@
             <field name="arch" type="xml">
                 <xpath expr="//header" position="inside">
                     <button name="action_create_planning_project" type="object" string="Generar plan CreArt"
-                            class="btn-primary" invisible="planning_task_count"/>
+                            class="btn-secondary" invisible="planning_task_count or stage_progress &lt; 45"/>
                     <button name="action_resync_planning_project" type="object" string="Regenerar plan CreArt"
                             class="btn-secondary" invisible="not planning_task_count"/>
                     <button name="action_open_planning" type="object" string="Ver planificación"
@@ -87,7 +87,7 @@
             <field name="inherit_id" ref="crm_extended_3D.view_crm_lead_form_extended"/>
             <field name="arch" type="xml">
                 <xpath expr="//page[@name='print_process']" position="before">
-                    <page string="Planificación" name="creart_planning">
+                    <page string="Planificación" name="creart_planning" invisible="stage_progress &lt; 45 and not planning_task_count">
                         <group>
                             <group>
                                 <field name="priority" widget="priority"/>

@@ -4,7 +4,7 @@
         <delete model="ir.ui.menu" id="menu_creart_dashboard"/>
 
         <menuitem id="menu_creart_root" name="CreArt 3DP" sequence="15"
-                  web_icon="crm,static/description/icon.png"/>
+                  web_icon="crm_extended_3D,static/description/icon.png"/>
 
         <!-- Un solo acceso al pipeline CRM (sin menú Dashboard duplicado) -->
         <menuitem id="menu_creart_opportunities" name="Oportunidades 3D"

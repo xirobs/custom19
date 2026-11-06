@@ -102,7 +102,7 @@ class CrmLeadActivityAutomation(models.Model):
             "crm_extended_3D.group_creart_commercial_director",
             raise_if_not_found=False,
         )
-        directors = director_group.users if director_group else self.env["res.users"]
+        directors = director_group.user_ids if director_group else self.env["res.users"]
 
         stale_leads = self.search([
             ("type", "=", "opportunity"),

@@ -16,3 +16,5 @@ from . import creart_activity_automation
 from . import creart_chatter_note_wizard
 from . import calendar_event_type
 from . import crm_lead_gantt
+from . import creart_kpi
+from . import res_users

@@ -1,0 +1,275 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<odoo>
+    <template id="app_layout" name="App CreArt: base">&lt;!DOCTYPE html&gt;
+<html lang="es">
+    <head>
+        <meta charset="utf-8"/>
+        <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"/>
+        <meta name="theme-color" content="#141414"/>
+        <meta name="mobile-web-app-capable" content="yes"/>
+        <meta name="apple-mobile-web-app-capable" content="yes"/>
+        <meta name="apple-mobile-web-app-title" content="CreArt"/>
+        <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
+        <title><t t-out="title or 'CreArt 3DP'"/></title>
+        <link rel="manifest" href="/creart/app/manifest.webmanifest"/>
+        <link rel="icon" href="/crm_extended_3D/static/src/app/icon-192.png"/>
+        <link rel="apple-touch-icon" href="/crm_extended_3D/static/src/app/icon-180.png"/>
+        <link rel="stylesheet" href="/crm_extended_3D/static/src/app/creart_app.css"/>
+        <script src="/crm_extended_3D/static/src/app/creart_app.js" defer="defer"></script>
+    </head>
+    <body>
+        <header class="top">
+            <span class="brand">CreArt <em>3DP</em></span>
+            <a class="top-link" href="/creart/app/instalar">Instalar</a>
+        </header>
+        <main class="page"><t t-out="0"/></main>
+        <nav class="tabs" aria-label="Principal">
+            <a href="/creart/app" t-attf-class="tab #{active_tab == 'tablero' and 'on' or ''}">Tablero</a>
+            <a href="/creart/app/trabajos" t-attf-class="tab #{active_tab == 'trabajos' and 'on' or ''}">Trabajos</a>
+            <a href="/creart/app/trabajos/nuevo" t-attf-class="tab #{active_tab == 'nuevo' and 'on' or ''}">Nuevo</a>
+        </nav>
+    </body>
+</html>
+    </template>
+
+    <template id="app_dashboard" name="App CreArt: tablero">
+        <t t-call="crm_extended_3D.app_layout">
+            <t t-set="title">Tablero · CreArt 3DP</t>
+            <h1>Tablero</h1>
+            <section class="grid">
+                <div class="kpi"><span>Ventas del mes</span><b t-out="money(cards['sold_month'])"/>
+                    <small><t t-if="cards['sold_delta'] &gt;= 0">+</t><t t-out="money(cards['sold_delta'])"/> vs. mes anterior</small></div>
+                <div class="kpi"><span>En proceso comercial</span><b t-out="cards['open_jobs']"/>
+                    <small><t t-out="money(cards['open_value'])"/> cotizado</small></div>
+                <div class="kpi"><span>Pipeline ponderado</span><b t-out="money(cards['weighted'])"/>
+                    <small>según etapa</small></div>
+                <div class="kpi"><span>Por cobrar</span><b t-out="money(cards['receivable'])"/>
+                    <small>saldo de trabajos vendidos</small></div>
+                <div class="kpi"><span>Ticket promedio</span><b t-out="money(cards['average_ticket'])"/></div>
+                <div class="kpi"><span>Conversión</span><b><t t-out="cards['conversion']"/>%</b></div>
+                <div class="kpi"><span>Ciclo de venta</span><b><t t-out="cards['cycle_days']"/> días</b></div>
+                <div class="kpi"><span>Margen promedio</span><b><t t-out="cards['average_margin']"/>%</b></div>
+            </section>
+
+            <section class="card">
+                <h2>Ventas y pronóstico</h2>
+                <div class="chart" role="img" aria-label="Ventas por mes y pronóstico de tres meses">
+                    <div t-foreach="data['bars']" t-as="bar" t-attf-class="col #{bar['kind']}">
+                        <span class="val" t-out="money(bar['value'])"/>
+                        <i t-attf-style="height: #{bar['height']}%"/>
+                        <span class="lab" t-out="bar['label']"/>
+                    </div>
+                </div>
+                <p class="legend">
+                    Pronóstico a 3 meses: <b t-out="money(data['forecast_total'])"/>.
+                    Confianza <b t-out="data['confidence']"/>
+                    (<t t-out="data['months_of_data']"/> meses completos de ventas).
+                </p>
+                <p class="notice" t-if="data['confidence'] == 'baja'">
+                    Aún hay pocos datos: toma este pronóstico como referencia, no como meta.
+                </p>
+            </section>
+
+            <section class="card">
+                <h2>Atención</h2>
+                <ul class="alerts">
+                    <li><b t-out="cards['in_production']"/> en producción</li>
+                    <li><b t-out="cards['overdue']"/> con entrega vencida</li>
+                    <li><b t-out="cards['unpriced']"/> sin precio</li>
+                    <li><b t-out="cards['shortage']"/> con faltante de material</li>
+                </ul>
+            </section>
+
+            <section class="card">
+                <h2>Trabajos por etapa</h2>
+                <div class="hbar" t-foreach="data['stages']" t-as="row">
+                    <span t-out="row['name']"/><b t-out="row['count']"/>
+                    <i t-attf-style="width: #{row['width']}%"/>
+                </div>
+            </section>
+        </t>
+    </template>
+
+    <template id="app_jobs" name="App CreArt: trabajos">
+        <t t-call="crm_extended_3D.app_layout">
+            <t t-set="title">Trabajos · CreArt 3DP</t>
+            <h1><t t-if="archived">Archivados</t><t t-else="">Trabajos</t></h1>
+            <form class="search" action="/creart/app/trabajos" method="get">
+                <input type="search" name="q" t-att-value="q" placeholder="Buscar trabajo, cliente o número" aria-label="Buscar"/>
+                <input t-if="archived" type="hidden" name="archivados" value="1"/>
+            </form>
+            <div class="chips">
+                <a t-attf-class="chip #{not stage_id and 'on' or ''}" href="/creart/app/trabajos">Todos</a>
+                <t t-foreach="stages" t-as="stage">
+                    <a t-attf-class="chip #{stage_id == stage.id and 'on' or ''}" t-attf-href="/creart/app/trabajos?etapa=#{stage.id}" t-out="stage.name"/>
+                </t>
+                <a t-attf-class="chip #{archived and 'on' or ''}" href="/creart/app/trabajos?archivados=1">Archivados</a>
+            </div>
+            <p class="empty" t-if="not leads">No hay trabajos con este filtro.</p>
+            <a class="job" t-foreach="leads" t-as="lead" t-attf-href="/creart/app/trabajos/#{lead.id}">
+                <div class="job-top"><b t-out="lead.name"/><span class="price" t-out="money(lead.selected_total_price or lead.expected_revenue)"/></div>
+                <div class="job-sub">
+                    <t t-out="lead.partner_name or lead.contact_name or lead.partner_id.name or 'Sin cliente'"/> · Nro. <t t-out="lead.lead_sequence"/>
+                </div>
+                <div class="job-sub"><span class="stage" t-out="lead.stage_id.name"/> Entrega <t t-out="fmt_date(lead.delivery_date)"/></div>
+                <div class="progress"><i t-attf-style="width: #{lead.stage_progress}%"/></div>
+            </a>
+            <p class="legend" t-if="total &gt; page_size">Se muestran <t t-out="page_size"/> de <t t-out="total"/>. Usa la búsqueda o los filtros para acotar.</p>
+        </t>
+    </template>
+
+    <template id="app_job_form" name="App CreArt: trabajo">
+        <t t-call="crm_extended_3D.app_layout">
+            <t t-set="title">Trabajo · CreArt 3DP</t>
+            <t t-set="v" t-value="post or {}"/>
+            <h1><t t-if="lead" t-out="lead.name"/><t t-else="">Nuevo trabajo</t></h1>
+            <p class="job-sub" t-if="lead">Nro. <t t-out="lead.lead_sequence"/> · <t t-out="lead.stage_id.name"/></p>
+            <p class="error" t-if="error" role="alert" t-out="error"/>
+            <p class="ok" t-if="saved" role="status">Cambios guardados.</p>
+            <p class="notice" t-if="lead and not lead.active">Este trabajo está archivado.</p>
+
+            <section class="grid" t-if="lead">
+                <div class="kpi"><span>Precio</span><b t-out="money(lead.selected_total_price or lead.expected_revenue)"/></div>
+                <div class="kpi"><span>Costo</span><b t-out="money(lead.total_cost)"/></div>
+                <div class="kpi"><span>Margen</span><b><t t-out="round(lead.margin_percent)"/>%</b></div>
+                <div class="kpi"><span>Entrega</span><b t-out="fmt_date(lead.delivery_date)"/></div>
+            </section>
+
+            <form class="card form" method="post" t-attf-action="/creart/app/trabajos/#{lead and lead.id or 'nuevo'}">
+                <input type="hidden" name="csrf_token" t-att-value="csrf"/>
+                <input type="hidden" name="form_submitted" value="1"/>
+                <label>Trabajo <input name="name" required="required" t-att-value="v.get('name') or (lead and lead.name)"/></label>
+                <label t-if="lead">Etapa
+                    <select name="stage_id">
+                        <option t-foreach="stages" t-as="stage" t-att-value="stage.id" t-att-selected="lead.stage_id == stage or None" t-out="stage.name"/>
+                    </select>
+                </label>
+                <div class="two">
+                    <label>Contacto <input name="contact_name" t-att-value="v.get('contact_name') or (lead and lead.contact_name)"/></label>
+                    <label>Empresa <input name="partner_name" t-att-value="v.get('partner_name') or (lead and lead.partner_name)"/></label>
+                    <label>Teléfono <input name="phone" type="tel" t-att-value="v.get('phone') or (lead and lead.phone)"/></label>
+                    <label>Correo <input name="email_from" type="email" t-att-value="v.get('email_from') or (lead and lead.email_from)"/></label>
+                    <label>Precio <input name="expected_revenue" type="number" step="0.01" min="0" inputmode="decimal" t-att-value="v.get('expected_revenue') or (lead and lead.expected_revenue)"/></label>
+                    <label>Abono <input name="advance_payment" type="number" step="0.01" min="0" inputmode="decimal" t-att-value="v.get('advance_payment') or (lead and lead.advance_payment)"/></label>
+                    <label>Método de pago
+                        <select name="payment_method">
+                            <option value="">Sin definir</option>
+                            <option t-foreach="payment_methods" t-as="pm" t-att-value="pm[0]" t-att-selected="lead and lead.payment_method == pm[0] or None" t-out="pm[1]"/>
+                        </select>
+                    </label>
+                    <label>Prioridad
+                        <select name="priority">
+                            <option value="0" t-att-selected="lead and lead.priority == '0' or None">Baja</option>
+                            <option value="1" t-att-selected="(not lead or lead.priority == '1') or None">Normal</option>
+                            <option value="2" t-att-selected="lead and lead.priority == '2' or None">Alta</option>
+                            <option value="3" t-att-selected="lead and lead.priority == '3' or None">Urgente</option>
+                        </select>
+                    </label>
+                    <label>Fecha de pedido <input name="order_date" type="date" t-att-value="lead and lead.order_date or None"/></label>
+                    <label>Piezas <input name="units" type="number" min="0" inputmode="numeric" t-att-value="v.get('units') or (lead and lead.units)"/></label>
+                    <label>Material
+                        <select name="filament_id">
+                            <option value="">Sin definir</option>
+                            <option t-foreach="filaments" t-as="fil" t-att-value="fil.id" t-att-selected="lead and lead.filament_id == fil or None" t-out="fil.display_name"/>
+                        </select>
+                    </label>
+                    <label>Color <input name="filament_color" t-att-value="v.get('filament_color') or (lead and lead.filament_color)"/></label>
+                    <label>Gramos <input name="filament_grams" type="number" step="0.1" min="0" inputmode="decimal" t-att-value="v.get('filament_grams') or (lead and lead.filament_grams)"/></label>
+                    <label>Horas de impresión <input name="print_hours" type="number" min="0" inputmode="numeric" t-att-value="v.get('print_hours') or (lead and lead.print_hours)"/></label>
+                    <label>Minutos <input name="print_time_minutes" type="number" min="0" max="59" inputmode="numeric" t-att-value="v.get('print_time_minutes') or (lead and lead.print_time_minutes)"/></label>
+                </div>
+                <label class="check"><input type="checkbox" name="creart_no_charge" value="1" t-att-checked="lead and lead.creart_no_charge or None"/> Sin cargo (patrocinio u obsequio)</label>
+                <button class="btn" type="submit"><t t-if="lead">Guardar cambios</t><t t-else="">Crear trabajo</t></button>
+            </form>
+
+            <t t-if="lead">
+                <section class="card" id="pasos" t-if="lead.print_process_step_ids">
+                    <h2>Producción</h2>
+                    <form t-foreach="lead.print_process_step_ids" t-as="step" method="post"
+                          t-attf-action="/creart/app/trabajos/#{lead.id}/paso/#{step.id}">
+                        <input type="hidden" name="csrf_token" t-att-value="csrf"/>
+                        <button t-attf-class="step #{step.state}" type="submit">
+                            <span t-out="step.name"/>
+                            <small><t t-if="step.state == 'done'">Completado</t><t t-elif="step.state == 'in_progress'">En curso</t><t t-else="">Pendiente</t></small>
+                        </button>
+                    </form>
+                </section>
+
+                <section class="card" id="notas">
+                    <h2>Notas</h2>
+                    <form method="post" t-attf-action="/creart/app/trabajos/#{lead.id}/nota">
+                        <input type="hidden" name="csrf_token" t-att-value="csrf"/>
+                        <textarea name="nota" rows="2" required="required" placeholder="Escribe una nota" aria-label="Nota"/>
+                        <button class="btn light" type="submit">Agregar nota</button>
+                    </form>
+                    <div class="note" t-foreach="notes" t-as="note">
+                        <small><t t-out="note.author_id.name"/> · <t t-out="fmt_date(note.date)"/></small>
+                        <div t-out="note.body"/>
+                    </div>
+                </section>
+
+                <form t-if="lead.active" method="post" t-attf-action="/creart/app/trabajos/#{lead.id}/archivar"
+                      data-confirm="¿Eliminar este trabajo? Quedará en Archivados y podrás restaurarlo.">
+                    <input type="hidden" name="csrf_token" t-att-value="csrf"/>
+                    <button class="btn danger" type="submit">Eliminar trabajo</button>
+                </form>
+                <form t-else="" method="post" t-attf-action="/creart/app/trabajos/#{lead.id}/restaurar">
+                    <input type="hidden" name="csrf_token" t-att-value="csrf"/>
+                    <button class="btn light" type="submit">Restaurar trabajo</button>
+                </form>
+            </t>
+        </t>
+    </template>
+
+    <template id="app_install" name="App CreArt: instalar">
+        <t t-call="crm_extended_3D.app_layout">
+            <t t-set="title">Instalar · CreArt 3DP</t>
+            <h1>Instalar la app</h1>
+            <section class="card">
+                <button id="pwa-install" class="btn" type="button" hidden="hidden">Instalar ahora</button>
+                <h2>Android</h2>
+                <p>Abre esta página en Chrome, toca el menú ⋮ y elige «Instalar aplicación» o «Agregar a pantalla principal».</p>
+                <h2>iPhone</h2>
+                <p>Abre esta página en Safari, toca Compartir y elige «Agregar a pantalla de inicio».</p>
+            </section>
+        </t>
+    </template>
+
+    <template id="app_offline" name="App CreArt: sin conexión">
+        <t t-call="crm_extended_3D.app_layout">
+            <t t-set="title">Sin conexión · CreArt 3DP</t>
+            <h1>Sin conexión</h1>
+            <p class="empty">Revisa tu internet e inténtalo de nuevo.</p>
+        </t>
+    </template>
+
+    <template id="app_service_worker" name="App CreArt: service worker">const CACHE = 'creart-app-v1';
+const OFFLINE = '/creart/app/sin-conexion';
+const SHELL = [
+    OFFLINE,
+    '/crm_extended_3D/static/src/app/creart_app.css',
+    '/crm_extended_3D/static/src/app/creart_app.js',
+    '/crm_extended_3D/static/src/app/icon-192.png',
+];
+self.addEventListener('install', (event) =&gt; {
+    event.waitUntil(caches.open(CACHE).then((cache) =&gt; cache.addAll(SHELL)));
+    self.skipWaiting();
+});
+self.addEventListener('activate', (event) =&gt; {
+    event.waitUntil(caches.keys().then((keys) =&gt; Promise.all(
+        keys.filter((key) =&gt; key !== CACHE).map((key) =&gt; caches.delete(key))
+    )));
+    self.clients.claim();
+});
+self.addEventListener('fetch', (event) =&gt; {
+    if (event.request.mode === 'navigate') {
+        // Los datos de clientes nunca se guardan en el dispositivo.
+        event.respondWith(fetch(event.request).catch(() =&gt; caches.match(OFFLINE)));
+        return;
+    }
+    if (SHELL.includes(new URL(event.request.url).pathname)) {
+        event.respondWith(caches.match(event.request).then((hit) =&gt; hit || fetch(event.request)));
+    }
+});
+</template>
+</odoo>

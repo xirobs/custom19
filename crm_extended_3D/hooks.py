@@ -30,7 +30,7 @@ CREART_STAGE_NAMES = {
     "Control de Calidad",
     "Listo para Entregar",
     "Entregado/Cerrado",
-    "Bloque/Pausado",
+    "Bloqueado/Pausado",
 }
 
 # xmlid en crm_extended_data.xml → nombre canónico del pipeline
@@ -45,13 +45,15 @@ CREART_STAGE_XMLID_BY_NAME = {
     "Control de Calidad": "crm_stage_control_calidad",
     "Listo para Entregar": "crm_stage_listo_entrega",
     "Entregado/Cerrado": "crm_stage_entregado_cerrado",
-    "Bloque/Pausado": "crm_stage_bloqueado",
+    "Bloqueado/Pausado": "crm_stage_bloqueado",
 }
 
 
 def post_init_hook(env):
     _sync_sheet_defaults(env)
     _dedupe_duplicate_stages(env)
+    _ensure_lead_sequence(env)
+    env["crm.lead"]._assign_missing_lead_sequences()
 
 
 def _sync_sheet_defaults(env):
@@ -81,7 +83,7 @@ def _dedupe_duplicate_stages(env):
             continue
         keeper = _pick_stage_keeper(env, name, group)
         for duplicate in group - keeper:
-            Lead.search([("stage_id", "=", duplicate.id)]).write({"stage_id": keeper.id})
+            Lead.with_context(creart_skip_price_check=True).search([("stage_id", "=", duplicate.id)]).write({"stage_id": keeper.id})
             duplicate.unlink()
 
 
@@ -93,3 +95,8 @@ def _pick_stage_keeper(env, stage_name, stages):
             return canonical
     Lead = env["crm.lead"]
     return max(stages, key=lambda s: Lead.search_count([("stage_id", "=", s.id)]))
+
+
+def _ensure_lead_sequence(env):
+    """Garantiza que exista ir.sequence con code crm.lead.sequence (hosting/reinstalación)."""
+    env["crm.lead"]._ensure_lead_sequence_record()

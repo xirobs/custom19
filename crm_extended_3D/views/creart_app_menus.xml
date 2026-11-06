@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<odoo>
+    <data noupdate="0">
+        <record id="action_creart_app" model="ir.actions.act_url">
+            <field name="name">Tablero CreArt</field>
+            <field name="url">/creart/app</field>
+            <field name="target">new</field>
+        </record>
+        <menuitem id="menu_creart_kpi" name="Tablero"
+                  parent="menu_creart_root" action="action_creart_app" sequence="4"/>
+
+        <record id="view_creart_team_users_list" model="ir.ui.view">
+            <field name="name">res.users.creart.team.list</field>
+            <field name="model">res.users</field>
+            <field name="priority">99</field>
+            <field name="arch" type="xml">
+                <list string="Equipo en la app" editable="bottom" create="0" delete="0">
+                    <field name="name" readonly="1"/>
+                    <field name="login" readonly="1"/>
+                    <field name="creart_team_access" widget="boolean_toggle"/>
+                </list>
+            </field>
+        </record>
+        <record id="action_creart_team_users" model="ir.actions.act_window">
+            <field name="name">Equipo en la app</field>
+            <field name="res_model">res.users</field>
+            <field name="view_mode">list</field>
+            <field name="view_id" ref="view_creart_team_users_list"/>
+            <field name="domain">[('share', '=', True)]</field>
+            <field name="help" type="html">
+                <p>Da acceso de portal a la persona desde Contactos y actívala aquí.</p>
+            </field>
+        </record>
+        <menuitem id="menu_creart_config_team" name="Equipo en la app"
+                  parent="menu_creart_config_root" action="action_creart_team_users"
+                  groups="base.group_erp_manager" sequence="45"/>
+    </data>
+</odoo>

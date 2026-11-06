@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 {
     "name": "CRM Extended",
-    "version": "19.0.3.28.0",
+    "version": "19.0.3.31.0",
     "author": "Jhuliana Delgado",
     "maintainer": "Jhuliana Delgado",
     "website": "",
@@ -10,7 +10,7 @@
     "depends": [
         "base", "web", "crm", "sale_crm", "product", "stock", "project", "calendar",
         "mierp_gantt",
-        "base_geolocalize", "maintenance",
+        "base_geolocalize", "maintenance", "portal",
     ],
     "data": [
         "security/security.xml",
@@ -36,6 +36,8 @@
         "views/mail_activity_type_views.xml",
         "views/creart_chatter_note_views.xml",
         "views/creart_config_menus.xml",
+        "views/creart_app_templates.xml",
+        "views/creart_app_menus.xml",
     ],
     "assets": {
         "web.assets_backend": [
