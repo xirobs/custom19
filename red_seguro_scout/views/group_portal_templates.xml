@@ -615,6 +615,14 @@
     <template id="group_payments" name="Grupo: pagos">
         <t t-call="red_seguro_scout.group_layout">
             <h4 class="o_rssp_h">Pagos del grupo</h4>
+            <section class="o_rssp_card o_rssp_pending" t-if="payment_requests">
+                <h5 class="o_rssp_h"><i class="fa fa-credit-card"/> Pagos por realizar</h5>
+                <a t-foreach="payment_requests" t-as="r" class="o_rssp_list_item" t-attf-href="/seguro/pago/#{r.id}/#{r.access_token}">
+                    <div><b t-out="r.request_reference"/>
+                        <div class="o_rssp_muted"><t t-out="r.member_count"/> asegurados · <t t-out="money(r.amount_expected)"/></div></div>
+                    <span class="o_rssp_pill" t-out="'Comprobante en revisión' if r.proof_submitted else 'Pagar'"/>
+                </a>
+            </section>
             <section class="o_rssp_card o_rssp_pending" t-if="pending_batches">
                 <h5 class="o_rssp_h"><i class="fa fa-hourglass-half"/> Pagos en trámite</h5>
                 <a t-foreach="pending_batches" t-as="b" class="o_rssp_list_item" t-attf-href="/mi-grupo/importar/#{b.id}">

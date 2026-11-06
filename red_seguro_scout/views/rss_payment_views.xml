@@ -55,6 +55,12 @@
         <field name="arch" type="xml">
             <form string="Pago del seguro" class="o_rss">
                 <header>
+                    <button name="action_send_payment_request" type="object" string="Enviar datos de pago"
+                            icon="fa-envelope" class="btn-primary" invisible="state != 'draft' or request_sent_date"/>
+                    <button name="action_send_payment_request" type="object" string="Reenviar datos de pago"
+                            icon="fa-envelope" invisible="state != 'draft' or not request_sent_date"/>
+                    <button name="action_send_payment_whatsapp" type="object" string="Enviar por WhatsApp"
+                            icon="fa-whatsapp" invisible="state != 'draft'"/>
                     <button name="action_confirm" type="object" string="Registrar pago y emitir recibo"
                             class="btn-primary" invisible="state != 'draft'"/>
                     <button name="action_print_receipt" type="object" string="Imprimir recibo"
@@ -74,6 +80,10 @@
                 <sheet>
                     <widget name="web_ribbon" title="Remitido" bg_color="text-bg-success" invisible="state != 'remitted'"/>
                     <widget name="web_ribbon" title="Cancelado" bg_color="text-bg-danger" invisible="state != 'cancel'"/>
+                    <div class="alert alert-info" role="status" invisible="state != 'draft' or not proof_submitted">
+                        El grupo subió su comprobante de transferencia (abajo, en Comprobante(s)). Verifica el depósito,
+                        captura el importe y presiona «Registrar pago y emitir recibo».
+                    </div>
                     <div class="oe_title">
                         <label for="name"/>
                         <h1><field name="name"/></h1>
@@ -119,6 +129,19 @@
                         <div class="o_rss_stat_main"><span class="o_rss_stat_v"><field name="amount" nolabel="1" readonly="1"/></span><span>Recibido</span></div>
                         <div invisible="not amount_difference"><span class="o_rss_stat_v"><field name="amount_difference" nolabel="1"/></span><span>Diferencia</span></div>
                     </div>
+                    <group string="Datos de pago enviados al grupo" invisible="not request_sent_date and not access_token">
+                        <group>
+                            <field name="request_reference"/>
+                            <field name="request_sent_date"/>
+                            <field name="proof_submitted"/>
+                        </group>
+                        <group>
+                            <field name="amount_mp_total"/>
+                            <field name="representative_ids" widget="many2many_tags"/>
+                            <field name="payment_url" widget="CopyClipboardChar"/>
+                            <field name="access_token" invisible="1"/>
+                        </group>
+                    </group>
                     <group string="Remisión a la aseguradora" invisible="state == 'draft'">
                         <group>
                             <field name="insurer_folio" readonly="state == 'remitted'"/>

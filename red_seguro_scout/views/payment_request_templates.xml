@@ -1,0 +1,99 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Liga de pago que reciben los representantes del grupo -->
+    <template id="payment_request_page" name="Red Seguro Scout: liga de pago">
+        <t t-call="web.frontend_layout">
+            <t t-set="no_header" t-value="True"/><t t-set="no_footer" t-value="True"/>
+            <style>
+                .rsspay { max-width: 640px; margin: 0 auto; color: #1E2B3A; }
+                .rsspay-head { background: #6E0B14; border-bottom: 4px solid #E9A825; color: #fff; border-radius: 16px 16px 0 0; padding: 16px 20px; display: flex; gap: 14px; align-items: center; }
+                .rsspay-head img { width: 54px; border-radius: 12px; background: #fff; }
+                .rsspay-head h1 { font-size: 20px; margin: 0; font-weight: 800; color: #fff; }
+                .rsspay-head small { opacity: .85; }
+                .rsspay-body { background: #FBF7F1; border: 1px solid #E9DCCB; border-top: 0; border-radius: 0 0 16px 16px; padding: 18px 20px; }
+                .rsspay-amount { font-size: 32px; font-weight: 800; color: #6E0B14; line-height: 1.1; }
+                .rsspay-card { background: #fff; border: 1px solid #E9DCCB; border-radius: 12px; padding: 14px 16px; margin-top: 14px; }
+                .rsspay-card h2 { font-size: 16px; font-weight: 800; color: #6E0B14; margin: 0 0 8px; }
+                .rsspay-dl { display: grid; grid-template-columns: max-content 1fr; gap: 4px 14px; margin: 0; }
+                .rsspay-dl dt { color: #6B7280; font-weight: 500; }
+                .rsspay-dl dd { margin: 0; font-weight: 600; word-break: break-all; }
+                .rsspay-btn { background: #6E0B14; color: #fff !important; border-radius: 10px; padding: 10px 18px; font-weight: 700; display: inline-block; text-decoration: none; }
+                .rsspay-btn-mp { background: #009EE3; }
+                .rsspay-muted { color: #6B7280; font-size: 13px; }
+            </style>
+            <div class="container py-4">
+                <div class="rsspay">
+                    <div class="rsspay-head">
+                        <img src="/red_seguro_scout/static/description/red_seguro_scout_logo.png" alt="Red Seguro Scout"/>
+                        <div><h1>Pago del seguro</h1><small>Red Seguro Scout · Rumbo Seguro</small></div>
+                    </div>
+                    <div class="rsspay-body">
+                        <div t-if="not pay" class="alert alert-danger mb-0">Esta liga de pago no existe o ya no es válida.</div>
+                        <t t-else="">
+                            <div t-if="error" class="alert alert-danger" t-out="error"/>
+                            <div t-if="ok" class="alert alert-success" t-out="ok"/>
+                            <div class="d-flex justify-content-between flex-wrap gap-2">
+                                <div>
+                                    <div class="rsspay-muted">Grupo</div>
+                                    <div class="fw-bold" t-out="pay.group_id.name"/>
+                                    <div class="rsspay-muted mt-1"><t t-out="pay.member_count"/> asegurados · ejercicio <t t-out="pay.year"/></div>
+                                </div>
+                                <div class="text-end">
+                                    <div class="rsspay-muted">Importe</div>
+                                    <div class="rsspay-amount" t-out="money(pay.amount_expected)"/>
+                                    <div class="rsspay-muted">Referencia <b t-out="pay.request_reference"/></div>
+                                </div>
+                            </div>
+
+                            <t t-if="pay.state in ('confirmed', 'remitted')">
+                                <div class="alert alert-success mt-3 mb-2">Pago recibido · recibo <b t-out="pay.name"/></div>
+                                <a class="rsspay-btn" t-attf-href="/seguro/pago/#{pay.id}/#{pay.access_token}/recibo"><i class="fa fa-file-pdf-o"/> Descargar recibo</a>
+                            </t>
+                            <div t-elif="pay.state == 'cancel'" class="alert alert-warning mt-3 mb-0">Esta solicitud de pago fue cancelada.</div>
+                            <t t-else="">
+                                <div t-if="pay.proof_submitted" class="alert alert-info mt-3 mb-0">Ya recibimos un comprobante; estamos verificando el depósito.</div>
+
+                                <div class="rsspay-card" t-if="mp_available">
+                                    <h2><i class="fa fa-credit-card"/> Pagar con Mercado Pago</h2>
+                                    <p class="mb-2">Tarjeta de débito o crédito, saldo de Mercado Pago u OXXO. Se acredita al momento y el recibo se emite solo.</p>
+                                    <p class="mb-2">Total a pagar: <b t-out="money(pay.amount_mp_total)"/>
+                                        <span class="rsspay-muted" t-if="pay.amount_mp_total &gt; pay.amount_expected">(incluye la comisión de Mercado Pago)</span></p>
+                                    <a class="rsspay-btn rsspay-btn-mp" t-attf-href="/seguro/pago/#{pay.id}/#{pay.access_token}/mercadopago">Pagar <t t-out="money(pay.amount_mp_total)"/></a>
+                                </div>
+
+                                <div class="rsspay-card" t-if="policy and (policy.bank_clabe or policy.bank_account or policy.bank_card)">
+                                    <h2><i class="fa fa-university"/> Transferencia bancaria</h2>
+                                    <p class="mb-2">Transfiere <b t-out="money(pay.amount_expected)"/> y escribe la referencia en el concepto.</p>
+                                    <dl class="rsspay-dl">
+                                        <t t-if="policy.bank_beneficiary"><dt>Beneficiario</dt><dd t-out="policy.bank_beneficiary"/></t>
+                                        <t t-if="policy.bank_name"><dt>Banco</dt><dd t-out="policy.bank_name"/></t>
+                                        <t t-if="policy.bank_clabe"><dt>CLABE</dt><dd t-out="policy.bank_clabe"/></t>
+                                        <t t-if="policy.bank_account"><dt>Cuenta</dt><dd t-out="policy.bank_account"/></t>
+                                        <t t-if="policy.bank_card"><dt>Tarjeta</dt><dd t-out="policy.bank_card"/></t>
+                                        <dt>Concepto</dt><dd t-out="pay.request_reference"/>
+                                    </dl>
+                                    <p t-if="policy.bank_notes" class="rsspay-muted mt-2 mb-0" t-out="policy.bank_notes"/>
+                                    <hr/>
+                                    <form t-attf-action="/seguro/pago/#{pay.id}/#{pay.access_token}/comprobante" method="post" enctype="multipart/form-data">
+                                        <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
+                                        <div class="fw-bold mb-2">Ya transferí: subir comprobante</div>
+                                        <div class="mb-2"><input type="file" name="proof" class="form-control" accept="image/*,application/pdf" multiple="multiple" required="required"/></div>
+                                        <div class="row g-2 mb-2">
+                                            <div class="col-sm-6"><input type="text" name="reference" class="form-control" placeholder="Folio de la operación (opcional)"/></div>
+                                            <div class="col-sm-6"><input type="text" name="tracking_key" class="form-control" placeholder="Clave de rastreo SPEI (opcional)"/></div>
+                                        </div>
+                                        <button type="submit" class="rsspay-btn">Enviar comprobante</button>
+                                    </form>
+                                </div>
+                                <div t-if="not mp_available and not (policy and (policy.bank_clabe or policy.bank_account or policy.bank_card))" class="alert alert-warning mt-3 mb-0">
+                                    Aún no hay forma de pago configurada. Comunícate con la Red Seguro Scout.
+                                </div>
+                            </t>
+                        </t>
+                    </div>
+                    <p class="rsspay-muted text-center mt-3">Liga personal del grupo. No la compartas fuera de los representantes.</p>
+                </div>
+            </div>
+        </t>
+    </template>
+</odoo>

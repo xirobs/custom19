@@ -23,3 +23,4 @@ from . import rss_dashboard
 from . import rss_import_office
 from . import rss_board
 from . import rss_credential
+from . import rss_payment_request

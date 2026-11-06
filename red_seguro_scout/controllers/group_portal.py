@@ -544,8 +544,10 @@ class RssGroupPortal(http.Controller):
             ('group_id', '=', member.group_id.id), ('state', 'in', ('confirmed', 'remitted'))], limit=100)
         pending = request.env['rss.import.batch'].sudo().search([
             ('group_id', '=', member.group_id.id), ('state', 'in', ('payment', 'verifying'))])
+        to_pay = request.env['rss.payment'].sudo().search([
+            ('group_id', '=', member.group_id.id), ('state', '=', 'draft'), ('access_token', '!=', False)])
         return self._render('red_seguro_scout.group_payments', member, 'payments', payments=payments,
-                            pending_batches=pending)
+                            pending_batches=pending, payment_requests=to_pay)
 
     @http.route(['/mi-grupo/pagos/<int:payment_id>/recibo'], type='http', auth='user', sitemap=False)
     def group_payment_receipt(self, payment_id, **kw):

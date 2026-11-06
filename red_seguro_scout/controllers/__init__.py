@@ -7,3 +7,4 @@ from . import insured_alta
 from . import dashboard_portal
 from . import insured_import_office
 from . import credential_portal
+from . import payment_request
