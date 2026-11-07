@@ -5,13 +5,13 @@
             <field name="name">Red Seguro Scout: relación mensual a la aseguradora</field>
             <field name="model_id" ref="model_rss_report"/>
             <field name="subject">Relación de asegurados {{ object.name }}</field>
-            <field name="email_from">{{ (object.company_id.email_formatted or user.email_formatted) }}</field>
+            <field name="email_from">{{ object._rss_email_from() or user.email_formatted }}</field>
             <field name="email_to">{{ object.policy_id.insurer_email }}</field>
             <field name="email_cc">{{ object.policy_id.insurer_cc or '' }}</field>
             <field name="description">Se envía con el Excel y el PDF de la relación mensual de asegurados</field>
             <field name="body_html" type="html">
 <div style="font-family: Arial, sans-serif; font-size: 14px; color: #1A2233;">
-    <div style="background: #6E0B14; border-bottom: 3px solid #E9A825; color: #ffffff; padding: 14px 18px; border-radius: 8px 8px 0 0;">
+    <div style="background-color: #6E0B14; border-bottom: 3px solid #E9A825; color: #ffffff; padding: 14px 18px; border-radius: 8px 8px 0 0;">
         <strong style="font-size: 16px;">Red Seguro Scout</strong>
         <span style="opacity: .85;"> · Rumbo Seguro</span>
         <div style="opacity: .85; font-size: 13px;">Relación mensual de asegurados</div>
@@ -32,7 +32,7 @@
                     <strong t-out="object.drop_count">0</strong></td></tr>
         </table>
         <p>Quedamos atentos a su acuse de recibido.</p>
-        <p>Saludos,<br/><t t-out="object.company_id.name or ''">Grupo Scout</t></p>
+        <p>Saludos,<br/><strong>Red Seguro Scout</strong> · Rumbo Seguro</p>
     </div>
 </div>
             </field>

@@ -26,3 +26,4 @@ from . import rss_credential
 from . import rss_payment_request
 from . import rss_certificate_missing
 from . import rss_service_charge
+from . import rss_mail_brand

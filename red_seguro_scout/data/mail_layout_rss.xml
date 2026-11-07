@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Marco de los correos del seguro: identidad de Red Seguro Scout (no la de la compañía de Odoo) -->
+    <template id="mail_notification_rss" name="Red Seguro Scout: marco de correo">
+<html t-att-lang="lang">
+<head>
+    <meta http-equiv="Content-Type" content="text/html charset=UTF-8"/>
+</head>
+<body>
+<t t-set="subtype_internal" t-value="False"/>
+<t t-call="mail.notification_preview"/>
+<t t-set="rss_base" t-value="message.get_base_url() if message else ''"/>
+<table role="presentation" border="0" cellpadding="0" cellspacing="0" style="padding-top: 16px; background-color: #F5EFE6; font-family: Verdana, Arial, sans-serif; color: #1A2233; width: 100%; border-collapse: separate;"><tr><td align="center">
+<table role="presentation" border="0" cellpadding="0" cellspacing="0" width="590" style="padding: 24px; background-color: #ffffff; color: #1A2233; border-collapse: separate; border-radius: 10px;">
+<tbody>
+    <tr>
+        <td style="min-width: 590px;">
+            <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%" style="border-collapse: separate;">
+                <tr>
+                    <td valign="middle" align="center">
+                        <img t-att-src="rss_base + '/red_seguro_scout/static/description/red_seguro_scout_logo.png'"
+                             style="height: 52px; border-radius: 10px;" alt="Red Seguro Scout"/>
+                    </td>
+                </tr>
+                <tr><td><div style="height: 3px; background-color: #E9A825; margin: 10px 0 20px 0;"></div></td></tr>
+            </table>
+        </td>
+    </tr>
+    <tr>
+        <td style="min-width: 590px;">
+            <t t-out="message.body"/>
+        </td>
+    </tr>
+    <tr>
+        <td align="center" style="min-width: 590px; padding: 0 8px; font-size: 11px; color: #6B7280;">
+            <hr width="100%" style="background-color: #E9DCCB; border: medium none; min-height: 1px; line-height: 0; margin: 16px 0 6px 0;"/>
+            <b style="color: #6E0B14;">Red Seguro Scout</b> · Seguro de accidentes scout<br/>
+            <a t-if="company and company.email" t-att-href="'mailto:%s' % company.email"
+               style="text-decoration: none; color: #6B7280;" t-out="company.email"/>
+        </td>
+    </tr>
+</tbody>
+</table>
+</td></tr>
+</table>
+</body>
+</html>
+    </template>
+</odoo>

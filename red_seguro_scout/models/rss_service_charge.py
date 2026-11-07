@@ -199,7 +199,7 @@ class RssServiceCharge(models.Model):
                 'default_model': self._name, 'default_res_ids': self.ids,
                 'default_composition_mode': 'comment', 'default_subject': subject, 'default_body': body,
                 'default_partner_ids': self.representative_ids.ids,
-                'default_email_layout_xmlid': 'mail.mail_notification_light',
+                'default_email_layout_xmlid': 'red_seguro_scout.mail_notification_rss',
                 'mark_rss_service_sent': True,
             },
         }
@@ -216,7 +216,7 @@ class RssServiceCharge(models.Model):
                 continue
             subject, body = rec._render_mail()
             rec.message_post(subject=subject, body=body, partner_ids=rec.representative_ids.ids,
-                             subtype_xmlid='mail.mt_comment', email_layout_xmlid='mail.mail_notification_light')
+                             subtype_xmlid='mail.mt_comment', email_layout_xmlid='red_seguro_scout.mail_notification_rss')
             rec._mark_sent()
             sent |= rec
         return sent

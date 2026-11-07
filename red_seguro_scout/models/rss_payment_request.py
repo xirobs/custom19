@@ -134,7 +134,7 @@ class RssPaymentRequest(models.Model):
                 'default_subject': subject,
                 'default_body': body,
                 'default_partner_ids': self.representative_ids.ids,
-                'default_email_layout_xmlid': 'mail.mail_notification_light',
+                'default_email_layout_xmlid': 'red_seguro_scout.mail_notification_rss',
                 'mark_rss_payment_request_sent': True,
             },
         }
@@ -261,7 +261,7 @@ class RssPaymentRequestAuto(models.Model):
                 subject=template._render_field('subject', pay.ids)[pay.id],
                 body=template._render_field('body_html', pay.ids)[pay.id],
                 partner_ids=pay.representative_ids.ids, subtype_xmlid='mail.mt_comment',
-                email_layout_xmlid='mail.mail_notification_light')
+                email_layout_xmlid='red_seguro_scout.mail_notification_rss')
             pay.request_sent_date = fields.Datetime.now()
 
 
@@ -302,7 +302,7 @@ class RssImportBatchPaymentInfo(models.Model):
                     subject=template._render_field('subject', batch.ids)[batch.id],
                     body=template._render_field('body_html', batch.ids)[batch.id],
                     partner_ids=partners.ids, subtype_xmlid='mail.mt_comment',
-                    email_layout_xmlid='mail.mail_notification_light')
+                    email_layout_xmlid='red_seguro_scout.mail_notification_rss')
             except Exception:  # noqa: BLE001 - el aviso no debe impedir el pago
                 _logger.exception('Red Seguro Scout: no se pudo avisar el pago de la carga %s', batch.id)
 

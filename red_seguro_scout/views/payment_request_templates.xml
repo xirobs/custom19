@@ -177,4 +177,21 @@
             </div>
         </t>
     </template>
+    <!-- Página de pago de Odoo (/payment/pay y su confirmación) con logo y pie de Red Seguro Scout -->
+    <template id="rss_payment_page_brand" inherit_id="portal.frontend_layout" name="Red Seguro Scout: página de pago" priority="90">
+        <xpath expr="//div[@id='wrapwrap']" position="before">
+            <t t-set="rss_pay_brand" t-value="request and request.env['rss.pay.brand'].sudo()._is_rss_payment_page()"/>
+        </xpath>
+        <xpath expr="//a[hasclass('navbar-brand')]/img" position="attributes">
+            <attribute name="t-att-src">'/red_seguro_scout/static/description/red_seguro_scout_logo.png' if rss_pay_brand else '/logo.png?company=%s' % res_company.id</attribute>
+            <attribute name="t-att-alt">'Red Seguro Scout' if rss_pay_brand else 'Logo of %s' % res_company.name</attribute>
+            <attribute name="t-att-title">'Red Seguro Scout' if rss_pay_brand else res_company.name</attribute>
+        </xpath>
+        <xpath expr="//span[hasclass('o_footer_copyright_name')]/span" position="attributes">
+            <attribute name="t-if">not rss_pay_brand</attribute>
+        </xpath>
+        <xpath expr="//span[hasclass('o_footer_copyright_name')]/span" position="after">
+            <span t-if="rss_pay_brand">Red Seguro Scout</span>
+        </xpath>
+    </template>
 </odoo>

@@ -5,11 +5,11 @@
             <field name="name">Red Seguro Scout: datos de pago para el grupo</field>
             <field name="model_id" ref="model_rss_payment"/>
             <field name="subject">Pago del seguro · {{ object.group_id.name }} · {{ object.request_reference }}</field>
-            <field name="email_from">{{ (object.company_id.email_formatted or user.email_formatted) }}</field>
+            <field name="email_from">{{ object._rss_email_from() or user.email_formatted }}</field>
             <field name="description">Se envía a los representantes del grupo con la liga de Mercado Pago y los datos para transferir</field>
             <field name="body_html" type="html">
 <div style="font-family: Arial, sans-serif; font-size: 14px; color: #1A2233;">
-    <div style="background: #6E0B14; border-bottom: 3px solid #E9A825; color: #ffffff; padding: 14px 18px; border-radius: 8px 8px 0 0;">
+    <div style="background-color: #6E0B14; border-bottom: 3px solid #E9A825; color: #ffffff; padding: 14px 18px; border-radius: 8px 8px 0 0;">
         <strong style="font-size: 16px;">Red Seguro Scout</strong>
         <span style="opacity: .85;"> · Rumbo Seguro</span>
         <div style="opacity: .85; font-size: 13px;">Pago del seguro de accidentes</div>
@@ -28,18 +28,18 @@
         </table>
 
         <t t-if="object._mercadopago_available()">
-            <div style="background: #F1F9FE; border: 1px solid #B9E3F8; border-radius: 8px; padding: 12px 14px; margin: 12px 0;">
+            <div style="background-color: #F1F9FE; border: 1px solid #B9E3F8; border-radius: 8px; padding: 12px 14px; margin: 12px 0;">
                 <strong style="color: #00649A;">Pagar con Mercado Pago</strong>
                 <div style="margin: 4px 0 10px; color: #4A5568;">Tarjeta, saldo de Mercado Pago u OXXO. Total
                     <strong t-out="'$ {:,.2f}'.format(object.amount_mp_total)">$ 0.00</strong>
                     <t t-if="object.amount_mp_total &gt; object.amount_expected">(incluye la comisión de Mercado Pago)</t>.
                     El recibo se emite solo.</div>
-                <a t-att-href="object.payment_url + '/mercadopago'" style="display: inline-block; margin-top: 6px; background: #009EE3; color: #ffffff; padding: 9px 16px; border-radius: 6px; text-decoration: none; font-weight: bold;">Pagar con Mercado Pago</a>
+                <a t-att-href="object.payment_url + '/mercadopago'" style="display: inline-block; margin-top: 6px; background-color: #009EE3; color: #ffffff; padding: 9px 16px; border-radius: 6px; text-decoration: none; font-weight: bold;">Pagar con Mercado Pago</a>
             </div>
         </t>
 
         <t t-if="object.policy_id and (object.policy_id.bank_clabe or object.policy_id.bank_account or object.policy_id.bank_card)">
-            <div style="background: #FBF7F1; border: 1px solid #E9DCCB; border-radius: 8px; padding: 12px 14px; margin: 12px 0;">
+            <div style="background-color: #FBF7F1; border: 1px solid #E9DCCB; border-radius: 8px; padding: 12px 14px; margin: 12px 0;">
                 <strong style="color: #6E0B14;">Transferencia bancaria</strong>
                 <div style="margin: 4px 0 6px; color: #4A5568;">Transfiere
                     <strong t-out="'$ {:,.2f}'.format(object.amount_expected)">$ 0.00</strong>
@@ -54,12 +54,12 @@
                 </table>
                 <div t-if="object.policy_id.bank_notes" style="margin-top: 6px; color: #4A5568;" t-out="object.policy_id.bank_notes"/>
                 <div style="margin-top: 10px;">Después de transferir, sube tu comprobante aquí:</div>
-                <div style="margin-top: 8px;"><a t-att-href="object.payment_url" style="display: inline-block; background: #6E0B14; color: #ffffff; padding: 9px 16px; border-radius: 6px; text-decoration: none; font-weight: bold;">Subir comprobante</a></div>
+                <div style="margin-top: 8px;"><a t-att-href="object.payment_url" style="display: inline-block; background-color: #6E0B14; color: #ffffff; padding: 9px 16px; border-radius: 6px; text-decoration: none; font-weight: bold;">Subir comprobante</a></div>
             </div>
         </t>
         <p style="color: #4A5568; font-size: 13px;">Toda la información del pago también está en esta liga:
             <a t-att-href="object.payment_url" t-out="object.payment_url or ''">liga</a></p>
-        <p>Saludos,<br/><t t-out="object.company_id.name or 'Red Seguro Scout'">Red Seguro Scout</t></p>
+        <p>Saludos,<br/><strong>Red Seguro Scout</strong> · Rumbo Seguro</p>
     </div>
 </div>
             </field>
@@ -69,11 +69,11 @@
             <field name="name">Red Seguro Scout: pago de la lista cargada por el grupo</field>
             <field name="model_id" ref="model_rss_import_batch"/>
             <field name="subject">Pago pendiente · {{ object.group_id.name }} · {{ object.reference }}</field>
-            <field name="email_from">{{ ((object.company_id or user.company_id).email_formatted or user.email_formatted) }}</field>
+            <field name="email_from">{{ object._rss_email_from() or user.email_formatted }}</field>
             <field name="description">Se envía a los representantes cuando el grupo termina de capturar su lista en el portal</field>
             <field name="body_html" type="html">
 <div style="font-family: Arial, sans-serif; font-size: 14px; color: #1A2233;">
-    <div style="background: #6E0B14; border-bottom: 3px solid #E9A825; color: #ffffff; padding: 14px 18px; border-radius: 8px 8px 0 0;">
+    <div style="background-color: #6E0B14; border-bottom: 3px solid #E9A825; color: #ffffff; padding: 14px 18px; border-radius: 8px 8px 0 0;">
         <strong style="font-size: 16px;">Red Seguro Scout</strong>
         <span style="opacity: .85;"> · Rumbo Seguro</span>
         <div style="opacity: .85; font-size: 13px;">Pago de la lista de asegurados</div>
@@ -91,18 +91,18 @@
                 <td style="padding: 4px 0;"><strong t-out="object.reference or ''">RSS-G1-1</strong></td></tr>
         </table>
         <t t-if="object._rss_mp_available()">
-            <div style="background: #F1F9FE; border: 1px solid #B9E3F8; border-radius: 8px; padding: 12px 14px; margin: 12px 0;">
+            <div style="background-color: #F1F9FE; border: 1px solid #B9E3F8; border-radius: 8px; padding: 12px 14px; margin: 12px 0;">
                 <strong style="color: #00649A;">Pagar con Mercado Pago</strong>
                 <div style="margin: 4px 0 6px; color: #4A5568;">Total
                     <strong t-out="'$ {:,.2f}'.format(object.amount_mp_total)">$ 0.00</strong>
                     <t t-if="object.amount_mp_total &gt; object.amount_total">(incluye la comisión de Mercado Pago)</t>.
                     Las personas quedan aseguradas al momento.</div>
-                <a t-att-href="object._rss_portal_url() + '/mercadopago'" style="display: inline-block; margin-top: 6px; background: #009EE3; color: #ffffff; padding: 9px 16px; border-radius: 6px; text-decoration: none; font-weight: bold;">Pagar con Mercado Pago</a>
+                <a t-att-href="object._rss_portal_url() + '/mercadopago'" style="display: inline-block; margin-top: 6px; background-color: #009EE3; color: #ffffff; padding: 9px 16px; border-radius: 6px; text-decoration: none; font-weight: bold;">Pagar con Mercado Pago</a>
             </div>
         </t>
         <t t-set="pol" t-value="object.group_id.sudo().policy_id"/>
         <t t-if="pol and (pol.bank_clabe or pol.bank_account or pol.bank_card)">
-            <div style="background: #FBF7F1; border: 1px solid #E9DCCB; border-radius: 8px; padding: 12px 14px; margin: 12px 0;">
+            <div style="background-color: #FBF7F1; border: 1px solid #E9DCCB; border-radius: 8px; padding: 12px 14px; margin: 12px 0;">
                 <strong style="color: #6E0B14;">Transferencia bancaria</strong>
                 <div style="margin: 4px 0 6px; color: #4A5568;">Transfiere
                     <strong t-out="'$ {:,.2f}'.format(object.amount_total)">$ 0.00</strong>
@@ -117,10 +117,10 @@
                 </table>
                 <div t-if="pol.bank_notes" style="margin-top: 6px; color: #4A5568;" t-out="pol.bank_notes"/>
                 <div style="margin-top: 10px;">Después de transferir, sube tu comprobante en el portal:</div>
-                <a t-att-href="object._rss_portal_url()" style="display: inline-block; margin-top: 8px; background: #6E0B14; color: #ffffff; padding: 9px 16px; border-radius: 6px; text-decoration: none; font-weight: bold;">Ir a mi carga</a>
+                <a t-att-href="object._rss_portal_url()" style="display: inline-block; margin-top: 8px; background-color: #6E0B14; color: #ffffff; padding: 9px 16px; border-radius: 6px; text-decoration: none; font-weight: bold;">Ir a mi carga</a>
             </div>
         </t>
-        <p>Saludos,<br/><t t-out="(object.company_id.name or 'Red Seguro Scout')">Red Seguro Scout</t></p>
+        <p>Saludos,<br/><strong>Red Seguro Scout</strong> · Rumbo Seguro</p>
     </div>
 </div>
             </field>
