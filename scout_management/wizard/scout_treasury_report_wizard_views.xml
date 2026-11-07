@@ -5,13 +5,15 @@
         <field name="model">scout.treasury.report.wizard</field>
         <field name="arch" type="xml">
             <form>
-                <p class="text-muted">Balance de tesorería para el Consejo, tomado de Contabilidad: saldos de caja y bancos, ingresos por rubro, gastos, disponible, adeudos y gastos por aprobar.</p>
+                <p class="text-muted">Informe de tesorería en formato infografía (para padres, tutores y jefes), tomado de Contabilidad: ingresos por rubro, egresos, saldos de caja y bancos, deudas, cobros pendientes y saldo proyectado. Opcionalmente agrega el detalle de cada movimiento.</p>
                 <group>
                     <label for="date_from" string="Periodo"/>
                     <div class="o_row">
                         <field name="date_from"/> al <field name="date_to"/>
                     </div>
+                    <field name="audience"/>
                     <field name="include_pending"/>
+                    <field name="include_detail"/>
                     <field name="notes" placeholder="Ej. Se entregan playeras de grupo por registro."/>
                 </group>
                 <footer>

@@ -1,9 +1,11 @@
 # -*- coding: utf-8 -*-
+import base64
+from collections import OrderedDict
 from datetime import timedelta
 
 from odoo import api, fields, models, _
 from odoo.exceptions import UserError
-from odoo.tools import format_amount, format_date
+from odoo.tools import file_open, format_amount, format_date
 
 
 class ScoutTreasuryReportWizard(models.TransientModel):
@@ -14,6 +16,9 @@ class ScoutTreasuryReportWizard(models.TransientModel):
                             default=lambda self: fields.Date.context_today(self).replace(day=1))
     date_to = fields.Date(string='Hasta', required=True, default=fields.Date.context_today)
     include_pending = fields.Boolean(string='Incluir cuentas por cobrar y por pagar', default=True)
+    include_detail = fields.Boolean(string='Agregar detalle de movimientos', default=True,
+                                    help='Después de la infografía agrega las hojas con cada ingreso y gasto.')
+    audience = fields.Char(string='Dirigido a', default='Padres, tutores y jefes')
     notes = fields.Text(string='Notas para la junta')
 
     def action_print(self):
@@ -109,18 +114,122 @@ class ReportScoutTreasury(models.AbstractModel):
 
         total_income = st['total_income']
         total_expense = st['total_expense']
+        closing_total = sum(r['closing'] for r in account_rows)
+        total_receivable = sum(r['amount'] for r in receivables)
+        total_payable = sum(r['amount'] for r in payables)
+        projected = closing_total + total_receivable - total_payable
+        money = lambda value: format_amount(self.env, value or 0.0, currency)
+
+        def pct(value, total):
+            return (value / total * 100.0) if total else 0.0
+
+        def bars(rows, total):
+            top = max([r['amount'] for r in rows] or [0.0])
+            for r in rows:
+                r['pct'] = pct(r['amount'], total)
+                r['width'] = max(2.0, r['amount'] / top * 100.0) if top and r['amount'] > 0 else 0.0
+            return rows
+
+        income_rows = bars(sorted([{'label': g['label'], 'amount': g['total']} for g in ordered_groups
+                                   if g['total']], key=lambda r: -r['amount']), total_income)
+        # Con pocos gastos se muestra cada concepto (Stickers, Escudos...); con muchos, por categoría
+        labels = {(e.get('label') or '').strip() for e in expenses}
+        by_label = len(labels) <= 8 and all(labels)
+        exp_map = OrderedDict()
+        for e in expenses:
+            key = (e.get('label') or '').strip() if by_label else (e['category'] or _('Otros gastos'))
+            exp_map[key] = exp_map.get(key, 0.0) + e['amount']
+        expense_rows = bars(sorted([{'label': k, 'amount': v} for k, v in exp_map.items() if v],
+                                   key=lambda r: -r['amount']), total_expense)
+
+        def grouped(items, limit=8):
+            agg = OrderedDict()
+            for it in items:
+                key = (it['desc'] or '').strip() or _('Sin concepto')
+                row = agg.setdefault(key, {'label': key, 'amount': 0.0, 'count': 0, 'who': set()})
+                row['amount'] += it['amount']
+                row['count'] += 1
+                if it.get('who'):
+                    row['who'].add(it['who'])
+            rows = sorted(agg.values(), key=lambda r: -r['amount'])
+            if len(rows) > limit:
+                rest = rows[limit - 1:]
+                rows = rows[:limit - 1] + [{'label': _('Otros conceptos'), 'amount': sum(r['amount'] for r in rest),
+                                            'count': sum(r['count'] for r in rest), 'who': set()}]
+            for r in rows:
+                r['who'] = ', '.join(sorted(r['who'])) if len(r['who']) == 1 else (
+                    _('%s personas', len(r['who'])) if r['who'] else '')
+            return rows
+
+        payable_rows = grouped(payables)
+        receivable_rows = grouped(receivables)
+
+        # gráfica "panorama": valores absolutos escalados a la columna más alta
+        overview = [
+            {'label': _('Ingresos'), 'amount': total_income, 'color': '#1f8a3b'},
+            {'label': _('Egresos'), 'amount': total_expense, 'color': '#d62828'},
+            {'label': _('Saldo en banco'), 'amount': closing_total, 'color': '#1b2f5e'},
+            {'label': _('Por cobrar'), 'amount': total_receivable, 'color': '#e0a800'},
+            {'label': _('Por pagar'), 'amount': total_payable, 'color': '#8b1a2b'},
+            {'label': _('Proyectado'), 'amount': projected, 'color': '#1f8a3b' if projected >= 0 else '#d62828'},
+        ]
+        top = max([abs(o['amount']) for o in overview] or [0.0]) or 1.0
+        for o in overview:
+            o['height'] = int(round(abs(o['amount']) / top * 120)) if o['amount'] else 0
+
+        findings = []
+        findings.append(_('Ingresaron %(amount)s en el periodo.', amount=money(total_income)) + (
+            ' ' + _('El rubro principal fue %(label)s (%(pct).1f %%).', label=income_rows[0]['label'],
+                    pct=income_rows[0]['pct']) if income_rows else ''))
+        findings.append(_('Se pagaron %(amount)s.', amount=money(total_expense)) + (
+            ' ' + _('El mayor gasto fue %(label)s (%(amount)s).', label=expense_rows[0]['label'],
+                    amount=money(expense_rows[0]['amount'])) if expense_rows else ''))
+        findings.append(_('Saldo en caja y bancos al cierre: %s.', money(closing_total)))
+        if wizard.include_pending and (total_payable or total_receivable):
+            findings.append(_('Deudas por pagar: %(pay)s. Cobros pendientes a miembros: %(rec)s.',
+                              pay=money(total_payable), rec=money(total_receivable)))
+            if projected < 0:
+                findings.append(_('Aun cobrando todo lo pendiente faltarían %s para cubrir las deudas.',
+                                  money(-projected)))
+            else:
+                findings.append(_('Cobrando lo pendiente y pagando las deudas quedarían %s disponibles.',
+                                  money(projected)))
+        if to_approve:
+            findings.append(_('%(n)s gasto(s) por %(amount)s esperan aprobación del jefe de grupo.',
+                              n=len(to_approve), amount=money(sum(t['amount'] for t in to_approve))))
+
+        logo = company.logo
+        if not logo:
+            try:
+                with file_open('scout_management/static/img/logo_grupo.png', 'rb') as handle:
+                    logo = base64.b64encode(handle.read())
+            except Exception:
+                logo = False
+
         return {
+            'logo': logo,
+            'audience': wizard.audience,
+            'include_detail': wizard.include_detail,
+            'include_pending': wizard.include_pending,
+            'income_rows': income_rows,
+            'expense_rows': expense_rows,
+            'payable_rows': payable_rows,
+            'receivable_rows': receivable_rows,
+            'overview': overview,
+            'projected': projected,
+            'findings': findings,
+            'cut_date': format_date(self.env, wizard.date_to, date_format='d MMMM y'),
             'doc_ids': wizard.ids,
             'doc_model': wizard._name,
             'docs': wizard,
             'company': company,
             'currency': currency,
-            'money': lambda value: format_amount(self.env, value or 0.0, currency),
+            'money': money,
             'date_from': format_date(self.env, wizard.date_from),
             'date_to': format_date(self.env, wizard.date_to),
             'accounts': account_rows,
             'opening_total': sum(r['opening'] for r in account_rows),
-            'closing_total': sum(r['closing'] for r in account_rows),
+            'closing_total': closing_total,
             'income_groups': ordered_groups,
             'expenses': expenses,
             'transfers': transfers,
@@ -130,7 +239,7 @@ class ReportScoutTreasury(models.AbstractModel):
             'receivables': receivables,
             'payables': payables,
             'to_approve': to_approve,
-            'total_receivable': sum(r['amount'] for r in receivables),
-            'total_payable': sum(r['amount'] for r in payables),
+            'total_receivable': total_receivable,
+            'total_payable': total_payable,
             'notes': wizard.notes,
         }

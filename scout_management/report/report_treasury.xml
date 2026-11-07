@@ -9,16 +9,256 @@
                     .tr-tot td { font-weight: 800; border-top: 2px solid #0f3049; }
                     .num { text-align: right; white-space: nowrap; }
                     .neg { color: #c00000; }
+                    .ti { color: #1b2f5e; font-size: 10.5px; }
+                    .ti table { border-collapse: collapse; }
+                    .ti-head { width: 100%; margin-bottom: 10px; }
+                    .ti-head td { vertical-align: middle; }
+                    .ti-vline { width: 2px; background: #c9d1dc; }
+                    .ti-title { font-size: 30px; font-weight: 900; line-height: 32px; color: #1b2f5e; }
+                    .ti-sub { font-size: 17px; font-weight: 700; color: #33465f; margin-top: 2px; }
+                    .ti-rule { border-top: 1px solid #c9d1dc; margin: 6px 0 4px 0; height: 6px; position: relative; }
+                    .ti-rule div { width: 45%; height: 6px; background: #d62828; margin-left: 55%; margin-top: -3px; }
+                    .ti-cut { font-size: 12px; color: #5b6b80; }
+                    .ti-cards { width: 100%; table-layout: fixed; border-collapse: separate !important; border-spacing: 6px 0; margin: 0 -6px 8px -6px; }
+                    .ti-cards td { vertical-align: top; }
+                    .ti-card { height: 46px; border: 1px solid #c9d1dc; border-left: 6px solid #1b2f5e; border-radius: 6px; padding: 7px 9px; background: #f7f9fb; }
+                    .ti-card .lbl { font-size: 10px; font-weight: 700; color: #33465f; text-transform: uppercase; letter-spacing: .3px; }
+                    .ti-card .big { font-size: 19px; font-weight: 900; color: #1b2f5e; margin-top: 2px; white-space: nowrap; }
+                    .ti-card .hint { font-size: 8px; color: #7a889a; }
+                    .ti-grid { width: 100%; table-layout: fixed; border-collapse: separate !important; border-spacing: 6px 0; margin: 0 -6px 8px -6px; }
+                    .ti-grid > tbody > tr > td, .ti-grid > tr > td { vertical-align: top; }
+                    .ti-box { border: 1px solid #c9d1dc; border-radius: 7px; overflow: hidden; page-break-inside: avoid; }
+                    .ti-bh { background: #1b2f5e; color: #fff; font-size: 13px; font-weight: 800; padding: 5px 9px; }
+                    .ti-bb { padding: 7px 9px; }
+                    .ti-t { width: 100%; }
+                    .ti-t th { background: #e9edf2; color: #1b2f5e; font-weight: 800; padding: 3px 6px; text-align: left; border-bottom: 1px solid #c9d1dc; }
+                    .ti-t td { padding: 3px 6px; border-bottom: 1px solid #e3e8ee; }
+                    .ti-t .num, .ti-t th.num { text-align: right; white-space: nowrap; }
+                    .ti-t .b { font-weight: 800; }
+                    .ti-t .who { color: #7a889a; font-size: 9px; }
+                    .ti-tot td { background: #1b2f5e; color: #fff; font-weight: 900; font-size: 12px; padding: 4px 6px; border: none; }
+                    .ti-tot.red td { background: #8b1a2b; }
+                    .ti-tot.green td { background: #1f6b35; }
+                    .muted { color: #7a889a; font-style: italic; }
+                    .ti-hbar { width: 100%; }
+                    .ti-hbar td { padding: 2px 0; vertical-align: middle; }
+                    .ti-hbar .l { width: 34%; text-align: right; padding-right: 6px; font-weight: 700; color: #8b1a2b; font-size: 10px; }
+                    .ti-hbar .b { border-left: 1px solid #9aa6b5; padding-left: 0; white-space: nowrap; }
+                    .ti-hbar .bar { display: inline-block; height: 13px; background: #a3192c; vertical-align: middle; }
+                    .ti-hbar .v { font-size: 9.5px; padding-left: 4px; vertical-align: middle; }
+                    .ti-vbar { width: 100%; table-layout: fixed; }
+                    .ti-vbar td { text-align: center; padding: 0 3px; }
+                    .ti-vbar .vals td { font-size: 8.5px; font-weight: 800; vertical-align: bottom; padding-bottom: 2px; }
+                    .ti-vbar .cols td { vertical-align: bottom; height: 124px; border-bottom: 1px solid #1b2f5e; }
+                    .ti-vbar .col { width: 70%; margin: 0 auto; }
+                    .ti-vbar .labs td { font-size: 9px; font-weight: 700; padding-top: 3px; }
+                    .ti-find { margin: 0; padding-left: 15px; }
+                    .ti-find li { margin-bottom: 3px; }
+                    .ti-notes { margin-top: 5px; white-space: pre-line; border-top: 1px dashed #c9d1dc; padding-top: 4px; }
+                    .ti-foot { text-align: center; color: #7a889a; font-size: 9px; margin-top: 8px; }
                 </style>
-                <div class="page sc-doc">
+                <div class="page sc-doc ti">
+                    <!-- ============ HOJA 1: INFOGRAFÍA ============ -->
+                    <table class="ti-head">
+                        <tr>
+                            <td style="width: 118px;">
+                                <img t-if="logo" t-att-src="image_data_uri(logo)" style="width: 105px; height: 105px;"/>
+                            </td>
+                            <td class="ti-vline"/>
+                            <td style="padding-left: 14px;">
+                                <div class="ti-title">Informe de Tesorería</div>
+                                <div class="ti-sub" t-out="company.name"/>
+                                <div class="ti-rule"><div/></div>
+                                <div class="ti-cut">Periodo: <t t-out="date_from"/> al <t t-out="date_to"/>
+                                    <span t-if="audience"> · Para: <t t-out="audience"/></span></div>
+                            </td>
+                        </tr>
+                    </table>
+
+                    <table class="ti-cards">
+                        <tr>
+                            <td><div class="ti-card" style="border-left-color: #1f8a3b;">
+                                <div class="lbl">Total de ingresos</div>
+                                <div class="big" style="color: #1f8a3b;" t-out="money(total_income)"/></div></td>
+                            <td><div class="ti-card" style="border-left-color: #d62828;">
+                                <div class="lbl">Total de egresos</div>
+                                <div class="big" style="color: #d62828;" t-out="money(total_expense)"/></div></td>
+                            <td><div class="ti-card" style="border-left-color: #1b2f5e;">
+                                <div class="lbl">Saldo en caja y bancos</div>
+                                <div class="big" t-out="money(closing_total)"/></div></td>
+                            <td t-if="include_pending"><div class="ti-card" t-attf-style="border-left-color: #{'#1f8a3b' if projected &gt;= 0 else '#d62828'};">
+                                <div class="lbl">Saldo proyectado</div>
+                                <div class="big" t-attf-style="color: #{'#1f8a3b' if projected &gt;= 0 else '#d62828'};" t-out="money(projected)"/>
+                                <div class="hint">Saldo + por cobrar − por pagar</div></div></td>
+                        </tr>
+                    </table>
+
+                    <table class="ti-grid">
+                        <tr>
+                            <td>
+                                <div class="ti-box">
+                                    <div class="ti-bh">Ingresos por rubro</div>
+                                    <table class="ti-t">
+                                        <thead><tr><th>Rubro</th><th class="num">Monto</th><th class="num">%</th></tr></thead>
+                                        <tbody>
+                                            <tr t-if="not income_rows"><td colspan="3" class="muted">Sin ingresos en el periodo.</td></tr>
+                                            <tr t-foreach="income_rows" t-as="r">
+                                                <td t-out="r['label']"/>
+                                                <td class="num b" t-out="money(r['amount'])"/>
+                                                <td class="num"><t t-out="'%.1f' % r['pct']"/> %</td>
+                                            </tr>
+                                        </tbody>
+                                        <tr class="ti-tot"><td>Total</td><td class="num" t-out="money(total_income)"/><td class="num">100 %</td></tr>
+                                    </table>
+                                </div>
+                            </td>
+                            <td>
+                                <div class="ti-box">
+                                    <div class="ti-bh">Egresos por concepto</div>
+                                    <table class="ti-t">
+                                        <thead><tr><th>Concepto</th><th class="num">Monto</th><th class="num">%</th></tr></thead>
+                                        <tbody>
+                                            <tr t-if="not expense_rows"><td colspan="3" class="muted">Sin egresos en el periodo.</td></tr>
+                                            <tr t-foreach="expense_rows" t-as="r">
+                                                <td t-out="r['label']"/>
+                                                <td class="num b" t-out="money(r['amount'])"/>
+                                                <td class="num"><t t-out="'%.1f' % r['pct']"/> %</td>
+                                            </tr>
+                                        </tbody>
+                                        <tr class="ti-tot red"><td>Total</td><td class="num" t-out="money(total_expense)"/><td class="num">100 %</td></tr>
+                                    </table>
+                                </div>
+                            </td>
+                        </tr>
+                    </table>
+
+                    <table class="ti-grid">
+                        <tr>
+                            <td>
+                                <div class="ti-box">
+                                    <div class="ti-bh">Distribución de egresos</div>
+                                    <div class="ti-bb">
+                                        <div t-if="not expense_rows" class="muted">Sin egresos en el periodo.</div>
+                                        <table class="ti-hbar">
+                                            <tr t-foreach="expense_rows[:7]" t-as="r">
+                                                <td class="l" t-out="r['label']"/>
+                                                <td class="b">
+                                                    <div class="bar" t-attf-style="width: #{'%.0f' % (r['width'] * 0.62)}%;"/>
+                                                    <span class="v"><b t-out="money(r['amount'])"/> (<t t-out="'%.1f' % r['pct']"/> %)</span>
+                                                </td>
+                                            </tr>
+                                        </table>
+                                    </div>
+                                </div>
+                            </td>
+                            <td>
+                                <div class="ti-box">
+                                    <div class="ti-bh">Panorama financiero</div>
+                                    <div class="ti-bb">
+                                        <table class="ti-vbar">
+                                            <tr class="vals">
+                                                <td t-foreach="overview" t-as="o"><t t-out="money(o['amount'])"/></td>
+                                            </tr>
+                                            <tr class="cols">
+                                                <td t-foreach="overview" t-as="o">
+                                                    <div class="col" t-attf-style="height: #{o['height']}px; background: #{o['color']};"/>
+                                                </td>
+                                            </tr>
+                                            <tr class="labs">
+                                                <td t-foreach="overview" t-as="o" t-out="o['label']"/>
+                                            </tr>
+                                        </table>
+                                    </div>
+                                </div>
+                            </td>
+                        </tr>
+                    </table>
+
+                    <table t-if="include_pending" class="ti-grid">
+                        <tr>
+                            <td>
+                                <div class="ti-box">
+                                    <div class="ti-bh">Deudas pendientes de pago</div>
+                                    <table class="ti-t">
+                                        <thead><tr><th>Concepto</th><th class="num">Pendiente</th></tr></thead>
+                                        <tbody>
+                                            <tr t-if="not payable_rows"><td colspan="2" class="muted">El grupo no tiene deudas pendientes.</td></tr>
+                                            <tr t-foreach="payable_rows" t-as="r">
+                                                <td><t t-out="r['label']"/><span t-if="r['who']" class="who"> · <t t-out="r['who']"/></span></td>
+                                                <td class="num b" t-out="money(r['amount'])"/>
+                                            </tr>
+                                        </tbody>
+                                        <tr class="ti-tot red"><td>Total por pagar</td><td class="num" t-out="money(total_payable)"/></tr>
+                                    </table>
+                                </div>
+                            </td>
+                            <td>
+                                <div class="ti-box">
+                                    <div class="ti-bh">Cobros pendientes a miembros</div>
+                                    <table class="ti-t">
+                                        <thead><tr><th>Concepto</th><th class="num">Por cobrar</th></tr></thead>
+                                        <tbody>
+                                            <tr t-if="not receivable_rows"><td colspan="2" class="muted">No hay cobros pendientes.</td></tr>
+                                            <tr t-foreach="receivable_rows" t-as="r">
+                                                <td><t t-out="r['label']"/><span t-if="r['who']" class="who"> · <t t-out="r['who']"/></span></td>
+                                                <td class="num b" t-out="money(r['amount'])"/>
+                                            </tr>
+                                        </tbody>
+                                        <tr class="ti-tot green"><td>Total por cobrar</td><td class="num" t-out="money(total_receivable)"/></tr>
+                                    </table>
+                                </div>
+                            </td>
+                        </tr>
+                    </table>
+
+                    <table class="ti-grid">
+                        <tr>
+                            <td style="width: 60%;">
+                                <div class="ti-box">
+                                    <div class="ti-bh">Principales hallazgos</div>
+                                    <div class="ti-bb">
+                                        <ul class="ti-find">
+                                            <li t-foreach="findings" t-as="f" t-out="f"/>
+                                        </ul>
+                                        <div t-if="notes" class="ti-notes"><b>Notas:</b> <t t-out="notes"/></div>
+                                    </div>
+                                </div>
+                            </td>
+                            <td style="width: 40%;">
+                                <div class="ti-box">
+                                    <div class="ti-bh">Saldos por cuenta</div>
+                                    <table class="ti-t">
+                                        <tr t-foreach="accounts" t-as="row">
+                                            <td class="b" t-out="row['journal'].name"/>
+                                            <td t-attf-class="num b #{'neg' if row['closing'] &lt; 0 else ''}" t-out="money(row['closing'])"/>
+                                        </tr>
+                                        <tr class="ti-tot"><td>Total</td><td class="num" t-out="money(closing_total)"/></tr>
+                                    </table>
+                                </div>
+                            </td>
+                        </tr>
+                    </table>
+
+                    <table class="sc-row" style="margin-top: 26px;">
+                        <tr>
+                            <td class="sc-sign"><div class="line">TESORERÍA<br/><span style="font-weight: 400;">Nombre y firma</span></div></td>
+                            <td style="width: 10%;"/>
+                            <td class="sc-sign"><div class="line">JEFATURA DE GRUPO<br/><span style="font-weight: 400;">Nombre y firma</span></div></td>
+                        </tr>
+                    </table>
+                    <div class="ti-foot">Corte al <t t-out="cut_date"/> · Documento generado desde la plataforma del grupo</div>
+
+                    <!-- ============ HOJAS SIGUIENTES: DETALLE ============ -->
+                    <t t-if="include_detail">
+                    <div style="page-break-before: always;"/>
                     <table class="sc-row">
                         <tr>
                             <td style="width: 70px;">
-                                <img t-if="company.logo" class="sc-logo" t-att-src="image_data_uri(company.logo)"/>
+                                <img t-if="logo" class="sc-logo" t-att-src="image_data_uri(logo)"/>
                             </td>
                             <td>
                                 <div style="font-size: 17px; font-weight: 900;" t-out="company.name"/>
-                                <div style="font-size: 14px; font-weight: 800;">REPORTE DE INGRESOS Y EGRESOS</div>
+                                <div style="font-size: 14px; font-weight: 800;">DETALLE DE INGRESOS Y EGRESOS</div>
                                 <div>Del <b t-out="date_from"/> al <b t-out="date_to"/></div>
                             </td>
                         </tr>
@@ -145,14 +385,7 @@
                             </tr>
                         </table>
                     </t>
-                    <div t-if="notes" style="margin-top: 8px; white-space: pre-line;"><b>Notas:</b> <t t-out="notes"/></div>
-                    <table class="sc-row" style="margin-top: 40px;">
-                        <tr>
-                            <td class="sc-sign"><div class="line">TESORERÍA<br/><span style="font-weight: 400;">Nombre y firma</span></div></td>
-                            <td style="width: 10%;"/>
-                            <td class="sc-sign"><div class="line">JEFATURA DE GRUPO<br/><span style="font-weight: 400;">Nombre y firma</span></div></td>
-                        </tr>
-                    </table>
+                    </t>
                 </div>
             </t>
         </t>
