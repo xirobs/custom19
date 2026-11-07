@@ -55,6 +55,8 @@
                     .ti-find { margin: 0; padding-left: 15px; }
                     .ti-find li { margin-bottom: 3px; }
                     .ti-notes { margin-top: 5px; white-space: pre-line; border-top: 1px dashed #c9d1dc; padding-top: 4px; }
+                    .hint2 { font-size: 8.5px; color: #7a889a; padding-top: 3px; padding-bottom: 4px; }
+                    .ti-proj { border: 2px solid #1f8a3b; border-radius: 6px; padding: 6px 10px; font-size: 12px; background: #f7f9fb; }
                     .ti-foot { text-align: center; color: #7a889a; font-size: 9px; margin-top: 8px; }
                 </style>
                 <div class="page sc-doc ti">
@@ -77,19 +79,57 @@
 
                     <table class="ti-cards">
                         <tr>
-                            <td><div class="ti-card" style="border-left-color: #1f8a3b;">
-                                <div class="lbl">Total de ingresos</div>
-                                <div class="big" style="color: #1f8a3b;" t-out="money(total_income)"/></div></td>
-                            <td><div class="ti-card" style="border-left-color: #d62828;">
-                                <div class="lbl">Total de egresos</div>
-                                <div class="big" style="color: #d62828;" t-out="money(total_expense)"/></div></td>
                             <td><div class="ti-card" style="border-left-color: #1b2f5e;">
-                                <div class="lbl">Saldo en caja y bancos</div>
-                                <div class="big" t-out="money(closing_total)"/></div></td>
-                            <td t-if="include_pending"><div class="ti-card" t-attf-style="border-left-color: #{'#1f8a3b' if projected &gt;= 0 else '#d62828'};">
-                                <div class="lbl">Saldo proyectado</div>
-                                <div class="big" t-attf-style="color: #{'#1f8a3b' if projected &gt;= 0 else '#d62828'};" t-out="money(projected)"/>
-                                <div class="hint">Saldo + por cobrar − por pagar</div></div></td>
+                                <div class="lbl">Disponible hoy</div>
+                                <div class="big" t-out="money(closing_total)"/>
+                                <div class="hint">Caja + bancos + Mercado Pago</div></div></td>
+                            <td><div class="ti-card" style="border-left-color: #1f8a3b;">
+                                <div class="lbl">Ingresos del periodo</div>
+                                <div class="big" style="color: #1f8a3b;" t-out="money(total_income)"/></div></td>
+                            <td t-if="include_pending"><div class="ti-card" style="border-left-color: #8b1a2b;">
+                                <div class="lbl">Deudas por pagar</div>
+                                <div class="big" style="color: #8b1a2b;" t-out="money(total_payable)"/></div></td>
+                            <td t-if="include_pending"><div class="ti-card" style="border-left-color: #e0a800;">
+                                <div class="lbl">Cobros pendientes</div>
+                                <div class="big" style="color: #b38600;" t-out="money(total_receivable)"/></div></td>
+                        </tr>
+                    </table>
+
+                    <table class="ti-grid">
+                        <tr>
+                            <td style="width: 42%;">
+                                <div class="ti-box">
+                                    <div class="ti-bh">Disponible por cuenta</div>
+                                    <table class="ti-t">
+                                        <thead><tr><th>Cuenta</th><th class="num">Saldo hoy</th></tr></thead>
+                                        <tbody>
+                                            <tr t-foreach="accounts" t-as="row">
+                                                <td class="b" t-out="row['journal'].name"/>
+                                                <td t-attf-class="num b #{'neg' if row['closing'] &lt; 0 else ''}" t-out="money(row['closing'])"/>
+                                            </tr>
+                                        </tbody>
+                                        <tr class="ti-tot"><td>Total disponible</td><td class="num" t-out="money(closing_total)"/></tr>
+                                    </table>
+                                </div>
+                            </td>
+                            <td style="width: 58%;">
+                                <div class="ti-box">
+                                    <div class="ti-bh">Ingresos del periodo</div>
+                                    <table class="ti-t">
+                                        <thead><tr><th>Concepto</th><th class="num">Movs.</th><th class="num">Monto</th><th class="num">%</th></tr></thead>
+                                        <tbody>
+                                            <tr t-if="not income_rows"><td colspan="4" class="muted">Sin ingresos en el periodo.</td></tr>
+                                            <tr t-foreach="income_rows" t-as="r">
+                                                <td t-out="r['label']"/>
+                                                <td class="num" t-out="r['count']"/>
+                                                <td class="num b" t-out="money(r['amount'])"/>
+                                                <td class="num"><t t-out="'%.1f' % r['pct']"/> %</td>
+                                            </tr>
+                                        </tbody>
+                                        <tr class="ti-tot green"><td colspan="2">Total ingresos</td><td class="num" t-out="money(total_income)"/><td class="num">100 %</td></tr>
+                                    </table>
+                                </div>
+                            </td>
                         </tr>
                     </table>
 
@@ -97,58 +137,19 @@
                         <tr>
                             <td>
                                 <div class="ti-box">
-                                    <div class="ti-bh">Ingresos por rubro</div>
+                                    <div class="ti-bh">Pagos realizados en el periodo</div>
                                     <table class="ti-t">
-                                        <thead><tr><th>Rubro</th><th class="num">Monto</th><th class="num">%</th></tr></thead>
+                                        <thead><tr><th>Concepto</th><th class="num">Monto</th></tr></thead>
                                         <tbody>
-                                            <tr t-if="not income_rows"><td colspan="3" class="muted">Sin ingresos en el periodo.</td></tr>
-                                            <tr t-foreach="income_rows" t-as="r">
-                                                <td t-out="r['label']"/>
-                                                <td class="num b" t-out="money(r['amount'])"/>
-                                                <td class="num"><t t-out="'%.1f' % r['pct']"/> %</td>
-                                            </tr>
-                                        </tbody>
-                                        <tr class="ti-tot"><td>Total</td><td class="num" t-out="money(total_income)"/><td class="num">100 %</td></tr>
-                                    </table>
-                                </div>
-                            </td>
-                            <td>
-                                <div class="ti-box">
-                                    <div class="ti-bh">Egresos por concepto</div>
-                                    <table class="ti-t">
-                                        <thead><tr><th>Concepto</th><th class="num">Monto</th><th class="num">%</th></tr></thead>
-                                        <tbody>
-                                            <tr t-if="not expense_rows"><td colspan="3" class="muted">Sin egresos en el periodo.</td></tr>
+                                            <tr t-if="not expense_rows"><td colspan="2" class="muted">Sin pagos en el periodo.</td></tr>
                                             <tr t-foreach="expense_rows" t-as="r">
                                                 <td t-out="r['label']"/>
                                                 <td class="num b" t-out="money(r['amount'])"/>
-                                                <td class="num"><t t-out="'%.1f' % r['pct']"/> %</td>
                                             </tr>
                                         </tbody>
-                                        <tr class="ti-tot red"><td>Total</td><td class="num" t-out="money(total_expense)"/><td class="num">100 %</td></tr>
+                                        <tr class="ti-tot red"><td>Total pagado</td><td class="num" t-out="money(total_expense)"/></tr>
                                     </table>
-                                </div>
-                            </td>
-                        </tr>
-                    </table>
-
-                    <table class="ti-grid">
-                        <tr>
-                            <td>
-                                <div class="ti-box">
-                                    <div class="ti-bh">Distribución de egresos</div>
-                                    <div class="ti-bb">
-                                        <div t-if="not expense_rows" class="muted">Sin egresos en el periodo.</div>
-                                        <table class="ti-hbar">
-                                            <tr t-foreach="expense_rows[:7]" t-as="r">
-                                                <td class="l" t-out="r['label']"/>
-                                                <td class="b">
-                                                    <div class="bar" t-attf-style="width: #{'%.0f' % (r['width'] * 0.62)}%;"/>
-                                                    <span class="v"><b t-out="money(r['amount'])"/> (<t t-out="'%.1f' % r['pct']"/> %)</span>
-                                                </td>
-                                            </tr>
-                                        </table>
-                                    </div>
+                                    <div class="ti-bb hint2">Informativo: estos pagos ya están reflejados en el disponible de hoy.</div>
                                 </div>
                             </td>
                             <td>
@@ -211,33 +212,21 @@
                         </tr>
                     </table>
 
-                    <table class="ti-grid">
-                        <tr>
-                            <td style="width: 60%;">
-                                <div class="ti-box">
-                                    <div class="ti-bh">Principales hallazgos</div>
-                                    <div class="ti-bb">
-                                        <ul class="ti-find">
-                                            <li t-foreach="findings" t-as="f" t-out="f"/>
-                                        </ul>
-                                        <div t-if="notes" class="ti-notes"><b>Notas:</b> <t t-out="notes"/></div>
-                                    </div>
-                                </div>
-                            </td>
-                            <td style="width: 40%;">
-                                <div class="ti-box">
-                                    <div class="ti-bh">Saldos por cuenta</div>
-                                    <table class="ti-t">
-                                        <tr t-foreach="accounts" t-as="row">
-                                            <td class="b" t-out="row['journal'].name"/>
-                                            <td t-attf-class="num b #{'neg' if row['closing'] &lt; 0 else ''}" t-out="money(row['closing'])"/>
-                                        </tr>
-                                        <tr class="ti-tot"><td>Total</td><td class="num" t-out="money(closing_total)"/></tr>
-                                    </table>
-                                </div>
-                            </td>
-                        </tr>
-                    </table>
+                    <div t-if="include_pending" class="ti-proj" t-attf-style="border-color: #{'#1f8a3b' if projected &gt;= 0 else '#d62828'};">
+                        <b>Saldo proyectado:</b> disponible <t t-out="money(closing_total)"/> + por cobrar <t t-out="money(total_receivable)"/>
+                        − por pagar <t t-out="money(total_payable)"/> =
+                        <b t-attf-style="color: #{'#1f8a3b' if projected &gt;= 0 else '#d62828'};" t-out="money(projected)"/>
+                    </div>
+
+                    <div class="ti-box" style="margin-top: 8px;">
+                        <div class="ti-bh">Principales hallazgos</div>
+                        <div class="ti-bb">
+                            <ul class="ti-find">
+                                <li t-foreach="findings" t-as="f" t-out="f"/>
+                            </ul>
+                            <div t-if="notes" class="ti-notes"><b>Notas:</b> <t t-out="notes"/></div>
+                        </div>
+                    </div>
 
                     <table class="sc-row" style="margin-top: 26px;">
                         <tr>

@@ -89,7 +89,8 @@ class ReportScoutTreasury(models.AbstractModel):
             Move = self.env['account.move'].sudo()
             for inv in Move.search([('company_id', '=', company.id), ('state', '=', 'posted'),
                                     ('move_type', '=', 'out_invoice'),
-                                    ('payment_state', 'in', ('not_paid', 'partial'))], order='invoice_date'):
+                                    ('payment_state', 'in', ('not_paid', 'partial'))],
+                                   order='invoice_date')._scout_live_charges():
                 receivables.append({'who': inv.scout_member_id.name or inv.partner_id.name,
                                     'desc': inv.invoice_line_ids[:1].name or inv.name,
                                     'amount': inv.amount_residual})
@@ -130,8 +131,8 @@ class ReportScoutTreasury(models.AbstractModel):
                 r['width'] = max(2.0, r['amount'] / top * 100.0) if top and r['amount'] > 0 else 0.0
             return rows
 
-        income_rows = bars(sorted([{'label': g['label'], 'amount': g['total']} for g in ordered_groups
-                                   if g['total']], key=lambda r: -r['amount']), total_income)
+        income_rows = bars(sorted([{'label': g['label'], 'amount': g['total'], 'count': len(g['moves'])}
+                                   for g in ordered_groups if g['total']], key=lambda r: -r['amount']), total_income)
         # Con pocos gastos se muestra cada concepto (Stickers, Escudos...); con muchos, por categoría
         labels = {(e.get('label') or '').strip() for e in expenses}
         by_label = len(labels) <= 8 and all(labels)
@@ -166,28 +167,43 @@ class ReportScoutTreasury(models.AbstractModel):
 
         # gráfica "panorama": valores absolutos escalados a la columna más alta
         overview = [
+            {'label': _('Disponible'), 'amount': closing_total, 'color': '#1b2f5e'},
             {'label': _('Ingresos'), 'amount': total_income, 'color': '#1f8a3b'},
-            {'label': _('Egresos'), 'amount': total_expense, 'color': '#d62828'},
-            {'label': _('Saldo en banco'), 'amount': closing_total, 'color': '#1b2f5e'},
-            {'label': _('Por cobrar'), 'amount': total_receivable, 'color': '#e0a800'},
-            {'label': _('Por pagar'), 'amount': total_payable, 'color': '#8b1a2b'},
-            {'label': _('Proyectado'), 'amount': projected, 'color': '#1f8a3b' if projected >= 0 else '#d62828'},
+            {'label': _('Pagado'), 'amount': total_expense, 'color': '#d62828'},
         ]
+        if wizard.include_pending:
+            overview += [
+                {'label': _('Por cobrar'), 'amount': total_receivable, 'color': '#e0a800'},
+                {'label': _('Por pagar'), 'amount': total_payable, 'color': '#8b1a2b'},
+                {'label': _('Proyectado'), 'amount': projected, 'color': '#1f8a3b' if projected >= 0 else '#d62828'},
+            ]
         top = max([abs(o['amount']) for o in overview] or [0.0]) or 1.0
         for o in overview:
             o['height'] = int(round(abs(o['amount']) / top * 120)) if o['amount'] else 0
 
+        def listing(rows, limit=6):
+            parts = ['%s %s' % (r['label'], money(r['amount'])) for r in rows[:limit]]
+            return ', '.join(parts) + (', …' if len(rows) > limit else '')
+
         findings = []
-        findings.append(_('Ingresaron %(amount)s en el periodo.', amount=money(total_income)) + (
-            ' ' + _('El rubro principal fue %(label)s (%(pct).1f %%).', label=income_rows[0]['label'],
-                    pct=income_rows[0]['pct']) if income_rows else ''))
-        findings.append(_('Se pagaron %(amount)s.', amount=money(total_expense)) + (
-            ' ' + _('El mayor gasto fue %(label)s (%(amount)s).', label=expense_rows[0]['label'],
-                    amount=money(expense_rows[0]['amount'])) if expense_rows else ''))
-        findings.append(_('Saldo en caja y bancos al cierre: %s.', money(closing_total)))
-        if wizard.include_pending and (total_payable or total_receivable):
-            findings.append(_('Deudas por pagar: %(pay)s. Cobros pendientes a miembros: %(rec)s.',
-                              pay=money(total_payable), rec=money(total_receivable)))
+        findings.append(_('Disponible hoy: %(total)s (%(detail)s).', total=money(closing_total),
+                          detail=', '.join('%s %s' % (r['journal'].name, money(r['closing'])) for r in account_rows)))
+        if income_rows:
+            findings.append(_('Ingresos del periodo: %(total)s — %(detail)s.', total=money(total_income),
+                              detail=', '.join('%s %s (%s)' % (r['label'], money(r['amount']), r['count'])
+                                               for r in income_rows)))
+        else:
+            findings.append(_('No hubo ingresos en el periodo.'))
+        if expense_rows:
+            findings.append(_('Pagos realizados: %(detail)s. Total %(total)s, ya reflejado en el disponible.',
+                              detail=listing(expense_rows), total=money(total_expense)))
+        if wizard.include_pending:
+            if payable_rows:
+                findings.append(_('Deudas pendientes: %(detail)s. Total %(total)s.', detail=listing(payable_rows),
+                                  total=money(total_payable)))
+            if receivable_rows:
+                findings.append(_('Cobros pendientes: %(detail)s. Total %(total)s.', detail=listing(receivable_rows),
+                                  total=money(total_receivable)))
             if projected < 0:
                 findings.append(_('Aun cobrando todo lo pendiente faltarían %s para cubrir las deudas.',
                                   money(-projected)))

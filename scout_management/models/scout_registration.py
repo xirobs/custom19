@@ -423,11 +423,17 @@ class ScoutRegistration(models.Model):
         return self.get_base_url().rstrip('/') + self._scout_payment_path()
 
     def action_cancel(self):
+        self._scout_drop_unpaid_invoice()
         self.write({'state': 'cancel'})
         self._scout_close_approval_activities(_('Cancelada'))
 
     def action_draft(self):
         self.write({'state': 'draft'})
+
+    def unlink(self):
+        # un registro eliminado (p. ej. de prueba) no debe dejar su cargo pendiente en cuentas por cobrar
+        self._scout_drop_unpaid_invoice()
+        return super().unlink()
 
     def _check_complete(self):
         self.ensure_one()

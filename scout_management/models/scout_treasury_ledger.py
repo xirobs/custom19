@@ -266,6 +266,7 @@ class ScoutTreasuryLedger(models.AbstractModel):
         Move = self.env['account.move'].sudo()
         receivable = Move.search([('company_id', '=', company.id), ('state', '=', 'posted'),
                                   ('move_type', '=', 'out_invoice'), ('payment_state', 'in', ('not_paid', 'partial'))])
+        receivable = receivable._scout_live_charges()
         payable = Move.search([('company_id', '=', company.id), ('state', '=', 'posted'),
                                ('move_type', '=', 'in_invoice'), ('payment_state', 'in', ('not_paid', 'partial'))])
         to_approve = self.env['scout.treasury.move'].sudo().search([('company_id', '=', company.id),

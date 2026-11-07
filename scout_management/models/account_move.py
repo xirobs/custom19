@@ -121,6 +121,25 @@ class AccountMove(models.Model):
         self._scout_close_approval_activities(_('Rechazado'))
 
 
+class AccountMoveScoutLive(models.Model):
+    _inherit = 'account.move'
+
+    def _scout_dead_charge(self):
+        """True para un cargo que ya no debe cobrarse: su ficha de registro se eliminó o canceló
+        (registros de prueba) o el miembro está archivado."""
+        self.ensure_one()
+        if self.scout_member_id and not self.scout_member_id.active:
+            return True
+        if self.scout_charge_origin == 'registration':
+            regs = self.env['scout.registration'].sudo().with_context(active_test=False).search(
+                [('invoice_id', '=', self.id)])
+            return not regs or all(r.state == 'cancel' for r in regs)
+        return False
+
+    def _scout_live_charges(self):
+        return self.filtered(lambda m: not m._scout_dead_charge())
+
+
 class AccountMoveLine(models.Model):
     _inherit = 'account.move.line'
 

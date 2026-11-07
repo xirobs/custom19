@@ -444,6 +444,8 @@ class ScoutAdminPortal(http.Controller):
             ('move_type', 'in', types), ('state', '=', 'posted'),
             ('payment_state', 'in', ('not_paid', 'partial')), ('company_id', '=', request.env.company.id)],
             order='invoice_date_due asc, id', limit=300)
+        if ver == 'cobrar':
+            invoices = invoices._scout_live_charges()
         if ver == 'pagar':
             invoices |= request.env['account.move'].search([
                 ('move_type', 'in', types), ('state', '=', 'draft'), ('scout_approval_state', '=', 'to_approve'),
