@@ -12,7 +12,7 @@ from dateutil.relativedelta import relativedelta
 
 from odoo import _, api, models
 
-from .rss_common import INJURY_SELECTION, SECTION_SELECTION
+from .rss_common import section_for_age, INJURY_SELECTION, SECTION_SELECTION
 
 AGE_BLOCKS = [(0, 6, '0–6'), (7, 10, '7–10'), (11, 14, '11–14'), (15, 17, '15–17'),
               (18, 21, '18–21'), (22, 200, '22 o más')]
@@ -106,7 +106,7 @@ class RssDashboard(models.AbstractModel):
                                           for r in by_group.values())
         pivot_age_sex = OrderedDict((label, {'Hombres': 0, 'Mujeres': 0}) for _l, _h, label in AGE_BLOCKS)
         for rec in base:
-            sec = sections.get(rec.section)
+            sec = sections.get(rec.section or (section_for_age(rec.age) if rec.birthdate else False))
             if sec:
                 dist_section[sec] += 1
                 short = by_group.get(rec.group_id.id, {}).get('short')

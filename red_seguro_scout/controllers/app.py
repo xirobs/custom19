@@ -20,6 +20,7 @@ class RssApp(http.Controller):
     @http.route(['/seguro-app'], type='http', auth='public', website=True, sitemap=False)
     def rss_app_start(self, **kw):
         """Punto de entrada del ícono: representante → /mi-grupo, asesor → /seguro."""
+        request.env['rss.group.member']._rss_mark_app()
         user = request.env.user
         if user._is_public():
             return request.redirect('/web/login?redirect=/seguro-app')
@@ -35,6 +36,7 @@ class RssApp(http.Controller):
                 sitemap=False)
     def rss_app_login(self, **kw):
         """Liga para compartir con representantes y asesores: entrada con la imagen del seguro."""
+        request.env['rss.group.member']._rss_mark_app()
         if not request.env.user._is_public():
             return request.redirect('/seguro-app')
         return request.redirect('/web/login?redirect=/seguro-app')
@@ -74,6 +76,12 @@ class RssApp(http.Controller):
 
 class RssLoginHome(PortalHome):
 
+    @http.route()
+    def web_login(self, redirect=None, **kw):
+        if request.env['rss.group.member'].sudo()._rss_is_login_redirect(redirect):
+            request.env['rss.group.member']._rss_mark_app()
+        return super().web_login(redirect=redirect, **kw)
+
     def _login_redirect(self, uid, redirect=None):
         """Representantes y asesores del seguro llegan a su portal, no a «Mi cuenta» de BitaScout."""
         if not redirect:
@@ -81,4 +89,5 @@ class RssLoginHome(PortalHome):
             if user.share and (request.env['rss.group.member'].sudo()._for_user(user)
                                or request.env['rss.advisor'].sudo()._for_user(user)):
                 redirect = '/seguro-app'
+                request.env['rss.group.member']._rss_mark_app()
         return super()._login_redirect(uid, redirect=redirect)

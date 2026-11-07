@@ -12,7 +12,7 @@ from datetime import date
 from odoo import _, api, fields, models
 from odoo.exceptions import UserError
 
-from .rss_common import SECTION_SELECTION
+from .rss_common import section_for_age, SECTION_SELECTION
 from .rss_credential import static_data_uri
 from .rss_dashboard import AGE_BLOCKS, _age_block
 
@@ -122,9 +122,11 @@ class RssBoard(models.Model):
                 'state': g.state_id.name or '', 'city': g.city or '',
             })
         labels = dict(SECTION_SELECTION)
+        # Sección capturada o, si falta, la que corresponde por edad
+        sec_of = {i.id: i.section or (section_for_age(i.age) if i.birthdate else False) for i in insured}
         sections, sections_sex = [], []
         for key, label in SECTION_SELECTION:
-            members = insured.filtered(lambda i, key=key: i.section == key)
+            members = insured.filtered(lambda i, key=key: sec_of[i.id] == key)
             short = label.split(' (')[0]
             sections.append({'key': key, 'label': '%s (%s)' % (short, SECTION_AGES[key]) if key != 'dirigente' else short,
                              'name': short, 'count': len(members), 'pct': pct(len(members))})
@@ -135,7 +137,7 @@ class RssBoard(models.Model):
                                      'label': '%s (%s %s)' % (name, SECTION_AGES[key], '♀' if sex == 'female' else '♂')
                                      if key in ('manada', 'tropa') else name,
                                      'count': len(part), 'pct': pct(len(part))})
-        no_section = insured.filtered(lambda i: not i.section)
+        no_section = insured.filtered(lambda i: not sec_of[i.id])
         if no_section:
             sections.append({'key': 'none', 'label': _('Sin sección'), 'name': _('Sin sección'),
                              'count': len(no_section), 'pct': pct(len(no_section))})
@@ -147,7 +149,7 @@ class RssBoard(models.Model):
             if rec.sex in ('male', 'female'):
                 block[rec.sex] += 1
         group_section = [{'name': r['short'], 'full_name': r['full_name'],
-                          'values': [len(per_group[r['id']].filtered(lambda i, k=k: i.section == k))
+                          'values': [len(per_group[r['id']].filtered(lambda i, k=k: sec_of[i.id] == k))
                                      for k, _l in SECTION_SELECTION]} for r in group_rows]
         # Ubicación: estado -> grupos
         locations = OrderedDict()

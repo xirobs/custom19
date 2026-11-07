@@ -300,6 +300,33 @@
         </field>
     </record>
 
+    <record id="rss_certificate_line_view_unmatched" model="ir.ui.view">
+        <field name="name">rss.certificate.line.unmatched.list</field>
+        <field name="model">rss.certificate.line</field>
+        <field name="arch" type="xml">
+            <list string="Certificados sin identificar" editable="bottom" multi_edit="1" create="0"
+                  decoration-warning="status == 'ambiguous'">
+                <header>
+                    <button name="action_create_missing_lines" type="object" string="Dar de alta y anexar"
+                            class="btn-primary" icon="fa-user-plus"
+                            confirm="Se dan de alta, como asegurados vigentes, las personas seleccionadas que tienen grupo en «Dar de alta en», con el nombre y la fecha de nacimiento del certificado. ¿Continuar?"/>
+                </header>
+                <field name="batch_id" optional="hide" readonly="1"/>
+                <field name="pages" readonly="1"/>
+                <field name="certificate_number" readonly="1"/>
+                <field name="name_read" readonly="1"/>
+                <field name="birthdate_read" readonly="1"/>
+                <field name="candidate_ids" widget="many2many_tags" readonly="1" optional="show"/>
+                <field name="insured_id" options="{'no_create': True}"/>
+                <field name="new_group_id" options="{'no_create': True}"/>
+                <field name="new_sex"/>
+                <field name="skip"/>
+                <field name="status" readonly="1"/>
+                <button name="action_preview" type="object" icon="fa-eye" title="Ver página"/>
+            </list>
+        </field>
+    </record>
+
     <record id="rss_certificate_batch_view_form" model="ir.ui.view">
         <field name="name">rss.certificate.batch.form</field>
         <field name="model">rss.certificate.batch</field>
@@ -310,6 +337,11 @@
                     <button name="action_read" type="object" string="Volver a leer" invisible="state != 'review'"
                             confirm="Se vuelven a leer los PDF; las asignaciones manuales aún no anexadas se pierden. ¿Continuar?"/>
                     <button name="action_attach" type="object" string="Anexar a cada asegurado" class="btn-primary" invisible="state != 'review'"/>
+                    <button name="action_open_unmatched" type="object" string="Sin identificar" icon="fa-list"
+                            invisible="state != 'review' or not pending_count"/>
+                    <button name="action_create_missing" type="object" string="Dar de alta y anexar" icon="fa-user-plus"
+                            invisible="state != 'review' or not pending_count"
+                            confirm="Se dan de alta, como asegurados vigentes, las personas «Sin identificar» que tienen grupo en «Dar de alta en», con el nombre y la fecha de nacimiento del certificado. ¿Continuar?"/>
                     <button name="action_rebuild" type="object" string="Volver a separar y anexar" invisible="state == 'draft'"
                             confirm="Se vuelve a leer el PDF original y se reemplaza el certificado anexado de cada persona identificada (con todas sus hojas). Las asignaciones hechas a mano se pierden. ¿Continuar?"/>
                     <field name="state" widget="statusbar"/>
@@ -322,7 +354,9 @@
                     <div class="o_rss_hint">
                         Sube el PDF que mandó la aseguradora con todos los certificados. El sistema lee el nombre de cada
                         página, identifica al asegurado y, al anexar, le deja <b>solo su certificado</b> en su ficha
-                        (lo ve su grupo en el portal). Revisa los que digan «Varios posibles» o «Sin identificar».
+                        (lo ve su grupo en el portal). Revisa los que digan «Varios posibles» o «Sin identificar». Si una persona aún no está registrada,
+                        elige su grupo en «Dar de alta en» y presiona «Dar de alta y anexar». Con el botón «Sin identificar»
+                        puedes seleccionar varias personas y elegirles el grupo a la vez.
                     </div>
                     <group>
                         <group>
@@ -357,6 +391,10 @@
                             <field name="candidate_ids" widget="many2many_tags" readonly="1" optional="show"/>
                             <field name="insured_id" readonly="attached" options="{'no_create': True}"/>
                             <field name="group_id"/>
+                            <field name="birthdate_read" optional="show" readonly="1"/>
+                            <field name="new_group_id" optional="show" readonly="attached or insured_id"
+                                   options="{'no_create': True}"/>
+                            <field name="new_sex" optional="show" readonly="attached or insured_id"/>
                             <field name="status" readonly="1"/>
                             <field name="no_text" optional="hide" readonly="1"/>
                             <field name="skip" readonly="attached"/>

@@ -42,6 +42,7 @@ class RssAdvisorPortal(http.Controller):
 
     def _render(self, template, advisor, section, **values):
         sudo_env = request.env(su=True)
+        request.env['rss.group.member']._rss_mark_app()
         base = CustomerPortal()._prepare_portal_layout_values()
         base.update({
             'page_name': 'rss_advisor',

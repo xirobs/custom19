@@ -36,3 +36,6 @@ access_rss_board_user,rss.board.user,model_rss_board,group_rss_user,1,0,0,0
 access_rss_board_manager,rss.board.manager,model_rss_board,group_rss_manager,1,1,1,1
 access_rss_board_block_user,rss.board.block.user,model_rss_board_block,group_rss_user,1,0,0,0
 access_rss_board_block_manager,rss.board.block.manager,model_rss_board_block,group_rss_manager,1,1,1,1
+access_rss_service_charge_user,rss.service.charge.user,model_rss_service_charge,group_rss_user,1,1,1,0
+access_rss_service_charge_manager,rss.service.charge.manager,model_rss_service_charge,group_rss_manager,1,1,1,1
+access_rss_service_charge_wizard_user,rss.service.charge.wizard.user,model_rss_service_charge_wizard,group_rss_user,1,1,1,1

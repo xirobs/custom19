@@ -24,3 +24,5 @@ from . import rss_import_office
 from . import rss_board
 from . import rss_credential
 from . import rss_payment_request
+from . import rss_certificate_missing
+from . import rss_service_charge

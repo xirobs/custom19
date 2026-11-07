@@ -11,6 +11,9 @@ ROLE_SELECTION = [
 ]
 
 
+RSS_APP_COOKIE = 'rss_app'
+
+
 class RssGroupMember(models.Model):
     """Representante de un grupo en el portal /mi-grupo.
 
@@ -142,7 +145,23 @@ class RssGroupMember(models.Model):
     def _rss_is_login_redirect(self, redirect):
         """¿La entrada viene de la app o de un portal del seguro? (para mostrar su imagen)."""
         path = (redirect or '').split('?')[0]
-        return any(path == p or path.startswith(p + '/') for p in ('/seguro-app', '/mi-grupo', '/seguro'))
+        if any(path == p or path.startswith(p + '/') for p in ('/seguro-app', '/mi-grupo', '/seguro')):
+            return True
+        # Celular donde ya se usó la app o un portal del seguro (cookie), salvo que se pida BitaScout
+        from odoo.http import request
+        if not request:
+            return False
+        if request.params.get('app') == 'bitascout':
+            return False
+        return request.httprequest.cookies.get(RSS_APP_COOKIE) == '1'
+
+    @api.model
+    def _rss_mark_app(self):
+        """Recuerda en el navegador que se usa la app del seguro (la entrada se ve con su imagen)."""
+        from odoo.http import request
+        if request:
+            request.future_response.set_cookie(RSS_APP_COOKIE, '1', max_age=365 * 24 * 3600,
+                                               httponly=True, samesite='Lax')
 
     @api.model
     def _for_user(self, user):

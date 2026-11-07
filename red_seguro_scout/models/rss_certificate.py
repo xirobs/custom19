@@ -139,7 +139,54 @@ class RssCertificateBatch(models.Model):
             return by_date, Insured.browse()
         return Insured.browse(), candidates
 
-    def _match_certificate(self, data, text_norm, raw_upper, index, Insured):
+    def _fuzzy_index(self):
+        """(id, palabras del nombre) de cada asegurado donde se busca; para la búsqueda tolerante."""
+        out = []
+        for insured in self._candidate_insured():
+            words = set()
+            for value in (insured.first_name, insured.second_name, insured.last_name_father,
+                          insured.last_name_mother):
+                words |= {w for w in normalize_text(value or '').split() if len(w) > 1}
+            if words:
+                out.append((insured.id, words))
+        return out
+
+    @staticmethod
+    def _fuzzy_match(name, fuzzy):
+        """Asegurados cuyo nombre se parece al del certificado aunque tenga errores de captura
+        («Herrea», «Galindooo») o los apellidos repetidos. Cada palabra del certificado debe
+        parecerse (≥ 80 %) a una del asegurado; gana el más parecido."""
+        from difflib import SequenceMatcher
+        query = [w for w in (name or '').split() if len(w) > 1]
+        if len(query) < 3 or not fuzzy:
+            return []
+        scored = []
+        for insured_id, words in fuzzy:
+            # Al menos un apellido o nombre idéntico, para no comparar contra todos a fondo
+            if not words.intersection(query):
+                continue
+            sims = []
+            for q in query:
+                if q in words:
+                    sims.append(1.0)
+                    continue
+                best = 0.0
+                for w in words:
+                    m = SequenceMatcher(None, q, w)
+                    if m.real_quick_ratio() > best and m.quick_ratio() > best:
+                        best = max(best, m.ratio())
+                sims.append(best)
+                if best < 0.8:
+                    break
+            if len(sims) == len(query) and min(sims) >= 0.8:
+                scored.append((sum(sims) / len(sims), insured_id))
+        if not scored:
+            return []
+        scored.sort(reverse=True)
+        top = scored[0][0]
+        return [insured_id for score, insured_id in scored if score >= top - 0.02]
+
+    def _match_certificate(self, data, text_norm, raw_upper, index, Insured, fuzzy=None):
         """Primero busca por el nombre del recuadro «Asegurado» (así no se confunde con el
         contratante); si no hay, por cualquier nombre de la página. Desempata con fecha de
         nacimiento y sexo leídos."""
@@ -159,6 +206,11 @@ class RssCertificateBatch(models.Model):
                 text = (' %s ' % text).replace(' %s ' % contractor, ' ')
             found, candidates = self._match_page(text, raw_upper, index, Insured)
             candidates = found or candidates
+        if not candidates and fuzzy:
+            # Nombre con error de captura: búsqueda tolerante con el nombre del certificado
+            label = name or normalize_text(self._label_name(raw_upper) or '')
+            if label:
+                candidates = Insured.browse(self._fuzzy_match(label, fuzzy))
         if len(candidates) > 1:
             birth, sex = data.get('insured_birthdate'), data.get('insured_sex')
             narrowed = candidates
@@ -209,6 +261,7 @@ class RssCertificateBatch(models.Model):
                 raise UserError(_('Sube el PDF de certificados que mandó la aseguradora.'))
             batch.line_ids.filtered(lambda l: not l.attached).unlink()
             index = batch._build_index()
+            fuzzy = batch._fuzzy_index()
             if not index:
                 raise UserError(_('No hay asegurados registrados donde buscar los nombres.'))
             pages_read = 0
@@ -224,7 +277,7 @@ class RssCertificateBatch(models.Model):
                     raw = original.upper()
                     text_norm = normalize_text(raw)
                     data = parse_certificate(original)
-                    found, candidates = batch._match_certificate(data, text_norm, raw, index, Insured)
+                    found, candidates = batch._match_certificate(data, text_norm, raw, index, Insured, fuzzy)
                     structured = bool(data.get('policy_number') or data.get('certificate_number')
                                       or data.get('insured_name'))
                     if current is not None and current.policy_number and not structured:
@@ -288,8 +341,14 @@ class RssCertificateBatch(models.Model):
                 raise UserError(_('No hay certificados identificados por anexar.'))
             dup = lines.insured_id.filtered(lambda i: len(lines.filtered(lambda l: l.insured_id == i)) > 1)
             if dup:
-                raise UserError(_('%s tiene más de un certificado en esta carga; deja solo uno '
-                                  '(marca «Omitir» en el otro).', ', '.join(dup.mapped('name'))))
+                # Se anexan los demás; los repetidos quedan para revisión (no se detiene toda la carga)
+                lines = lines.filtered(lambda l: l.insured_id not in dup)
+                batch.message_post(body=_('%s tiene más de un certificado en esta carga; deja solo uno '
+                                          '(marca «Omitir» en el otro) y vuelve a anexar.',
+                                          ', '.join(dup.mapped('name'))))
+                if not lines:
+                    raise UserError(_('%s tiene más de un certificado en esta carga; deja solo uno '
+                                      '(marca «Omitir» en el otro).', ', '.join(dup.mapped('name'))))
             readers = {}
             for line in lines:
                 pdf = line.attachment_id

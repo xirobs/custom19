@@ -320,3 +320,16 @@ class TestRedSeguroScout(TransactionCase):
         pay2.member_ids = [(5,)]
         pay2.action_load_members()
         self.assertEqual(pay2.member_ids, new, 'Solo el que falta por pagar')
+
+    def test_97_section_kept_and_suggested(self):
+        """La sección capturada no se borra al cambiar la fecha; si falta, sale por edad (también en el tablero)."""
+        rec = self._insured(self.group_a, birthdate=date(2014, 5, 1))
+        self.assertEqual(rec.section, 'tropa')
+        rec.section = 'dirigente'
+        rec.birthdate = date(2014, 6, 1)
+        self.assertEqual(rec.section, 'dirigente', 'No se borra al cambiar la fecha')
+        self.env.flush_all()
+        self.env.cr.execute('UPDATE rss_insured SET section = NULL WHERE id = %s', [rec.id])
+        rec.invalidate_recordset()
+        tropa = [s for s in self.env['rss.board']._board_data(self.group_a, 'all')['sections'] if s['key'] == 'tropa'][0]
+        self.assertGreaterEqual(tropa['count'], 1, 'Sin sección guardada, el tablero la toma por edad')

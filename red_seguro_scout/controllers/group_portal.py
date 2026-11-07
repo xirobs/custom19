@@ -52,6 +52,7 @@ class RssGroupPortal(http.Controller):
 
     def _render(self, template, member, section, **values):
         sudo_env = request.env(su=True)
+        request.env['rss.group.member']._rss_mark_app()
         base = self._base_values()
         base.update({
             'member': member,
@@ -546,8 +547,10 @@ class RssGroupPortal(http.Controller):
             ('group_id', '=', member.group_id.id), ('state', 'in', ('payment', 'verifying'))])
         to_pay = request.env['rss.payment'].sudo().search([
             ('group_id', '=', member.group_id.id), ('state', '=', 'draft'), ('access_token', '!=', False)])
+        services = request.env['rss.service.charge'].sudo().search([
+            ('group_id', '=', member.group_id.id), ('state', 'in', ('sent', 'review', 'paid'))], limit=20)
         return self._render('red_seguro_scout.group_payments', member, 'payments', payments=payments,
-                            pending_batches=pending, payment_requests=to_pay)
+                            pending_batches=pending, payment_requests=to_pay, service_charges=services)
 
     @http.route(['/mi-grupo/pagos/<int:payment_id>/recibo'], type='http', auth='user', sitemap=False)
     def group_payment_receipt(self, payment_id, **kw):

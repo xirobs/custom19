@@ -94,9 +94,15 @@ class RssInsured(models.Model):
 
     @api.depends('birthdate')
     def _compute_section(self):
+        # Si no se asigna, Odoo deja el campo vacío: se conserva la sección capturada y,
+        # si no hay, se sugiere por edad (antes un cambio de fecha borraba la sección).
         for rec in self:
-            if rec.birthdate and not rec.section:
+            if rec.section:
+                rec.section = rec.section
+            elif rec.birthdate:
                 rec.section = section_for_age(rec.age)
+            else:
+                rec.section = False
 
     def _compute_claim_count(self):
         data = self.env['rss.claim']._read_group(

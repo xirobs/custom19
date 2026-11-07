@@ -554,6 +554,15 @@ class TestInsuranceLogin(_RssPortalCommon, HttpCase):
         self.assertIn('redirect=/seguro-app', res.url)
         self.assertIn('o_rss_login_brand', res.text)
         self.assertIn('/seguro-app/manifest.webmanifest', res.text)
+        # Este celular ya usó la app del seguro: la entrada general y «restablecer contraseña» se ven del seguro
+        remembered = self.url_open('/web/login')
+        self.assertIn('o_rss_login_brand', remembered.text)
+        self.assertIn('/seguro-app/manifest.webmanifest', remembered.text)
+        reset = self.url_open('/web/reset_password')
+        self.assertIn('o_rss_login_brand', reset.text)
+        self.assertNotIn('o_rss_login_brand', self.url_open('/web/login?app=bitascout').text)
+        # Un celular nuevo ve la entrada general sin cambios
+        self.opener.cookies.clear()
         plain = self.url_open('/web/login')
         self.assertNotIn('o_rss_login_brand', plain.text, 'La entrada general no cambia')
 

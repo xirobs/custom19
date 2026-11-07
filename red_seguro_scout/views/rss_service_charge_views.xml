@@ -1,0 +1,157 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="rss_service_charge_wizard_view_form" model="ir.ui.view">
+        <field name="name">rss.service.charge.wizard.form</field>
+        <field name="model">rss.service.charge.wizard</field>
+        <field name="arch" type="xml">
+            <form string="Cobrar servicios a grupos">
+                <p class="text-muted">Se crea un cobro por grupo con su liga de pago (Mercado Pago o transferencia con
+                    comprobante). Si lo envías, les llega por correo a los representantes de cada grupo.</p>
+                <group>
+                    <field name="concept"/>
+                    <field name="amount"/>
+                    <field name="group_ids" widget="many2many_tags" options="{'no_create': True}"/>
+                    <field name="send"/>
+                    <field name="remember"/>
+                </group>
+                <footer>
+                    <button name="action_create" type="object" string="Crear cobros" class="btn-primary"/>
+                    <button special="cancel" string="Cancelar"/>
+                </footer>
+            </form>
+        </field>
+    </record>
+
+    <record id="action_rss_service_charge_wizard" model="ir.actions.act_window">
+        <field name="name">Cobrar servicios a grupos</field>
+        <field name="res_model">rss.service.charge.wizard</field>
+        <field name="view_mode">form</field>
+        <field name="target">new</field>
+        <field name="binding_model_id" ref="model_rss_scout_group"/>
+        <field name="binding_view_types">list,form</field>
+    </record>
+
+    <record id="rss_service_charge_view_list" model="ir.ui.view">
+        <field name="name">rss.service.charge.list</field>
+        <field name="model">rss.service.charge</field>
+        <field name="arch" type="xml">
+            <list string="Cobros de servicio" decoration-success="state == 'paid'" decoration-info="state == 'review'"
+                  decoration-muted="state == 'cancel'">
+                <header>
+                    <button name="%(red_seguro_scout.action_rss_service_charge_wizard)d" type="action"
+                            string="Cobrar a grupos" class="btn-primary" display="always"/>
+                </header>
+                <field name="name"/>
+                <field name="date"/>
+                <field name="group_id"/>
+                <field name="concept" optional="show"/>
+                <field name="amount" sum="Total"/>
+                <field name="currency_id" column_invisible="1"/>
+                <field name="payment_method" optional="show"/>
+                <field name="paid_date" optional="show"/>
+                <field name="sent_date" optional="hide"/>
+                <field name="state" widget="badge" decoration-success="state == 'paid'" decoration-info="state == 'review'"
+                       decoration-warning="state == 'sent'"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="rss_service_charge_view_form" model="ir.ui.view">
+        <field name="name">rss.service.charge.form</field>
+        <field name="model">rss.service.charge</field>
+        <field name="arch" type="xml">
+            <form string="Cobro de servicio" class="o_rss">
+                <header>
+                    <button name="action_send" type="object" string="Enviar liga de pago" icon="fa-envelope"
+                            class="btn-primary" invisible="state != 'draft'"/>
+                    <button name="action_send" type="object" string="Reenviar liga" icon="fa-envelope"
+                            invisible="state not in ('sent', 'review')"/>
+                    <button name="action_send_whatsapp" type="object" string="Enviar por WhatsApp" icon="fa-whatsapp"
+                            invisible="state in ('paid', 'cancel')"/>
+                    <button name="action_register_payment" type="object" string="Registrar pago" icon="fa-check"
+                            class="btn-primary" invisible="state not in ('sent', 'review')"
+                            confirm="Se marca como pagado y se avisa al grupo con su recibo. ¿El pago sí llegó?"/>
+                    <button name="action_register_payment" type="object" string="Registrar pago" icon="fa-check"
+                            invisible="state != 'draft'"
+                            confirm="Se marca como pagado y se avisa al grupo con su recibo. ¿El pago sí llegó?"/>
+                    <button name="action_cancel" type="object" string="Cancelar" invisible="state in ('paid', 'cancel')"/>
+                    <button name="action_reset" type="object" string="Volver a abrir" invisible="state != 'cancel'"/>
+                    <field name="state" widget="statusbar" statusbar_visible="draft,sent,review,paid"/>
+                </header>
+                <sheet>
+                    <widget name="web_ribbon" title="Pagado" invisible="state != 'paid'"/>
+                    <div class="alert alert-info" role="status" invisible="state != 'review'">
+                        El grupo subió su comprobante (abajo). Verifica el depósito y presiona «Registrar pago».
+                    </div>
+                    <div class="oe_title"><h1><field name="name" readonly="1"/></h1></div>
+                    <group>
+                        <group>
+                            <field name="group_id" readonly="state == 'paid'" options="{'no_create': True}"/>
+                            <field name="concept" readonly="state == 'paid'"/>
+                            <field name="amount" readonly="state == 'paid'"/>
+                            <field name="currency_id" invisible="1"/>
+                            <field name="date" readonly="state == 'paid'"/>
+                            <field name="company_id" groups="base.group_multi_company"/>
+                        </group>
+                        <group>
+                            <field name="reference"/>
+                            <field name="payment_url" widget="CopyClipboardChar"/>
+                            <field name="amount_mp_total"/>
+                            <field name="representative_ids" widget="many2many_tags"/>
+                            <field name="sent_date"/>
+                        </group>
+                    </group>
+                    <group string="Pago">
+                        <group>
+                            <field name="payment_method" readonly="state == 'paid'"/>
+                            <field name="payment_reference" readonly="state == 'paid'"/>
+                            <field name="tracking_key" invisible="payment_method not in ('transfer', 'deposit')"/>
+                        </group>
+                        <group>
+                            <field name="paid_date"/>
+                            <field name="mp_commission" invisible="payment_method != 'mercadopago'"/>
+                            <field name="attachment_ids" widget="many2many_binary"/>
+                        </group>
+                    </group>
+                    <field name="notes" placeholder="Notas internas"/>
+                </sheet>
+                <chatter/>
+            </form>
+        </field>
+    </record>
+
+    <record id="rss_service_charge_view_search" model="ir.ui.view">
+        <field name="name">rss.service.charge.search</field>
+        <field name="model">rss.service.charge</field>
+        <field name="arch" type="xml">
+            <search>
+                <field name="group_id"/>
+                <field name="name"/>
+                <field name="reference"/>
+                <filter name="pending" string="Pendientes" domain="[('state', 'in', ('draft', 'sent', 'review'))]"/>
+                <filter name="review" string="Comprobante por verificar" domain="[('state', '=', 'review')]"/>
+                <filter name="paid" string="Pagados" domain="[('state', '=', 'paid')]"/>
+                <separator/>
+                <filter name="date" string="Fecha" date="date"/>
+                <group>
+                    <filter name="by_group" string="Grupo" context="{'group_by': 'group_id'}"/>
+                    <filter name="by_state" string="Estatus" context="{'group_by': 'state'}"/>
+                </group>
+            </search>
+        </field>
+    </record>
+
+    <record id="action_rss_service_charge" model="ir.actions.act_window">
+        <field name="name">Cobros de servicio</field>
+        <field name="res_model">rss.service.charge</field>
+        <field name="view_mode">list,form</field>
+        <field name="context">{'search_default_pending': 1}</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">Cobra los servicios de Red Seguro Scout a cada grupo</p>
+            <p>Usa «Cobrar a grupos»: a cada grupo le llega su liga para pagar con Mercado Pago o por transferencia.</p>
+        </field>
+    </record>
+
+    <menuitem id="menu_rss_service_charges" name="Cobros de servicio" parent="menu_rss_insurance"
+              action="action_rss_service_charge" sequence="35"/>
+</odoo>
