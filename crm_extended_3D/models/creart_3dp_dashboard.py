@@ -34,6 +34,47 @@ class Creart3dpDashboard(models.TransientModel):
     avg_margin_percent = fields.Float(string="Margen promedio (%)", compute="_compute_kpis")
     filament_kg_pipeline = fields.Float(string="Filamento en pipeline (kg)", compute="_compute_kpis")
 
+    # Indicadores compartidos con la app del equipo (modelo creart.kpi)
+    kpi_sold_month = fields.Monetary(string="Ventas del mes", compute="_compute_creart_kpis", currency_field="currency_id")
+    kpi_sold_delta = fields.Monetary(string="Diferencia vs. mes anterior", compute="_compute_creart_kpis", currency_field="currency_id")
+    kpi_average_ticket = fields.Monetary(string="Ticket promedio", compute="_compute_creart_kpis", currency_field="currency_id")
+    kpi_receivable = fields.Monetary(string="Por cobrar", compute="_compute_creart_kpis", currency_field="currency_id")
+    kpi_open_value = fields.Monetary(string="En proceso comercial", compute="_compute_creart_kpis", currency_field="currency_id")
+    kpi_weighted = fields.Monetary(string="Pipeline ponderado", compute="_compute_creart_kpis", currency_field="currency_id")
+    kpi_forecast_total = fields.Monetary(string="Pronóstico 3 meses", compute="_compute_creart_kpis", currency_field="currency_id")
+    kpi_conversion = fields.Integer(string="Conversión (%)", compute="_compute_creart_kpis")
+    kpi_cycle_days = fields.Integer(string="Ciclo de venta (días)", compute="_compute_creart_kpis")
+    kpi_overdue = fields.Integer(string="Entregas vencidas", compute="_compute_creart_kpis")
+    kpi_unpriced = fields.Integer(string="Sin precio", compute="_compute_creart_kpis")
+    kpi_months_of_data = fields.Integer(string="Meses con datos", compute="_compute_creart_kpis")
+    kpi_confidence = fields.Selection(
+        [("baja", "Baja"), ("media", "Media"), ("alta", "Alta")],
+        string="Confianza del pronóstico", compute="_compute_creart_kpis",
+    )
+
+    @api.depends_context("uid", "allowed_company_ids")
+    def _compute_creart_kpis(self):
+        for dash in self:
+            data = self.env["creart.kpi"].get_dashboard(self.env.company)
+            cards = data["cards"]
+            dash.kpi_sold_month = cards["sold_month"]
+            dash.kpi_sold_delta = cards["sold_delta"]
+            dash.kpi_average_ticket = cards["average_ticket"]
+            dash.kpi_receivable = cards["receivable"]
+            dash.kpi_open_value = cards["open_value"]
+            dash.kpi_weighted = cards["weighted"]
+            dash.kpi_forecast_total = data["forecast_total"]
+            dash.kpi_conversion = cards["conversion"]
+            dash.kpi_cycle_days = cards["cycle_days"]
+            dash.kpi_overdue = cards["overdue"]
+            dash.kpi_unpriced = cards["unpriced"]
+            dash.kpi_months_of_data = data["months_of_data"]
+            dash.kpi_confidence = data["confidence"]
+
+    def _compute_display_name(self):
+        for dash in self:
+            dash.display_name = _("Tablero CreArt 3DP")
+
     def _get_leads(self):
         return self.env["crm.lead"].search([
             ("type", "=", "opportunity"),
@@ -111,6 +152,7 @@ class Creart3dpDashboard(models.TransientModel):
 
     def action_refresh_dashboard(self):
         self._compute_kpis()
+        self._compute_creart_kpis()
         return {
             "type": "ir.actions.act_window",
             "name": _("Dashboard CreArt 3DP"),

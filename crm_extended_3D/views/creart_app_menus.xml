@@ -1,13 +1,69 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <odoo>
     <data noupdate="0">
-        <record id="action_creart_app" model="ir.actions.act_url">
-            <field name="name">Tablero CreArt</field>
-            <field name="url">/creart/app</field>
-            <field name="target">new</field>
+        <delete model="ir.actions.act_url" search="[('url', '=', '/creart/app')]"/>
+        <record id="view_creart_3dp_dashboard_form" model="ir.ui.view">
+            <field name="name">creart.3dp.dashboard.form</field>
+            <field name="model">creart.3dp.dashboard</field>
+            <field name="arch" type="xml">
+                <form string="Tablero CreArt 3DP" create="0" delete="0">
+                    <header>
+                        <button name="action_refresh_dashboard" type="object" string="Actualizar" class="btn-primary"/>
+                        <button name="action_open_pipeline_graph" type="object" string="Ver gráfico del pipeline" class="btn-secondary"/>
+                    </header>
+                    <sheet>
+                        <div class="oe_title"><h1>Tablero CreArt 3DP</h1></div>
+                        <group>
+                            <group string="Ventas">
+                                <field name="currency_id" invisible="1"/>
+                                <field name="kpi_sold_month" widget="monetary"/>
+                                <field name="kpi_sold_delta" widget="monetary"/>
+                                <field name="kpi_average_ticket" widget="monetary"/>
+                                <field name="kpi_receivable" widget="monetary"/>
+                                <field name="kpi_conversion"/>
+                                <field name="kpi_cycle_days"/>
+                            </group>
+                            <group string="Pronóstico">
+                                <field name="kpi_open_value" widget="monetary"/>
+                                <field name="kpi_weighted" widget="monetary"/>
+                                <field name="kpi_forecast_total" widget="monetary"/>
+                                <field name="kpi_confidence"/>
+                                <field name="kpi_months_of_data"/>
+                            </group>
+                            <group string="Producción">
+                                <field name="jobs_active"/>
+                                <field name="jobs_printing"/>
+                                <field name="jobs_queue"/>
+                                <field name="kpi_overdue"/>
+                            </group>
+                            <group string="Atención">
+                                <field name="kpi_unpriced"/>
+                                <field name="jobs_not_profitable"/>
+                                <field name="jobs_material_shortage"/>
+                                <field name="avg_margin_percent"/>
+                            </group>
+                        </group>
+                        <div class="alert alert-info" role="status" invisible="kpi_confidence != 'baja'">
+                            Aún hay pocos datos de ventas: toma el pronóstico como referencia, no como meta.
+                        </div>
+                        <group string="Accesos">
+                            <button name="action_open_active_jobs" type="object" string="Trabajos activos" class="btn-link"/>
+                            <button name="action_open_printing_jobs" type="object" string="Imprimiendo" class="btn-link"/>
+                            <button name="action_open_not_profitable" type="object" string="No rentables" class="btn-link"/>
+                            <button name="action_open_material_shortage" type="object" string="Faltante de material" class="btn-link"/>
+                        </group>
+                    </sheet>
+                </form>
+            </field>
+        </record>
+        <record id="action_creart_open_dashboard" model="ir.actions.server">
+            <field name="name">Tablero CreArt 3DP</field>
+            <field name="model_id" ref="model_creart_3dp_dashboard"/>
+            <field name="state">code</field>
+            <field name="code">action = model.action_open_dashboard()</field>
         </record>
         <menuitem id="menu_creart_kpi" name="Tablero"
-                  parent="menu_creart_root" action="action_creart_app" sequence="4"/>
+                  parent="menu_creart_root" action="action_creart_open_dashboard" sequence="4"/>
 
         <record id="view_creart_team_users_list" model="ir.ui.view">
             <field name="name">res.users.creart.team.list</field>

@@ -235,6 +235,27 @@
         </t>
     </template>
 
+    <template id="app_mobile_only" name="App CreArt: solo celular">&lt;!DOCTYPE html&gt;
+<html lang="es">
+    <head>
+        <meta charset="utf-8"/>
+        <meta name="viewport" content="width=device-width, initial-scale=1"/>
+        <title>CreArt 3DP</title>
+        <link rel="icon" href="/crm_extended_3D/static/src/app/icon-192.png"/>
+        <link rel="stylesheet" href="/crm_extended_3D/static/src/app/creart_app.css"/>
+    </head>
+    <body class="solo">
+        <header class="top"><span class="brand">CreArt <em>3DP</em></span></header>
+        <main class="page">
+            <h1>Abre la app desde tu celular</h1>
+            <p class="empty">La app del equipo CreArt está pensada para usarse en Android o iPhone.
+                Entra a esta misma dirección desde el navegador de tu celular y agrégala a tu pantalla de inicio.</p>
+            <a class="btn light" href="/web/session/logout?redirect=/web/login">Cerrar sesión</a>
+        </main>
+    </body>
+</html>
+    </template>
+
     <template id="app_offline" name="App CreArt: sin conexión">
         <t t-call="crm_extended_3D.app_layout">
             <t t-set="title">Sin conexión · CreArt 3DP</t>

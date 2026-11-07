@@ -1,18 +1,20 @@
 """App del equipo CreArt 3DP: portal móvil instalable (PWA)."""
 
 import json
+import re
 from datetime import datetime
 
-from werkzeug.exceptions import Forbidden, NotFound
+from werkzeug.exceptions import NotFound
 
 from odoo import fields, http, _
 from odoo.exceptions import UserError, ValidationError
 from odoo.http import request
 
 from odoo.addons.crm_extended_3D.hooks import CREART_STAGE_XMLID_BY_NAME
+from odoo.addons.portal.controllers.web import Home
 
 TEAM_GROUP = "crm_extended_3D.group_creart_portal_team"
-SALES_GROUP = "sales_team.group_sale_salesman"
+MOBILE_UA = re.compile(r"Android|iPhone|iPad|iPod|Mobile", re.IGNORECASE)
 TEXT_FIELDS = ("name", "contact_name", "partner_name", "phone", "email_from", "filament_color")
 FLOAT_FIELDS = ("expected_revenue", "advance_payment", "filament_grams")
 INT_FIELDS = ("units", "print_hours", "print_time_minutes")
@@ -20,16 +22,45 @@ PAGE_SIZE = 40
 STEP_NEXT = {"pending": "in_progress", "in_progress": "done", "done": "pending"}
 
 
+def is_mobile_request():
+    agent = request.httprequest.headers.get("User-Agent", "")
+    return bool(MOBILE_UA.search(agent))
+
+
+def is_team_user(user=None):
+    """Equipo habilitado: usuarios portal con el grupo de la app (no internos)."""
+    user = user or request.env.user
+    return user.share and user.has_group(TEAM_GROUP)
+
+
+class CreartHome(Home):
+    """El equipo habilitado entra directo a la app cuando inicia sesión desde el celular."""
+
+    def _login_redirect(self, uid, redirect=None):
+        if not redirect and is_mobile_request():
+            user = request.env["res.users"].sudo().browse(uid)
+            if is_team_user(user):
+                redirect = "/creart/app"
+        return super()._login_redirect(uid, redirect=redirect)
+
+
 class CreartApp(http.Controller):
 
     # ------------------------------------------------------------------
     # Apoyo
     # ------------------------------------------------------------------
-    def _check_access(self):
-        """Solo el equipo: usuarios portal autorizados y comerciales internos."""
+    def _guard(self):
+        """La app es solo para el equipo habilitado y solo en celular.
+
+        Administradores y usuarios internos siguen en la vista normal de Odoo;
+        el resto de usuarios portal vuelve a su portal.
+        """
         user = request.env.user
-        if not (user.has_group(TEAM_GROUP) or user.has_group(SALES_GROUP)):
-            raise Forbidden()
+        if not is_team_user(user):
+            return request.redirect("/odoo" if not user.share else "/my")
+        if not is_mobile_request():
+            return request.render("crm_extended_3D.app_mobile_only")
+        return None
 
     def _company(self):
         return request.env.company
@@ -130,13 +161,15 @@ class CreartApp(http.Controller):
     # ------------------------------------------------------------------
     @http.route("/creart/app", type="http", auth="user", sitemap=False)
     def dashboard(self, **kw):
-        self._check_access()
+        if (blocked := self._guard()):
+            return blocked
         data = request.env["creart.kpi"].sudo().get_dashboard(self._company())
         return self._render("app_dashboard", "tablero", data=data, cards=data["cards"])
 
     @http.route("/creart/app/trabajos", type="http", auth="user", sitemap=False)
     def jobs(self, q="", etapa=None, archivados=None, **kw):
-        self._check_access()
+        if (blocked := self._guard()):
+            return blocked
         domain = self._lead_domain() + [("active", "=", not archivados)]
         stage_id = int(etapa) if etapa and str(etapa).isdigit() else None
         if stage_id:
@@ -156,7 +189,8 @@ class CreartApp(http.Controller):
 
     @http.route("/creart/app/trabajos/nuevo", type="http", auth="user", methods=["GET", "POST"], sitemap=False)
     def job_new(self, **post):
-        self._check_access()
+        if (blocked := self._guard()):
+            return blocked
         error = None
         if request.httprequest.method == "POST":
             try:
@@ -172,7 +206,8 @@ class CreartApp(http.Controller):
 
     @http.route("/creart/app/trabajos/<int:lead_id>", type="http", auth="user", methods=["GET", "POST"], sitemap=False)
     def job_detail(self, lead_id, **post):
-        self._check_access()
+        if (blocked := self._guard()):
+            return blocked
         lead = self._get_lead(lead_id)
         error = None
         if request.httprequest.method == "POST":
@@ -190,19 +225,22 @@ class CreartApp(http.Controller):
 
     @http.route("/creart/app/trabajos/<int:lead_id>/archivar", type="http", auth="user", methods=["POST"], sitemap=False)
     def job_archive(self, lead_id, **post):
-        self._check_access()
+        if (blocked := self._guard()):
+            return blocked
         self._get_lead(lead_id).write({"active": False})
         return request.redirect("/creart/app/trabajos")
 
     @http.route("/creart/app/trabajos/<int:lead_id>/restaurar", type="http", auth="user", methods=["POST"], sitemap=False)
     def job_restore(self, lead_id, **post):
-        self._check_access()
+        if (blocked := self._guard()):
+            return blocked
         self._get_lead(lead_id).write({"active": True})
         return request.redirect(f"/creart/app/trabajos/{lead_id}")
 
     @http.route("/creart/app/trabajos/<int:lead_id>/nota", type="http", auth="user", methods=["POST"], sitemap=False)
     def job_note(self, lead_id, nota="", **post):
-        self._check_access()
+        if (blocked := self._guard()):
+            return blocked
         nota = (nota or "").strip()
         if nota:
             self._get_lead(lead_id).message_post(
@@ -216,7 +254,8 @@ class CreartApp(http.Controller):
         type="http", auth="user", methods=["POST"], sitemap=False,
     )
     def job_step(self, lead_id, step_id, **post):
-        self._check_access()
+        if (blocked := self._guard()):
+            return blocked
         lead = self._get_lead(lead_id)
         step = lead.print_process_step_ids.filtered(lambda s: s.id == step_id)
         if not step:
@@ -233,7 +272,8 @@ class CreartApp(http.Controller):
 
     @http.route("/creart/app/instalar", type="http", auth="user", sitemap=False)
     def install_help(self, **kw):
-        self._check_access()
+        if (blocked := self._guard()):
+            return blocked
         return self._render("app_install", "instalar")
 
     # ------------------------------------------------------------------

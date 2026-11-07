@@ -42,6 +42,7 @@ h2 { font-size:17px; margin:0 0 10px; }
 .step { display:flex; justify-content:space-between; align-items:center; width:100%; min-height:46px; font:inherit; color:var(--ink); background:transparent; border:0; border-bottom:1px solid var(--line); padding:8px 0; cursor:pointer; text-align:left; }
 .step small { color:var(--mute); } .step.done small { color:var(--ok); font-weight:600; } .step.in_progress small { color:var(--gold); font-weight:600; }
 .note { border-top:1px solid var(--line); margin-top:10px; padding-top:8px; font-size:15px; overflow-wrap:anywhere; } .note small { color:var(--mute); }
+body.solo { padding-bottom:0; } .btn { text-align:center; text-decoration:none; }
 .error { color:var(--danger); font-weight:600; } .ok { color:var(--ok); font-weight:600; } .empty { color:var(--mute); }
 .tabs { position:fixed; left:0; right:0; bottom:0; z-index:5; display:flex; background:var(--card); border-top:1px solid var(--line); padding-bottom:env(safe-area-inset-bottom); }
 .tab { flex:1; text-align:center; padding:14px 4px; min-height:52px; color:var(--mute); text-decoration:none; font-size:15px; } .tab.on { color:var(--ink); font-weight:700; box-shadow:inset 0 2px 0 var(--gold); }
