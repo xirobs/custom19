@@ -114,6 +114,8 @@ class ScoutTreasuryLedger(models.AbstractModel):
                        source=_('Venta %s', tmove.store_sale_id.name) if tmove.store_sale_id else _('Captura'))
             if tmove.move_type == 'transfer':
                 res.update(kind='transfer', group=None)
+            elif tmove.move_type == 'income' and tmove.category_id.report_group == 'opening':
+                res.update(kind='opening', group=None)
             elif tmove.move_type == 'income':
                 res.update(kind='income', group=tmove.category_id.report_group or 'other')
                 if tmove.category_id == self.env.ref('scout_management.category_adjust_in', raise_if_not_found=False):
@@ -180,7 +182,7 @@ class ScoutTreasuryLedger(models.AbstractModel):
             domain = self._base(company) + self._journal_domain(journal) + [
                 ('date', '>=', date_from), ('date', '<=', date_to)]
             lines = Line.search(domain, order='date, id')
-            t = {'income': 0.0, 'expense': 0.0, 'tin': 0.0, 'tout': 0.0}
+            t = {'income': 0.0, 'expense': 0.0, 'tin': 0.0, 'tout': 0.0, 'opening': 0.0}
             for line in lines:
                 if float_is_zero(line.balance, precision_rounding=company.currency_id.rounding):
                     continue
@@ -192,6 +194,12 @@ class ScoutTreasuryLedger(models.AbstractModel):
                 amount = line.balance
                 entry = dict(info, date=line.date, journal=journal, amount=abs(amount), signed=amount,
                              line_id=line.id)
+                if info['kind'] == 'opening':
+                    # saldo inicial cargado (dinero de antes de la plataforma): no es ingreso del periodo
+                    t['opening'] += amount
+                    entry['label'] = _('Saldo inicial: %s', info.get('label') or '')
+                    movements.append(entry)
+                    continue
                 if info['kind'] == 'transfer':
                     key = 'tin' if amount > 0 else 'tout'
                     t[key] += abs(amount)
@@ -226,7 +234,7 @@ class ScoutTreasuryLedger(models.AbstractModel):
                     t['expense'] += -amount
                     expenses.append(entry)
                 movements.append(entry)
-            opening = self._balance(journal, before=date_from)
+            opening = self._balance(journal, before=date_from) + t['opening']
             closing = self._balance(journal, date_to=date_to)
             rows.append({'journal': journal, 'kind': self._journal_kind(journal), 'opening': opening,
                          'income': t['income'], 'expense': t['expense'], 'tin': t['tin'], 'tout': t['tout'],

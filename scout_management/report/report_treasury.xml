@@ -57,6 +57,16 @@
                     .ti-notes { margin-top: 5px; white-space: pre-line; border-top: 1px dashed #c9d1dc; padding-top: 4px; }
                     .hint2 { font-size: 8.5px; color: #7a889a; padding-top: 3px; padding-bottom: 4px; }
                     .ti-proj { border: 2px solid #1f8a3b; border-radius: 6px; padding: 6px 10px; font-size: 12px; background: #f7f9fb; }
+                    .ti-mbar { width: 100%; table-layout: fixed; }
+                    .ti-mbar td { text-align: center; padding: 0 2px; }
+                    .ti-mbar .cols td { vertical-align: bottom; height: 114px; border-bottom: 1px solid #1b2f5e; }
+                    .ti-mbar .pair { white-space: nowrap; font-size: 0; }
+                    .ti-mbar .col { display: inline-block; width: 38%; vertical-align: bottom; margin: 0 1px; }
+                    .ti-mbar .col.in { background: #1f8a3b; }
+                    .ti-mbar .col.out { background: #d62828; }
+                    .ti-mbar .labs td { font-size: 8.5px; font-weight: 700; padding-top: 3px; }
+                    .ti-legend { font-size: 9px; margin-top: 4px; }
+                    .ti-legend .sw { display: inline-block; width: 9px; height: 9px; vertical-align: middle; }
                     .ti-foot { text-align: center; color: #7a889a; font-size: 9px; margin-top: 8px; }
                 </style>
                 <div class="page sc-doc ti">
@@ -236,6 +246,112 @@
                         </tr>
                     </table>
                     <div class="ti-foot">Corte al <t t-out="cut_date"/> · Documento generado desde la plataforma del grupo</div>
+
+                    <!-- ============ COMPARATIVO POR MES ============ -->
+                    <t t-if="trend">
+                    <div style="page-break-before: always;"/>
+                    <table class="ti-head">
+                        <tr>
+                            <td style="width: 80px;">
+                                <img t-if="logo" t-att-src="image_data_uri(logo)" style="width: 70px; height: 70px;"/>
+                            </td>
+                            <td class="ti-vline"/>
+                            <td style="padding-left: 14px;">
+                                <div class="ti-title" style="font-size: 24px; line-height: 26px;">Ingresos y egresos por mes</div>
+                                <div class="ti-sub">Últimos <t t-out="trend['months']"/> meses · <t t-out="trend['from_label']"/> a <t t-out="trend['to_label']"/></div>
+                                <div class="ti-rule"><div/></div>
+                            </td>
+                        </tr>
+                    </table>
+
+                    <table class="ti-cards">
+                        <tr>
+                            <td><div class="ti-card" style="border-left-color: #1f8a3b;">
+                                <div class="lbl">Ingresos del periodo</div>
+                                <div class="big" style="color: #1f8a3b;" t-out="money(trend['total_income'])"/></div></td>
+                            <td><div class="ti-card" style="border-left-color: #d62828;">
+                                <div class="lbl">Egresos del periodo</div>
+                                <div class="big" style="color: #d62828;" t-out="money(trend['total_expense'])"/></div></td>
+                            <td><div class="ti-card" t-attf-style="border-left-color: #{'#1b2f5e' if trend['net'] &gt;= 0 else '#d62828'};">
+                                <div class="lbl">Resultado (ingresos − egresos)</div>
+                                <div class="big" t-attf-style="color: #{'#1b2f5e' if trend['net'] &gt;= 0 else '#d62828'};" t-out="money(trend['net'])"/></div></td>
+                        </tr>
+                    </table>
+
+                    <div class="ti-box" style="margin-bottom: 8px;">
+                        <div class="ti-bh">Ingresos y egresos mes por mes</div>
+                        <div class="ti-bb">
+                            <table class="ti-mbar">
+                                <tr class="cols">
+                                    <td t-foreach="trend['rows']" t-as="r">
+                                        <div class="pair">
+                                            <div class="col in" t-attf-style="height: #{r['h_in']}px;"/>
+                                            <div class="col out" t-attf-style="height: #{r['h_out']}px;"/>
+                                        </div>
+                                    </td>
+                                </tr>
+                                <tr class="labs">
+                                    <td t-foreach="trend['rows']" t-as="r"><t t-out="r['label']"/><t t-if="r['historic']">*</t></td>
+                                </tr>
+                            </table>
+                            <div class="ti-legend"><span class="sw" style="background: #1f8a3b;"/> Ingresos <span class="sw" style="background: #d62828; margin-left: 12px;"/> Egresos</div>
+                        </div>
+                        <table class="ti-t">
+                            <thead><tr><th>Mes</th><th class="num">Ingresos</th><th class="num">Egresos</th><th class="num">Resultado</th></tr></thead>
+                            <tbody>
+                                <tr t-foreach="trend['rows']" t-as="r">
+                                    <td class="b"><t t-out="r['label']"/><t t-if="r['historic']">*</t></td>
+                                    <td class="num" t-out="money(r['income']) if not r['empty'] else '—'"/>
+                                    <td class="num" t-out="money(r['expense']) if not r['empty'] else '—'"/>
+                                    <td t-attf-class="num b #{'neg' if r['net'] &lt; 0 else ''}" t-out="money(r['net']) if not r['empty'] else '—'"/>
+                                </tr>
+                            </tbody>
+                            <tr class="ti-tot"><td>Total</td><td class="num" t-out="money(trend['total_income'])"/><td class="num" t-out="money(trend['total_expense'])"/><td class="num" t-out="money(trend['net'])"/></tr>
+                        </table>
+                    </div>
+
+                    <table class="ti-grid">
+                        <tr>
+                            <td>
+                                <div class="ti-box">
+                                    <div class="ti-bh">Ingresos por rubro</div>
+                                    <div class="ti-bb">
+                                        <div t-if="not trend['income_by_group']" class="muted">Sin ingresos.</div>
+                                        <table class="ti-hbar">
+                                            <tr t-foreach="trend['income_by_group']" t-as="r">
+                                                <td class="l" style="color: #1f6b35;" t-out="r['label']"/>
+                                                <td class="b">
+                                                    <div class="bar" t-attf-style="background: #1f8a3b; width: #{'%.0f' % (r['width'] * 0.55)}%;"/>
+                                                    <span class="v"><b t-out="money(r['amount'])"/> (<t t-out="'%.0f' % r['pct']"/> %)</span>
+                                                </td>
+                                            </tr>
+                                        </table>
+                                    </div>
+                                </div>
+                            </td>
+                            <td>
+                                <div class="ti-box">
+                                    <div class="ti-bh">Egresos por categoría</div>
+                                    <div class="ti-bb">
+                                        <div t-if="not trend['expense_by_category']" class="muted">Sin egresos.</div>
+                                        <table class="ti-hbar">
+                                            <tr t-foreach="trend['expense_by_category']" t-as="r">
+                                                <td class="l" t-out="r['label']"/>
+                                                <td class="b">
+                                                    <div class="bar" t-attf-style="width: #{'%.0f' % (r['width'] * 0.55)}%;"/>
+                                                    <span class="v"><b t-out="money(r['amount'])"/> (<t t-out="'%.0f' % r['pct']"/> %)</span>
+                                                </td>
+                                            </tr>
+                                        </table>
+                                    </div>
+                                </div>
+                            </td>
+                        </tr>
+                    </table>
+                    <ul t-if="trend['notes']" class="ti-find" style="margin-top: 6px;">
+                        <li t-foreach="trend['notes']" t-as="n" t-out="n"/>
+                    </ul>
+                    </t>
 
                     <!-- ============ HOJAS SIGUIENTES: DETALLE ============ -->
                     <t t-if="include_detail">

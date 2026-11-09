@@ -11,6 +11,12 @@
         <field name="report_group">other</field>
         <field name="sequence">20</field>
     </record>
+    <record id="category_opening_balance" model="scout.treasury.category">
+        <field name="name">Saldo inicial (dinero de antes de la plataforma)</field>
+        <field name="category_type">income</field>
+        <field name="report_group">opening</field>
+        <field name="sequence">19</field>
+    </record>
     <record id="category_adjust_out" model="scout.treasury.category">
         <field name="name">Ajuste de arqueo (faltante)</field>
         <field name="category_type">expense</field>

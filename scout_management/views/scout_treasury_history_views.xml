@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_scout_treasury_history_list" model="ir.ui.view">
+        <field name="name">scout.treasury.history.list</field>
+        <field name="model">scout.treasury.history</field>
+        <field name="arch" type="xml">
+            <list editable="top" decoration-success="move_type == 'income'" decoration-danger="move_type == 'expense'">
+                <field name="date"/>
+                <field name="move_type"/>
+                <field name="name"/>
+                <field name="report_group" invisible="move_type != 'income'"/>
+                <field name="expense_category" invisible="move_type != 'expense'"/>
+                <field name="account"/>
+                <field name="amount" sum="Total"/>
+                <field name="source" optional="show"/>
+                <field name="notes" optional="hide"/>
+                <field name="company_id" groups="base.group_multi_company" optional="hide"/>
+                <field name="currency_id" column_invisible="1"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_scout_treasury_history_search" model="ir.ui.view">
+        <field name="name">scout.treasury.history.search</field>
+        <field name="model">scout.treasury.history</field>
+        <field name="arch" type="xml">
+            <search>
+                <field name="name"/>
+                <field name="source"/>
+                <filter name="income" string="Ingresos" domain="[('move_type', '=', 'income')]"/>
+                <filter name="expense" string="Egresos" domain="[('move_type', '=', 'expense')]"/>
+                <group>
+                    <filter name="by_month" string="Mes" context="{'group_by': 'date:month'}"/>
+                    <filter name="by_type" string="Tipo" context="{'group_by': 'move_type'}"/>
+                </group>
+            </search>
+        </field>
+    </record>
+
+    <record id="action_scout_treasury_history" model="ir.actions.act_window">
+        <field name="name">Historial anterior a la plataforma</field>
+        <field name="res_model">scout.treasury.history</field>
+        <field name="view_mode">list</field>
+        <field name="context">{'search_default_by_month': 1}</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">Captura los ingresos y egresos de los meses anteriores</p>
+            <p>Se usan solo para el comparativo de 3, 6 o 12 meses del informe de tesorería. No mueven cajas ni
+                bancos: ese dinero ya está en el saldo inicial de cada cuenta.</p>
+        </field>
+    </record>
+
+    <menuitem id="menu_scout_treasury_history" name="Historial anterior (ingresos y egresos)"
+              parent="menu_scout_treasury" action="action_scout_treasury_history" sequence="16"/>
+</odoo>

@@ -239,7 +239,11 @@
                     <b class="text-capitalize" t-out="period_label"/>
                     <a class="btn btn-sm btn-light" t-att-href="'%s/tesoreria?mes=%s&amp;caja=%s' % (admin_base, mes + 1, caja or '')"><i class="fa fa-chevron-right"/></a>
                 </div>
-                <a class="btn btn-sm o_sl_btn_outline" target="_blank" data-sl-pdf="1" t-att-href="'%s/tesoreria/balance.pdf?desde=%s&amp;hasta=%s' % (admin_base, start, end)"><i class="fa fa-file-pdf-o"/> PDF para el Consejo</a>
+                <a class="btn btn-sm o_sl_btn_outline" target="_blank" data-sl-pdf="1" t-att-href="'%s/tesoreria/balance.pdf?desde=%s&amp;hasta=%s&amp;meses=12' % (admin_base, start, end)"><i class="fa fa-file-pdf-o"/> PDF para el Consejo</a>
+                <span class="small text-muted ms-1">comparativo:
+                    <a target="_blank" data-sl-pdf="1" t-att-href="'%s/tesoreria/balance.pdf?desde=%s&amp;hasta=%s&amp;meses=3' % (admin_base, start, end)">3</a> ·
+                    <a target="_blank" data-sl-pdf="1" t-att-href="'%s/tesoreria/balance.pdf?desde=%s&amp;hasta=%s&amp;meses=6' % (admin_base, start, end)">6</a> ·
+                    <a target="_blank" data-sl-pdf="1" t-att-href="'%s/tesoreria/balance.pdf?desde=%s&amp;hasta=%s&amp;meses=12' % (admin_base, start, end)">12</a> meses</span>
             </div>
             <div class="o_ad_filters">
                 <a t-att-href="'%s/tesoreria?mes=%s' % (admin_base, mes)" t-attf-class="#{'active' if not caja else ''}">Todas las cuentas</a>

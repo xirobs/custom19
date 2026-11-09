@@ -20,6 +20,7 @@ HEADERS = {
     'name': ('producto', 'nombre', 'descripcion', 'nombre del producto'),
     'qty': ('existencia', 'cantidad', 'existencias', 'stock', 'inventario'),
     'price': ('precio de venta', 'precio', 'precio venta', 'precio unitario'),
+    'cost': ('costo', 'costo unitario', 'precio de compra', 'costo de compra'),
 }
 
 
@@ -69,19 +70,22 @@ class ScoutProductImport(models.TransientModel):
         wb = Workbook()
         ws = wb.active
         ws.title = 'Productos'
-        for col, (label, width) in enumerate((('Producto *', 55), ('Existencia', 14), ('Precio de venta *', 16)), start=1):
+        for col, (label, width) in enumerate((('Producto *', 55), ('Costo', 12), ('Precio de venta *', 16),
+                                              ('Existencia', 14)), start=1):
             cell = ws.cell(row=1, column=col, value=label)
             cell.font = Font(bold=True, color='FFFFFF')
             cell.fill = PatternFill('solid', fgColor='0F3049')
             ws.column_dimensions[cell.column_letter].width = width
-        ws.append(['Pañoleta oficial del grupo talla G', 7, 250])
-        ws.append(['Kit de promesa (deja Existencia vacía si no controla piezas)', None, 360])
+        ws.append(['Pañoleta oficial del grupo talla G', 180, 250, 7])
+        ws.append(['Kit de promesa (deja Existencia vacía si no controla piezas)', 250, 360, None])
         ws.freeze_panes = 'A2'
         info = wb.create_sheet('Instrucciones')
         for row, text in enumerate([
             'PRODUCTOS DE LA TIENDA SCOUT',
-            'Una fila por producto: Producto, Existencia y Precio de venta. Las filas 2 y 3 son ejemplos: bórralas.',
-            'Si el producto ya existe (mismo nombre) se actualiza: su precio cambia y su existencia queda igual a la del archivo.',
+            'Una fila por producto: Producto, Costo, Precio de venta y Existencia. Las filas 2 y 3 son ejemplos: bórralas.',
+            'Si el producto ya existe (mismo nombre) se actualiza: costo y precio cambian y su existencia queda igual a la del '
+            'archivo (conteo físico). Si es nuevo, se da de alta.',
+            'Costo vacío = no se cambia el costo.',
             'Existencia vacía = el producto no controla existencias (cuotas, alimentos preparados, kits).',
             'Los productos quedan sin IVA y como artículos de la tienda scout.',
         ], start=1):
@@ -109,7 +113,8 @@ class ScoutProductImport(models.TransientModel):
             index = {}
             for key, names in HEADERS.items():
                 for i, h in enumerate(header):
-                    if h in names or (key == 'price' and h.startswith('precio')):
+                    if h in names or (key == 'price' and h.startswith('precio') and 'compra' not in h) \
+                            or (key == 'cost' and h.startswith('costo')):
                         index.setdefault(key, i)
             if 'name' in index and ('price' in index or 'qty' in index):
                 break
@@ -123,13 +128,16 @@ class ScoutProductImport(models.TransientModel):
             name = re.sub(r'\s+', ' ', str(get('name') or '')).strip()
             if not name or _norm(name).startswith('total'):
                 continue
-            items.append((number, {'name': name, 'qty': get('qty'), 'price': get('price')}))
+            items.append((number, {'name': name, 'qty': get('qty'), 'price': get('price'), 'cost': get('cost')}))
         return items
 
     # ------------------------------------------------------------------ importación
     def _import_row(self, item):
         qty = _number(item['qty'], _('Existencia'))
         price = _number(item['price'], _('Precio de venta'))
+        cost = _number(item.get('cost'), _('Costo'))
+        if cost is not None and cost < 0:
+            raise ValueError(_('El costo no puede ser negativo.'))
         if qty is not None and qty < 0:
             raise ValueError(_('La existencia no puede ser negativa.'))
         if price is not None and price < 0:
@@ -142,13 +150,15 @@ class ScoutProductImport(models.TransientModel):
             product = Template.create({
                 'name': item['name'], 'type': 'consu', 'sale_ok': True, 'purchase_ok': True,
                 'scout_store_ok': True, 'scout_sale_type': 'store', 'scout_track_qty': qty is not None,
-                'list_price': price or 0.0, 'taxes_id': [fields.Command.clear()],
+                'list_price': price or 0.0, 'standard_price': cost or 0.0, 'taxes_id': [fields.Command.clear()],
                 'supplier_taxes_id': [fields.Command.clear()],
             })
         else:
             vals = {'scout_store_ok': True, 'active': True}
             if price is not None:
                 vals['list_price'] = price
+            if cost is not None:
+                vals['standard_price'] = cost
             if qty is not None:
                 vals['scout_track_qty'] = True
             product.write(vals)

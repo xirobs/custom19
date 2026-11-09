@@ -17,7 +17,9 @@ class ScoutTreasuryCategory(models.Model):
         ('sales', 'Ventas del día'), ('store', 'Tienda scout'), ('food', 'Venta de alimentos'),
         ('registration', 'Registro'), ('fees', 'Cuotas'), ('donation', 'Donativos y colaboraciones'),
         ('activity', 'Actividades y campamentos'), ('other', 'Otros'),
-    ], string='Agrupar en reporte como', default='other')
+        ('opening', 'Saldo inicial (dinero de antes de la plataforma)'),
+    ], string='Agrupar en reporte como', default='other',
+        help='"Saldo inicial" no cuenta como ingreso: se suma al saldo con el que arranca la cuenta.')
     account_id = fields.Many2one('account.account', string='Cuenta contable', company_dependent=True,
                                  help='Cuenta de ingreso o gasto donde se registra el movimiento. '
                                       'Si se deja vacía se usa la primera cuenta de ingreso/gasto del plan.')

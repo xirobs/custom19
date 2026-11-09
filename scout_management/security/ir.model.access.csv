@@ -87,3 +87,6 @@ access_scout_debt_payment_wizard,scout.debt.payment.wizard treasurer,model_scout
 access_scout_activity_type_user,scout.activity.type user,model_scout_activity_type,base.group_user,1,0,0,0
 access_scout_activity_type_portal,scout.activity.type portal,model_scout_activity_type,base.group_portal,1,0,0,0
 access_scout_activity_type_officer,scout.activity.type officer,model_scout_activity_type,group_scout_officer,1,1,1,1
+access_scout_treasury_history_officer,scout.treasury.history officer,model_scout_treasury_history,group_scout_officer,1,0,0,0
+access_scout_treasury_history_treasurer,scout.treasury.history treasurer,model_scout_treasury_history,group_scout_treasurer,1,1,1,0
+access_scout_treasury_history_manager,scout.treasury.history manager,model_scout_treasury_history,group_scout_manager,1,1,1,1

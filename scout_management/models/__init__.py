@@ -35,5 +35,6 @@ from . import scout_card_pdf
 from . import scout_treasury_ledger
 from . import scout_call_turns
 from . import scout_debt
+from . import scout_treasury_history
 from . import scout_progression_path
 from . import scout_resource_portal

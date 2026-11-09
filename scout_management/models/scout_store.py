@@ -59,6 +59,53 @@ class ProductTemplate(models.Model):
             product.scout_low_stock = bool(product.scout_track_qty and product.scout_store_ok
                                            and product.scout_qty_available <= product.scout_min_qty)
 
+    scout_qty_onhand = fields.Float(
+        string='Existencia', compute='_compute_scout_qty_onhand', inverse='_inverse_scout_qty_onhand',
+        digits='Product Unit', help='Piezas que hay hoy. Escribe la cantidad contada: la diferencia se registra sola '
+                                    'como inventario inicial (la primera vez) o como ajuste por conteo físico.')
+    scout_stock_value = fields.Float(string='Valor (costo)', compute='_compute_scout_qty_onhand',
+                                     digits='Product Price')
+
+    def _compute_scout_qty_onhand(self):
+        for product in self:
+            product.scout_qty_onhand = product.scout_qty_available
+            product.scout_stock_value = product.scout_qty_available * (product.standard_price or 0.0)
+
+    def _inverse_scout_qty_onhand(self):
+        Move = self.env['scout.store.stock.move'].sudo()
+        for product in self:
+            if not product.id:
+                continue
+            diff = (product.scout_qty_onhand or 0.0) - product.scout_qty_available
+            if float_compare(diff, 0.0, precision_digits=3):
+                has_moves = bool(Move.search_count([('product_tmpl_id', '=', product.id)]))
+                Move.create({'product_tmpl_id': product.id, 'move_kind': 'adjust' if has_moves else 'initial',
+                             'quantity': diff, 'unit_cost': product.standard_price,
+                             'note': _('Conteo físico') if has_moves else _('Inventario inicial')})
+                if not product.scout_track_qty:
+                    product.scout_track_qty = True
+            product.invalidate_recordset(['scout_qty_available'])
+
+    @api.model_create_multi
+    def create(self, vals_list):
+        # la existencia capturada al dar de alta (en la lista editable) se aplica después de crear el producto
+        qtys = [vals.pop('scout_qty_onhand', None) for vals in vals_list]
+        products = super().create(vals_list)
+        for product, qty in zip(products, qtys):
+            if qty:
+                product.scout_qty_onhand = qty
+        return products
+
+    def action_scout_open_import(self):
+        return {'type': 'ir.actions.act_window', 'name': _('Cargar productos y existencias desde Excel'),
+                'res_model': 'scout.product.import', 'view_mode': 'form', 'target': 'new'}
+
+    def action_scout_open_moves(self):
+        return {'type': 'ir.actions.act_window', 'name': _('Entradas, ajustes y ventas'),
+                'res_model': 'scout.store.stock.move', 'view_mode': 'list,form',
+                'domain': [('product_tmpl_id', 'in', self.ids)] if self else [],
+                'context': {'default_move_kind': 'in'}}
+
     def action_scout_stock_in(self):
         self.ensure_one()
         return {
@@ -120,6 +167,7 @@ class ScoutStoreSale(models.Model):
                                 help='Miembro al que corresponde la compra (para su estado de cuenta).')
     event_id = fields.Many2one('calendar.event', string='Campamento / evento', domain="[('is_scout_event', '=', True)]")
     line_ids = fields.One2many('scout.store.sale.line', 'sale_id', string='Productos', copy=True)
+    lines_summary = fields.Char(string='Qué se vendió', compute='_compute_lines_summary')
     amount_total = fields.Monetary(string='Total', compute='_compute_amount_total', store=True,
                                    currency_field='currency_id')
     payment_mode = fields.Selection([('paid', 'Pagó en el momento'), ('online', 'Paga en línea (QR / liga)'),
@@ -149,6 +197,11 @@ class ScoutStoreSale(models.Model):
             sale.amount_total = sum(sale.line_ids.mapped('subtotal'))
 
     @api.depends('state', 'payment_mode', 'invoice_id.payment_state', 'treasury_move_id.state')
+    def _compute_lines_summary(self):
+        for sale in self:
+            sale.lines_summary = ', '.join('%g x %s' % (l.quantity, l.product_id.name or '')
+                                           for l in sale.line_ids)
+
     def _compute_paid_state(self):
         for sale in self:
             if sale.payment_mode == 'paid':

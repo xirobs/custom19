@@ -550,13 +550,14 @@ class ScoutAdminPortal(http.Controller):
                             kinds=dict(DEBT_KINDS), today=fields.Date.context_today(request.env.user))
 
     @http.route([BASE + '/tesoreria/balance.pdf'], type='http', auth='user', website=True)
-    def admin_treasury_pdf(self, desde=None, hasta=None, **kw):
+    def admin_treasury_pdf(self, desde=None, hasta=None, meses='12', **kw):
         acc, redirect = self._guard('treasury')
         if redirect:
             return redirect
         today = fields.Date.context_today(request.env.user)
         wizard = request.env['scout.treasury.report.wizard'].sudo().create({
-            'date_from': _date(desde, today.replace(day=1)), 'date_to': _date(hasta, today)})
+            'date_from': _date(desde, today.replace(day=1)), 'date_to': _date(hasta, today),
+            'trend_months': meses if meses in ('0', '3', '6', '12') else '12'})
         return self._pdf('scout_management.action_report_treasury', wizard, data={'wizard_id': wizard.id},
                          filename='Balance tesoreria %s a %s.pdf' % (wizard.date_from, wizard.date_to))
 

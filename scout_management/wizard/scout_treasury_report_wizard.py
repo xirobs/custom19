@@ -3,6 +3,8 @@ import base64
 from collections import OrderedDict
 from datetime import timedelta
 
+from dateutil.relativedelta import relativedelta
+
 from odoo import api, fields, models, _
 from odoo.exceptions import UserError
 from odoo.tools import file_open, format_amount, format_date
@@ -19,6 +21,11 @@ class ScoutTreasuryReportWizard(models.TransientModel):
     include_detail = fields.Boolean(string='Agregar detalle de movimientos', default=True,
                                     help='Después de la infografía agrega las hojas con cada ingreso y gasto.')
     audience = fields.Char(string='Dirigido a', default='Padres, tutores y jefes')
+    trend_months = fields.Selection([('0', 'No incluir'), ('3', 'Últimos 3 meses'), ('6', 'Últimos 6 meses'),
+                                     ('12', 'Últimos 12 meses')], string='Comparativo por mes', default='12',
+                                    required=True,
+                                    help='Agrega una hoja con ingresos y egresos mes por mes hasta el mes del corte. '
+                                         'Los meses anteriores a la plataforma salen del Historial anterior.')
     notes = fields.Text(string='Notas para la junta')
 
     def action_print(self):
@@ -214,6 +221,9 @@ class ReportScoutTreasury(models.AbstractModel):
             findings.append(_('%(n)s gasto(s) por %(amount)s esperan aprobación del jefe de grupo.',
                               n=len(to_approve), amount=money(sum(t['amount'] for t in to_approve))))
 
+        trend = self._trend(company, wizard.date_to, int(wizard.trend_months or 0), money) \
+            if int(wizard.trend_months or 0) else False
+
         logo = company.logo
         if not logo:
             try:
@@ -224,6 +234,7 @@ class ReportScoutTreasury(models.AbstractModel):
 
         return {
             'logo': logo,
+            'trend': trend,
             'audience': wizard.audience,
             'include_detail': wizard.include_detail,
             'include_pending': wizard.include_pending,
@@ -258,4 +269,67 @@ class ReportScoutTreasury(models.AbstractModel):
             'total_receivable': total_receivable,
             'total_payable': total_payable,
             'notes': wizard.notes,
+        }
+
+    MONTHS = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic']
+
+    def _trend(self, company, end, months, money):
+        """Ingresos y egresos mes por mes (plataforma + historial anterior) de los últimos `months` meses."""
+        from ..models.scout_treasury_ledger import GROUP_LABELS
+        from ..models.scout_treasury_history import HISTORY_GROUPS
+        Ledger = self.env['scout.treasury.ledger']
+        History = self.env['scout.treasury.history']
+        first = end.replace(day=1) - relativedelta(months=months - 1)
+        rows, groups, cats = [], {}, {}
+        hist_labels = dict(HISTORY_GROUPS)
+        for i in range(months):
+            start = first + relativedelta(months=i)
+            stop = min(start + relativedelta(months=1, days=-1), end)
+            st = Ledger.statement(start, stop, company)
+            hist = History.totals(start, stop, company)
+            income = st['total_income'] + hist['income']
+            expense = st['total_expense'] + hist['expense']
+            for g in st['income_groups']:
+                if g['total']:
+                    groups[g['label']] = groups.get(g['label'], 0.0) + g['total']
+            for key, amount in hist['groups'].items():
+                label = GROUP_LABELS.get(key) or hist_labels.get(key, key)
+                groups[label] = groups.get(label, 0.0) + amount
+            for e in st['expenses']:
+                key = e.get('category') or _('Otros gastos')
+                cats[key] = cats.get(key, 0.0) + e['amount']
+            for key, amount in hist['categories'].items():
+                cats[key] = cats.get(key, 0.0) + amount
+            rows.append({'label': '%s %s' % (self.MONTHS[start.month - 1], start.strftime('%y')),
+                         'income': income, 'expense': expense, 'net': income - expense,
+                         'historic': bool(hist['count']), 'empty': not income and not expense})
+        total_income = sum(r['income'] for r in rows)
+        total_expense = sum(r['expense'] for r in rows)
+        top = max([max(r['income'], r['expense']) for r in rows] or [0.0]) or 1.0
+        for r in rows:
+            r['h_in'] = int(round(r['income'] / top * 110)) if r['income'] > 0 else 0
+            r['h_out'] = int(round(r['expense'] / top * 110)) if r['expense'] > 0 else 0
+
+        def ranked(data, total):
+            out = sorted([{'label': k, 'amount': v} for k, v in data.items() if v], key=lambda r: -r['amount'])
+            peak = max([r['amount'] for r in out] or [0.0]) or 1.0
+            for r in out:
+                r['pct'] = (r['amount'] / total * 100.0) if total else 0.0
+                r['width'] = max(2.0, r['amount'] / peak * 100.0)
+            return out
+
+        best = max(rows, key=lambda r: r['income']) if rows else None
+        notes = []
+        if best and best['income']:
+            notes.append(_('El mes con más ingresos fue %(m)s (%(a)s).', m=best['label'], a=money(best['income'])))
+        empty = [r['label'] for r in rows if r['empty']]
+        if empty:
+            notes.append(_('Sin movimientos registrados: %s.', ', '.join(empty)))
+        if any(r['historic'] for r in rows):
+            notes.append(_('Los meses marcados con * incluyen el historial capturado de antes de la plataforma.'))
+        return {
+            'months': months, 'rows': rows, 'total_income': total_income, 'total_expense': total_expense,
+            'net': total_income - total_expense, 'income_by_group': ranked(groups, total_income),
+            'expense_by_category': ranked(cats, total_expense), 'notes': notes,
+            'from_label': rows[0]['label'] if rows else '', 'to_label': rows[-1]['label'] if rows else '',
         }

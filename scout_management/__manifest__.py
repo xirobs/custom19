@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 {
     'name': 'Gestión de Grupo Scout',
-    'version': '19.0.4.41.0',
+    'version': '19.0.4.43.0',
     'summary': 'Grupo scout sobre Contactos, Calendario, Contabilidad y Conversaciones: miembros, actividades, asistencia, adelantos, actas, tesorería y portal para padres',
     'description': """
 Gestión de Grupo Scout
@@ -85,6 +85,7 @@ Ver static/description/index.html para la ficha completa y doc/ para el manual d
         'views/scout_treasury_ledger_views.xml',
         'views/scout_call_turns_views.xml',
         'views/scout_debt_views.xml',
+        'views/scout_treasury_history_views.xml',
         'views/scout_promo_views.xml',
         'views/scout_calendar_import_views.xml',
         'views/portal_templates.xml',

@@ -42,18 +42,23 @@
         <field name="model">product.template</field>
         <field name="priority">90</field>
         <field name="arch" type="xml">
-            <list decoration-danger="scout_low_stock" editable="bottom">
-                <field name="name"/>
-                <field name="scout_sale_type"/>
+            <list decoration-danger="scout_low_stock" editable="top" multi_edit="1">
+                <header>
+                    <button name="action_scout_open_import" type="object" string="Cargar desde Excel"
+                            icon="fa-file-excel-o" class="btn-primary" display="always"/>
+                    <button name="action_scout_open_moves" type="object" string="Ver entradas y ajustes"
+                            icon="fa-exchange" display="always"/>
+                </header>
+                <field name="name" string="Producto"/>
                 <field name="standard_price" string="Costo"/>
                 <field name="list_price" string="Precio de venta"/>
+                <field name="scout_qty_onhand" string="Existencia" sum="Piezas"/>
+                <field name="scout_stock_value" string="Valor (costo)" sum="Valor" optional="show"/>
+                <field name="scout_sale_type" optional="hide"/>
+                <field name="scout_min_qty" optional="hide"/>
                 <field name="scout_track_qty" optional="hide"/>
-                <field name="scout_qty_available" string="Existencia"/>
-                <field name="scout_min_qty" optional="show"/>
                 <field name="scout_low_stock" column_invisible="True"/>
                 <field name="scout_store_ok" column_invisible="True"/>
-                <button name="action_scout_stock_in" type="object" icon="fa-plus-square" title="Entrada de mercancía"
-                        invisible="not scout_track_qty"/>
             </list>
         </field>
     </record>
@@ -135,7 +140,8 @@
                 <field name="name"/>
                 <field name="sale_type"/>
                 <field name="partner_id"/>
-                <field name="member_id" optional="show"/>
+                <field name="member_id" optional="hide"/>
+                <field name="lines_summary"/>
                 <field name="amount_total" sum="Total"/>
                 <field name="payment_mode" optional="hide"/>
                 <field name="paid_state" widget="badge" decoration-success="paid_state == 'paid'"
@@ -229,7 +235,7 @@
         </field>
     </record>
     <record id="action_scout_store_sale" model="ir.actions.act_window">
-        <field name="name">Ventas</field>
+        <field name="name">Ventas del día</field>
         <field name="res_model">scout.store.sale</field>
         <field name="view_mode">list,form</field>
         <field name="context">{'search_default_group_date': 1}</field>
