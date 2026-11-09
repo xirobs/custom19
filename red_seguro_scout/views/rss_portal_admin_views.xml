@@ -445,6 +445,9 @@
                             <label for="cert_policy_date_start" string="Vigencia de la póliza"/>
                             <div class="o_row"><field name="cert_policy_date_start"/> – <field name="cert_policy_date_end"/></div>
                             <field name="certificate_attachment_id" options="{'no_create': True}"/>
+                            <field name="certificate_upload" filename="certificate_upload_name"
+                                   string="Subir certificado (PDF)"/>
+                            <field name="certificate_upload_name" invisible="1"/>
                             <field name="certificate_date"/>
                         </group>
                         <group string="Contratante">

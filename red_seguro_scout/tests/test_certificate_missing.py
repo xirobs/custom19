@@ -86,3 +86,39 @@ class TestCertificateMissingAndFuzzy(_RssPortalCommon, TransactionCase):
         batch.action_attach()
         self.assertTrue(self.jose.certificate_attachment_id, 'Los demás sí se anexan')
         self.assertFalse(self.maria.certificate_attachment_id, 'La repetida queda para revisión')
+
+
+@tagged('post_install', '-at_install', 'red_seguro_scout')
+class TestCredentialCycle(TransactionCase):
+
+    def test_cycle_19_aug(self):
+        from ..models.rss_credential import credential_cycle
+        self.assertEqual(credential_cycle(self.env, date(2026, 11, 9)), (date(2026, 8, 19), date(2027, 8, 19)))
+        self.assertEqual(credential_cycle(self.env, date(2026, 8, 19)), (date(2026, 8, 19), date(2027, 8, 19)))
+        self.assertEqual(credential_cycle(self.env, date(2026, 8, 18)), (date(2025, 8, 19), date(2026, 8, 19)))
+        group = self.env['rss.scout.group'].create({'name': 'Grupo Ciclo', 'number': 77})
+        rec = self.env['rss.insured'].create({'group_id': group.id, 'first_name': 'Ana', 'last_name_father': 'Ciclo',
+                                              'birthdate': date(2015, 1, 1), 'sex': 'female'})
+        vals = rec._credential_values()
+        start, end = credential_cycle(self.env)
+        self.assertEqual((vals['start'], vals['end']), (start.strftime('%d/%m/%Y'), end.strftime('%d/%m/%Y')))
+
+
+@tagged('post_install', '-at_install', 'red_seguro_scout')
+class TestCertificateManualUpload(_RssPortalCommon, TransactionCase):
+
+    @classmethod
+    def setUpClass(cls):
+        super().setUpClass()
+        cls._setup_data()
+
+    def test_upload_from_form(self):
+        import base64
+        pdf = _pdf([['CERTIFICADO INDIVIDUAL No. AP-0909', 'Asegurado: GARCIA LOPEZ MARIA FERNANDA']])
+        self.assertFalse(self.maria.has_certificate)
+        self.maria.write({'certificate_upload': base64.b64encode(pdf), 'certificate_upload_name': 'Cert 909.pdf'})
+        self.assertTrue(self.maria.has_certificate)
+        self.assertEqual(self.maria.certificate_attachment_id.name, 'Cert 909.pdf')
+        self.assertEqual(self.maria.certificate_attachment_id.raw, pdf)
+        with self.assertRaises(UserError):
+            self.jose.write({'certificate_upload': base64.b64encode(b'no es pdf'), 'certificate_upload_name': 'x.jpg'})

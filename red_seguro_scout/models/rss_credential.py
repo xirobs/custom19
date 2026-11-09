@@ -51,7 +51,25 @@ RELATION = {'father': 'Padre', 'mother': 'Madre', 'tutor': 'Tutor(a)', 'other': 
 
 
 def _d(value):
-    return '%s %s %s' % (value.day, MONTHS_SHORT[value.month - 1], value.year) if value else ''
+    return value.strftime('%d/%m/%Y') if value else ''
+
+
+CYCLE_PARAM = 'red_seguro_scout.credential_cycle_start'
+
+
+def credential_cycle(env, ref=None):
+    """Vigencia de la credencial: ciclo scout del 19 de agosto al 19 de agosto del año siguiente
+    (el que contiene la fecha de referencia). El día de inicio se puede cambiar con el parámetro
+    del sistema red_seguro_scout.credential_cycle_start (MM-DD)."""
+    from datetime import date
+    ref = ref or fields.Date.context_today(env['rss.insured'])
+    try:
+        month, day = (int(x) for x in (env['ir.config_parameter'].sudo().get_param(CYCLE_PARAM) or '08-19').split('-'))
+        date(2000, month, day)
+    except ValueError:
+        month, day = 8, 19
+    year = ref.year if (ref.month, ref.day) >= (month, day) else ref.year - 1
+    return date(year, month, day), date(year + 1, month, day)
 
 
 class RssInsuredCredential(models.Model):
@@ -81,12 +99,7 @@ class RssInsuredCredential(models.Model):
             main_cov = '%s: %s' % (coverage.name, coverage.sum_insured_text or '$ {:,.2f}'.format(coverage.sum_insured))
         else:
             main_cov = policy.coverage_type or _('Accidentes personales (según condiciones de la póliza de la Red de Scouts).')
-        start = rec.cert_date_start or rec.date_start or policy.date_start
-        end = rec.cert_date_end or policy.date_end
-        if not end and start:
-            # Toda la cobertura termina el 18 de agosto siguiente al alta
-            from datetime import date
-            end = date(start.year + (1 if (start.month, start.day) > (8, 18) else 0), 8, 18)
+        start, end = credential_cycle(self.env)
         if rec.tutor_name or rec.tutor_phone:
             em_name = rec.tutor_name or _('Padre, madre o tutor')
             em_role = RELATION.get(rec.tutor_relationship) or _('Tutor(a)')
