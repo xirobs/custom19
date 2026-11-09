@@ -672,6 +672,8 @@ class ScoutAdminPortal(http.Controller):
             domain.append(('state', 'in', ('draft', 'pending', 'authorized')))
         if origen in dict(CHARGE_ORIGINS):
             domain.append(('scout_charge_origin', '=', origen))
+        for prefix in request.env['scout.treasury.ledger']._foreign_prefixes():
+            domain = domain + [('reference', 'not like', prefix + '%')]
         txs = request.env['payment.transaction'].sudo().search(domain, order='create_date desc', limit=200)
         done = txs.filtered(lambda t: t.state == 'done')
         totals = {'amount': sum(done.mapped('amount')), 'fee': sum(done.mapped('scout_fee_amount')),

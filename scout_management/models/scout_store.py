@@ -196,12 +196,13 @@ class ScoutStoreSale(models.Model):
         for sale in self:
             sale.amount_total = sum(sale.line_ids.mapped('subtotal'))
 
-    @api.depends('state', 'payment_mode', 'invoice_id.payment_state', 'treasury_move_id.state')
+    @api.depends('line_ids.quantity', 'line_ids.product_id')
     def _compute_lines_summary(self):
         for sale in self:
             sale.lines_summary = ', '.join('%g x %s' % (l.quantity, l.product_id.name or '')
                                            for l in sale.line_ids)
 
+    @api.depends('state', 'payment_mode', 'invoice_id.payment_state', 'treasury_move_id.state')
     def _compute_paid_state(self):
         for sale in self:
             if sale.payment_mode == 'paid':

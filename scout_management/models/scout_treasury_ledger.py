@@ -67,7 +67,41 @@ class ScoutTreasuryLedger(models.AbstractModel):
 
     @api.model
     def _base(self, company):
-        return [('parent_state', '=', 'posted'), ('company_id', '=', company.id)]
+        domain = [('parent_state', '=', 'posted'), ('company_id', '=', company.id)]
+        foreign = self._foreign_moves(company)
+        if foreign:
+            domain.append(('move_id', 'not in', foreign.ids))
+        return domain
+
+    @api.model
+    def _foreign_prefixes(self):
+        """Referencias de pagos que NO son del grupo aunque entren por la misma cuenta de Mercado Pago
+        (p. ej. Red Seguro Scout: "RSV-"). Se configura en el parámetro scout_management.treasury_foreign_prefixes
+        (separado por comas)."""
+        value = self.env['ir.config_parameter'].sudo().get_param('scout_management.treasury_foreign_prefixes', 'RSV-')
+        return [p.strip() for p in (value or '').split(',') if p.strip()]
+
+    @api.model
+    def _foreign_transactions(self, company=None):
+        prefixes = self._foreign_prefixes()
+        Tx = self.env['payment.transaction'].sudo()
+        if not prefixes:
+            return Tx
+        domain = ['|'] * (len(prefixes) - 1) + [('reference', '=like', '%s%%' % p) for p in prefixes]
+        if company:
+            domain = [('company_id', '=', company.id)] + domain
+        return Tx.search(domain)
+
+    @api.model
+    def _foreign_moves(self, company):
+        txs = self._foreign_transactions(company)
+        moves = self.env['account.move'].sudo()
+        for tx in txs:
+            if 'payment_id' in tx._fields and tx.payment_id:
+                moves |= tx.payment_id.move_id
+            if tx.scout_fee_move_id.account_move_id:
+                moves |= tx.scout_fee_move_id.account_move_id
+        return moves
 
     @api.model
     def _balance(self, journal, date_to=None, before=None):
@@ -405,6 +439,8 @@ class PaymentTransactionFee(models.Model):
         self.ensure_one()
         if self.provider_code != 'mercado_pago' or not self.scout_fee_amount or self.scout_fee_move_id:
             return
+        if any((self.reference or '').startswith(p) for p in self.env['scout.treasury.ledger']._foreign_prefixes()):
+            return  # pago de otro servicio (Red Seguro Scout): no es dinero del grupo
         journal = payment.journal_id or self.provider_id.journal_id
         category = self.env.ref('scout_management.category_bank_fee', raise_if_not_found=False)
         if not journal or not category:

@@ -90,7 +90,7 @@
         <field name="name">Pagos en línea (Mercado Pago)</field>
         <field name="res_model">payment.transaction</field>
         <field name="view_mode">list,form</field>
-        <field name="domain">[('provider_code', '=', 'mercado_pago')]</field>
+        <field name="domain">[('provider_code', '=', 'mercado_pago'), ('reference', 'not like', 'RSV-')]</field>
         <field name="context">{'search_default_scout_done': 1}</field>
     </record>
     <menuitem id="menu_scout_online_payments" name="Pagos en línea (Mercado Pago)" parent="menu_scout_treasury_more"
