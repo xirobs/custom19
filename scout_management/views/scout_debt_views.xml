@@ -153,6 +153,6 @@
         </field>
     </record>
 
-    <menuitem id="menu_scout_debt" name="Deudas y adeudos (anteriores)" parent="menu_scout_treasury"
+    <menuitem id="menu_scout_debt" name="Deudas y adeudos" parent="menu_scout_treasury"
               action="action_scout_debt" sequence="15"/>
 </odoo>

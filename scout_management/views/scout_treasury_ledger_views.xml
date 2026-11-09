@@ -88,8 +88,8 @@
         <field name="view_mode">list,form</field>
     </record>
 
-    <menuitem id="menu_scout_treasury_statement" name="Saldos y estado de cuenta (cuadrado)" parent="menu_scout_treasury"
+    <menuitem id="menu_scout_treasury_statement" name="Saldos y estado de cuenta" parent="menu_scout_treasury"
               action="action_scout_treasury_statement" sequence="1"/>
-    <menuitem id="menu_scout_treasury_count" name="Arqueos y conciliaciones" parent="menu_scout_treasury"
-              action="action_scout_treasury_count" sequence="2"/>
+    <menuitem id="menu_scout_treasury_count" name="Arqueo de caja y bancos" parent="menu_scout_treasury"
+              action="action_scout_treasury_count" sequence="20"/>
 </odoo>

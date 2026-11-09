@@ -466,6 +466,7 @@
                 <span t-if="inv.scout_approval_state == 'to_approve'" class="o_ad_state o_ad_state_to_approve">Por aprobar</span>
                 <span class="text-end">
                     <b class="d-block" t-out="fmt_money(inv.amount_residual if inv.state == 'posted' else inv.amount_total)"/>
+                    <a t-if="ver == 'cobrar' and inv.state == 'posted'" class="btn btn-sm o_sl_btn mt-1" t-att-href="'%s/cobro/%s#abono_amount' % (admin_base, inv.id)"><i class="fa fa-money"/> Abonar</a>
                     <a t-if="ver == 'cobrar' and inv.scout_can_pay_online" class="btn btn-sm o_ad_btn_mp mt-1" t-att-href="'%s/cobro/%s' % (admin_base, inv.id)"><i class="fa fa-qrcode"/> Cobrar en línea</a>
                 </span>
             </div>
@@ -731,7 +732,7 @@
         </t>
     </template>
 
-    <template id="admin_charge" name="Administración: cobro en línea">
+    <template id="admin_charge" name="Administración: cobro y abonos">
         <t t-call="scout_management.leader_layout">
             <t t-set="tab" t-value="'tes'"/>
             <t t-call="scout_management.admin_tabs"/>
@@ -761,6 +762,35 @@
             </div>
             <div t-elif="link_error" class="alert alert-warning" t-out="link_error"/>
             <div t-elif="invoice.payment_state in ('paid', 'in_payment')" class="alert alert-success"><i class="fa fa-check-circle"/> Este cobro ya está pagado.</div>
+            <div t-if="invoice.state == 'posted' and invoice.payment_state not in ('paid', 'in_payment', 'reversed')" class="o_sl_box">
+                <b>Registrar abono</b>
+                <small class="d-block text-muted mb-2">Pago en efectivo, transferencia o depósito. Puede ser una parte o todo lo que se debe.</small>
+                <form t-att-action="'%s/cobro/%s/abono' % (admin_base, invoice.id)" method="post" class="row g-2">
+                    <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
+                    <div class="col-6"><label class="form-label small mb-0" for="abono_amount">Importe</label>
+                        <input id="abono_amount" type="number" step="0.01" min="0.01" t-att-max="'%.2f' % (invoice.amount_residual - invoice.scout_online_fee)" name="amount" class="form-control" t-att-value="'%.2f' % (invoice.amount_residual - invoice.scout_online_fee)" required="required"/>
+                        <small t-if="invoice.scout_online_fee" class="text-muted">Sin la comisión en línea (<t t-out="fmt_money(invoice.scout_online_fee)"/>), que solo aplica al pagar con Mercado Pago.</small></div>
+                    <div class="col-6"><label class="form-label small mb-0" for="abono_journal">Entra a</label>
+                        <select id="abono_journal" name="journal_id" class="form-select" required="required">
+                            <option t-foreach="journals" t-as="j" t-att-value="j.id" t-out="{'Cash': 'Efectivo', 'Bank': 'Banco'}.get(j.name, j.name)"/>
+                        </select></div>
+                    <div class="col-6"><label class="form-label small mb-0" for="abono_date">Fecha</label>
+                        <input id="abono_date" type="date" name="date" class="form-control" t-att-value="today_str"/></div>
+                    <div class="col-6"><label class="form-label small mb-0" for="abono_ref">Referencia (opcional)</label>
+                        <input id="abono_ref" type="text" name="reference" class="form-control" placeholder="Folio de transferencia"/></div>
+                    <div class="col-12"><button type="submit" class="btn o_sl_btn w-100"><i class="fa fa-money"/> Registrar abono</button></div>
+                </form>
+            </div>
+            <div t-if="abonos" class="o_sl_box">
+                <b>Abonos registrados</b>
+                <div t-foreach="abonos" t-as="p" class="o_ad_move">
+                    <span class="flex-grow-1 min-w-0"><span class="d-block" t-out="fmt_date(p.date)"/>
+                        <small class="text-muted"><t t-out="{'Cash': 'Efectivo', 'Bank': 'Banco'}.get(p.journal_id.name, p.journal_id.name)"/><t t-if="p.memo"> · <t t-out="p.memo"/></t></small></span>
+                    <b t-out="fmt_money(p.amount)"/>
+                </div>
+                <div class="o_ad_kv mt-1"><span>Pagado</span><b t-out="fmt_money(invoice.amount_total - invoice.amount_residual)"/></div>
+                <div class="o_ad_kv"><span>Pendiente</span><b t-out="fmt_money(invoice.amount_residual)"/></div>
+            </div>
             <div t-if="txs" class="o_sl_box">
                 <b>Intentos de pago en línea</b>
                 <div t-foreach="txs" t-as="t" class="o_ad_move">

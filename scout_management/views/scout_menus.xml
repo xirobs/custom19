@@ -61,15 +61,13 @@
 
     <!-- Tesorería (Contabilidad) -->
     <menuitem id="menu_scout_treasury" name="Tesorería" parent="menu_scout_root" sequence="30" groups="group_scout_officer"/>
-    <menuitem id="menu_scout_treasury_income" name="Ingresos" parent="menu_scout_treasury" action="action_scout_treasury_income" sequence="5"/>
-    <menuitem id="menu_scout_treasury_expense" name="Egresos" parent="menu_scout_treasury" action="action_scout_treasury_expense" sequence="6"/>
-    <menuitem id="menu_scout_treasury_transfer" name="Traspasos" parent="menu_scout_treasury" action="action_scout_treasury_transfer" sequence="7"/>
-    <menuitem id="menu_scout_treasury_move" name="Capturas de ingresos, egresos y traspasos" parent="menu_scout_treasury" action="action_scout_treasury_move" sequence="10"/>
+    <menuitem id="menu_scout_treasury_move" name="Movimientos (ingresos, egresos y traspasos)" parent="menu_scout_treasury" action="action_scout_treasury_move" sequence="5"/>
     <menuitem id="menu_scout_store" name="Tienda scout" parent="menu_scout_root" sequence="32" groups="group_scout_officer"/>
     <menuitem id="menu_scout_store_sale" name="Ventas del día" parent="menu_scout_store" action="action_scout_store_sale" sequence="10"/>
     <menuitem id="menu_scout_store_products" name="Productos y existencias" parent="menu_scout_store" action="action_scout_store_products" sequence="30"/>
-    <menuitem id="menu_scout_receivable" name="Cargos a miembros (por cobrar)" parent="menu_scout_treasury" action="action_scout_receivable" sequence="20"/>
-    <menuitem id="menu_scout_payable" name="Facturas de proveedor (por pagar)" parent="menu_scout_treasury" action="action_scout_payable" sequence="30"/>
+    <menuitem id="menu_scout_receivable" name="Por cobrar (cargos a miembros)" parent="menu_scout_treasury" action="action_scout_receivable" sequence="10"/>
+    <menuitem id="menu_scout_treasury_more" name="Consultas" parent="menu_scout_treasury" sequence="50"/>
+    <menuitem id="menu_scout_payable" name="Facturas de proveedor (por pagar)" parent="menu_scout_treasury_more" action="action_scout_payable" sequence="20"/>
 
     <!-- Aprobaciones del jefe de grupo -->
     <menuitem id="menu_scout_approvals" name="Aprobaciones" parent="menu_scout_root" sequence="35" groups="group_scout_manager"/>

@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+from odoo.tools import float_compare
 from odoo import _, api, fields, models
 from odoo.exceptions import UserError
 
@@ -138,6 +139,43 @@ class AccountMoveScoutLive(models.Model):
 
     def _scout_live_charges(self):
         return self.filtered(lambda m: not m._scout_dead_charge())
+
+
+class AccountMoveScoutAbono(models.Model):
+    _inherit = 'account.move'
+
+    def scout_register_abono(self, amount, journal, date=None, reference=None):
+        """Abono (pago parcial o total) a un cargo: compra de tienda a crédito, registro, renovación, cuota...
+        Entra a la caja o banco elegido y el cargo queda con su saldo pendiente."""
+        self.ensure_one()
+        if self.move_type != 'out_invoice' or self.state != 'posted':
+            raise UserError(_('Solo se pueden abonar cargos registrados.'))
+        if self.payment_state in ('paid', 'in_payment', 'reversed'):
+            raise UserError(_('Este cargo ya está pagado.'))
+        if not journal or journal.type not in ('cash', 'bank'):
+            raise UserError(_('Elige la caja o banco donde entra el dinero.'))
+        self._scout_remove_online_fee()  # pagado a mano: sin comisión en línea
+        rounding = self.currency_id.rounding or 0.01
+        if float_compare(amount or 0.0, 0.0, precision_rounding=rounding) <= 0:
+            raise UserError(_('Escribe el importe del abono.'))
+        if float_compare(amount, self.amount_residual, precision_rounding=rounding) > 0:
+            raise UserError(_('El abono (%(a)s) es mayor a lo que se debe (%(r)s).',
+                              a='$ {:,.2f}'.format(amount), r='$ {:,.2f}'.format(self.amount_residual)))
+        self.env['account.payment.register'].with_context(
+            active_model='account.move', active_ids=self.ids).create({
+                'journal_id': journal.id, 'amount': amount,
+                'payment_date': date or fields.Date.context_today(self),
+                'communication': reference or self.name,
+                'payment_difference_handling': 'open',
+            }).action_create_payments()
+        self.message_post(body=_('Abono de %(a)s en %(j)s. Queda por pagar %(r)s.', a='$ {:,.2f}'.format(amount),
+                                 j=journal.name, r='$ {:,.2f}'.format(self.amount_residual)))
+        return self.amount_residual
+
+    def _scout_abonos(self):
+        """Pagos ya aplicados al cargo (fecha, cuenta, importe)."""
+        self.ensure_one()
+        return self._get_reconciled_payments().sorted('date')
 
 
 class AccountMoveLine(models.Model):

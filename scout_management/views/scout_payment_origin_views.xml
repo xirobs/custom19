@@ -93,6 +93,6 @@
         <field name="domain">[('provider_code', '=', 'mercado_pago')]</field>
         <field name="context">{'search_default_scout_done': 1}</field>
     </record>
-    <menuitem id="menu_scout_online_payments" name="Pagos en línea (Mercado Pago)" parent="menu_scout_treasury"
-              action="action_scout_online_payments" sequence="25"/>
+    <menuitem id="menu_scout_online_payments" name="Pagos en línea (Mercado Pago)" parent="menu_scout_treasury_more"
+              action="action_scout_online_payments" sequence="10"/>
 </odoo>

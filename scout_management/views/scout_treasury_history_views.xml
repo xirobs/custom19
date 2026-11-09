@@ -49,6 +49,6 @@
         </field>
     </record>
 
-    <menuitem id="menu_scout_treasury_history" name="Historial anterior (ingresos y egresos)"
-              parent="menu_scout_treasury" action="action_scout_treasury_history" sequence="16"/>
+    <menuitem id="menu_scout_treasury_history" name="Historial anterior a la plataforma"
+              parent="menu_scout_treasury_more" action="action_scout_treasury_history" sequence="30"/>
 </odoo>

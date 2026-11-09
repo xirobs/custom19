@@ -629,8 +629,34 @@ class ScoutAdminPortal(http.Controller):
                 error = _('No se pudo generar la liga de Mercado Pago: %s', e)
         txs = request.env['payment.transaction'].sudo().search(
             [('invoice_ids', 'in', invoice.ids)], order='create_date desc', limit=10)
+        journals = request.env['account.journal'].search([('type', 'in', ('cash', 'bank')),
+                                                          ('company_id', '=', invoice.company_id.id)])
         return self._render('scout_management.admin_charge', invoice=invoice.sudo(), link=link, qr=qr,
-                            message=message, wa=wa, link_error=error, txs=txs, mp=self._mp_ready())
+                            message=message, wa=wa, link_error=error, txs=txs, mp=self._mp_ready(),
+                            journals=journals, abonos=invoice.sudo()._scout_abonos(),
+                            today_str=fields.Date.to_string(fields.Date.context_today(request.env.user)))
+
+    @http.route([BASE + '/cobro/<int:invoice_id>/abono'], type='http', auth='user', website=True, methods=['POST'])
+    def admin_charge_abono(self, invoice_id, **post):
+        acc, redirect = self._guard('treasury')
+        if redirect:
+            return redirect
+        url = '%s/cobro/%s' % (BASE, invoice_id)
+        invoice = request.env['account.move'].browse(invoice_id).exists()
+        try:
+            if not invoice:
+                raise UserError(_('No encontré el cargo.'))
+            journal = request.env['account.journal'].browse(_int(post.get('journal_id'))).exists()
+            amount = float(str(post.get('amount') or '0').replace(',', '').replace('$', '').strip() or 0)
+            pending = invoice.scout_register_abono(amount, journal, _date(post.get('date'), None),
+                                                   (post.get('reference') or '').strip() or None)
+        except ERRORS as e:
+            return self._back(url, error=self._err(e))
+        except ValueError:
+            return self._back(url, error=_('El importe no es un número.'))
+        msg = _('Abono registrado. Queda por pagar $ %s.', '{:,.2f}'.format(pending)) if pending > 0.004 \
+            else _('Abono registrado: el cargo quedó pagado.')
+        return self._back(url, ok=msg)
 
     @http.route([BASE + '/tesoreria/en-linea'], type='http', auth='user', website=True)
     def admin_online_payments(self, estado='pagados', origen='', **kw):
