@@ -16,6 +16,7 @@ def mark_insurance_opportunities(env):
 def post_init_hook(env):
     mark_insurance_opportunities(env)
     apply_brand(env)
+    set_followup_kinds(env)
 
 
 BRAND_MARK = "data-o-ins-brand"
@@ -51,3 +52,18 @@ def apply_brand(env):
     if len(companies) == 1:
         env["insurance.brand"].apply_to_company(companies)
     brand_mail_templates(env)
+
+
+def set_followup_kinds(env):
+    """Gastos médicos mayores se renueva cada año; vida cumple aniversario (solo si aún no lo configuraron)."""
+    for xmlid, kind in (("insurance_management.policy_type_medical", "renewal"),
+                        ("insurance_management.policy_type_life", "anniversary")):
+        ramo = env.ref(xmlid, raise_if_not_found=False)
+        if ramo and ramo.renewal_kind in (False, "none"):
+            ramo.renewal_kind = kind
+
+
+def enable_followup_blocks(env):
+    """Quien ya usa el portal ve también Renovación y Aniversario."""
+    users = env["res.users"].sudo().with_context(active_test=False).search([])
+    users.filtered("ins_portal_access").write({"ins_portal_renewal": True, "ins_portal_anniversary": True})

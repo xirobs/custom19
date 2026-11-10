@@ -30,7 +30,7 @@ PROCEDURE_STATES = [
     ("done", "Terminado"),
     ("cancelled", "Cancelado"),
 ]
-PORTAL_BLOCKS = ("emission", "procedure", "claim", "collection", "crm")
+PORTAL_BLOCKS = ("portfolio", "emission", "procedure", "claim", "collection", "crm", "renewal", "anniversary")
 
 
 class InsuranceTeamAssignMixin(models.AbstractModel):
@@ -68,11 +68,18 @@ class InsuranceTeamAssignMixin(models.AbstractModel):
 class ResUsers(models.Model):
     _inherit = "res.users"
 
+    ins_portal_portfolio = fields.Boolean(
+        string="Portal: mi cartera (asesor)",
+        help="El asesor ve sus clientes y pólizas, renovaciones, cobranza de sus clientes, comisiones y meta.",
+    )
+    ins_agent_ids = fields.One2many("insurance.agent", "user_id", string="Asesor vinculado")
     ins_portal_emission = fields.Boolean(string="Portal: emisiones")
     ins_portal_procedure = fields.Boolean(string="Portal: trámites")
     ins_portal_claim = fields.Boolean(string="Portal: siniestros")
     ins_portal_collection = fields.Boolean(string="Portal: cobranza")
     ins_portal_crm = fields.Boolean(string="Portal: CRM y prospectos")
+    ins_portal_renewal = fields.Boolean(string="Portal: renovaciones (GMM)")
+    ins_portal_anniversary = fields.Boolean(string="Portal: aniversarios (vida)")
     ins_portal_all = fields.Boolean(
         string="Ve los asuntos de todo el equipo",
         help="Supervisión: además de lo asignado a esta persona, ve y puede trabajar lo de los demás.",
@@ -311,8 +318,129 @@ class CrmLead(models.Model):
             "policy_amount": self.expected_revenue or 0.0,
             "team_user_id": (self.team_user_id or self.env.user).id,
             "emission_stage": "request",
+            "agent_id": self.env["insurance.agent"].sudo().search(
+                [("user_id", "in", (self.team_user_id | self.user_id | self.env.user).ids)], limit=1).id or False,
         }
         policy = self.env["insurance.policy"].create({k: v for k, v in vals.items() if v is not False or k == "policy_amount"})
         self.insurance_policy_id = policy
         self.message_post(body=_("Se envió a emisión: %s") % policy.display_name)
         return policy
+
+
+class InsuranceAgentPortal(models.Model):
+    _inherit = "insurance.agent"
+
+    portal_ready = fields.Boolean(string="Con acceso al portal", compute="_compute_portal_ready")
+
+    @api.depends("user_id", "user_id.ins_portal_portfolio")
+    def _compute_portal_ready(self):
+        for agent in self:
+            agent.portal_ready = bool(agent.user_id and agent.user_id.ins_portal_portfolio)
+
+    def action_insurance_portal_access(self):
+        """Activa al asesor en el portal (celular o tablet): crea su usuario de portal si no tiene,
+        le habilita «Mi cartera» y CRM y le manda la invitación para crear su contraseña."""
+        if not self.env.user.has_group("insurance_management.group_insurance_manager"):
+            raise UserError(_("Solo un administrador de Seguros puede dar acceso al portal."))
+        Users = self.env["res.users"].sudo().with_context(no_reset_password=True, active_test=False)
+        invited = self.env["res.users"]
+        for agent in self:
+            email = (agent.email or agent.partner_id.email or "").strip()
+            user = agent.user_id.sudo()
+            if not user:
+                if not email:
+                    raise UserError(_("Captura el correo de %s: será su usuario para entrar.") % agent.name)
+                user = Users.search([("login", "=ilike", email)], limit=1)
+                if user and not user.active:
+                    user.active = True
+                if not user:
+                    partner = agent.partner_id
+                    if not partner:
+                        partner = self.env["res.partner"].sudo().create({
+                            "name": agent.name, "email": email, "phone": agent.mobile or False,
+                        })
+                        agent.partner_id = partner
+                    elif not partner.email:
+                        partner.email = email
+                    user = Users.create({
+                        "name": agent.name,
+                        "login": email,
+                        "email": email,
+                        "partner_id": partner.id,
+                        "group_ids": [(6, 0, [self.env.ref("base.group_portal").id])],
+                    })
+                    invited |= user
+                agent.user_id = user
+            user.write({"ins_portal_portfolio": True, "ins_portal_crm": True})
+        for user in invited:
+            try:
+                user.with_context(create_user=True).action_reset_password()
+            except Exception:  # sin servidor de correo: la contraseña se pone a mano
+                invited -= user
+        message = _("Listo: %s ya puede entrar al portal (/equipo) desde su celular o tablet.") % ", ".join(self.mapped("name"))
+        if invited:
+            message += " " + _("Se envió la invitación por correo para crear su contraseña.")
+        return {
+            "type": "ir.actions.client",
+            "tag": "display_notification",
+            "params": {"title": _("Acceso al portal"), "message": message, "type": "success", "sticky": False,
+                       "next": {"type": "ir.actions.act_window_close"}},
+        }
+
+
+FOLLOWUP_STATES = [
+    ("contacted", "Cliente contactado"),
+    ("quoted", "Propuesta enviada"),
+    ("accepted", "Acepta"),
+    ("declined", "No acepta"),
+]
+LOG_CHANNELS = [
+    ("call", "Llamada"),
+    ("whatsapp", "WhatsApp"),
+    ("email", "Correo"),
+    ("visit", "Visita"),
+    ("other", "Otro"),
+]
+
+
+class InsurancePolicyType(models.Model):
+    _inherit = "insurance.policy.type"
+
+    renewal_kind = fields.Selection(
+        [("renewal", "Renovación anual"), ("anniversary", "Aniversario"), ("none", "Sin seguimiento")],
+        string="Seguimiento anual",
+        default="none",
+        help="Renovación anual: la póliza vence y se renueva cada año (gastos médicos mayores). "
+             "Aniversario: la póliza sigue vigente y cada año cumple aniversario (vida).",
+    )
+
+
+class InsurancePolicyFollowup(models.Model):
+    _inherit = "insurance.policy"
+
+    renewal_kind = fields.Selection(related="policy_type_id.renewal_kind", string="Seguimiento anual")
+    renewal_followup = fields.Selection(FOLLOWUP_STATES, string="Avance de renovación", tracking=True, copy=False)
+    anniversary_followup = fields.Selection(FOLLOWUP_STATES, string="Avance del aniversario", tracking=True, copy=False)
+    anniversary_year_done = fields.Integer(string="Aniversario atendido (año)", copy=False, tracking=True)
+    next_anniversary = fields.Date(string="Próximo aniversario", compute="_compute_next_anniversary")
+
+    @api.depends("coverage_start_date", "issue_date")
+    def _compute_next_anniversary(self):
+        today = fields.Date.context_today(self)
+        for policy in self:
+            start = policy.coverage_start_date or policy.issue_date
+            if not start:
+                policy.next_anniversary = False
+                continue
+            years = max(1, today.year - start.year)
+            candidate = start + relativedelta(years=years)
+            # aniversario de este año aún reciente (15 días) cuenta como el "próximo"
+            if candidate < today - relativedelta(days=15):
+                candidate = start + relativedelta(years=years + 1)
+            policy.next_anniversary = candidate
+
+    def write(self, vals):
+        if vals.get("anniversary_followup") in ("accepted", "declined"):
+            for policy in self.filtered("next_anniversary"):
+                policy.anniversary_year_done = policy.next_anniversary.year
+        return super().write(vals)

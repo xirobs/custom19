@@ -9,7 +9,7 @@
                 <a href="/equipo" class="o_it_entry_card">
                     <span class="o_it_entry_icon"><img src="/insurance_management/static/img/logo_mark_light.png" alt=""/></span>
                     <div>
-                        <div class="o_it_entry_title">Portal del equipo</div>
+                        <div class="o_it_entry_title">Vive Seguro</div>
                         <div class="o_it_entry_text">Emisiones, trámites, siniestros, cobranza y prospectos asignados a ti</div>
                     </div>
                     <i class="fa fa-chevron-right ms-auto"/>
@@ -20,7 +20,7 @@
 
     <template id="portal_breadcrumbs_insurance_team" inherit_id="portal.portal_breadcrumbs" priority="42">
         <xpath expr="//ol[hasclass('o_portal_submenu')]" position="inside">
-            <li t-if="page_name == 'insurance_team'" class="breadcrumb-item active">Portal del equipo</li>
+            <li t-if="page_name == 'insurance_team'" class="breadcrumb-item active">Vive Seguro</li>
         </xpath>
     </template>
 
@@ -35,7 +35,7 @@
                     <a href="/equipo" class="o_it_brand">
                         <img class="o_it_logo_h" src="/insurance_management/static/img/logo_h_light.png" alt="Respaldo Patrimonial · Asesores de Seguros"/>
                         <div class="o_it_head_meta">
-                            <div class="o_it_kicker">Portal del equipo</div>
+                            <div class="o_it_kicker">Vive Seguro</div>
                             <div class="o_it_hello">Hola, <t t-out="(user.name or '').split(' ')[0]"/></div>
                         </div>
                     </a>
@@ -119,6 +119,112 @@
         </section>
     </template>
 
+    <!-- Registro rápido de avance: canal, nota (con dictado por voz), etiquetas, avance y siguiente actividad -->
+    <template id="team_log_form" name="Equipo: registrar avance">
+        <form t-att-action="action" method="post" class="o_it_log">
+            <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
+            <input t-if="back" type="hidden" name="back" t-att-value="back"/>
+            <fieldset class="o_it_seg">
+                <legend class="visually-hidden">¿Cómo fue el contacto?</legend>
+                <t t-set="ch_icons" t-value="{'call': 'fa fa-phone', 'whatsapp': 'fa fa-whatsapp', 'email': 'fa fa-envelope-o', 'visit': 'fa fa-map-marker', 'other': 'fa fa-ellipsis-h'}"/>
+                <label t-foreach="channels" t-as="ch" class="o_it_seg_item">
+                    <input type="radio" name="channel" t-att-value="ch[0]"/>
+                    <span><i t-att-class="ch_icons.get(ch[0], 'fa fa-circle')"/> <t t-out="ch[1]"/></span>
+                </label>
+            </fieldset>
+            <div class="o_it_voice">
+                <label class="visually-hidden" t-att-for="'lg_%s' % fid">Qué se habló</label>
+                <textarea t-att-id="'lg_%s' % fid" name="body" rows="3" class="form-control"
+                          placeholder="¿Qué se habló? Acuerdos, datos que dio el cliente, qué falta…"/>
+                <button type="button" class="o_it_mic" t-att-data-target="'lg_%s' % fid" aria-label="Dictar por voz" title="Dictar por voz">
+                    <i class="fa fa-microphone"/>
+                </button>
+            </div>
+            <div t-if="show_tags" class="o_it_tagpick">
+                <input type="hidden" name="tags_sent" value="1"/>
+                <span class="o_it_tagpick_label">Etiquetas</span>
+                <label t-foreach="all_tags" t-as="tg" class="o_it_tagchk">
+                    <input type="checkbox" name="tag_ids" t-att-value="tg.id" t-att-checked="tg in current_tags or None"/>
+                    <span t-attf-class="o_it_tag o_it_tag_#{tg.color or 0}" t-out="tg.name"/>
+                </label>
+                <input name="new_tag" class="form-control form-control-sm o_it_newtag" placeholder="+ Nueva etiqueta" aria-label="Nueva etiqueta"/>
+            </div>
+            <div t-if="followup" class="o_it_field">
+                <label t-att-for="'fu_%s' % fid">Avance</label>
+                <select t-att-id="'fu_%s' % fid" name="followup" class="form-select">
+                    <option value="">Sin cambio</option>
+                    <option t-foreach="followup_states" t-as="fs" t-att-value="fs[0]" t-att-selected="fs[0] == followup_value or None" t-out="fs[1]"/>
+                </select>
+            </div>
+            <label t-if="show_done" class="o_it_check o_it_done_chk"><input type="checkbox" name="done" value="1" checked="checked"/> Marcar la actividad como hecha</label>
+            <details class="o_it_next" t-att-open="open_next or None">
+                <summary><i class="fa fa-calendar-plus-o"/> Agendar otra actividad o asignarla</summary>
+                <div class="o_it_grid">
+                    <div class="o_it_field">
+                        <label t-att-for="'nt_%s' % fid">Tipo</label>
+                        <select t-att-id="'nt_%s' % fid" name="next_type" class="form-select">
+                            <option t-foreach="task_types" t-as="tt" t-att-value="tt[0]" t-att-selected="tt[0] == 'followup' or None" t-out="tt[1]"/>
+                        </select>
+                    </div>
+                    <div class="o_it_field">
+                        <label t-att-for="'nu_%s' % fid">Asignar a</label>
+                        <select t-att-id="'nu_%s' % fid" name="next_user_id" class="form-select">
+                            <option t-foreach="members" t-as="m" t-att-value="m.id" t-att-selected="m == user or None" t-out="'Yo' if m == user else m.name"/>
+                        </select>
+                    </div>
+                    <div class="o_it_field"><label t-att-for="'nd_%s' % fid">Fecha</label><input t-att-id="'nd_%s' % fid" type="date" name="next_date" class="form-control"/></div>
+                    <div class="o_it_field"><label t-att-for="'nh_%s' % fid">Hora</label><input t-att-id="'nh_%s' % fid" type="time" name="next_time" class="form-control"/></div>
+                    <div class="o_it_field o_it_wide"><label t-att-for="'nn_%s' % fid">¿Qué hay que hacer?</label><input t-att-id="'nn_%s' % fid" name="next_name" class="form-control" placeholder="Ej. Llamar para confirmar la cita"/></div>
+                </div>
+            </details>
+            <button type="submit" class="btn o_it_btn w-100 mt-2"><i class="fa fa-check"/> Guardar</button>
+        </form>
+    </template>
+
+    <!-- Lista de actividades del día (hoy y atrasadas) con registro rápido -->
+    <template id="team_activity_list" name="Equipo: actividades del día">
+        <p t-if="not activities" class="o_it_empty_line"><i class="fa fa-check-circle text-success"/> No tienes actividades pendientes para hoy.</p>
+        <ul class="o_it_tasks">
+            <li t-foreach="activities" t-as="task" t-attf-class="o_it_task o_it_task_rich o_it_sem_#{task.status_color}">
+                <div class="o_it_task_row">
+                    <span class="o_it_sem" t-att-title="dict(task._fields['status_color'].selection).get(task.status_color)"/>
+                    <a class="o_it_task_body" t-att-href="'/equipo/actividad/%s?back=%s' % (task.id, back)">
+                        <div class="o_it_task_name"><t t-out="task.name"/></div>
+                        <div class="o_it_task_meta">
+                            <span t-attf-class="o_it_pill #{'o_it_pill_bad' if task.date_deadline &lt; today else ''}"
+                                  t-out="'Atrasada · %s' % task.date_deadline.strftime('%d/%m') if task.date_deadline &lt; today else 'Hoy'"/>
+                            <t t-if="task.date_start"> · <t t-out="svc.local(task.date_start).strftime('%H:%M')"/></t>
+                            · <t t-out="dict(task._fields['task_type'].selection).get(task.task_type)"/>
+                            <t t-if="task.lead_id"> · <t t-out="task.lead_id.contact_name or task.lead_id.name"/></t>
+                            <t t-elif="task.partner_id"> · <t t-out="task.partner_id.name"/></t>
+                            <t t-if="task.policy_id"> · <t t-out="task.policy_id.name"/></t>
+                            <t t-if="scope == 'all' and task.user_id != user"> · <i class="fa fa-user"/> <t t-out="task.user_id.name"/></t>
+                        </div>
+                        <div t-if="task.lead_id and task.lead_id.tag_ids" class="o_it_tags">
+                            <span t-foreach="task.lead_id.tag_ids" t-as="tg" t-attf-class="o_it_tag o_it_tag_#{tg.color or 0}" t-out="tg.name"/>
+                        </div>
+                    </a>
+                    <div class="o_it_task_quick">
+                        <t t-set="ph" t-value="svc.task_phone(task)"/>
+                        <a t-if="ph" t-att-href="'tel:%s' % ph" class="btn btn-sm o_it_btn_light" aria-label="Llamar" title="Llamar"><i class="fa fa-phone"/></a>
+                        <a t-if="ph" t-att-href="svc.wa_link(ph, '')" target="_blank" class="btn btn-sm o_it_btn_wa" aria-label="WhatsApp" title="WhatsApp"><i class="fa fa-whatsapp"/></a>
+                    </div>
+                </div>
+                <details class="o_it_task_log">
+                    <summary class="btn btn-sm o_it_btn_light"><i class="fa fa-pencil"/> Registrar / hecha</summary>
+                    <t t-call="insurance_management.team_log_form">
+                        <t t-set="action" t-value="'/equipo/actividad/%s/registro' % task.id"/>
+                        <t t-set="fid" t-value="'t%s' % task.id"/>
+                        <t t-set="show_done" t-value="True"/>
+                        <t t-set="show_tags" t-value="bool(task.lead_id)"/>
+                        <t t-set="current_tags" t-value="task.lead_id.tag_ids"/>
+                        <t t-set="followup" t-value="False"/>
+                    </t>
+                </details>
+            </li>
+        </ul>
+    </template>
+
     <template id="team_no_access" name="Equipo: sin acceso">
         <t t-call="insurance_management.team_layout">
             <div class="o_it_empty">
@@ -147,33 +253,21 @@
                         <span class="o_it_tile_icon"><i t-attf-class="fa #{n[2]}"/></span>
                         <i class="fa fa-arrow-right o_it_tile_go" aria-hidden="true"/>
                         <span class="o_it_tile_name" t-out="n[1]"/>
-                        <span class="o_it_tile_count"><b t-out="c.get('count', 0)"/> <small t-out="'pendiente' if c.get('count') == 1 else 'pendientes'"/></span>
+                        <span class="o_it_tile_count"><b t-out="c.get('count', 0)"/> <small t-out="c.get('count_label') or ('pendiente' if c.get('count') == 1 else 'pendientes')"/></span>
                         <span t-if="c.get('hot')" class="o_it_tile_hot"><t t-out="c['hot']"/> <t t-out="c['hot_label']"/></span>
                     </a>
                 </t>
             </section>
 
             <section class="o_it_panel">
-                <h2 class="o_it_h2"><i class="fa fa-calendar-check-o"/> Para hoy y mañana</h2>
-                <p t-if="not dash['tasks']" class="text-muted mb-0">No tienes pendientes en la agenda. ¡Bien!</p>
-                <ul class="o_it_tasks">
-                    <li t-foreach="dash['tasks']" t-as="task" t-attf-class="o_it_task o_it_sem_#{task.status_color}">
-                        <span class="o_it_sem" t-att-title="dict(task._fields['status_color'].selection).get(task.status_color)"/>
-                        <div class="o_it_task_body">
-                            <div class="o_it_task_name" t-out="task.name"/>
-                            <div class="o_it_task_meta">
-                                <t t-out="task.date_deadline.strftime('%d/%m')"/>
-                                <t t-if="task.date_start"> · <t t-out="svc.local(task.date_start).strftime('%H:%M')"/></t>
-                                <t t-if="task.partner_id"> · <t t-out="task.partner_id.name"/></t>
-                                <t t-if="task.policy_id"> · <t t-out="task.policy_id.name"/></t>
-                            </div>
-                        </div>
-                        <form t-att-action="'/equipo/tarea/%s/hecha' % task.id" method="post">
-                            <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
-                            <button class="btn o_it_btn_light btn-sm" type="submit" title="Marcar como hecha"><i class="fa fa-check"/> Hecha</button>
-                        </form>
-                    </li>
-                </ul>
+                <div class="o_it_title_row mb-2">
+                    <h2 class="o_it_h2 mb-0"><i class="fa fa-calendar-check-o"/> Actividades del día</h2>
+                    <span class="o_it_hint small">Toca «Registrar» para anotar lo que se hizo (puedes dictarlo) y agendar lo siguiente.</span>
+                </div>
+                <t t-call="insurance_management.team_activity_list">
+                    <t t-set="activities" t-value="dash['tasks']"/>
+                    <t t-set="back" t-value="'/equipo'"/>
+                </t>
             </section>
         </t>
     </template>
@@ -720,13 +814,13 @@
             <t t-call="insurance_management.team_block_title">
                 <t t-set="icon" t-value="'fa-handshake-o'"/>
                 <t t-set="title" t-value="'CRM · prospectos'"/>
-                <t t-set="hint" t-value="'De la 1ra cita al cierre. Arrastra cada prospecto a su etapa; los perdidos pasan a la lista de publicidad.'"/>
+                <t t-set="hint" t-value="'Todas las etapas de tus prospectos. Arrastra cada tarjeta a su etapa (en el celular usa «Mover a…»).'"/>
                 <t t-set="scope_url" t-value="'/equipo/crm'"/>
                 <t t-set="new_url" t-value="'/equipo/crm/nuevo'"/>
                 <t t-set="new_label" t-value="'Nuevo prospecto'"/>
             </t>
             <div class="o_it_board o_it_board_crm" data-block="crm">
-                <section t-foreach="columns" t-as="col" t-attf-class="o_it_col o_it_col_#{col[0]}" t-att-data-column="col[0]">
+                <section t-foreach="columns" t-as="col" t-attf-class="o_it_col #{'o_it_col_won' if col[1].is_won else ''}" t-att-data-column="col[0]">
                     <header class="o_it_col_head"><span t-out="col[1].name"/><b t-out="len(col[2])"/></header>
                     <div class="o_it_col_body">
                         <article t-foreach="col[2]" t-as="l" class="o_it_card" draggable="true" t-att-data-id="l.id">
@@ -734,7 +828,10 @@
                                 <div class="o_it_card_top"><b t-out="l.contact_name or l.partner_id.name or l.name"/></div>
                                 <div class="o_it_card_meta"><t t-out="l.insurance_policy_type_id.name or 'Sin ramo'"/><t t-if="l.expected_revenue"> · <t t-out="money(l.expected_revenue)"/></t></div>
                                 <div t-if="l.phone" class="o_it_card_meta"><i class="fa fa-phone"/> <t t-out="l.phone"/></div>
-                                <div t-if="col[0] == 'lost' and l.insurance_lost_note" class="o_it_card_meta"><i class="fa fa-bullhorn"/> <t t-out="l.insurance_lost_note"/></div>
+                                <div t-if="l.tag_ids" class="o_it_tags">
+                                    <span t-foreach="l.tag_ids" t-as="tg" t-attf-class="o_it_tag o_it_tag_#{tg.color or 0}" t-out="tg.name"/>
+                                </div>
+                                <div t-if="l.insurance_lost_note" class="o_it_card_meta"><i class="fa fa-bullhorn"/> <t t-out="l.insurance_lost_note"/></div>
                                 <div t-if="scope == 'all' and (l.team_user_id or l.user_id)" class="o_it_card_who"><i class="fa fa-user"/> <t t-out="(l.team_user_id or l.user_id).name"/></div>
                             </a>
                             <t t-call="insurance_management.team_move_select">
@@ -748,6 +845,15 @@
                     </div>
                 </section>
             </div>
+            <section class="o_it_panel mt-3">
+                <div class="o_it_title_row mb-2">
+                    <h2 class="o_it_h2 mb-0"><i class="fa fa-calendar-check-o"/> Actividades de hoy con prospectos</h2>
+                    <span class="o_it_hint small">Abre una para ver lo programado, anotar la llamada o el mensaje y agendar lo siguiente.</span>
+                </div>
+                <t t-call="insurance_management.team_activity_list">
+                    <t t-set="back" t-value="'/equipo/crm'"/>
+                </t>
+            </section>
         </t>
     </template>
 
@@ -777,7 +883,23 @@
                     <div class="o_it_field"><label for="cr_amount">Prima estimada</label><input id="cr_amount" name="amount" inputmode="decimal" class="form-control"/></div>
                     <div class="o_it_field"><label for="cr_mdate">1ra cita (opcional)</label><input id="cr_mdate" name="meeting_date" type="date" class="form-control"/></div>
                     <div class="o_it_field"><label for="cr_mtime">Hora</label><input id="cr_mtime" name="meeting_time" type="time" class="form-control"/></div>
-                    <div class="o_it_field o_it_wide"><label for="cr_note">Notas</label><textarea id="cr_note" name="note" rows="3" class="form-control"/></div>
+                    <div class="o_it_field o_it_wide">
+                        <span class="o_it_tagpick_label">Etiquetas</span>
+                        <div class="o_it_tagpick">
+                            <label t-foreach="all_tags" t-as="tg" class="o_it_tagchk">
+                                <input type="checkbox" name="tag_ids" t-att-value="tg.id"/>
+                                <span t-attf-class="o_it_tag o_it_tag_#{tg.color or 0}" t-out="tg.name"/>
+                            </label>
+                            <input name="new_tag" class="form-control form-control-sm o_it_newtag" placeholder="+ Nueva etiqueta" aria-label="Nueva etiqueta"/>
+                        </div>
+                    </div>
+                    <div class="o_it_field o_it_wide">
+                        <label for="cr_note">Notas</label>
+                        <div class="o_it_voice">
+                            <textarea id="cr_note" name="note" rows="3" class="form-control"/>
+                            <button type="button" class="o_it_mic" data-target="cr_note" aria-label="Dictar por voz" title="Dictar por voz"><i class="fa fa-microphone"/></button>
+                        </div>
+                    </div>
                 </div>
                 <button type="submit" class="btn o_it_btn o_it_btn_big"><i class="fa fa-check"/> Guardar prospecto</button>
             </form>
@@ -791,84 +913,401 @@
                 <div>
                     <h1 class="o_it_h1" t-out="lead.contact_name or lead.partner_id.name or lead.name"/>
                     <p class="o_it_hint mb-0"><t t-out="lead.insurance_policy_type_id.name or 'Sin ramo'"/> · <t t-out="dict(lead._fields['insurance_origin'].selection).get(lead.insurance_origin) or ''"/></p>
+                    <div t-if="lead.tag_ids" class="o_it_tags mt-1">
+                        <span t-foreach="lead.tag_ids" t-as="tg" t-attf-class="o_it_tag o_it_tag_#{tg.color or 0}" t-out="tg.name"/>
+                    </div>
                 </div>
                 <div class="o_it_actions">
                     <a t-if="lead.phone" t-att-href="'tel:%s' % lead.phone" class="btn o_it_btn_light"><i class="fa fa-phone"/> Llamar</a>
-                    <a t-if="svc.wa_link(lead.phone or lead.partner_id, 'Hola %s, ' % ((lead.contact_name or '').split(' ') or [''])[0])"
+                    <a t-if="svc.wa_link(lead.phone or lead.partner_id, '')"
                        t-att-href="svc.wa_link(lead.phone or lead.partner_id, 'Hola %s, ' % ((lead.contact_name or '').split(' ') or [''])[0])" target="_blank" class="btn o_it_btn_wa"><i class="fa fa-whatsapp"/> WhatsApp</a>
+                    <a t-if="lead.email_from" t-att-href="'mailto:%s' % lead.email_from" class="btn o_it_btn_light"><i class="fa fa-envelope-o"/> Correo</a>
                 </div>
             </div>
             <form t-att-action="'/equipo/crm/%s/etapa' % lead.id" method="post" class="o_it_stage_bar">
                 <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
                 <button t-foreach="stages" t-as="st" type="submit" name="stage" t-att-value="st[0]"
-                        t-attf-class="o_it_stage o_it_stage_#{st[0]} #{'current' if lead.stage_id == st[1] else ''}" t-out="st[1].name"/>
+                        t-attf-class="o_it_stage #{'o_it_stage_won' if st[1].is_won else ''} #{'o_it_stage_lost' if st[1] == lost_stage else ''} #{'current' if lead.stage_id == st[1] else ''}" t-out="st[1].name"/>
             </form>
             <div class="o_it_two">
                 <section class="o_it_panel">
-                    <h2 class="o_it_h2"><i class="fa fa-calendar-plus-o"/> Agendar cita</h2>
-                    <form t-att-action="'/equipo/crm/%s/cita' % lead.id" method="post" class="o_it_inline_form">
-                        <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
-                        <div class="o_it_field">
-                            <label for="mt_kind">Tipo</label>
-                            <select id="mt_kind" name="kind" class="form-select">
-                                <option value="first">1ra cita</option>
-                                <option value="closing">Cita de cierre</option>
-                                <option value="followup">Seguimiento</option>
-                            </select>
-                        </div>
-                        <div class="o_it_field"><label for="mt_date">Fecha</label><input id="mt_date" type="date" name="date" class="form-control" required="required"/></div>
-                        <div class="o_it_field"><label for="mt_time">Hora</label><input id="mt_time" type="time" name="time" class="form-control"/></div>
-                        <button class="btn o_it_btn" type="submit"><i class="fa fa-check"/> Agendar</button>
-                    </form>
-                    <ul class="o_it_tasks mt-3">
-                        <li t-foreach="tasks" t-as="task" t-attf-class="o_it_task o_it_sem_#{task.status_color}">
-                            <span class="o_it_sem"/>
-                            <div class="o_it_task_body">
-                                <div class="o_it_task_name" t-out="task.name"/>
-                                <div class="o_it_task_meta"><t t-out="task.date_deadline.strftime('%d/%m/%Y')"/><t t-if="task.date_start"> · <t t-out="svc.local(task.date_start).strftime('%H:%M')"/></t></div>
-                            </div>
+                    <h2 class="o_it_h2"><i class="fa fa-comments"/> Seguimiento</h2>
+                    <p class="o_it_hint small mb-2">Anota cada llamada, mensaje o correo. Lo que registres en las actividades del día también aparece aquí.</p>
+                    <t t-call="insurance_management.team_log_form">
+                        <t t-set="action" t-value="'/equipo/crm/%s/seguimiento' % lead.id"/>
+                        <t t-set="fid" t-value="'l%s' % lead.id"/>
+                        <t t-set="show_done" t-value="False"/>
+                        <t t-set="show_tags" t-value="True"/>
+                        <t t-set="current_tags" t-value="lead.tag_ids"/>
+                        <t t-set="followup" t-value="False"/>
+                    </t>
+                    <h3 class="o_it_h3">Historial</h3>
+                    <ul class="o_it_timeline">
+                        <li t-if="not rows" class="text-muted">Aún no hay seguimiento.</li>
+                        <li t-foreach="rows" t-as="r" t-attf-class="#{'o_it_tl_task' if r['kind'] == 'task' else ''} #{'o_it_tl_todo' if r['kind'] == 'task' and r['task'].state == 'todo' else ''}">
+                            <t t-if="r['kind'] == 'task'">
+                                <t t-set="tk" t-value="r['task']"/>
+                                <div class="o_it_tl_head">
+                                    <b t-out="dict(tk._fields['task_type'].selection).get(tk.task_type)"/> ·
+                                    <t t-out="tk.date_deadline.strftime('%d/%m/%Y')"/><t t-if="tk.date_start"> <t t-out="svc.local(tk.date_start).strftime('%H:%M')"/></t>
+                                    · <t t-out="tk.user_id.name"/>
+                                    <span t-attf-class="o_it_pill #{'o_it_pill_ok' if tk.state == 'done' else ('o_it_pill_bad' if tk.status_color == 'red' else 'o_it_pill_warn')}"
+                                          t-out="dict(tk._fields['state'].selection).get(tk.state)"/>
+                                </div>
+                                <div class="o_it_tl_text">
+                                    <a t-if="tk.state == 'todo'" t-att-href="'/equipo/actividad/%s?back=/equipo/crm/%s' % (tk.id, lead.id)" t-out="tk.name"/>
+                                    <t t-else="" t-out="tk.name"/>
+                                </div>
+                                <div t-if="tk.result" class="o_it_tl_text o_it_tl_result" t-out="tk.result"/>
+                            </t>
+                            <t t-else="">
+                                <t t-set="m" t-value="r['msg']"/>
+                                <div class="o_it_tl_head"><b t-out="m['author']"/> · <t t-out="m['date'].strftime('%d/%m/%Y %H:%M') if m['date'] else ''"/></div>
+                                <div t-if="m['text']" class="o_it_tl_text" t-out="m['text']"/>
+                                <div t-if="m['files']" class="o_it_tl_files">
+                                    <a t-foreach="m['files']" t-as="f" t-att-href="'/equipo/archivo/crm/%s/%s' % (lead.id, f.id)" target="_blank" class="o_it_chip"><i class="fa fa-file-o"/> <t t-out="f.name"/></a>
+                                </div>
+                            </t>
                         </li>
                     </ul>
-                    <hr/>
-                    <form t-if="not lead.insurance_policy_id" t-att-action="'/equipo/crm/%s/emision' % lead.id" method="post">
-                        <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
-                        <button class="btn o_it_btn w-100" type="submit"><i class="fa fa-trophy"/> ¡Ganado! Pasar a emisión</button>
-                    </form>
-                    <p t-else="" class="o_it_ok_line"><i class="fa fa-check-circle"/> En emisión: <t t-out="lead.insurance_policy_id.name"/></p>
-                    <details class="o_it_details">
-                        <summary><i class="fa fa-bullhorn"/> Perdido → lista de publicidad</summary>
-                        <form t-att-action="'/equipo/crm/%s/etapa' % lead.id" method="post" class="o_it_inline_form">
+                </section>
+                <div>
+                    <section class="o_it_panel">
+                        <h2 class="o_it_h2"><i class="fa fa-id-card-o"/> Datos</h2>
+                        <form t-att-action="'/equipo/crm/%s/datos' % lead.id" method="post" class="o_it_form">
                             <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
-                            <input type="hidden" name="stage" value="lost"/>
-                            <div class="o_it_field o_it_wide"><label for="lo_reason">Motivo</label><input id="lo_reason" name="reason" class="form-control" placeholder="Precio, ya tiene seguro, no contesta…"/></div>
-                            <button class="btn o_it_btn_ghost" type="submit">Mover a publicidad</button>
+                            <div class="o_it_field"><label for="ld_name">Nombre</label><input id="ld_name" name="name" class="form-control" t-att-value="lead.contact_name or ''"/></div>
+                            <div class="o_it_field"><label for="ld_phone">Teléfono</label><input id="ld_phone" name="phone" type="tel" class="form-control" t-att-value="lead.phone or ''"/></div>
+                            <div class="o_it_field"><label for="ld_email">Correo</label><input id="ld_email" name="email" type="email" class="form-control" t-att-value="lead.email_from or ''"/></div>
+                            <div class="o_it_field">
+                                <label for="ld_ramo">Ramo</label>
+                                <select id="ld_ramo" name="ramo_id" class="form-select">
+                                    <option value="">—</option>
+                                    <option t-foreach="cat['ramos']" t-as="r" t-att-value="r.id" t-att-selected="r == lead.insurance_policy_type_id or None" t-out="r.name"/>
+                                </select>
+                            </div>
+                            <div class="o_it_field"><label for="ld_amount">Prima estimada</label><input id="ld_amount" name="amount" inputmode="decimal" class="form-control" t-att-value="'%.2f' % lead.expected_revenue"/></div>
+                            <button class="btn o_it_btn_light mt-2" type="submit"><i class="fa fa-save"/> Guardar datos</button>
                         </form>
-                    </details>
-                </section>
-                <section class="o_it_panel">
-                    <h2 class="o_it_h2"><i class="fa fa-id-card-o"/> Datos</h2>
-                    <form t-att-action="'/equipo/crm/%s/datos' % lead.id" method="post" class="o_it_form">
-                        <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
-                        <div class="o_it_field"><label for="ld_name">Nombre</label><input id="ld_name" name="name" class="form-control" t-att-value="lead.contact_name or ''"/></div>
-                        <div class="o_it_field"><label for="ld_phone">Teléfono</label><input id="ld_phone" name="phone" type="tel" class="form-control" t-att-value="lead.phone or ''"/></div>
-                        <div class="o_it_field"><label for="ld_email">Correo</label><input id="ld_email" name="email" type="email" class="form-control" t-att-value="lead.email_from or ''"/></div>
-                        <div class="o_it_field">
-                            <label for="ld_ramo">Ramo</label>
-                            <select id="ld_ramo" name="ramo_id" class="form-select">
-                                <option value="">—</option>
-                                <option t-foreach="cat['ramos']" t-as="r" t-att-value="r.id" t-att-selected="r == lead.insurance_policy_type_id or None" t-out="r.name"/>
-                            </select>
-                        </div>
-                        <div class="o_it_field"><label for="ld_amount">Prima estimada</label><input id="ld_amount" name="amount" inputmode="decimal" class="form-control" t-att-value="'%.2f' % lead.expected_revenue"/></div>
-                        <button class="btn o_it_btn_light" type="submit"><i class="fa fa-save"/> Guardar datos</button>
-                    </form>
-                </section>
+                    </section>
+                    <section class="o_it_panel">
+                        <form t-if="not lead.insurance_policy_id" t-att-action="'/equipo/crm/%s/emision' % lead.id" method="post">
+                            <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
+                            <button class="btn o_it_btn w-100" type="submit"><i class="fa fa-trophy"/> ¡Ganado! Pasar a emisión</button>
+                        </form>
+                        <p t-else="" class="o_it_ok_line"><i class="fa fa-check-circle"/> En emisión: <t t-out="lead.insurance_policy_id.name"/></p>
+                        <details t-if="lost_stage" class="o_it_details">
+                            <summary><i class="fa fa-bullhorn"/> Perdido → lista de publicidad</summary>
+                            <form t-att-action="'/equipo/crm/%s/etapa' % lead.id" method="post" class="o_it_inline_form">
+                                <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
+                                <input type="hidden" name="stage" t-att-value="lost_stage.id"/>
+                                <div class="o_it_field o_it_wide"><label for="lo_reason">Motivo</label><input id="lo_reason" name="reason" class="form-control" placeholder="Precio, ya tiene seguro, no contesta…"/></div>
+                                <button class="btn o_it_btn_ghost" type="submit">Mover a publicidad</button>
+                            </form>
+                        </details>
+                    </section>
+                </div>
             </div>
-            <t t-call="insurance_management.team_notes">
-                <t t-set="slug" t-value="'crm'"/>
-                <t t-set="rec" t-value="lead"/>
-                <t t-set="back" t-value="'/equipo/crm/%s' % lead.id"/>
+        </t>
+    </template>
+    <!-- ===================== Mi cartera (asesor) ===================== -->
+    <template id="team_portfolio_row" name="Equipo: fila de póliza de la cartera">
+        <a t-att-href="'/equipo/cartera/%s' % p.id" t-attf-class="o_it_row o_it_row_link o_it_row_#{p.attention_level or 'ok'}">
+            <div class="o_it_row_main">
+                <div class="o_it_row_title"><b t-out="p.partner_id.name"/>
+                    <span t-if="p.attention_level == 'danger'" class="o_it_pill o_it_pill_bad" t-out="p.attention_reason or 'Atención'"/>
+                    <span t-elif="p.attention_level == 'warning'" class="o_it_pill o_it_pill_warn" t-out="p.attention_reason or 'Revisar'"/>
+                </div>
+                <div class="o_it_row_meta">
+                    <t t-out="p.name"/> · <t t-out="p.policy_type_id.name or 'Sin ramo'"/><t t-if="p.offer_id"> · <t t-out="p.offer_id.name"/></t>
+                    <t t-if="p.insurance_company_id"> · <t t-out="p.insurance_company_id.name"/></t>
+                </div>
+                <div t-if="extra" class="o_it_row_meta small" t-out="extra"/>
+                <div t-if="scope == 'all' and p.agent_id" class="o_it_card_who"><i class="fa fa-user"/> <t t-out="p.agent_id.name"/></div>
+            </div>
+            <div class="o_it_row_amount"><t t-out="money(p.policy_amount, p.currency_id)"/><small class="d-block">prima anual</small></div>
+        </a>
+    </template>
+
+    <template id="team_portfolio" name="Equipo: mi cartera">
+        <t t-call="insurance_management.team_layout">
+            <t t-call="insurance_management.team_block_title">
+                <t t-set="icon" t-value="'fa-briefcase'"/>
+                <t t-set="title" t-value="'Mi cartera'"/>
+                <t t-set="hint" t-value="'Tus clientes y pólizas: lo que necesita atención, renovaciones, cobranza y tus comisiones.'"/>
+                <t t-set="scope_url" t-value="'/equipo/cartera?vista=%s' % view"/>
+                <t t-set="new_url" t-value="'/equipo/crm/nuevo' if blocks.get('crm') else ''"/>
+                <t t-set="new_label" t-value="'Nuevo prospecto'"/>
             </t>
+            <div t-if="not data['agents']" class="o_it_empty">
+                <i class="fa fa-id-badge fa-3x"/>
+                <h2>Aún no estás vinculado como asesor</h2>
+                <p>Pide a la oficina que te vincule en Seguros › Asesores (campo «Usuario») para ver tu cartera.</p>
+            </div>
+            <t t-else="">
+                <section class="o_it_kpis">
+                    <div class="o_it_kpi">
+                        <small>Pólizas vigentes</small>
+                        <b t-out="data['counts']['policies']"/>
+                        <span><t t-out="len(data['clients'])"/> clientes</span>
+                    </div>
+                    <div class="o_it_kpi">
+                        <small>Prima anual vigente</small>
+                        <t t-if="data['premium']">
+                            <b t-foreach="data['premium'].items()" t-as="pr" class="d-block" t-out="money(pr[1], pr[0])"/>
+                        </t>
+                        <b t-else="">—</b>
+                    </div>
+                    <div class="o_it_kpi o_it_kpi_main">
+                        <small>Comisiones del mes</small>
+                        <b t-out="money(data['month_comm'], data['currency'])"/>
+                        <t t-if="data['target']">
+                            <div class="o_it_meter" role="progressbar" t-att-aria-valuenow="data['progress']" aria-valuemin="0" aria-valuemax="100" aria-label="Avance de la meta del mes">
+                                <span t-attf-style="width: #{data['progress']}%"/>
+                            </div>
+                            <span><t t-out="data['progress']"/>% de la meta de <t t-out="money(data['target'], data['currency'])"/></span>
+                        </t>
+                        <span t-else="">Sin meta del mes</span>
+                    </div>
+                    <div class="o_it_kpi">
+                        <small>Comisiones por liquidar</small>
+                        <b t-out="money(data['to_pay'], data['currency'])"/>
+                        <span>pendientes de pago</span>
+                    </div>
+                </section>
+
+                <div class="o_it_chips">
+                    <t t-set="tabs" t-value="[('attention', 'Atención', 'fa-exclamation-circle', data['counts']['attention']), ('renewals', 'Renovaciones', 'fa-refresh', data['counts']['renewals']), ('collection', 'Cobranza', 'fa-money', data['counts']['collection']), ('policies', 'Pólizas', 'fa-folder-open-o', data['counts']['policies']), ('commissions', 'Comisiones', 'fa-percent', None)]"/>
+                    <a t-foreach="tabs" t-as="tb" t-att-href="'/equipo/cartera?vista=%s%s' % (tb[0], '&amp;ver=todos' if scope == 'all' else '')"
+                       t-attf-class="o_it_chip #{'active' if view == tb[0] else ''} #{'o_it_chip_bad' if tb[0] in ('attention', 'collection') and tb[3] else ''}">
+                        <i t-attf-class="fa #{tb[2]}"/> <t t-out="tb[1]"/> <b t-if="tb[3] is not None" t-out="tb[3]"/>
+                    </a>
+                </div>
+
+                <!-- Atención -->
+                <div t-if="view == 'attention'" class="o_it_list">
+                    <p t-if="not data['attention']" class="o_it_empty_line"><i class="fa fa-check-circle text-success"/> Todo en orden: ninguna póliza requiere atención.</p>
+                    <t t-foreach="data['attention']" t-as="p">
+                        <t t-call="insurance_management.team_portfolio_row"><t t-set="extra" t-value="False"/></t>
+                    </t>
+                </div>
+
+                <!-- Renovaciones -->
+                <div t-if="view == 'renewals'" class="o_it_list">
+                    <p t-if="not data['renewals']" class="o_it_empty_line">No hay renovaciones en los próximos 60 días.</p>
+                    <t t-foreach="data['renewals']" t-as="p">
+                        <t t-call="insurance_management.team_portfolio_row">
+                            <t t-set="extra" t-value="'Vence el %s · %s' % (p.end_date.strftime('%d/%m/%Y') if p.end_date else '—', renewal_labels.get(p.renewal_state, ''))"/>
+                        </t>
+                    </t>
+                </div>
+
+                <!-- Cobranza de mis clientes -->
+                <div t-if="view == 'collection'" class="o_it_list">
+                    <p t-if="not data['lines']" class="o_it_empty_line"><i class="fa fa-check-circle text-success"/> Tus clientes están al corriente.</p>
+                    <article t-foreach="data['lines']" t-as="ln" t-attf-class="o_it_row o_it_row_#{ln.collection_status}">
+                        <t t-set="stg" t-value="collection_stages.get(ln.collection_stage, ('', 'na'))"/>
+                        <div class="o_it_row_main">
+                            <div class="o_it_row_title"><b t-out="ln.partner_id.name"/> <span t-attf-class="o_it_pill o_it_pill_#{stg[1]}" t-out="stg[0]"/></div>
+                            <div class="o_it_row_meta">Póliza <t t-out="ln.policy_id.name"/> · cuota <t t-out="ln.number"/> · cobro <t t-out="ln.due_date and ln.due_date.strftime('%d/%m/%Y')"/></div>
+                        </div>
+                        <div class="o_it_row_amount" t-out="money(ln.balance or ln.amount, ln.currency_id)"/>
+                        <div class="o_it_row_actions">
+                            <a t-if="svc.wa_link(ln.partner_id, '')" t-att-href="svc.wa_link(ln.partner_id, svc.collection_reminder_text(ln))" target="_blank" class="btn btn-sm o_it_btn_wa"><i class="fa fa-whatsapp"/> <span>Recordar pago</span></a>
+                            <a t-att-href="'/equipo/cartera/%s' % ln.policy_id.id" class="btn btn-sm o_it_btn_light"><i class="fa fa-folder-open-o"/> <span>Ver póliza</span></a>
+                        </div>
+                    </article>
+                </div>
+
+                <!-- Pólizas -->
+                <t t-if="view == 'policies'">
+                    <form action="/equipo/cartera" method="get" class="o_it_search" role="search">
+                        <input type="hidden" name="vista" value="policies"/>
+                        <input t-if="scope == 'all'" type="hidden" name="ver" value="todos"/>
+                        <label class="visually-hidden" for="pf_q">Buscar</label>
+                        <input id="pf_q" name="q" class="form-control" t-att-value="q" placeholder="Buscar cliente o número de póliza"/>
+                        <button class="btn o_it_btn_light" type="submit" aria-label="Buscar"><i class="fa fa-search"/></button>
+                    </form>
+                    <div class="o_it_list">
+                        <p t-if="not data['active_view']" class="o_it_empty_line">Sin pólizas vigentes<t t-if="q"> con «<t t-out="q"/>»</t>.</p>
+                        <t t-foreach="data['active_view']" t-as="p">
+                            <t t-call="insurance_management.team_portfolio_row">
+                                <t t-set="extra" t-value="'Vigencia %s – %s' % (p.coverage_start_date.strftime('%d/%m/%Y') if p.coverage_start_date else '—', p.end_date.strftime('%d/%m/%Y') if p.end_date else '—')"/>
+                            </t>
+                        </t>
+                    </div>
+                </t>
+
+                <!-- Comisiones -->
+                <div t-if="view == 'commissions'" class="o_it_list">
+                    <p t-if="not data['commissions']" class="o_it_empty_line">Aún no hay comisiones registradas.</p>
+                    <article t-foreach="data['commissions']" t-as="cm" t-attf-class="o_it_row o_it_row_#{'paid' if cm.state == 'paid' else ('due_soon' if cm.state == 'to_pay' else 'na')}">
+                        <div class="o_it_row_main">
+                            <div class="o_it_row_title"><b t-out="cm.partner_id.name"/>
+                                <span t-attf-class="o_it_pill #{'o_it_pill_ok' if cm.state == 'paid' else ('o_it_pill_warn' if cm.state == 'to_pay' else '')}" t-out="commission_labels.get(cm.state)"/></div>
+                            <div class="o_it_row_meta"><t t-out="cm.date.strftime('%d/%m/%Y')"/> · Póliza <t t-out="cm.policy_id.name"/> · <t t-out="dict(cm._fields['commission_type'].selection).get(cm.commission_type)"/> · <t t-out="'%.1f' % cm.rate"/>% de <t t-out="money(cm.base_amount, cm.currency_id)"/></div>
+                        </div>
+                        <div class="o_it_row_amount" t-out="money(cm.amount, cm.currency_id)"/>
+                    </article>
+                </div>
+            </t>
+        </t>
+    </template>
+
+    <template id="team_portfolio_policy" name="Equipo: póliza de mi cartera">
+        <t t-call="insurance_management.team_layout">
+            <a href="/equipo/cartera?vista=policies" class="o_it_back"><i class="fa fa-arrow-left"/> Mi cartera</a>
+            <div class="o_it_title_row">
+                <div>
+                    <h1 class="o_it_h1" t-out="policy.partner_id.name"/>
+                    <p class="o_it_hint mb-0"><t t-out="policy.name"/> · <t t-out="policy.policy_type_id.name or 'Sin ramo'"/><t t-if="policy.offer_id"> · <t t-out="policy.offer_id.name"/></t></p>
+                </div>
+                <div class="o_it_actions">
+                    <a t-if="policy.partner_id._insurance_phone()" t-att-href="'tel:%s' % policy.partner_id._insurance_phone()" class="btn o_it_btn_light"><i class="fa fa-phone"/> Llamar</a>
+                    <a t-if="svc.wa_link(policy.partner_id, '')" t-att-href="svc.wa_link(policy.partner_id, 'Hola %s, ' % (policy.partner_id.name or '').split(' ')[0])" target="_blank" class="btn o_it_btn_wa"><i class="fa fa-whatsapp"/> WhatsApp</a>
+                    <a t-att-href="'/equipo/pdf/cartera/%s' % policy.id" target="_blank" class="btn o_it_btn_light"><i class="fa fa-file-pdf-o o_it_pdf"/> Resumen PDF</a>
+                </div>
+            </div>
+            <div t-if="policy.attention_level in ('danger', 'warning')" t-attf-class="alert #{'alert-danger' if policy.attention_level == 'danger' else 'alert-warning'} o_it_alert_inline" role="alert">
+                <i class="fa fa-exclamation-triangle"/> <t t-out="policy.attention_reason or 'Esta póliza requiere atención.'"/>
+            </div>
+            <section class="o_it_panel">
+                <div class="o_it_facts">
+                    <div><small>Aseguradora</small><b t-out="policy.insurance_company_id.name or '—'"/></div>
+                    <div><small>Prima anual</small><b t-out="money(policy.policy_amount, policy.currency_id)"/></div>
+                    <div><small>Suma asegurada</small><b t-out="money(policy.insured_amount, policy.currency_id)"/></div>
+                    <div><small>Forma de pago</small><b t-out="dict(policy._fields['premium_type'].selection).get(policy.premium_type) or '—'"/></div>
+                    <div><small>Vigencia</small><b><t t-out="policy.coverage_start_date and policy.coverage_start_date.strftime('%d/%m/%Y') or '—'"/> – <t t-out="policy.end_date and policy.end_date.strftime('%d/%m/%Y') or '—'"/></b></div>
+                    <div><small>Renovación</small><b t-out="renewal_labels.get(policy.renewal_state) or '—'"/></div>
+                    <div><small>Asegurado</small><b t-out="policy.insured_partner_id.name or policy.partner_id.name"/></div>
+                    <div><small>Teléfono</small><b t-out="policy.partner_id._insurance_phone() or '—'"/></div>
+                </div>
+            </section>
+            <section t-if="policy.installment_ids" class="o_it_panel">
+                <h2 class="o_it_h2"><i class="fa fa-calendar"/> Pagos</h2>
+                <div class="o_it_list">
+                    <article t-foreach="policy.installment_ids.sorted('due_date')" t-as="ln" t-attf-class="o_it_row o_it_row_compact o_it_row_#{'paid' if ln.state == 'paid' else ln.collection_status}">
+                        <t t-set="stg" t-value="collection_stages.get(ln.collection_stage, ('', 'na'))"/>
+                        <div class="o_it_row_main">
+                            <div class="o_it_row_title"><b>Cuota <t t-out="ln.number"/></b> <span t-attf-class="o_it_pill o_it_pill_#{stg[1]}" t-out="stg[0]"/></div>
+                            <div class="o_it_row_meta">Cobro <t t-out="ln.due_date and ln.due_date.strftime('%d/%m/%Y')"/><t t-if="ln.payment_date"> · pagó el <t t-out="ln.payment_date.strftime('%d/%m/%Y')"/></t></div>
+                        </div>
+                        <div class="o_it_row_amount" t-out="money(ln.amount, ln.currency_id)"/>
+                    </article>
+                </div>
+            </section>
+            <section t-if="policy.benefit_ids" class="o_it_panel">
+                <h2 class="o_it_h2"><i class="fa fa-shield"/> Beneficios</h2>
+                <div class="o_it_facts">
+                    <div t-foreach="policy.benefit_ids" t-as="b"><small t-out="b.benefit_id.code"/><b t-out="money(b.insured_amount, policy.currency_id)"/></div>
+                </div>
+            </section>
+            <t t-call="insurance_management.team_notes">
+                <t t-set="slug" t-value="'cartera'"/>
+                <t t-set="rec" t-value="policy"/>
+                <t t-set="back" t-value="'/equipo/cartera/%s' % policy.id"/>
+            </t>
+        </t>
+    </template>
+    <!-- ===================== Actividad ===================== -->
+    <template id="team_activity" name="Equipo: actividad">
+        <t t-call="insurance_management.team_layout">
+            <a t-att-href="back" class="o_it_back"><i class="fa fa-arrow-left"/> Volver</a>
+            <div class="o_it_title_row">
+                <div>
+                    <h1 class="o_it_h1" t-out="task.name"/>
+                    <p class="o_it_hint mb-0">
+                        <t t-out="dict(task._fields['task_type'].selection).get(task.task_type)"/> ·
+                        <t t-out="task.date_deadline.strftime('%d/%m/%Y')"/><t t-if="task.date_start"> · <t t-out="svc.local(task.date_start).strftime('%H:%M')"/></t>
+                        · <t t-out="task.user_id.name"/>
+                    </p>
+                </div>
+                <span t-attf-class="o_it_badge #{'o_it_badge_done' if task.state == 'done' else ('o_it_badge_late' if task.status_color == 'red' else '')}"
+                      t-out="dict(task._fields['status_color'].selection).get(task.status_color)"/>
+            </div>
+            <section class="o_it_panel">
+                <div class="o_it_facts">
+                    <div t-if="task.lead_id"><small>Prospecto</small><b t-out="task.lead_id.contact_name or task.lead_id.name"/></div>
+                    <div t-if="task.partner_id"><small>Cliente</small><b t-out="task.partner_id.name"/></div>
+                    <div t-if="task.policy_id"><small>Póliza</small><b t-out="task.policy_id.name"/></div>
+                    <div t-if="phone"><small>Teléfono</small><b t-out="phone"/></div>
+                    <div t-if="task.lead_id.stage_id"><small>Etapa</small><b t-out="task.lead_id.stage_id.name"/></div>
+                </div>
+                <div t-if="task.description" class="o_it_quote mb-3" t-out="task.description"/>
+                <div t-if="task.result" class="o_it_quote mb-3"><b>Lo registrado:</b><br/><t t-out="task.result"/></div>
+                <div class="o_it_actions">
+                    <a t-if="phone" t-att-href="'tel:%s' % phone" class="btn o_it_btn_light"><i class="fa fa-phone"/> Llamar</a>
+                    <a t-if="phone" t-att-href="svc.wa_link(phone, '')" target="_blank" class="btn o_it_btn_wa"><i class="fa fa-whatsapp"/> WhatsApp</a>
+                    <a t-if="task.partner_id.email or task.lead_id.email_from" t-att-href="'mailto:%s' % (task.lead_id.email_from or task.partner_id.email)" class="btn o_it_btn_light"><i class="fa fa-envelope-o"/> Correo</a>
+                    <a t-if="link" t-att-href="link" class="btn o_it_btn_light"><i class="fa fa-folder-open-o"/> Ver ficha</a>
+                </div>
+            </section>
+            <section t-if="task.state == 'todo'" class="o_it_panel">
+                <h2 class="o_it_h2"><i class="fa fa-pencil"/> Registrar lo que se hizo</h2>
+                <t t-call="insurance_management.team_log_form">
+                    <t t-set="action" t-value="'/equipo/actividad/%s/registro' % task.id"/>
+                    <t t-set="fid" t-value="'a%s' % task.id"/>
+                    <t t-set="show_done" t-value="True"/>
+                    <t t-set="show_tags" t-value="bool(task.lead_id)"/>
+                    <t t-set="current_tags" t-value="task.lead_id.tag_ids"/>
+                    <t t-set="followup" t-value="False"/>
+                </t>
+            </section>
+        </t>
+    </template>
+
+    <!-- ===================== Renovaciones (GMM) y aniversarios (vida) ===================== -->
+    <template id="team_followups" name="Equipo: renovaciones y aniversarios">
+        <t t-call="insurance_management.team_layout">
+            <t t-set="is_renewal" t-value="block == 'renewal'"/>
+            <t t-call="insurance_management.team_block_title">
+                <t t-set="icon" t-value="'fa-refresh' if is_renewal else 'fa-gift'"/>
+                <t t-set="title" t-value="'Renovaciones · Gastos médicos mayores' if is_renewal else 'Aniversarios · Vida'"/>
+                <t t-set="hint" t-value="'Pólizas que vencen en los próximos 60 días. Registra cada contacto y el avance hasta renovar.' if is_renewal else 'Pólizas de vida que cumplen aniversario en los próximos 60 días: buen momento para revisar beneficios, actualizar datos y ofrecer más.'"/>
+            </t>
+            <form t-att-action="'/equipo/renovaciones' if is_renewal else '/equipo/aniversarios'" method="get" class="o_it_search" role="search">
+                <label class="visually-hidden" for="fu_q">Buscar</label>
+                <input id="fu_q" name="q" class="form-control" t-att-value="q" placeholder="Buscar cliente o póliza"/>
+                <button class="btn o_it_btn_light" type="submit" aria-label="Buscar"><i class="fa fa-search"/></button>
+            </form>
+            <p t-if="not rows" class="o_it_empty_line"><i class="fa fa-check-circle text-success"/> Nada pendiente por ahora.</p>
+            <div class="o_it_list">
+                <article t-foreach="rows" t-as="r" t-attf-class="o_it_row #{'o_it_row_overdue' if r['days'] &lt;= 7 else ('o_it_row_due_soon' if r['days'] &lt;= 30 else 'o_it_row_ok')}">
+                    <t t-set="p" t-value="r['policy']"/>
+                    <div class="o_it_row_main">
+                        <div class="o_it_row_title"><b t-out="p.partner_id.name"/>
+                            <span t-attf-class="o_it_pill #{'o_it_pill_bad' if r['days'] &lt;= 7 else ('o_it_pill_warn' if r['days'] &lt;= 30 else '')}"
+                                  t-out="('Vencida hace %s días' % -r['days'] if r['days'] &lt; 0 else ('Hoy' if r['days'] == 0 else 'En %s días' % r['days'])) if is_renewal else ('Hoy' if r['days'] == 0 else ('Hace %s días' % -r['days'] if r['days'] &lt; 0 else 'En %s días' % r['days']))"/>
+                            <span t-if="r['followup']" class="o_it_pill o_it_pill_ok" t-out="dict(followup_states).get(r['followup'])"/>
+                        </div>
+                        <div class="o_it_row_meta">
+                            <t t-out="p.name"/> · <t t-out="p.offer_id.name or p.policy_type_id.name"/><t t-if="p.insurance_company_id"> · <t t-out="p.insurance_company_id.name"/></t>
+                        </div>
+                        <div class="o_it_row_meta small">
+                            <t t-if="is_renewal">Vence el <t t-out="r['date'].strftime('%d/%m/%Y') if r['date'] else '—'"/></t>
+                            <t t-else="">Aniversario <t t-out="r['years']"/> el <t t-out="r['date'].strftime('%d/%m/%Y')"/></t>
+                            <t t-if="p.agent_id"> · Asesor: <t t-out="p.agent_id.name"/></t>
+                        </div>
+                    </div>
+                    <div class="o_it_row_amount"><t t-out="money(p.policy_amount, p.currency_id)"/><small class="d-block">prima anual</small></div>
+                    <div class="o_it_row_actions">
+                        <t t-set="ph" t-value="p.partner_id._insurance_phone()"/>
+                        <a t-if="ph" t-att-href="'tel:%s' % ph" class="btn btn-sm o_it_btn_light"><i class="fa fa-phone"/> <span>Llamar</span></a>
+                        <a t-if="ph" t-att-href="svc.wa_link(ph, ('Hola %s, su póliza %s vence el %s. Le comparto las opciones para renovarla.' if is_renewal else 'Hola %s, su póliza %s cumple un año más el %s. Me gustaría revisar con usted sus beneficios.') % ((p.partner_id.name or '').split(' ')[0], p.name, r['date'].strftime('%d/%m/%Y') if r['date'] else ''))" target="_blank" class="btn btn-sm o_it_btn_wa"><i class="fa fa-whatsapp"/> <span>WhatsApp</span></a>
+                        <details class="o_it_pay o_it_task_log">
+                            <summary class="btn btn-sm o_it_btn"><i class="fa fa-pencil"/> Registrar avance</summary>
+                            <t t-call="insurance_management.team_log_form">
+                                <t t-set="action" t-value="'/equipo/%s/%s/registro' % ('renovaciones' if is_renewal else 'aniversarios', p.id)"/>
+                                <t t-set="fid" t-value="'f%s' % p.id"/>
+                                <t t-set="show_done" t-value="False"/>
+                                <t t-set="show_tags" t-value="False"/>
+                                <t t-set="followup" t-value="True"/>
+                                <t t-set="followup_value" t-value="r['followup']"/>
+                            </t>
+                        </details>
+                    </div>
+                </article>
+            </div>
         </t>
     </template>
 </odoo>

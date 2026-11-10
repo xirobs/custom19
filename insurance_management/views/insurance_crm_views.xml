@@ -613,7 +613,7 @@
         <field name="inherit_id" ref="base.res_config_settings_view_form"/>
         <field name="arch" type="xml">
             <xpath expr="//form" position="inside">
-                <app data-string="Seguros" string="Seguros" name="insurance_management" groups="insurance_management.group_insurance_manager">
+                <app data-string="Vive Seguro" string="Vive Seguro" name="insurance_management" groups="insurance_management.group_insurance_manager">
                     <block title="Avisos automáticos por correo" name="insurance_notifications">
                         <setting string="Cobranza" help="Recordatorio antes de la fecha de cobro y aviso de pago atrasado.">
                             <field name="insurance_auto_collection"/>

@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <odoo>
     <menuitem id="menu_insurance_root" active="True"
-              name="Gestión de Seguros"
+              name="Vive Seguro"
               action="action_insurance_control_dashboard"
               sequence="45"
               web_icon="insurance_management,static/description/icon.png"

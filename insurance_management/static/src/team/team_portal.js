@@ -181,6 +181,63 @@ function setupRequirements(form) {
     show();
 }
 
+// Dictado por voz (Chrome, Edge, Safari y Android): escribe en la nota lo que se va diciendo.
+function setupMic(btn) {
+    const Recognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (!Recognition) {
+        btn.hidden = true;
+        return;
+    }
+    let rec = null;
+    btn.addEventListener("click", () => {
+        const area = document.getElementById(btn.dataset.target);
+        if (!area) {
+            return;
+        }
+        if (rec) {
+            rec.stop();
+            return;
+        }
+        rec = new Recognition();
+        rec.lang = document.documentElement.lang && document.documentElement.lang.startsWith("es")
+            ? document.documentElement.lang.replace("_", "-") : "es-MX";
+        rec.continuous = true;
+        rec.interimResults = true;
+        const base = area.value ? area.value.replace(/\s*$/, " ") : "";
+        rec.onresult = (ev) => {
+            let finalText = "";
+            let interim = "";
+            for (let i = 0; i < ev.results.length; i++) {
+                const text = ev.results[i][0].transcript;
+                if (ev.results[i].isFinal) {
+                    finalText += text;
+                } else {
+                    interim += text;
+                }
+            }
+            area.value = base + finalText + interim;
+        };
+        rec.onerror = (ev) => {
+            toast(ev.error === "not-allowed" || ev.error === "service-not-allowed"
+                ? "Permite el uso del micrófono en el navegador para dictar."
+                : "No se pudo dictar. Intenta de nuevo.");
+        };
+        rec.onend = () => {
+            btn.classList.remove("o_it_listening");
+            btn.setAttribute("aria-label", "Dictar por voz");
+            rec = null;
+        };
+        try {
+            rec.start();
+            btn.classList.add("o_it_listening");
+            btn.setAttribute("aria-label", "Detener dictado");
+            toast("Te escucho… toca el micrófono otra vez para terminar.");
+        } catch {
+            rec = null;
+        }
+    });
+}
+
 function init() {
     const root = document.querySelector(".o_ins_team");
     if (!root) {
@@ -188,6 +245,7 @@ function init() {
     }
     root.querySelectorAll(".o_it_board[data-block]").forEach(setupBoard);
     root.querySelectorAll(".o_it_policy_search").forEach(setupPolicySearch);
+    root.querySelectorAll(".o_it_mic").forEach(setupMic);
     root.querySelectorAll("form").forEach((form) => {
         setupOffers(form);
         setupRequirements(form);

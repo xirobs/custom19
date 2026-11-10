@@ -14,7 +14,7 @@ from odoo.http import content_disposition, request
 
 from odoo.addons.portal.controllers.portal import CustomerPortal
 
-from ..models.insurance_team import EMISSION_STAGES, PROCEDURE_STATES
+from ..models.insurance_team import EMISSION_STAGES, FOLLOWUP_STATES, LOG_CHANNELS, PROCEDURE_STATES
 
 _logger = logging.getLogger(__name__)
 
@@ -24,14 +24,20 @@ SLUGS = {
     "siniestros": "claim",
     "cobranza": "collection",
     "crm": "crm",
+    "cartera": "portfolio",
+    "renovaciones": "renewal",
+    "aniversarios": "anniversary",
 }
 BLOCK_URL = {v: "/equipo/" + k for k, v in SLUGS.items()}
 NAV = [
+    ("portfolio", "Mi cartera", "fa-briefcase"),
     ("emission", "Emisiones", "fa-file-text-o"),
     ("procedure", "Trámites", "fa-tasks"),
     ("claim", "Siniestros", "fa-medkit"),
     ("collection", "Cobranza", "fa-money"),
     ("crm", "CRM", "fa-handshake-o"),
+    ("renewal", "Renovación", "fa-refresh"),
+    ("anniversary", "Aniversario", "fa-gift"),
 ]
 CLAIM_STATE_LABELS = {
     "draft": "Aviso", "documents": "Documentos", "review": "En evaluación", "authorized": "Autorizado",
@@ -108,6 +114,25 @@ class InsuranceTeamPortal(http.Controller):
     def _files(name="files"):
         return request.httprequest.files.getlist(name)
 
+    @staticmethod
+    def _post_with_tags():
+        """Parámetros del formulario, conservando todas las etiquetas marcadas (casillas con el mismo nombre)."""
+        post = dict(request.params)
+        post["tag_ids"] = request.httprequest.form.getlist("tag_ids")
+        return post
+
+    def _log_values(self):
+        """Datos que usan los formularios de "registrar avance"."""
+        svc = self._svc()
+        Task = request.env["insurance.task"]
+        return {
+            "channels": LOG_CHANNELS,
+            "task_types": Task._fields["task_type"]._description_selection(request.env),
+            "members": svc.team_members(),
+            "followup_states": FOLLOWUP_STATES,
+            "all_tags": request.env["crm.tag"].sudo().search([]),
+        }
+
     def _scope(self):
         return "all" if request.params.get("ver") == "todos" else "mine"
 
@@ -116,7 +141,37 @@ class InsuranceTeamPortal(http.Controller):
     def team_home(self, **kw):
         if not request.env.user.ins_portal_access:
             return self._render("insurance_management.team_no_access", page="none")
-        return self._render("insurance_management.team_home", "home", dash=self._svc().home())
+        return self._render("insurance_management.team_home", "home", dash=self._svc().home(), **self._log_values())
+
+    # ------------------------------------------------------------------ actividades
+    @http.route(["/equipo/actividad/<int:task_id>"], type="http", auth="user", website=True)
+    def team_activity(self, task_id, **kw):
+        svc = self._svc()
+        try:
+            task = svc.activity(task_id)
+        except ERRORS:
+            return request.redirect("/equipo")
+        back = kw.get("back") if (kw.get("back") or "").startswith("/equipo") else "/equipo"
+        return self._render("insurance_management.team_activity", "home", task=task, link=svc.activity_links(task),
+                            phone=svc.task_phone(task), back=back, **self._log_values())
+
+    @http.route(["/equipo/actividad/<int:task_id>/registro"], type="http", auth="user", website=True,
+                methods=["POST"])
+    def team_activity_log(self, task_id, **kw):
+        svc = self._svc()
+        post = self._post_with_tags()
+        back = post.get("back") if (post.get("back") or "").startswith("/equipo") else "/equipo"
+        try:
+            task = svc.activity(task_id)
+            nxt = svc.log_progress(post, task=task)
+        except ERRORS as e:
+            return self._back(back, error=_msg(e))
+        ok = _("Avance guardado.")
+        if post.get("done"):
+            ok = _("Actividad hecha.")
+        if nxt:
+            ok += " " + _("Siguiente actividad agendada para %s.") % (nxt.user_id.name if nxt.user_id != request.env.user else _("ti"))
+        return self._back(back, ok=ok)
 
     @http.route(["/equipo/tarea/<int:task_id>/hecha"], type="http", auth="user", website=True, methods=["POST"])
     def team_task_done(self, task_id, **kw):
@@ -168,6 +223,7 @@ class InsuranceTeamPortal(http.Controller):
         """PDF con la marca de la agencia: resumen de póliza, seguimiento de siniestro o comprobante de pago."""
         reports = {
             "emisiones": "insurance_management.action_report_insurance_policy",
+            "cartera": "insurance_management.action_report_insurance_policy",
             "siniestros": "insurance_management.action_report_insurance_claim",
             "cobranza": "insurance_management.action_report_insurance_receipt",
         }
@@ -182,13 +238,38 @@ class InsuranceTeamPortal(http.Controller):
             raise request.not_found()
         Report = request.env["ir.actions.report"].sudo()
         pdf, _type = Report._render_qweb_pdf(reports[slug], record.ids)
-        name = {"emisiones": "Poliza", "siniestros": "Siniestro", "cobranza": "Comprobante"}[slug]
+        name = {"emisiones": "Poliza", "cartera": "Poliza", "siniestros": "Siniestro", "cobranza": "Comprobante"}[slug]
         filename = "%s-%s.pdf" % (name, (record.display_name or str(record.id)).replace("/", "-"))
         return request.make_response(pdf, headers=[
             ("Content-Type", "application/pdf"),
             ("Content-Length", len(pdf)),
             ("Content-Disposition", content_disposition(filename, disposition_type="inline")),
         ])
+
+    # ------------------------------------------------------------------ mi cartera (asesor)
+    @http.route(["/equipo/cartera"], type="http", auth="user", website=True)
+    def team_portfolio(self, vista="attention", q=None, **kw):
+        if redirect := self._guard("portfolio"):
+            return redirect
+        svc = self._svc()
+        data = svc.portfolio(self._scope(), vista, q)
+        renewal_labels = dict(request.env["insurance.policy"]._fields["renewal_state"]._description_selection(request.env))
+        commission_labels = dict(request.env["insurance.commission"]._fields["state"]._description_selection(request.env))
+        return self._render("insurance_management.team_portfolio", "portfolio", data=data, view=vista, q=q or "",
+                            renewal_labels=renewal_labels, commission_labels=commission_labels)
+
+    @http.route(["/equipo/cartera/<int:policy_id>"], type="http", auth="user", website=True)
+    def team_portfolio_policy(self, policy_id, **kw):
+        if redirect := self._guard("portfolio"):
+            return redirect
+        svc = self._svc()
+        try:
+            policy = svc.portfolio_policy(policy_id)
+        except ERRORS:
+            return request.redirect("/equipo/cartera")
+        renewal_labels = dict(request.env["insurance.policy"]._fields["renewal_state"]._description_selection(request.env))
+        return self._render("insurance_management.team_portfolio_policy", "portfolio", policy=policy,
+                            timeline=svc.timeline(policy), renewal_labels=renewal_labels)
 
     # ------------------------------------------------------------------ emisiones
     @http.route(["/equipo/emisiones"], type="http", auth="user", website=True)
@@ -400,25 +481,60 @@ class InsuranceTeamPortal(http.Controller):
             return self._back("/equipo/cobranza", error=_("El cliente no tiene teléfono."))
         return request.redirect(link, local=False)
 
+    # ------------------------------------------------------------------ renovaciones (GMM) y aniversarios (vida)
+    @http.route(["/equipo/renovaciones", "/equipo/aniversarios"], type="http", auth="user", website=True)
+    def team_followups(self, q=None, **kw):
+        block = "renewal" if request.httprequest.path.rstrip("/").endswith("renovaciones") else "anniversary"
+        if redirect := self._guard(block):
+            return redirect
+        svc = self._svc()
+        if block == "renewal":
+            rows = [{"policy": p, "date": p.end_date, "days": (p.end_date - svc.today()).days if p.end_date else 0,
+                     "followup": p.renewal_followup} for p in svc.renewal_policies(search=q)]
+        else:
+            rows = svc.anniversary_rows(search=q)
+        return self._render("insurance_management.team_followups", block, rows=rows, block=block, q=q or "",
+                            **self._log_values())
+
+    @http.route(["/equipo/renovaciones/<int:policy_id>/registro", "/equipo/aniversarios/<int:policy_id>/registro"],
+                type="http", auth="user", website=True, methods=["POST"])
+    def team_followup_log(self, policy_id, **kw):
+        slug = request.httprequest.path.split("/")[2]
+        block = SLUGS.get(slug)
+        if block not in ("renewal", "anniversary"):
+            raise request.not_found()
+        url = "/equipo/" + slug
+        svc = self._svc()
+        try:
+            policy = svc.followup_policy(block, policy_id)
+            svc.log_progress(dict(request.params), policy=policy,
+                             followup_field="renewal_followup" if block == "renewal" else "anniversary_followup")
+        except ERRORS as e:
+            return self._back(url, error=_msg(e))
+        return self._back(url, ok=_("Avance guardado: %s") % policy.partner_id.name)
+
     # ------------------------------------------------------------------ CRM
     @http.route(["/equipo/crm"], type="http", auth="user", website=True)
     def team_crm(self, **kw):
         if redirect := self._guard("crm"):
             return redirect
-        return self._render("insurance_management.team_crm", "crm", columns=self._svc().crm_board(self._scope()))
+        svc = self._svc()
+        return self._render("insurance_management.team_crm", "crm", columns=svc.crm_board(self._scope()),
+                            activities=svc.day_activities(crm_only=True, scope=self._scope()), **self._log_values())
 
     @http.route(["/equipo/crm/nuevo"], type="http", auth="user", website=True, methods=["GET"])
     def team_crm_new(self, **kw):
         if redirect := self._guard("crm"):
             return redirect
-        return self._render("insurance_management.team_crm_new", "crm", cat=self._svc().catalogs())
+        return self._render("insurance_management.team_crm_new", "crm", cat=self._svc().catalogs(),
+                            **self._log_values())
 
     @http.route(["/equipo/crm/nuevo"], type="http", auth="user", website=True, methods=["POST"])
     def team_crm_create(self, **post):
         if redirect := self._guard("crm"):
             return redirect
         try:
-            lead = self._svc().crm_create(post)
+            lead = self._svc().crm_create(self._post_with_tags())
         except ERRORS as e:
             return self._back("/equipo/crm/nuevo", error=_msg(e))
         return self._back("/equipo/crm/%s" % lead.id, ok=_("Prospecto registrado."))
@@ -433,8 +549,8 @@ class InsuranceTeamPortal(http.Controller):
         except ERRORS:
             return request.redirect("/equipo/crm")
         return self._render("insurance_management.team_crm_lead", "crm", lead=lead, cat=svc.catalogs(),
-                            stages=svc._crm_stages(), tasks=svc.crm_tasks(lead), timeline=svc.timeline(lead),
-                            wa=svc.wa_link(lead.partner_id, "") if lead.partner_id else False)
+                            stages=svc._crm_stages(), rows=svc.lead_timeline(lead),
+                            lost_stage=svc._crm_named("lost"), **self._log_values())
 
     @http.route(["/equipo/crm/<int:lead_id>/<string:op>"], type="http", auth="user", website=True,
                 methods=["POST"])
@@ -451,6 +567,10 @@ class InsuranceTeamPortal(http.Controller):
             elif op == "cita":
                 svc.crm_schedule(lead_id, post)
                 ok = _("Cita agendada.")
+            elif op == "seguimiento":
+                lead = svc._record("crm", lead_id)
+                nxt = svc.log_progress(self._post_with_tags(), lead=lead)
+                ok = _("Seguimiento guardado.") + (" " + _("Actividad agendada.") if nxt else "")
             elif op == "emision":
                 policy = svc.crm_to_emission(lead_id)
                 if request.env.user._ins_portal_can("emission"):

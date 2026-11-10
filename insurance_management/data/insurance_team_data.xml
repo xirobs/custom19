@@ -75,6 +75,16 @@
             <field name="requirements">Informe médico, acta de nacimiento o constancia del embarazo según el caso, identificación de la asegurada y facturas si es reembolso.</field>
         </record>
 
+        <!-- Etiquetas rápidas para el seguimiento de prospectos -->
+        <record id="crm_tag_nc" model="crm.tag">
+            <field name="name">NC · No contesta, se dejó WhatsApp</field>
+            <field name="color">1</field>
+        </record>
+        <record id="crm_tag_a" model="crm.tag">
+            <field name="name">A · Agendado</field>
+            <field name="color">7</field>
+        </record>
+
         <!-- Etapas del CRM del equipo -->
         <record id="crm_stage_first_meeting" model="crm.stage">
             <field name="name">1ra cita</field>

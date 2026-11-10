@@ -239,7 +239,7 @@
         <field name="inherit_id" ref="base.view_users_form"/>
         <field name="arch" type="xml">
             <xpath expr="//notebook" position="inside">
-                <page string="Portal del equipo de seguros" name="insurance_team_portal"
+                <page string="Vive Seguro · Portal del equipo" name="insurance_team_portal"
                       groups="insurance_management.group_insurance_manager">
                     <p class="text-muted">
                         Marca lo que esta persona trabaja. Lo verá en <b>/equipo</b> (desde su cuenta del portal o
@@ -247,11 +247,19 @@
                     </p>
                     <group>
                         <group string="Bloques">
+                            <field name="ins_portal_portfolio"/>
+                            <field name="ins_agent_ids" widget="many2many_tags" readonly="1" invisible="not ins_agent_ids"
+                                   string="Asesor vinculado"/>
+                            <div colspan="2" class="text-muted small" invisible="not ins_portal_portfolio or ins_agent_ids">
+                                Para ver su cartera, vincula a esta persona en Seguros › Asesores (campo «Usuario»).
+                            </div>
                             <field name="ins_portal_emission"/>
                             <field name="ins_portal_procedure"/>
                             <field name="ins_portal_claim"/>
                             <field name="ins_portal_collection"/>
                             <field name="ins_portal_crm"/>
+                            <field name="ins_portal_renewal"/>
+                            <field name="ins_portal_anniversary"/>
                         </group>
                         <group string="Supervisión">
                             <field name="ins_portal_all"/>
@@ -272,6 +280,49 @@
                         Usuario de <b>portal</b>: entra a <b>/equipo</b> con su correo y contraseña. No ocupa licencia.
                     </div>
                 </page>
+            </xpath>
+        </field>
+    </record>
+
+    <!-- Asesor: activar su acceso al portal (celular o tablet) -->
+    <record id="view_insurance_agent_form_portal" model="ir.ui.view">
+        <field name="name">insurance.agent.form.portal</field>
+        <field name="model">insurance.agent</field>
+        <field name="inherit_id" ref="view_insurance_agent_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//sheet" position="before">
+                <header>
+                    <field name="portal_ready" invisible="1"/>
+                    <button name="action_insurance_portal_access" type="object" class="btn-primary" icon="fa-mobile"
+                            string="Activar acceso al portal" invisible="portal_ready"
+                            groups="insurance_management.group_insurance_manager"
+                            confirm="Se creará (o activará) su usuario de portal con «Mi cartera» y CRM, y se le enviará la invitación por correo. ¿Continuar?"/>
+                    <span invisible="not portal_ready" class="badge text-bg-success align-self-center">
+                        <i class="fa fa-mobile me-1" title="Portal"/>Con acceso al portal
+                    </span>
+                </header>
+            </xpath>
+        </field>
+    </record>
+
+    <!-- Ramo: qué seguimiento anual lleva (renovación GMM / aniversario vida) -->
+    <record id="view_insurance_policy_type_list_followup" model="ir.ui.view">
+        <field name="name">insurance.policy.type.list.followup</field>
+        <field name="model">insurance.policy.type</field>
+        <field name="inherit_id" ref="view_insurance_policy_type_list"/>
+        <field name="arch" type="xml">
+            <field name="name" position="after">
+                <field name="renewal_kind"/>
+            </field>
+        </field>
+    </record>
+    <record id="view_insurance_policy_type_form_followup" model="ir.ui.view">
+        <field name="name">insurance.policy.type.form.followup</field>
+        <field name="model">insurance.policy.type</field>
+        <field name="inherit_id" ref="view_insurance_policy_type_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//sheet//field[@name='name']" position="after">
+                <field name="renewal_kind"/>
             </xpath>
         </field>
     </record>

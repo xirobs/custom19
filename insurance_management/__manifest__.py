@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 {
-    "name": "Gestión de Aseguradoras",
-    "version": "19.0.8.0.0",
+    "name": "Vive Seguro",
+    "version": "19.0.10.0.0",
     "author": "Jhuliana Delgado",
     "maintainer": "Jhuliana Delgado",
     "website": "",

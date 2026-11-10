@@ -16,9 +16,10 @@ from dateutil.relativedelta import relativedelta
 
 from odoo import _, api, fields, models
 from odoo.exceptions import AccessError, MissingError, UserError
-from odoo.tools import html2plaintext
+from markupsafe import Markup
+from odoo.tools import html2plaintext, html_escape
 
-from .insurance_team import EMISSION_STAGES, PROCEDURE_STATES
+from .insurance_team import EMISSION_STAGES, FOLLOWUP_STATES, LOG_CHANNELS, PROCEDURE_STATES
 
 CRM_STAGE_XMLIDS = [
     ("first", "insurance_management.crm_stage_first_meeting"),
@@ -35,11 +36,14 @@ CLAIM_COLUMNS = [
     ("paid", "Pagado"),
 ]
 BLOCK_MODELS = {
+    "portfolio": "insurance.policy",
     "emission": "insurance.policy",
     "procedure": "insurance.procedure",
     "claim": "insurance.claim",
     "collection": "insurance.installment",
     "crm": "crm.lead",
+    "renewal": "insurance.policy",
+    "anniversary": "insurance.policy",
 }
 MAX_FILE = 15 * 1024 * 1024
 
@@ -78,6 +82,10 @@ class InsuranceTeamPortal(models.AbstractModel):
             return ["|", ("team_user_id", "=", uid), ("user_id", "=", uid)]
         if block == "collection":
             return []  # quien tiene Cobranza ve toda la cobranza
+        if block == "portfolio":
+            return [("agent_id.user_id", "=", uid)]
+        if block in ("renewal", "anniversary"):
+            return []  # renovaciones y aniversarios los ve quien tenga el bloque
         return [("team_user_id", "=", uid)]
 
     @api.model
@@ -172,7 +180,7 @@ class InsuranceTeamPortal(models.AbstractModel):
         )[:limit]
         rows = []
         for msg in messages:
-            text = html2plaintext(msg.body or "").strip()
+            text = re.sub(r"\*(.+?)\*", r"\1", html2plaintext(msg.body or "")).strip()
             if not text and msg.tracking_value_ids:
                 parts = []
                 for tv in msg.tracking_value_ids.sudo():
@@ -211,6 +219,12 @@ class InsuranceTeamPortal(models.AbstractModel):
         blocks = self.blocks()
         today = self.today()
         cards = {}
+        if blocks["portfolio"]:
+            policies = self.env["insurance.policy"].sudo().search(
+                self._mine_domain("portfolio") + [("state", "=", "confirmed")])
+            hot = len(policies.filtered(lambda p: p.renewal_state == "pending" or p.attention_level == "danger"))
+            cards["portfolio"] = {"count": len(policies), "hot": hot, "hot_label": _("requieren atención"),
+                                  "count_label": _("póliza vigente") if len(policies) == 1 else _("pólizas vigentes")}
         if blocks["emission"]:
             policies = self.env["insurance.policy"].sudo().search(
                 self._mine_domain("emission") + [("emission_stage", "!=", "delivered"), ("state", "!=", "cancelled")]
@@ -239,16 +253,23 @@ class InsuranceTeamPortal(models.AbstractModel):
                                    "hot_label": _("vencidos")}
         if blocks["crm"]:
             leads = self.env["crm.lead"].sudo().search(
-                self._mine_domain("crm") + [("stage_id", "in", self._crm_stage_ids()[:3])]
+                self._mine_domain("crm") + [("stage_id", "in", self._crm_open_stage_ids()),
+                                            ("type", "=", "opportunity")]
             )
             cards["crm"] = {"count": len(leads), "hot": len(leads.filtered(
                 lambda l: l.activity_date_deadline and l.activity_date_deadline <= today)),
                 "hot_label": _("con cita hoy o antes")}
-        tasks = self.env["insurance.task"].sudo().search([
-            ("user_id", "=", user.id), ("state", "=", "todo"),
-            ("date_deadline", "<=", today + relativedelta(days=1)),
-        ], limit=20)
-        return {"cards": cards, "tasks": tasks}
+        if blocks["renewal"]:
+            policies = self.renewal_policies()
+            cards["renewal"] = {"count": len(policies),
+                                "hot": len(policies.filtered(lambda p: p.end_date and p.end_date <= today + relativedelta(days=15))),
+                                "hot_label": _("vencen en 15 días")}
+        if blocks["anniversary"]:
+            rows = self.anniversary_rows()
+            cards["anniversary"] = {"count": len(rows),
+                                    "hot": len([r for r in rows if r["days"] <= 15]),
+                                    "hot_label": _("en 15 días o menos")}
+        return {"cards": cards, "tasks": self.day_activities()}
 
     @api.model
     def task_done(self, task_id):
@@ -309,6 +330,8 @@ class InsuranceTeamPortal(models.AbstractModel):
 
     @staticmethod
     def _float(value):
+        if value in (None, False, ""):
+            return 0.0
         try:
             return float(str(value).replace(",", "").replace("$", "").strip() or 0)
         except ValueError:
@@ -338,6 +361,7 @@ class InsuranceTeamPortal(models.AbstractModel):
             "policy_amount": self._float(post.get("amount")),
             "team_user_id": self._user().id,
             "emission_stage": "request",
+            "agent_id": self.my_agent().id or False,
         }
         if self._user().share:
             vals["user_id"] = False
@@ -639,25 +663,35 @@ class InsuranceTeamPortal(models.AbstractModel):
 
     # ------------------------------------------------------------------ CRM
     @api.model
-    def _crm_stages(self):
-        stages = []
-        for key, xmlid in CRM_STAGE_XMLIDS:
-            stage = self.env.ref(xmlid, raise_if_not_found=False)
-            if stage:
-                stages.append((key, stage.sudo()))
-        return stages
+    def _crm_named(self, key):
+        """Etapa por su papel (1ra cita, cierre, ganado, perdido); tolera que la hayan borrado o renombrado."""
+        xmlid = dict(CRM_STAGE_XMLIDS).get(key)
+        stage = self.env.ref(xmlid, raise_if_not_found=False) if xmlid else None
+        if stage:
+            return stage.sudo()
+        Stage = self.env["crm.stage"].sudo()
+        if key == "won":
+            return Stage.search([("is_won", "=", True)], limit=1)
+        if key == "first":
+            return Stage.search([], order="sequence, id", limit=1)
+        return Stage
 
     @api.model
-    def _crm_stage_ids(self):
-        return [stage.id for _key, stage in self._crm_stages()]
+    def _crm_stages(self):
+        """Todas las etapas del CRM, en el orden configurado: (clave, etapa)."""
+        return [(str(stage.id), stage) for stage in self.env["crm.stage"].sudo().search([], order="sequence, id")]
+
+    @api.model
+    def _crm_open_stage_ids(self):
+        lost = self._crm_named("lost")
+        return [st.id for _k, st in self._crm_stages() if not st.is_won and st != lost]
 
     @api.model
     def crm_board(self, scope="mine"):
         self._check("crm")
         stages = self._crm_stages()
         leads = self.env["crm.lead"].sudo().search(
-            self._mine_domain("crm", scope) + [("stage_id", "in", [s.id for _k, s in stages]),
-                                                ("type", "=", "opportunity")],
+            self._mine_domain("crm", scope) + [("type", "=", "opportunity")],
             order="priority desc, write_date desc",
         )
         return [(key, stage, leads.filtered(lambda l, s=stage: l.stage_id == s)) for key, stage in stages]
@@ -668,7 +702,7 @@ class InsuranceTeamPortal(models.AbstractModel):
         name = (post.get("name") or "").strip()
         if not name:
             raise UserError(_("Escribe el nombre del prospecto."))
-        stages = dict(self._crm_stages())
+        first = self._crm_named("first")
         user = self._user()
         vals = {
             "name": post.get("title") or name,
@@ -676,7 +710,7 @@ class InsuranceTeamPortal(models.AbstractModel):
             "phone": post.get("phone") or False,
             "email_from": post.get("email") or False,
             "type": "opportunity",
-            "stage_id": stages["first"].id if "first" in stages else False,
+            "stage_id": first.id or False,
             "team_user_id": user.id,
             "user_id": user.id if not user.share else False,
             "insurance_policy_type_id": self._int(post.get("ramo_id")),
@@ -686,6 +720,9 @@ class InsuranceTeamPortal(models.AbstractModel):
             "description": post.get("note") or False,
         }
         lead = self.env["crm.lead"].sudo().create({k: v for k, v in vals.items() if v is not False})
+        tags = self._tags_from_post(post)
+        if tags:
+            lead.tag_ids = [(6, 0, tags.ids)]
         if post.get("meeting_date"):
             self.crm_schedule(lead.id, {"date": post["meeting_date"], "time": post.get("meeting_time"),
                                         "kind": "first"})
@@ -694,11 +731,12 @@ class InsuranceTeamPortal(models.AbstractModel):
     @api.model
     def crm_move(self, lead_id, stage_key, post=None):
         lead = self._record("crm", lead_id)
-        stages = dict(self._crm_stages())
-        if stage_key not in stages:
+        stage = self._crm_named(stage_key) if stage_key in dict(CRM_STAGE_XMLIDS) else \
+            self.env["crm.stage"].sudo().browse(self._int(stage_key) or []).exists()
+        if not stage:
             raise UserError(_("Etapa no válida."))
-        vals = {"stage_id": stages[stage_key].id}
-        if stage_key == "lost" and post and post.get("reason"):
+        vals = {"stage_id": stage.id}
+        if stage == self._crm_named("lost") and post and post.get("reason"):
             vals["insurance_lost_note"] = post["reason"]
         lead.write(vals)
         return lead
@@ -739,9 +777,9 @@ class InsuranceTeamPortal(models.AbstractModel):
             "partner_id": lead.partner_id.id or False,
             "lead_id": lead.id,
         })
-        stages = dict(self._crm_stages())
-        if kind in stages and lead.stage_id != stages[kind]:
-            lead.stage_id = stages[kind]
+        target = self._crm_named(kind) if kind in ("first", "closing") else False
+        if target and lead.stage_id != target:
+            lead.stage_id = target
         lead.message_post(body=_("%(t)s agendada para el %(d)s") % {"t": title, "d": day.strftime("%d/%m/%Y")},
                           author_id=self._author().id, subtype_xmlid="mail.mt_note")
         return task
@@ -753,13 +791,285 @@ class InsuranceTeamPortal(models.AbstractModel):
     @api.model
     def crm_to_emission(self, lead_id):
         lead = self._record("crm", lead_id)
-        stages = dict(self._crm_stages())
-        if "won" in stages and lead.stage_id != stages["won"]:
-            lead.stage_id = stages["won"]
+        won = self._crm_named("won")
+        if won and lead.stage_id != won:
+            lead.stage_id = won
         policy = lead.action_insurance_to_emission()
         if self._user()._ins_portal_can("emission") and policy.team_user_id != self._user():
             policy.team_user_id = self._user()
         return policy
+
+    # ------------------------------------------------------------------ actividades del día y registro de avances
+    @api.model
+    def day_activities(self, crm_only=False, scope="mine"):
+        """Actividades pendientes de hoy y atrasadas (las atrasadas primero)."""
+        domain = [("state", "=", "todo"), ("date_deadline", "<=", self.today())]
+        if not (scope == "all" and self.sees_all()):
+            domain.append(("user_id", "=", self._user().id))
+        if crm_only:
+            domain.append(("lead_id", "!=", False))
+        return self.env["insurance.task"].sudo().search(domain, order="date_deadline, date_start, id", limit=60)
+
+    @api.model
+    def team_members(self):
+        """Personas a las que se les puede asignar una actividad: equipo del portal y usuarios de Seguros."""
+        Users = self.env["res.users"].sudo()
+        group = self.env.ref("insurance_management.group_insurance_user", raise_if_not_found=False)
+        users = Users.search([("share", "=", False), ("all_group_ids", "in", group.ids)]) if group else Users
+        portal_flags = ["|"] * 7 + [("ins_portal_%s" % b, "=", True) for b in
+                                     ("portfolio", "emission", "procedure", "claim", "collection", "crm", "renewal", "anniversary")]
+        users |= Users.search(portal_flags)
+        return (users | self._user()).sorted("name")
+
+    @api.model
+    def activity(self, task_id):
+        domain = [("id", "=", int(task_id))]
+        if not self.sees_all():
+            domain += ["|", ("user_id", "=", self._user().id), ("create_uid", "=", self._user().id)]
+        task = self.env["insurance.task"].sudo().search(domain, limit=1)
+        if not task:
+            raise MissingError(_("La actividad no existe o no está asignada a ti."))
+        return task
+
+    @api.model
+    def activity_links(self, task):
+        """A dónde lleva la actividad dentro del portal (prospecto o póliza)."""
+        blocks = self.blocks()
+        if task.lead_id and blocks.get("crm"):
+            return "/equipo/crm/%s" % task.lead_id.id
+        if task.policy_id:
+            if blocks.get("portfolio") and task.policy_id.agent_id.user_id == self._user():
+                return "/equipo/cartera/%s" % task.policy_id.id
+            if blocks.get("emission") and task.policy_id.team_user_id == self._user():
+                return "/equipo/emisiones/%s" % task.policy_id.id
+        return False
+
+    @api.model
+    def task_phone(self, task):
+        if task.lead_id and task.lead_id.phone:
+            return task.lead_id.phone
+        return task.partner_id._insurance_phone() if task.partner_id else ""
+
+    @api.model
+    def _tags_from_post(self, post):
+        """Etiquetas marcadas + una nueva escrita a mano (se crea si no existe)."""
+        Tag = self.env["crm.tag"].sudo()
+        raw = post.get("tag_ids") or []
+        if isinstance(raw, str):
+            raw = [raw]
+        ids = [int(x) for x in raw if str(x).isdigit()]
+        tags = Tag.browse(ids).exists()
+        new = (post.get("new_tag") or "").strip()
+        if new:
+            tag = Tag.search([("name", "=ilike", new)], limit=1) or Tag.create({"name": new[:60], "color": 4})
+            tags |= tag
+        return tags
+
+    @api.model
+    def _schedule(self, post, lead=None, policy=None, partner=None, title_hint=""):
+        """Crea la siguiente actividad si pidieron agendar una."""
+        if not post.get("next_date"):
+            return self.env["insurance.task"]
+        day = fields.Date.to_date(post["next_date"])
+        types = dict(self.env["insurance.task"]._fields["task_type"].selection)
+        task_type = post.get("next_type") if post.get("next_type") in types else "followup"
+        start = False
+        if post.get("next_time"):
+            hour, minute = (post["next_time"].split(":") + ["0"])[:2]
+            tz = pytz.timezone(self._user().tz or "America/Mexico_City")
+            start = tz.localize(datetime.combine(day, time(int(hour), int(minute)))).astimezone(pytz.utc).replace(tzinfo=None)
+        assignee = self.env["res.users"].sudo().browse(self._int(post.get("next_user_id")) or []).exists()
+        if assignee and assignee not in self.team_members():
+            raise UserError(_("Solo puedes asignar actividades a personas del equipo."))
+        who = (lead.contact_name or lead.partner_name or lead.name) if lead else (partner.name if partner else "")
+        name = (post.get("next_name") or "").strip() or "%s%s" % (types[task_type], (": " + who) if who else "")
+        task = self.env["insurance.task"].sudo().create({
+            "name": name,
+            "task_type": task_type,
+            "date_deadline": day,
+            "date_start": start,
+            "user_id": (assignee or self._user()).id,
+            "partner_id": (partner or (lead.partner_id if lead else False) or self.env["res.partner"]).id or False,
+            "lead_id": lead.id if lead else False,
+            "policy_id": policy.id if policy else False,
+            "description": post.get("next_note") or False,
+        })
+        if task.user_id != self._user():
+            task.message_subscribe(partner_ids=task.user_id.partner_id.ids)
+            task.message_post(body=_("%(who)s te asignó esta actividad para el %(day)s.") % {
+                "who": self._user().name, "day": day.strftime("%d/%m/%Y")},
+                author_id=self._author().id, partner_ids=task.user_id.partner_id.ids,
+                message_type="comment", subtype_xmlid="mail.mt_comment")
+        return task
+
+    @api.model
+    def log_progress(self, post, task=None, lead=None, policy=None, followup_field=None):
+        """Registro rápido de lo que se hizo (llamada, WhatsApp, correo…): queda en el historial del
+        prospecto o la póliza, cierra la actividad si se pidió y agenda la siguiente."""
+        channels = dict(LOG_CHANNELS)
+        channel = post.get("channel") if post.get("channel") in channels else False
+        text = (post.get("body") or "").strip()
+        if task:
+            lead = lead or task.lead_id
+            policy = policy or task.policy_id
+        target = lead or policy or task
+        if not (text or channel or post.get("next_date") or post.get("done") or post.get("new_tag")
+                or post.get("followup") or post.get("tags_sent")):
+            raise UserError(_("Escribe qué se hizo o elige una opción."))
+        parts = []
+        if channel:
+            parts.append("<b>%s</b>" % channels[channel])
+        if text:
+            parts.append(html_escape(text).replace("\n", "<br/>"))
+        if lead:
+            tags = self._tags_from_post(post)
+            if post.get("tags_sent") or post.get("new_tag"):
+                added = tags - lead.tag_ids
+                lead.tag_ids = [(6, 0, tags.ids)]
+                if added:
+                    parts.append(_("Etiquetas: %s") % ", ".join(added.mapped("name")))
+        if followup_field and post.get("followup") in dict(FOLLOWUP_STATES):
+            policy.write({followup_field: post["followup"]})
+            parts.append(_("Avance: %s") % dict(FOLLOWUP_STATES)[post["followup"]])
+        if task and parts:
+            parts.insert(0, _("Actividad «%s»") % html_escape(task.name))
+        if parts and target:
+            target.message_post(body=Markup(" · ".join(parts)), author_id=self._author().id,
+                                message_type="comment", subtype_xmlid="mail.mt_note")
+        if task:
+            vals = {}
+            if text:
+                vals["result"] = ((task.result + "\n") if task.result else "") + (
+                    "%s: %s" % (channels[channel], text) if channel else text)
+            if vals:
+                task.write(vals)
+            if post.get("done"):
+                task.action_done()
+        nxt = self._schedule(post, lead=lead, policy=policy,
+                             partner=(task.partner_id if task else False) or (policy.partner_id if policy else False))
+        return nxt
+
+    @api.model
+    def lead_timeline(self, lead):
+        """Seguimiento del prospecto: actividades (pendientes y hechas) y notas, del más reciente al más antiguo."""
+        rows = []
+        for task in self.crm_tasks(lead):
+            when = task.date_start and self.local(task.date_start) or datetime.combine(task.date_deadline, time(9, 0))
+            rows.append({"kind": "task", "task": task, "date": when, "sort": when.replace(tzinfo=None)})
+        for msg in self.timeline(lead, limit=60):
+            date = msg["date"]
+            rows.append({"kind": "note", "msg": msg, "date": date, "sort": date.replace(tzinfo=None) if date else datetime.min})
+        return sorted(rows, key=lambda r: r["sort"], reverse=True)
+
+    # ------------------------------------------------------------------ renovaciones (GMM) y aniversarios (vida)
+    @api.model
+    def renewal_policies(self, scope="mine", search=None):
+        self._check("renewal")
+        domain = [("policy_type_id.renewal_kind", "=", "renewal"), ("renewal_state", "in", ["pending", "in_progress"])]
+        if search:
+            domain += ["|", ("partner_id.name", "ilike", search), ("name", "ilike", search)]
+        return self.env["insurance.policy"].sudo().search(domain, order="end_date, id")
+
+    @api.model
+    def anniversary_rows(self, scope="mine", search=None, days=60):
+        self._check("anniversary")
+        today = self.today()
+        domain = [("policy_type_id.renewal_kind", "=", "anniversary"), ("state", "=", "confirmed")]
+        if search:
+            domain += ["|", ("partner_id.name", "ilike", search), ("name", "ilike", search)]
+        rows = []
+        for policy in self.env["insurance.policy"].sudo().search(domain):
+            nxt = policy.next_anniversary
+            if not nxt or nxt > today + relativedelta(days=days):
+                continue
+            if policy.anniversary_year_done == nxt.year:
+                continue
+            start = policy.coverage_start_date or policy.issue_date
+            followup = policy.anniversary_followup
+            if followup in ("accepted", "declined") and policy.anniversary_year_done != nxt.year:
+                followup = False  # lo de años anteriores ya no cuenta
+            rows.append({
+                "policy": policy, "date": nxt, "days": (nxt - today).days,
+                "years": nxt.year - start.year if start else 0, "followup": followup,
+            })
+        return sorted(rows, key=lambda r: r["date"])
+
+    @api.model
+    def followup_policy(self, block, policy_id):
+        self._check(block)
+        kind = "renewal" if block == "renewal" else "anniversary"
+        policy = self.env["insurance.policy"].sudo().search(
+            [("id", "=", int(policy_id)), ("policy_type_id.renewal_kind", "=", kind)], limit=1)
+        if not policy:
+            raise MissingError(_("La póliza no existe en esta lista."))
+        return policy
+
+    # ------------------------------------------------------------------ mi cartera (asesor)
+    @api.model
+    def my_agent(self):
+        return self.env["insurance.agent"].sudo().search([("user_id", "=", self._user().id)], limit=1)
+
+    @api.model
+    def portfolio(self, scope="mine", view="attention", search=None):
+        """Todo lo que el asesor necesita de su cartera en una sola consulta."""
+        self._check("portfolio")
+        today = self.today()
+        month_start = today.replace(day=1)
+        agents = self.env["insurance.agent"].sudo().search(
+            [] if (scope == "all" and self.sees_all()) else [("user_id", "=", self._user().id)])
+        Policy = self.env["insurance.policy"].sudo()
+        base = [("agent_id", "in", agents.ids)]
+        active = Policy.search(base + [("state", "=", "confirmed")])
+        attention = active.filtered(lambda p: p.attention_level in ("danger", "warning")).sorted(
+            lambda p: (p.attention_level != "danger", p.name))
+        renewals = Policy.search(base + [("renewal_state", "in", ["pending", "in_progress"])], order="end_date")
+        lines = self.env["insurance.installment"].sudo().search(
+            [("policy_id.agent_id", "in", agents.ids), ("collection_status", "in", ["overdue", "due_soon"])],
+            order="due_date")
+        Commission = self.env["insurance.commission"].sudo()
+        commissions = Commission.search([("agent_id", "in", agents.ids)], order="date desc", limit=40)
+        month_comm = sum(Commission.search([("agent_id", "in", agents.ids), ("date", ">=", month_start),
+                                            ("state", "!=", "cancelled")]).mapped("amount_company"))
+        to_pay = sum(Commission.search([("agent_id", "in", agents.ids), ("state", "=", "to_pay")]).mapped("amount_company"))
+        Goal = self.env["insurance.goal"].sudo()
+        goal_domain = [("agent_id", "in", agents.ids), ("year", "=", today.year)]
+        goal = Goal.search(goal_domain + [("month", "=", str(today.month))], limit=1)
+        target = goal.income_target if goal else sum(
+            Goal.search(goal_domain + [("month", "=", False)]).mapped("income_target")) / 12.0
+        clients = active.mapped("partner_id")
+        if search:
+            needle = search.lower()
+            clients = clients.filtered(lambda c: needle in (c.name or "").lower())
+            active_view = active.filtered(lambda p: needle in (p.partner_id.name or "").lower() or needle in (p.name or "").lower())
+        else:
+            active_view = active
+        premium = {}
+        for policy in active:
+            premium[policy.currency_id] = premium.get(policy.currency_id, 0.0) + (policy.policy_amount or 0.0)
+        return {
+            "agents": agents,
+            "active": active,
+            "active_view": active_view.sorted(lambda p: (p.partner_id.name or "")),
+            "attention": attention,
+            "renewals": renewals,
+            "lines": lines,
+            "commissions": commissions,
+            "clients": clients.sorted("name"),
+            "premium": premium,
+            "month_comm": month_comm,
+            "to_pay": to_pay,
+            "target": target,
+            "progress": min(100, int(round(month_comm * 100.0 / target))) if target else 0,
+            "currency": self.env.company.currency_id,
+            "counts": {
+                "attention": len(attention), "renewals": len(renewals), "collection": len(lines),
+                "policies": len(active), "commissions": len(commissions),
+            },
+        }
+
+    @api.model
+    def portfolio_policy(self, policy_id):
+        return self._record("portfolio", policy_id)
 
     # ------------------------------------------------------------------ mover (arrastrar y soltar)
     @api.model
