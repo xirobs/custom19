@@ -237,13 +237,27 @@ class CreartApp(http.Controller):
         }
 
     def _open_tasks(self, start, end):
-        """Tareas de planificación (producción) entre dos fechas locales."""
-        return request.env["project.task"].sudo().search([
+        """Tareas de planificación (producción) entre dos fechas locales.
+
+        En Odoo Enterprise planned_date_start/planned_date_end no se guardan en la base
+        de datos, así que se filtra por date_deadline (guardado) y se afina en Python.
+        """
+        start_utc, end_utc = self._to_utc(start), self._to_utc(end)
+        tasks = request.env["project.task"].sudo().search([
             ("lead_id", "!=", False),
             ("state", "not in", TASK_CLOSED),
-            ("planned_date_start", "<", self._to_utc(end)),
-            ("planned_date_end", ">=", self._to_utc(start)),
-        ], order="planned_date_start asc")
+            ("date_deadline", ">=", start_utc),
+        ])
+
+        def bounds(task):
+            begin = task.planned_date_start
+            finish = task.planned_date_end or task.date_deadline
+            return begin, finish
+
+        tasks = tasks.filtered(
+            lambda t: bounds(t)[0] and bounds(t)[0] < end_utc and (bounds(t)[1] or bounds(t)[0]) >= start_utc
+        )
+        return tasks.sorted(lambda t: t.planned_date_start)
 
     def _group_by_day(self, records, field_name, start, days):
         groups = OrderedDict()
