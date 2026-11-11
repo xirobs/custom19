@@ -73,6 +73,7 @@
                 <list string="Equipo en la app" editable="bottom" create="0" delete="0">
                     <field name="name" readonly="1"/>
                     <field name="login" readonly="1"/>
+                    <field name="share" string="Usuario portal" readonly="1"/>
                     <field name="creart_team_access" widget="boolean_toggle"/>
                 </list>
             </field>
@@ -82,9 +83,9 @@
             <field name="res_model">res.users</field>
             <field name="view_mode">list</field>
             <field name="view_id" ref="view_creart_team_users_list"/>
-            <field name="domain">[('share', '=', True)]</field>
             <field name="help" type="html">
-                <p>Da acceso de portal a la persona desde Contactos y actívala aquí.</p>
+                <p>Activa aquí a las personas del equipo: entrarán directo a la app CreArt (celular o computadora).</p>
+                <p>Pueden ser usuarios internos o de portal.</p>
             </field>
         </record>
         <menuitem id="menu_creart_config_team" name="Equipo en la app"

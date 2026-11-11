@@ -27,7 +27,7 @@
         </record>
         <record id="group_creart_portal_team" model="res.groups">
             <field name="name">Equipo CreArt (app portal)</field>
-            <field name="comment">Usuarios portal que ven y operan todas las oportunidades desde la app del equipo.</field>
+            <field name="comment">Usuarios (portal o internos) que ven y operan todas las oportunidades desde la app del equipo.</field>
         </record>
     </data>
 </odoo>

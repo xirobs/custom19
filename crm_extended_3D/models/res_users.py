@@ -1,4 +1,4 @@
-"""Acceso de usuarios portal a la app del equipo CreArt."""
+"""Acceso del equipo (usuarios portal o internos) a la app CreArt."""
 
 from odoo import api, fields, models
 

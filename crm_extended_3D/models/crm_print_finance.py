@@ -186,7 +186,7 @@ class CrmLeadFinance(models.Model):
     print_time_minutes = fields.Integer("Minutos impresión")
     print_time_seconds = fields.Integer("Segundos impresión")
 
-    dead_time_hours = fields.Integer("Tiempo muerto")
+    dead_time_hours = fields.Integer("Hora tiempo muerto")
     dead_time_minutes = fields.Integer("Minutos tiempo muerto")
     dead_time_seconds = fields.Integer("Segundos tiempo muerto")
 

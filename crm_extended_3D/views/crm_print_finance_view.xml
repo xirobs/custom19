@@ -21,22 +21,35 @@
                 <!-- Finanzas: cotización arriba, detalle en subpestañas -->
                 <xpath expr="//page[@name='finanzas']" position="replace">
                     <page string="Finanzas" name="finanzas">
-                        <group>
-                            <group string="Cotizar">
+                        <group string="Cotizar" name="cotizar">
+                            <group name="cotizar_material">
                                 <field name="creart_no_charge"/>
                                 <field name="filament_id"/>
                                 <field name="filament_grams"/>
+                                <field name="filament_waste_percent"/>
                                 <field name="units"/>
                                 <field name="print_hours"/>
                                 <field name="print_time_minutes"/>
-                                <field name="mo_design_hours"/>
-                                <field name="mo_postprocess_hours"/>
+                                <field name="print_time_seconds"/>
                             </group>
-                            <group string="Resultado">
+                            <group name="cotizar_tiempos">
+                                <field name="mo_design_hours"/>
+                                <field name="mo_concept_hours"/>
+                                <field name="mo_postprocess_hours"/>
+                                <field name="mo_operation_hours"/>
+                                <field name="dead_time_hours" string="Hora tiempo muerto"/>
+                                <field name="dead_time_minutes"/>
+                                <field name="dead_time_seconds"/>
+                            </group>
+                        </group>
+                        <group string="Resultado" name="resultado">
+                            <group name="resultado_precios">
                                 <field name="selected_unit_price" readonly="1" string="P. unitario s/IVA"/>
                                 <field name="selected_total_price" readonly="1" string="P. venta s/IVA"/>
                                 <field name="selected_total_price_tax" readonly="1"/>
                                 <field name="total_cost" readonly="1"/>
+                            </group>
+                            <group name="resultado_margen">
                                 <field name="margin_percent" readonly="1"/>
                                 <field name="rentable" readonly="1"/>
                                 <field name="quote_price_hint" readonly="1"/>
@@ -57,21 +70,6 @@
                                         <field name="subtotal"/>
                                     </list>
                                 </field>
-                            </page>
-                            <page string="Más tiempos" name="finanzas_tiempos">
-                                <group>
-                                    <group>
-                                        <field name="print_time_seconds"/>
-                                        <field name="filament_waste_percent"/>
-                                        <field name="dead_time_hours"/>
-                                        <field name="dead_time_minutes"/>
-                                        <field name="dead_time_seconds"/>
-                                    </group>
-                                    <group>
-                                        <field name="mo_concept_hours"/>
-                                        <field name="mo_operation_hours"/>
-                                    </group>
-                                </group>
                             </page>
                             <page string="Precios" name="finanzas_precios">
                                 <group>
