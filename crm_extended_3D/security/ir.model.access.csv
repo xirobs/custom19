@@ -20,3 +20,4 @@ access_creart_3dp_dashboard_manager,creart.3dp.dashboard manager,model_creart_3d
 access_creart_chatter_note_wizard_user,creart.crm.chatter.note.wizard user,model_creart_crm_chatter_note_wizard,crm_extended_3D.group_crm_user,1,1,1,1
 access_creart_chatter_note_wizard_manager,creart.crm.chatter.note.wizard manager,model_creart_crm_chatter_note_wizard,crm_extended_3D.group_crm_manager,1,1,1,1
 access_creart_3dp_dashboard_salesman,creart.3dp.dashboard salesman,model_creart_3dp_dashboard,sales_team.group_sale_salesman,1,1,1,1
+access_creart_team_add_wizard,creart.team.add.wizard admin,model_creart_team_add_wizard,base.group_erp_manager,1,1,1,1

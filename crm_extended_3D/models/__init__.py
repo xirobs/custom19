@@ -18,3 +18,4 @@ from . import calendar_event_type
 from . import crm_lead_gantt
 from . import creart_kpi
 from . import res_users
+from . import creart_team_wizard

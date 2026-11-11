@@ -12,6 +12,7 @@ class ResUsers(models.Model):
         string="Acceso a la app CreArt",
         compute="_compute_creart_team_access",
         inverse="_inverse_creart_team_access",
+        search="_search_creart_team_access",
         help="Permite ver y operar todas las oportunidades desde la app del equipo.",
     )
 
@@ -26,3 +27,8 @@ class ResUsers(models.Model):
         for user in self:
             command = 4 if user.creart_team_access else 3
             user.sudo().write({"group_ids": [(command, group.id)]})
+
+    def _search_creart_team_access(self, operator, value):
+        group = self.env.ref(TEAM_GROUP)
+        positive = (operator in ("=", "in") and bool(value)) or (operator in ("!=", "not in") and not value)
+        return [("group_ids", "in" if positive else "not in", group.ids)]
