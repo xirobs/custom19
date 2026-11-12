@@ -1,15 +1,12 @@
 # -*- coding: utf-8 -*-
 """Credencial del seguro en los portales y página pública del QR."""
-import base64
 
 from odoo import _, http
 from odoo.http import content_disposition, request
 
 from .advisor_portal import RssAdvisorPortal
 from .group_portal import RssGroupPortal
-
-MAX_PHOTO = 8 * 1024 * 1024
-PHOTO_TYPES = ('image/jpeg', 'image/png', 'image/webp', 'image/heic', 'image/heif')
+from .rss_photo import photo_from_request
 
 
 def _pdf(insured, name):
@@ -26,18 +23,12 @@ def _save_photo(insured, post):
         insured.sudo().photo = False
         insured.sudo().message_post(body=_('Foto de la credencial quitada desde el portal.'))
         return True, _('Foto quitada: la credencial usa el acomodo sin foto.')
-    upload = request.httprequest.files.get('photo')
-    if not upload or not upload.filename:
-        return False, _('Elige una foto.')
-    data = upload.read()
-    if len(data) > MAX_PHOTO:
-        return False, _('La foto pesa más de 8 MB.')
-    if (upload.mimetype or '').lower() not in PHOTO_TYPES:
-        return False, _('Sube una foto JPG o PNG.')
-    try:
-        insured.sudo().photo = base64.b64encode(data)
-    except Exception:  # noqa: BLE001 - imagen dañada o formato no soportado
-        return False, _('No se pudo leer la foto; prueba con otra en JPG o PNG.')
+    photo, error = photo_from_request(post)
+    if error:
+        return False, error
+    if not photo:
+        return False, _('Toma o elige una foto.')
+    insured.sudo().photo = photo
     insured.sudo().message_post(body=_('Foto de la credencial actualizada desde el portal.'))
     return True, _('Foto guardada.')
 

@@ -14,6 +14,7 @@ from odoo.http import request
 
 from .advisor_portal import RssAdvisorPortal
 from .group_portal import RssGroupPortal
+from .rss_photo import photo_from_request
 
 FIELDS = ('first_name', 'second_name', 'last_name_father', 'last_name_mother', 'birthdate', 'sex',
           'curp', 'tutor_name', 'tutor_relationship', 'tutor_phone', 'tutor_email')
@@ -102,7 +103,11 @@ class RssGroupAlta(RssGroupPortal):
         # Quita renglones vacíos de la tabla a mano
         batch.line_ids.filtered(lambda l: l._is_blank()).unlink()
         seq = max(batch.line_ids.mapped('sequence') or [0]) + 1
-        line = request.env['rss.import.line'].sudo().create(dict(vals, batch_id=batch.id, sequence=seq))
+        photo, photo_error = photo_from_request(post)
+        if photo_error:
+            return again(photo_error)
+        line = request.env['rss.import.line'].sudo().create(dict(vals, batch_id=batch.id, sequence=seq,
+                                                                 photo=photo or False))
         batch.action_validate()
         if line.status == 'error':
             problem = line.message or _('revisa los datos')
@@ -166,9 +171,12 @@ class RssAdvisorAlta(RssAdvisorPortal):
                                        vals['last_name_mother'], vals['birthdate'], company=group.company_id)
         if dup:
             return again(_('%(name)s ya está registrado en %(group)s.', name=dup[0].name, group=dup[0].group_id.name))
+        photo, photo_error = photo_from_request(post)
+        if photo_error:
+            return again(photo_error)
         try:
             insured = Insured.create(dict(vals, group_id=group.id, state='draft', capture_source='portal',
-                                          captured_by_id=request.env.user.id))
+                                          captured_by_id=request.env.user.id, photo=photo or False))
         except (UserError, ValidationError) as exc:
             return again(str(exc))
         insured.message_post(body=_('Alta desde el portal del asesor por %s.', advisor.name))

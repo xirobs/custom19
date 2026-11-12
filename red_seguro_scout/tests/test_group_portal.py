@@ -724,6 +724,40 @@ class TestPortalAlta(_RssPortalCommon, HttpCase):
         self.assertNotEqual(leo.status, 'error')
         self.assertFalse(leo.tutor_name)
 
+    @staticmethod
+    def _jpeg_data_url(w=90, h=120):
+        import base64, io
+        from PIL import Image
+        buf = io.BytesIO()
+        Image.new('RGB', (w, h), (120, 160, 200)).save(buf, 'JPEG')
+        return 'data:image/jpeg;base64,' + base64.b64encode(buf.getvalue()).decode()
+
+    def test_photo_camera_or_file_in_alta(self):
+        """Foto al dar de alta: botón de cámara y de archivo; la foto viaja a la captura y al asegurado."""
+        self.authenticate('alta7@example.com', 'clave-alta7')
+        form = self.url_open('/mi-grupo/alta').text
+        self.assertIn('capture="environment"', form, 'Botón «Tomar foto»')
+        self.assertIn('Elegir de galería o archivo', form)
+        self.assertIn('multipart/form-data', form)
+        self.url_open('/mi-grupo/alta', data=dict(self._person(first_name='Foto', next='done'),
+                                                  photo_data=self._jpeg_data_url(),
+                                                  csrf_token=self._csrf('/mi-grupo/alta')))
+        line = self.env['rss.import.line'].search([('first_name', '=', 'Foto')])
+        self.assertTrue(line.photo, 'La foto queda en la captura')
+        vals = line.batch_id._line_insured_vals(line, 'portal', line.create_date.date())
+        self.assertTrue(vals['photo'], 'y pasa al asegurado al darlo de alta')
+        # Foto que no es imagen: no se guarda y avisa
+        res = self.url_open('/mi-grupo/alta', data=dict(self._person(first_name='Mala', next='done'),
+                                                        csrf_token=self._csrf('/mi-grupo/alta')),
+                            files={'photo': ('x.png', b'no es imagen', 'image/png')})
+        self.assertIn('No se pudo leer la foto', res.text)
+        # Asesor: el asegurado nace con su foto
+        self.authenticate('asesora.alta@example.com', 'asesora-alta-1')
+        self.url_open('/seguro/alta', data=dict(self._person(first_name='Fotito', group_id=str(self.g3.id), next='done'),
+                                                photo_data=self._jpeg_data_url(), csrf_token=self._csrf('/seguro/alta')))
+        new = self.env['rss.insured'].search([('first_name', '=', 'Fotito')])
+        self.assertTrue(new.photo)
+
     def test_advisor_sees_preinscritos_and_registers(self):
         self.authenticate('asesora.alta@example.com', 'asesora-alta-1')
         home = self.url_open('/seguro').text
@@ -1011,6 +1045,13 @@ class TestBoardsAndCredential(_RssPortalCommon, HttpCase):
         self.url_open(url, data={'csrf_token': csrf}, files={'photo': ('foto.png', buf.getvalue(), 'image/png')})
         self.assertTrue(self.maria.photo)
         self.assertNotIn('who nophoto', self.url_open(url).text)
+        # Foto ya reducida por el navegador (cámara del celular)
+        self.maria.photo = False
+        page = self.url_open(url)
+        self.assertIn('capture="environment"', page.text)
+        csrf = re.search(r'name="csrf_token" value="([^"]+)"', page.text).group(1)
+        self.url_open(url, data={'csrf_token': csrf, 'photo_data': TestPortalAlta._jpeg_data_url()})
+        self.assertTrue(self.maria.photo)
         # otro grupo: no
         self.assertIn('/mi-grupo/asegurados', self.url_open('/mi-grupo/asegurados/%s/credencial' % self.ana_a.id).url)
         # tablero del portal con pestañas

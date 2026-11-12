@@ -9,7 +9,7 @@
         <section class="o_rssp_card o_rssp_alta_form">
             <h4 class="o_rssp_h"><i class="fa fa-user-plus"/> Dar de alta a un asegurado</h4>
             <p class="o_rssp_muted" t-out="alta_note"/>
-            <form method="post" t-att-action="action">
+            <form method="post" t-att-action="action" enctype="multipart/form-data">
                 <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
                 <div class="o_rssp_form_grid">
                     <label t-if="alta_groups" class="o_rssp_span2">Grupo *
@@ -34,6 +34,13 @@
                     </label>
                     <label class="o_rssp_span2">CURP <small class="o_rssp_muted">(opcional)</small>
                         <input name="curp" class="form-control" maxlength="18" style="text-transform: uppercase" t-att-value="form.get('curp')"/></label>
+                    <div class="o_rssp_form_sub o_rssp_span2">Foto para la credencial <small class="o_rssp_muted">(opcional)</small></div>
+                    <div class="o_rssp_span2">
+                        <t t-call="red_seguro_scout.rss_photo_picker">
+                            <t t-set="current" t-value="False"/>
+                            <t t-set="autosubmit" t-value="False"/>
+                        </t>
+                    </div>
                     <div class="o_rssp_form_sub o_rssp_span2">Padre, madre o tutor <small class="o_rssp_muted">(opcional: captúralo si lo tienes)</small></div>
                     <label class="o_rssp_span2">Nombre completo<input name="tutor_name" class="form-control" t-att-value="form.get('tutor_name')"/></label>
                     <label>Parentesco

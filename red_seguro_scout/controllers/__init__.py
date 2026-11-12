@@ -8,3 +8,4 @@ from . import dashboard_portal
 from . import insured_import_office
 from . import credential_portal
 from . import payment_request
+from . import rss_photo

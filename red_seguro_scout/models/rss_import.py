@@ -184,6 +184,7 @@ class RssImportBatch(models.Model):
             'capture_source': source,
             'captured_by_id': line.batch_id.user_id.id or self.env.user.id,
             'import_batch_id': line.batch_id.id,
+            'photo': line.photo or False,
         }
 
     def _ready_lines(self):
@@ -416,6 +417,9 @@ class RssImportLine(models.Model):
     _name = 'rss.import.line'
     _description = 'Fila de importación de asegurados'
     _order = 'batch_id, sequence'
+
+    photo = fields.Image('Foto', max_width=600, max_height=600, attachment=True,
+                         help='Foto opcional para la credencial; pasa al asegurado al darlo de alta.')
 
     batch_id = fields.Many2one('rss.import.batch', required=True, ondelete='cascade', index=True)
     sequence = fields.Integer('Fila')
