@@ -390,7 +390,7 @@
                         </select></div>
                 </div>
                 <label class="form-label mt-2">Comprobante (foto o PDF)</label>
-                <input type="file" name="attachment" accept="image/*,application/pdf" capture="environment" class="form-control"/>
+                <input type="file" name="attachment" accept="image/*,application/pdf" class="form-control"/>
                 <p t-if="tipo != 'income' and not acc.get('manager')" class="small text-muted mt-2 mb-0"><i class="fa fa-info-circle"/> Los egresos y traspasos van al jefe de grupo para su aprobación.</p>
                 <div class="d-flex gap-2 mt-3">
                     <button name="post" value="1" class="btn o_sl_btn flex-grow-1"><i class="fa fa-check"/> Guardar y registrar</button>
@@ -1047,7 +1047,7 @@
                 <label class="form-label mt-2">Referencia</label>
                 <input name="reference" class="form-control" placeholder="No. de transferencia"/>
                 <label class="form-label mt-2">Comprobante (foto o PDF)</label>
-                <input type="file" name="attachment" accept="image/*,application/pdf" capture="environment" class="form-control"/>
+                <input type="file" name="attachment" accept="image/*,application/pdf" class="form-control"/>
                 <p t-if="payable and not acc.get('manager')" class="small text-muted mt-2 mb-0"><i class="fa fa-info-circle"/> Los pagos van al jefe de grupo para su aprobación.</p>
                 <button class="btn o_sl_btn w-100 mt-3"><i class="fa fa-check"/> <t t-out="'Registrar pago' if payable else 'Registrar cobro'"/></button>
             </form>

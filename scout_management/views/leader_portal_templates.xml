@@ -852,10 +852,10 @@
                 <form t-att-action="'/dirigentes/%s/miembro/%s/foto' % (section.id, member.id)" method="post" class="o_sl_photo_form" data-sl-photo-autosubmit="1">
                     <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
                     <input type="hidden" name="photo_data"/>
-                    <label class="o_sl_photo_pick" title="Tomar foto">
+                    <label class="o_sl_photo_pick" title="Tomar o subir foto">
                         <t t-call="scout_management.leader_avatar"/>
                         <i class="fa fa-camera"/>
-                        <input type="file" accept="image/*" capture="user" class="d-none" data-sl-photo="1"/>
+                        <input type="file" accept="image/*" class="d-none" data-sl-photo="1"/>
                     </label>
                 </form>
                 <div>
@@ -1220,8 +1220,8 @@
                 <input type="hidden" name="photo_data"/>
                 <div class="o_sl_photo_box">
                     <img class="o_sl_photo_preview d-none" alt=""/>
-                    <label class="btn o_sl_btn_outline"><i class="fa fa-camera"/> Tomar foto
-                        <input type="file" accept="image/*" capture="user" class="d-none" data-sl-photo="1"/></label>
+                    <label class="btn o_sl_btn_outline"><i class="fa fa-camera"/> Tomar o subir foto
+                        <input type="file" accept="image/*" class="d-none" data-sl-photo="1"/></label>
                 </div>
                 <div class="row g-2">
                     <div class="col-12"><label class="form-label">Nombre(s) *</label><input name="first_name" class="form-control" required="1" t-att-value="values.get('first_name')"/></div>
@@ -1266,7 +1266,7 @@
                 <div t-if="not member.image_128" class="o_sl_photo_box">
                     <img class="o_sl_photo_preview d-none" alt=""/>
                     <label class="btn o_sl_btn_outline"><i class="fa fa-camera"/> Foto del <t t-out="'scouter' if member.scout_type == 'leader' else 'scout'"/> (obligatoria)
-                        <input type="file" accept="image/*" capture="user" class="d-none" data-sl-photo="1"/></label>
+                        <input type="file" accept="image/*" class="d-none" data-sl-photo="1"/></label>
                     <small class="text-danger d-block">Sin foto no se puede guardar la ficha (es para su credencial).</small>
                 </div>
                 <div class="o_sl_card_box small">
@@ -1287,7 +1287,7 @@
                             <label class="o_sl_ine_pick">
                                 <img class="o_sl_ine_front_prev d-none" alt=""/>
                                 <span><i class="fa fa-id-card-o"/> <span class="o_scout_id_front_label">Identificación (frente)</span> *</span>
-                                <input type="file" accept="image/*,application/pdf" capture="environment" class="d-none" data-sl-photo="1" data-id-doc="front"
+                                <input type="file" accept="image/*,application/pdf" class="d-none" data-sl-photo="1" data-id-doc="front"
                                        data-sl-target="ine_front_data" data-sl-preview=".o_sl_ine_front_prev" data-sl-max="1600"/>
                             </label>
                             <div class="o_scout_id_result small mt-1"/>
@@ -1296,7 +1296,7 @@
                             <label class="o_sl_ine_pick">
                                 <img class="o_sl_ine_back_prev d-none" alt=""/>
                                 <span><i class="fa fa-id-card-o"/> Identificación (reverso)</span>
-                                <input type="file" accept="image/*,application/pdf" capture="environment" class="d-none" data-sl-photo="1" data-id-doc="back"
+                                <input type="file" accept="image/*,application/pdf" class="d-none" data-sl-photo="1" data-id-doc="back"
                                        data-sl-target="ine_back_data" data-sl-preview=".o_sl_ine_back_prev" data-sl-max="1600"/>
                             </label>
                             <div class="o_scout_id_result small mt-1"/>
