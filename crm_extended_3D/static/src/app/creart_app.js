@@ -73,6 +73,17 @@
         input.placeholder = "0";
     });
 
+    // Gantt: arranca mostrando el día de hoy.
+    var gantt = document.querySelector(".gantt");
+    var todayCell = gantt && gantt.querySelector(".g-day.today");
+    if (gantt && todayCell && gantt.scrollWidth > gantt.clientWidth) {
+        var label = gantt.querySelector(".g-head .g-label");
+        var cell = todayCell.getBoundingClientRect();
+        var box = gantt.getBoundingClientRect();
+        var offset = cell.left - box.left + gantt.scrollLeft - (label ? label.offsetWidth : 0) - 2 * cell.width;
+        gantt.scrollLeft = Math.max(offset, 0);
+    }
+
     // Etapa activa visible en el carrusel de etapas.
     var current = document.querySelector(".stepper .st.on");
     if (current && current.scrollIntoView) {

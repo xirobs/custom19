@@ -18,6 +18,7 @@
             <t t-elif="icon == 'x'"><path d="M6 6l12 12M18 6 6 18"/></t>
             <t t-elif="icon == 'phone'"><path d="M5 4h4l2 5-2.5 1.5a11 11 0 0 0 5 5L15 13l5 2v4a2 2 0 0 1-2 2A16 16 0 0 1 3 6a2 2 0 0 1 2-2"/></t>
             <t t-elif="icon == 'board'"><rect x="3" y="4" width="5" height="16" rx="1.5"/><rect x="10" y="4" width="5" height="11" rx="1.5"/><rect x="17" y="4" width="4" height="7" rx="1.5"/></t>
+            <t t-elif="icon == 'gantt'"><path d="M4 5h9M7 12h11M5 19h7"/><path d="M3 3v18"/></t>
             <t t-elif="icon == 'list'"><path d="M8 6h13M8 12h13M8 18h13M3.5 6h.01M3.5 12h.01M3.5 18h.01"/></t>
             <t t-elif="icon == 'download'"><path d="M12 3v12m0 0-4-4m4 4 4-4"/><path d="M4 17v3h16v-3"/></t>
             <t t-elif="icon == 'odoo'"><rect x="3" y="3" width="7" height="7" rx="2"/><rect x="14" y="3" width="7" height="7" rx="2"/><rect x="3" y="14" width="7" height="7" rx="2"/><rect x="14" y="14" width="7" height="7" rx="2"/></t>
@@ -40,8 +41,8 @@
         <link rel="manifest" href="/creart/app/manifest.webmanifest"/>
         <link rel="icon" href="/crm_extended_3D/static/src/app/icon-192.png"/>
         <link rel="apple-touch-icon" href="/crm_extended_3D/static/src/app/icon-180.png"/>
-        <link rel="stylesheet" href="/crm_extended_3D/static/src/app/creart_app.css?v=2"/>
-        <script src="/crm_extended_3D/static/src/app/creart_app.js?v=2" defer="defer"></script>
+        <link rel="stylesheet" href="/crm_extended_3D/static/src/app/creart_app.css?v=3"/>
+        <script src="/crm_extended_3D/static/src/app/creart_app.js?v=3" defer="defer"></script>
     </head>
     <body class="app">
         <t t-set="flash_texts" t-value="{
@@ -223,6 +224,7 @@
                 <div class="seg" t-if="not archived">
                     <a t-attf-class="#{not board and 'on' or ''}" t-attf-href="/creart/app/trabajos?q=#{q}"><t t-call="crm_extended_3D.app_icon"><t t-set="icon" t-value="'list'"/></t>Lista</a>
                     <a t-attf-class="#{board and 'on' or ''}" t-attf-href="/creart/app/trabajos?vista=tablero&amp;q=#{q}"><t t-call="crm_extended_3D.app_icon"><t t-set="icon" t-value="'board'"/></t>Tablero</a>
+                    <a t-attf-class="#{gantt and 'on' or ''}" t-attf-href="/creart/app/trabajos?vista=gantt&amp;q=#{q}"><t t-call="crm_extended_3D.app_icon"><t t-set="icon" t-value="'gantt'"/></t>Gantt</a>
                 </div>
             </div>
             <form class="search" action="/creart/app/trabajos" method="get">
@@ -254,6 +256,77 @@
                 </div>
                 <p class="legend" t-if="total &gt; page_size">Se muestran <t t-out="page_size"/> de <t t-out="total"/>. Usa la búsqueda o los filtros para acotar.</p>
             </t>
+        </t>
+    </template>
+
+
+    <!-- ===================== TRABAJOS: GANTT ===================== -->
+    <template id="app_jobs_gantt" name="App CreArt: trabajos gantt">
+        <t t-call="crm_extended_3D.app_layout">
+            <t t-set="title">Gantt · CreArt 3DP</t>
+            <t t-set="board" t-value="False"/>
+            <div class="page-head">
+                <h1>Trabajos <small class="count" t-out="total"/></h1>
+                <div class="seg">
+                    <a t-attf-href="/creart/app/trabajos?q=#{q}"><t t-call="crm_extended_3D.app_icon"><t t-set="icon" t-value="'list'"/></t>Lista</a>
+                    <a t-attf-href="/creart/app/trabajos?vista=tablero&amp;q=#{q}"><t t-call="crm_extended_3D.app_icon"><t t-set="icon" t-value="'board'"/></t>Tablero</a>
+                    <a class="on" t-attf-href="/creart/app/trabajos?vista=gantt&amp;q=#{q}"><t t-call="crm_extended_3D.app_icon"><t t-set="icon" t-value="'gantt'"/></t>Gantt</a>
+                </div>
+            </div>
+            <form class="search" action="/creart/app/trabajos" method="get">
+                <t t-call="crm_extended_3D.app_icon"><t t-set="icon" t-value="'search'"/></t>
+                <input type="search" name="q" t-att-value="q" placeholder="Buscar trabajo, cliente o número" aria-label="Buscar"/>
+                <input type="hidden" name="vista" value="gantt"/>
+                <input type="hidden" name="mes" t-att-value="cur_mes"/>
+            </form>
+            <div class="weeknav">
+                <a class="icon-btn" t-attf-href="?vista=gantt&amp;mes=#{prev_mes}&amp;q=#{q}" aria-label="Mes anterior"><t t-call="crm_extended_3D.app_icon"><t t-set="icon" t-value="'back'"/></t></a>
+                <div><b t-out="month_label"/><a t-if="cur_mes != this_mes" t-attf-href="?vista=gantt&amp;q=#{q}">Hoy</a></div>
+                <a class="icon-btn" t-attf-href="?vista=gantt&amp;mes=#{next_mes}&amp;q=#{q}" aria-label="Mes siguiente"><t t-call="crm_extended_3D.app_icon"><t t-set="icon" t-value="'next'"/></t></a>
+            </div>
+            <p class="legend g-legend">
+                <i class="sw g-sw-bar"/>Pedido → entrega
+                <i class="sw g-sw-prod"/>Producción planificada
+                <i class="sw g-sw-late"/>Entrega vencida
+                <i class="sw g-sw-today"/>Hoy
+            </p>
+            <p class="empty" t-if="not total">No hay trabajos con fechas en este mes.</p>
+            <div class="gantt" t-if="total" t-attf-style="--days: #{len(days)}">
+                <div class="g-row g-head">
+                    <div class="g-label">Prospecto</div>
+                    <div class="g-track">
+                        <span t-foreach="days" t-as="d" t-attf-class="g-day #{d.weekday() &gt;= 5 and 'we' or ''} #{d == today and 'today' or ''}">
+                            <small t-out="weekday_letter(d)"/><b t-out="d.day"/>
+                        </span>
+                    </div>
+                </div>
+                <t t-foreach="groups" t-as="grp">
+                    <t t-if="grp['rows']">
+                        <div class="g-stage">
+                            <span><t t-out="grp['stage_name']"/> <b t-out="len(grp['rows'])"/></span>
+                        </div>
+                        <div class="g-row" t-foreach="grp['rows']" t-as="row">
+                            <a class="g-label" t-attf-href="/creart/app/trabajos/#{row['lead'].id}">
+                                <b t-out="row['lead'].name"/>
+                                <small t-out="row['lead'].partner_name or row['lead'].contact_name or row['lead'].partner_id.name or 'Sin cliente'"/>
+                            </a>
+                            <div class="g-track">
+                                <span t-foreach="days" t-as="d" t-if="d.weekday() &gt;= 5" class="g-we" t-attf-style="grid-column: #{d.day}"/>
+                                <span t-if="today in days" class="g-now" t-attf-style="grid-column: #{today.day}"/>
+                                <a t-attf-class="g-bar #{row['late'] and 'late' or ''} #{row['cut_left'] and 'cut-l' or ''} #{row['cut_right'] and 'cut-r' or ''}"
+                                   t-attf-href="/creart/app/trabajos/#{row['lead'].id}"
+                                   t-attf-style="grid-column: #{row['col_start']} / #{row['col_end']}"
+                                   t-attf-title="#{row['lead'].name}: #{fmt_date(row['start'])} → #{fmt_date(row['end'])}">
+                                    <span t-out="row['lead'].name"/>
+                                </a>
+                                <span t-if="row['prod']" class="g-prod" t-attf-style="grid-column: #{row['prod'][0]} / #{row['prod'][1]}"
+                                      t-attf-title="Producción planificada"/>
+                            </div>
+                        </div>
+                    </t>
+                </t>
+            </div>
+            <p class="hint">Desliza horizontalmente para ver todo el mes. Toca una barra para abrir el trabajo.</p>
         </t>
     </template>
 
@@ -700,7 +773,7 @@
         <meta charset="utf-8"/>
         <meta name="viewport" content="width=device-width, initial-scale=1"/>
         <title>Sin conexión · CreArt 3DP</title>
-        <link rel="stylesheet" href="/crm_extended_3D/static/src/app/creart_app.css?v=2"/>
+        <link rel="stylesheet" href="/crm_extended_3D/static/src/app/creart_app.css?v=3"/>
     </head>
     <body class="solo">
         <main class="page narrow">
@@ -712,12 +785,12 @@
 </html>
     </template>
 
-    <template id="app_service_worker" name="App CreArt: service worker">const CACHE = 'creart-app-v2';
+    <template id="app_service_worker" name="App CreArt: service worker">const CACHE = 'creart-app-v3';
 const OFFLINE = '/creart/app/sin-conexion';
 const SHELL = [
     OFFLINE,
-    '/crm_extended_3D/static/src/app/creart_app.css?v=2',
-    '/crm_extended_3D/static/src/app/creart_app.js?v=2',
+    '/crm_extended_3D/static/src/app/creart_app.css?v=3',
+    '/crm_extended_3D/static/src/app/creart_app.js?v=3',
     '/crm_extended_3D/static/src/app/icon-192.png',
 ];
 self.addEventListener('install', (event) =&gt; {

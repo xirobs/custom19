@@ -2,9 +2,10 @@
 
 import json
 from collections import OrderedDict
-from datetime import datetime, timedelta
+from datetime import date, datetime, timedelta
 
 import pytz
+from dateutil.relativedelta import relativedelta
 from werkzeug.exceptions import NotFound
 
 from odoo import fields, http, _
@@ -32,6 +33,8 @@ STEP_NEXT = {"pending": "in_progress", "in_progress": "done", "done": "pending"}
 TASK_CLOSED = ("1_done", "1_canceled")
 WEEKDAYS = ("Lun", "Mar", "Mié", "Jue", "Vie", "Sáb", "Dom")
 WEEKDAYS_LONG = ("Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado", "Domingo")
+MONTHS_LONG = ("Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto",
+               "Septiembre", "Octubre", "Noviembre", "Diciembre")
 MONTHS = ("ene", "feb", "mar", "abr", "may", "jun", "jul", "ago", "sep", "oct", "nov", "dic")
 
 
@@ -56,6 +59,7 @@ class CreartHome(Home):
                 redirect = APP_URL
         return super()._login_redirect(uid, redirect=redirect)
 
+    @http.route()
     def web_client(self, s_action=None, **kw):
         """/odoo sin acción lleva al equipo a la app (los enlaces directos siguen funcionando)."""
         uid = request.session.uid
@@ -70,6 +74,7 @@ class CreartHome(Home):
 class CreartPortalHome(CustomerPortal):
     """/my lleva al equipo a la app en lugar del portal estándar."""
 
+    @http.route()
     def home(self, **kw):
         if is_team_user():
             return request.redirect(APP_URL)
@@ -317,7 +322,7 @@ class CreartApp(http.Controller):
     # Trabajos (oportunidades 3D)
     # ------------------------------------------------------------------
     @http.route(f"{APP_URL}/trabajos", type="http", auth="user", sitemap=False)
-    def jobs(self, q="", etapa=None, archivados=None, vista=None, **kw):
+    def jobs(self, q="", etapa=None, archivados=None, vista=None, mes=None, **kw):
         if (blocked := self._guard()):
             return blocked
         domain = self._lead_domain() + [("active", "=", not archivados)]
@@ -332,6 +337,11 @@ class CreartApp(http.Controller):
             ]
         board = vista == "tablero" and not archivados
         stages = self._stages()
+        if vista == "gantt" and not archivados:
+            return self._render(
+                "app_jobs_gantt", "trabajos", q=q, stages=stages, archived=False, board=False, gantt=True,
+                **self._gantt_data(domain, stages, mes),
+            )
         if board:
             leads = self._leads().search(domain, order="priority desc, id desc", limit=300)
             columns = [(stage, leads.filtered(lambda l, s=stage: l.stage_id == s)) for stage in stages]
@@ -343,7 +353,70 @@ class CreartApp(http.Controller):
         return self._render(
             "app_jobs", "trabajos", leads=leads, q=q, stage_id=stage_id, stages=stages,
             archived=bool(archivados), total=total, page_size=PAGE_SIZE, board=board, columns=columns,
+            gantt=False,
         )
+
+    def _gantt_data(self, domain, stages, mes):
+        """Barras por prospecto (pedido → entrega) agrupadas por etapa para un mes."""
+        today = self._today()
+        try:
+            year, month = (int(x) for x in (mes or "").split("-"))
+            first = date(year, month, 1)
+        except ValueError:
+            first = today.replace(day=1)
+        last = (first + relativedelta(months=1)) - timedelta(days=1)
+        days = [first + timedelta(days=i) for i in range(last.day)]
+
+        def local_date(value):
+            if not value:
+                return None
+            return self._local(value).date() if isinstance(value, datetime) else value
+
+        leads = self._leads().search(domain, order="priority desc, id desc", limit=500)
+        groups, total = [], 0
+        others = leads.filtered(lambda l: l.stage_id not in stages)
+        buckets = [(stage.name, leads.filtered(lambda l, s=stage: l.stage_id == s)) for stage in stages]
+        if others:
+            buckets.append(("Otras etapas", others))
+        for stage_name, stage_leads in buckets:
+            rows = []
+            for lead in stage_leads:
+                start = lead.order_date or local_date(lead.create_date)
+                end = lead.delivery_date or local_date(lead.planning_date_end) or start
+                if end < start:
+                    end = start
+                if end < first or start > last:
+                    continue
+                prod_start = local_date(lead.planning_date_start)
+                prod_end = local_date(lead.planning_date_end)
+                prod = None
+                if prod_start and prod_end and prod_end >= first and prod_start <= last:
+                    prod = (max(prod_start, first).day, min(prod_end, last).day + 1)
+                rows.append({
+                    "lead": lead,
+                    "col_start": max(start, first).day,
+                    "col_end": min(end, last).day + 1,
+                    "cut_left": start < first,
+                    "cut_right": end > last,
+                    "late": bool(lead.delivery_date and lead.delivery_date < today and lead.stage_progress < 100),
+                    "prod": prod,
+                    "start": start, "end": end,
+                })
+            total += len(rows)
+            groups.append({"stage_name": stage_name, "rows": rows})
+        prev_month = first - relativedelta(months=1)
+        next_month = first + relativedelta(months=1)
+        return {
+            "groups": groups, "days": days, "total": total, "today": today,
+            "month_label": f"{MONTHS_LONG[first.month - 1]} {first.year}",
+            "prev_mes": prev_month.strftime("%Y-%m"), "next_mes": next_month.strftime("%Y-%m"),
+            "this_mes": today.strftime("%Y-%m"), "cur_mes": first.strftime("%Y-%m"),
+            "weekday_letter": lambda d: "LMMJVSD"[d.weekday()],
+            "show_empty": bool(self._params_flag("vacias")),
+        }
+
+    def _params_flag(self, name):
+        return request.params.get(name) in ("1", "true", "on")
 
     @http.route(f"{APP_URL}/trabajos/nuevo", type="http", auth="user", methods=["GET", "POST"], sitemap=False)
     def job_new(self, **post):
