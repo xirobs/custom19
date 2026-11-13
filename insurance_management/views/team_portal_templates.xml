@@ -927,7 +927,7 @@
             <form t-att-action="'/equipo/crm/%s/etapa' % lead.id" method="post" class="o_it_stage_bar">
                 <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
                 <button t-foreach="stages" t-as="st" type="submit" name="stage" t-att-value="st[0]"
-                        t-attf-class="o_it_stage #{'o_it_stage_won' if st[1].is_won else ''} #{'o_it_stage_lost' if st[1] == lost_stage else ''} #{'current' if lead.stage_id == st[1] else ''}" t-out="st[1].name"/>
+                        t-attf-class="o_it_stage #{'o_it_stage_won' if st[1].is_won else ''} #{'o_it_stage_lost' if st[1] == lost_stage else ''} #{'current' if svc._stage_key(lead.stage_id) == svc._stage_key(st[1]) else ''}" t-out="st[1].name"/>
             </form>
             <div class="o_it_two">
                 <section class="o_it_panel">
@@ -996,6 +996,15 @@
                             <button class="btn o_it_btn w-100" type="submit"><i class="fa fa-trophy"/> ¡Ganado! Pasar a emisión</button>
                         </form>
                         <p t-else="" class="o_it_ok_line"><i class="fa fa-check-circle"/> En emisión: <t t-out="lead.insurance_policy_id.name"/></p>
+                        <details t-if="not lead.insurance_policy_id" class="o_it_details">
+                            <summary class="text-danger"><i class="fa fa-trash-o"/> Eliminar prospecto</summary>
+                            <form t-att-action="'/equipo/crm/%s/eliminar' % lead.id" method="post" class="o_it_inline_form"
+                                  data-confirm="¿Eliminar este prospecto? Sus actividades pendientes se cancelan.">
+                                <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
+                                <div class="o_it_field o_it_wide"><label for="del_reason">Motivo (opcional)</label><input id="del_reason" name="reason" class="form-control" placeholder="Duplicado, dato de prueba, no es prospecto…"/></div>
+                                <button class="btn o_it_btn_ghost" type="submit"><i class="fa fa-trash-o"/> Eliminar</button>
+                            </form>
+                        </details>
                         <details t-if="lost_stage" class="o_it_details">
                             <summary><i class="fa fa-bullhorn"/> Perdido → lista de publicidad</summary>
                             <form t-att-action="'/equipo/crm/%s/etapa' % lead.id" method="post" class="o_it_inline_form">

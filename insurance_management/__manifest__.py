@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 {
     "name": "Vive Seguro",
-    "version": "19.0.10.0.0",
+    "version": "19.0.10.0.3",
     "author": "Jhuliana Delgado",
     "maintainer": "Jhuliana Delgado",
     "website": "",

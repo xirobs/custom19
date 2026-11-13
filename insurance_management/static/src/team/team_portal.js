@@ -246,6 +246,14 @@ function init() {
     root.querySelectorAll(".o_it_board[data-block]").forEach(setupBoard);
     root.querySelectorAll(".o_it_policy_search").forEach(setupPolicySearch);
     root.querySelectorAll(".o_it_mic").forEach(setupMic);
+    // Formularios que piden confirmación (p. ej. eliminar un prospecto)
+    root.querySelectorAll("form[data-confirm]").forEach((form) =>
+        form.addEventListener("submit", (ev) => {
+            if (!window.confirm(form.dataset.confirm)) {
+                ev.preventDefault();
+            }
+        })
+    );
     root.querySelectorAll("form").forEach((form) => {
         setupOffers(form);
         setupRequirements(form);

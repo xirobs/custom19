@@ -567,6 +567,9 @@ class InsuranceTeamPortal(http.Controller):
             elif op == "cita":
                 svc.crm_schedule(lead_id, post)
                 ok = _("Cita agendada.")
+            elif op == "eliminar":
+                name = svc.crm_delete(lead_id, post.get("reason"))
+                return self._back("/equipo/crm", ok=_("Prospecto eliminado: %s") % name)
             elif op == "seguimiento":
                 lead = svc._record("crm", lead_id)
                 nxt = svc.log_progress(self._post_with_tags(), lead=lead)

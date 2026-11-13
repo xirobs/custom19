@@ -74,12 +74,16 @@ class InsuranceTeamPortal(models.AbstractModel):
     @api.model
     def _mine_domain(self, block, scope="mine"):
         uid = self._user().id
+        if block == "crm":
+            # Solo oportunidades de seguros: en la misma base puede haber las de otros negocios.
+            insurance = [("is_insurance_opportunity", "=", True), ("type", "=", "opportunity")]
+            if scope == "all" and self.sees_all():
+                return insurance
+            return insurance + ["|", ("team_user_id", "=", uid), ("user_id", "=", uid)]
         if scope == "all" and self.sees_all():
             return []
         if block == "procedure":
             return [("user_id", "=", uid)]
-        if block == "crm":
-            return ["|", ("team_user_id", "=", uid), ("user_id", "=", uid)]
         if block == "collection":
             return []  # quien tiene Cobranza ve toda la cobranza
         if block == "portfolio":
@@ -676,25 +680,54 @@ class InsuranceTeamPortal(models.AbstractModel):
             return Stage.search([], order="sequence, id", limit=1)
         return Stage
 
+    @staticmethod
+    def _stage_key(stage):
+        """Las etapas con el mismo nombre (sin importar mayúsculas ni espacios) se muestran como una sola."""
+        return "".join((stage.name or "").lower().split())
+
     @api.model
     def _crm_stages(self):
-        """Todas las etapas del CRM, en el orden configurado: (clave, etapa)."""
-        return [(str(stage.id), stage) for stage in self.env["crm.stage"].sudo().search([], order="sequence, id")]
+        """Etapas del CRM de seguros igual que el tablero «Oportunidades de seguros» de la plataforma.
+
+        Mismo criterio que Odoo: etapas generales (sin equipo) + las del equipo de ventas de las
+        oportunidades de seguros + las que ya tienen oportunidades de seguros, todas juntas en el orden
+        de Odoo (secuencia, nombre). Las que se llaman igual se juntan en una sola columna."""
+        Stage = self.env["crm.stage"].sudo()
+        leads = self.env["crm.lead"].sudo().search(
+            [("is_insurance_opportunity", "=", True), ("type", "=", "opportunity")])
+        teams = leads.mapped("team_id")
+        domain = [("team_ids", "=", False)]
+        if teams:
+            domain = ["|", ("team_ids", "=", False), ("team_ids", "in", teams.ids)]
+        stages = Stage.search(domain) | leads.mapped("stage_id")
+        lost = self.env.ref("insurance_management.crm_stage_lost_publicity", raise_if_not_found=False)
+        if lost:
+            stages |= lost.sudo()
+        columns, seen = [], set()
+        for stage in stages.sorted(lambda st: (st.sequence, (st.name or "").lower(), st.id)):
+            key = self._stage_key(stage)
+            if key in seen:
+                continue
+            seen.add(key)
+            columns.append((str(stage.id), stage))
+        return columns
 
     @api.model
     def _crm_open_stage_ids(self):
         lost = self._crm_named("lost")
-        return [st.id for _k, st in self._crm_stages() if not st.is_won and st != lost]
+        closed = {self._stage_key(st) for _k, st in self._crm_stages() if st.is_won or st == lost}
+        return self.env["crm.stage"].sudo().search([]).filtered(lambda st: self._stage_key(st) not in closed).ids
 
     @api.model
     def crm_board(self, scope="mine"):
         self._check("crm")
         stages = self._crm_stages()
         leads = self.env["crm.lead"].sudo().search(
-            self._mine_domain("crm", scope) + [("type", "=", "opportunity")],
+            self._mine_domain("crm", scope),
             order="priority desc, write_date desc",
         )
-        return [(key, stage, leads.filtered(lambda l, s=stage: l.stage_id == s)) for key, stage in stages]
+        return [(key, stage, leads.filtered(lambda l, k=self._stage_key(stage): self._stage_key(l.stage_id) == k))
+                for key, stage in stages]
 
     @api.model
     def crm_create(self, post):
@@ -710,6 +743,7 @@ class InsuranceTeamPortal(models.AbstractModel):
             "phone": post.get("phone") or False,
             "email_from": post.get("email") or False,
             "type": "opportunity",
+            "is_insurance_opportunity": True,
             "stage_id": first.id or False,
             "team_user_id": user.id,
             "user_id": user.id if not user.share else False,
@@ -733,10 +767,13 @@ class InsuranceTeamPortal(models.AbstractModel):
         lead = self._record("crm", lead_id)
         stage = self._crm_named(stage_key) if stage_key in dict(CRM_STAGE_XMLIDS) else \
             self.env["crm.stage"].sudo().browse(self._int(stage_key) or []).exists()
-        if not stage:
+        columns = {self._stage_key(st): st for _k, st in self._crm_stages()}
+        if not stage or self._stage_key(stage) not in columns:
             raise UserError(_("Etapa no válida."))
+        stage = columns[self._stage_key(stage)]
         vals = {"stage_id": stage.id}
-        if stage == self._crm_named("lost") and post and post.get("reason"):
+        lost = self._crm_named("lost")
+        if lost and self._stage_key(stage) == self._stage_key(lost) and post and post.get("reason"):
             vals["insurance_lost_note"] = post["reason"]
         lead.write(vals)
         return lead
@@ -785,6 +822,22 @@ class InsuranceTeamPortal(models.AbstractModel):
         return task
 
     @api.model
+    def crm_delete(self, lead_id, reason=None):
+        """Quita el prospecto del CRM: se archiva (no se pierde su historial y se puede recuperar
+        desde la plataforma) y se cancelan sus actividades pendientes."""
+        lead = self._record("crm", lead_id)
+        if lead.insurance_policy_id:
+            raise UserError(_("Este prospecto ya tiene póliza (%s); no se puede eliminar.") % lead.insurance_policy_id.name)
+        name = lead.contact_name or lead.name
+        pending = self.env["insurance.task"].sudo().search([("lead_id", "=", lead.id), ("state", "=", "todo")])
+        pending.write({"state": "cancelled"})
+        lead.message_post(body=_("Eliminado desde el portal por %(who)s.%(why)s") % {
+            "who": self._user().name, "why": (" " + _("Motivo: %s") % reason) if reason else ""},
+            author_id=self._author().id, subtype_xmlid="mail.mt_note")
+        lead.write({"active": False})
+        return name
+
+    @api.model
     def crm_tasks(self, lead):
         return self.env["insurance.task"].sudo().search([("lead_id", "=", lead.id)], order="date_deadline desc")
 
@@ -807,7 +860,7 @@ class InsuranceTeamPortal(models.AbstractModel):
         if not (scope == "all" and self.sees_all()):
             domain.append(("user_id", "=", self._user().id))
         if crm_only:
-            domain.append(("lead_id", "!=", False))
+            domain.append(("lead_id.is_insurance_opportunity", "=", True))
         return self.env["insurance.task"].sudo().search(domain, order="date_deadline, date_start, id", limit=60)
 
     @api.model
