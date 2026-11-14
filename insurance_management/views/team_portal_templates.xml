@@ -305,6 +305,10 @@
                                     <t t-out="p.policy_type_id.name or 'Sin ramo'"/><t t-if="p.insurance_company_id"> · <t t-out="p.insurance_company_id.name"/></t>
                                 </div>
                                 <div class="o_it_card_meta"><t t-out="p.name"/> · <t t-out="money(p.policy_amount, p.currency_id)"/></div>
+                                <t t-if="p.lead_id and p.emission_stage in ('request', 'documents')">
+                                    <div t-if="p.sudo().req_complete" class="o_it_card_meta o_it_req_ok"><i class="fa fa-folder-open-o"/> Expediente completo</div>
+                                    <div t-else="" class="o_it_card_meta o_it_req_bad"><i class="fa fa-exclamation-circle"/> Falta: <t t-out="p.sudo().req_missing"/></div>
+                                </t>
                                 <div t-if="p.emission_stage == 'delivered' and p.delivery_date" class="o_it_card_meta">
                                     <i class="fa fa-check"/> Entregada el <t t-out="p.delivery_date.strftime('%d/%m')"/>
                                 </div>
@@ -436,6 +440,10 @@
                 <p t-else="" class="o_it_ok_line"><i class="fa fa-check-circle"/> Entregada el <t t-out="policy.delivery_date and policy.delivery_date.strftime('%d/%m/%Y')"/>
                     <t t-if="policy.delivery_method"> por <t t-out="dict(policy._fields['delivery_method'].selection).get(policy.delivery_method)"/></t></p>
             </section>
+            <t t-if="policy.lead_id">
+                <t t-set="lead" t-value="policy.lead_id.sudo()"/>
+                <t t-call="insurance_management.team_request_view"/>
+            </t>
             <t t-call="insurance_management.team_notes">
                 <t t-set="slug" t-value="'emisiones'"/>
                 <t t-set="rec" t-value="policy"/>
@@ -906,6 +914,139 @@
         </t>
     </template>
 
+    <template id="team_request_files" name="Equipo: archivos del expediente">
+        <ul class="o_it_req_files">
+            <li t-foreach="files" t-as="f">
+                <a t-att-href="'/equipo/archivo/%s/%s/%s' % (slug, rec.id, f.id)" target="_blank" class="o_it_chip"><i class="fa fa-file-o"/> <t t-out="f.name"/></a>
+                <form t-if="editable" t-att-action="'/equipo/crm/%s/quitar-archivo' % rec.id" method="post" class="d-inline"
+                      data-confirm="¿Quitar este archivo del expediente?">
+                    <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
+                    <input type="hidden" name="attachment_id" t-att-value="f.id"/>
+                    <button type="submit" class="o_it_x" title="Quitar"><i class="fa fa-times"/></button>
+                </form>
+            </li>
+            <li t-if="not files" class="text-muted small">Sin archivo</li>
+        </ul>
+    </template>
+
+    <template id="team_request_form" name="Equipo: expediente de solicitud (asesor)">
+        <section class="o_it_panel o_it_req" id="solicitud">
+            <div class="o_it_req_head">
+                <h2 class="o_it_h2 mb-0"><i class="fa fa-folder-open-o"/> Expediente para emisión</h2>
+                <span t-if="lead.req_complete" class="o_it_pill o_it_pill_ok"><i class="fa fa-check"/> Completo</span>
+                <span t-else="" class="o_it_pill o_it_pill_warn">Incompleto</span>
+            </div>
+            <p class="o_it_hint small">Llénalo con el cliente. Emisiones lo ve en la etapa <b>Solicitud</b> para iniciar el trámite.</p>
+            <p t-if="lead.req_missing" class="o_it_req_missing"><i class="fa fa-exclamation-circle"/> Falta: <t t-out="lead.req_missing"/></p>
+            <form t-att-action="'/equipo/crm/%s/solicitud' % lead.id" method="post" enctype="multipart/form-data" class="o_it_form">
+                <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
+                <h3 class="o_it_h3">Datos personales</h3>
+                <div class="o_it_grid">
+                    <div class="o_it_field o_it_wide"><label for="rq_name">Nombre completo</label>
+                        <input id="rq_name" name="full_name" class="form-control" t-att-value="lead.req_full_name or ''" placeholder="Nombre(s) y apellidos"/></div>
+                    <div class="o_it_field"><label for="rq_h">Estatura (m)</label>
+                        <input id="rq_h" name="height" inputmode="decimal" class="form-control" placeholder="1.65" t-att-value="lead.req_height and ('%.2f' % lead.req_height) or ''"/></div>
+                    <div class="o_it_field"><label for="rq_w">Peso (kg)</label>
+                        <input id="rq_w" name="weight" inputmode="decimal" class="form-control" placeholder="68" t-att-value="lead.req_weight and ('%g' % lead.req_weight) or ''"/></div>
+                    <div class="o_it_field"><label for="rq_rfc">RFC</label>
+                        <input id="rq_rfc" name="rfc" class="form-control o_it_upper" maxlength="13" t-att-value="lead.req_rfc or ''"/></div>
+                    <div class="o_it_field"><label for="rq_curp">CURP</label>
+                        <input id="rq_curp" name="curp" class="form-control o_it_upper" maxlength="18" t-att-value="lead.req_curp or ''"/></div>
+                </div>
+                <h3 class="o_it_h3">Trabajo</h3>
+                <div class="o_it_grid">
+                    <div class="o_it_field o_it_wide"><label for="rq_emp">¿Dónde trabaja?</label>
+                        <input id="rq_emp" name="employer" class="form-control" t-att-value="lead.req_employer or ''"/></div>
+                    <div class="o_it_field"><label for="rq_pos">Puesto</label>
+                        <input id="rq_pos" name="job_position" class="form-control" t-att-value="lead.req_job_position or ''"/></div>
+                    <div class="o_it_field"><label for="rq_yrs">¿Cuánto tiempo tiene ahí?</label>
+                        <input id="rq_yrs" name="job_years" class="form-control" placeholder="3 años" t-att-value="lead.req_job_years or ''"/></div>
+                </div>
+                <h3 class="o_it_h3">Comprobante de domicilio</h3>
+                <t t-call="insurance_management.team_request_files">
+                    <t t-set="files" t-value="lead.req_address_proof_ids"/><t t-set="rec" t-value="lead"/>
+                    <t t-set="slug" t-value="'crm'"/><t t-set="editable" t-value="True"/>
+                </t>
+                <input type="file" name="address_files" multiple="multiple" accept="image/*,application/pdf" class="form-control"/>
+                <t t-if="lead.req_is_gmm">
+                    <h3 class="o_it_h3">Gastos Médicos · póliza anterior</h3>
+                    <div class="o_it_field o_it_wide"><label for="rq_prev">Póliza anterior (aseguradora y número, o «ninguna»)</label>
+                        <input id="rq_prev" name="prev_policy" class="form-control" t-att-value="lead.req_prev_policy or ''"/></div>
+                    <label class="small text-muted mt-2 d-block">Póliza(s) anterior(es)</label>
+                    <t t-call="insurance_management.team_request_files">
+                        <t t-set="files" t-value="lead.req_prev_policy_ids"/><t t-set="rec" t-value="lead"/>
+                        <t t-set="slug" t-value="'crm'"/><t t-set="editable" t-value="True"/>
+                    </t>
+                    <input type="file" name="prev_files" multiple="multiple" accept="image/*,application/pdf" class="form-control"/>
+                    <label class="small text-muted mt-2 d-block">Comprobantes de pago de esa póliza</label>
+                    <t t-call="insurance_management.team_request_files">
+                        <t t-set="files" t-value="lead.req_payment_proof_ids"/><t t-set="rec" t-value="lead"/>
+                        <t t-set="slug" t-value="'crm'"/><t t-set="editable" t-value="True"/>
+                    </t>
+                    <input type="file" name="payment_files" multiple="multiple" accept="image/*,application/pdf" class="form-control"/>
+                </t>
+                <t t-else="">
+                    <input type="hidden" name="prev_policy" t-att-value="lead.req_prev_policy or ''"/>
+                </t>
+                <h3 class="o_it_h3">Salud</h3>
+                <div class="o_it_chips">
+                    <label t-foreach="disease_opts" t-as="d" class="o_it_chip_radio">
+                        <input type="radio" name="has_disease" t-att-value="d[0]" t-att-checked="lead.req_has_disease == d[0] or None"/>
+                        <span t-out="d[1]"/>
+                    </label>
+                </div>
+                <div class="o_it_field o_it_wide mt-2"><label for="rq_dis">Si tiene o tuvo alguna enfermedad: ¿cuál y desde cuándo?</label>
+                    <div class="o_it_voice">
+                        <textarea id="rq_dis" name="disease_detail" rows="3" class="form-control" t-out="lead.req_disease_detail or ''"/>
+                        <button type="button" class="o_it_mic" data-target="rq_dis" title="Dictar"><i class="fa fa-microphone"/></button>
+                    </div>
+                </div>
+                <button class="btn o_it_btn o_it_btn_big mt-3" type="submit"><i class="fa fa-save"/> Guardar expediente</button>
+            </form>
+        </section>
+    </template>
+
+    <template id="team_request_view" name="Equipo: expediente de solicitud (emisión)">
+        <section class="o_it_panel o_it_req">
+            <div class="o_it_req_head">
+                <h2 class="o_it_h2 mb-0"><i class="fa fa-folder-open-o"/> Expediente del cliente</h2>
+                <span t-if="lead.req_complete" class="o_it_pill o_it_pill_ok"><i class="fa fa-check"/> Completo</span>
+                <span t-else="" class="o_it_pill o_it_pill_warn">Incompleto</span>
+            </div>
+            <p t-if="lead.req_missing" class="o_it_req_missing"><i class="fa fa-exclamation-circle"/> Falta: <t t-out="lead.req_missing"/></p>
+            <div class="o_it_facts">
+                <div class="o_it_wide"><small>Nombre completo</small><b t-out="lead.req_full_name or '—'"/></div>
+                <div><small>Estatura</small><b t-out="lead.req_height and ('%.2f m' % lead.req_height) or '—'"/></div>
+                <div><small>Peso</small><b t-out="lead.req_weight and ('%g kg' % lead.req_weight) or '—'"/></div>
+                <div><small>RFC</small><b t-out="lead.req_rfc or '—'"/></div>
+                <div><small>CURP</small><b t-out="lead.req_curp or '—'"/></div>
+                <div><small>Trabaja en</small><b t-out="lead.req_employer or '—'"/></div>
+                <div><small>Puesto</small><b t-out="lead.req_job_position or '—'"/></div>
+                <div><small>Antigüedad</small><b t-out="lead.req_job_years or '—'"/></div>
+                <div><small>Enfermedades</small><b t-out="dict(lead._fields['req_has_disease'].selection).get(lead.req_has_disease) or '—'"/></div>
+                <div t-if="lead.req_is_gmm"><small>Póliza anterior</small><b t-out="lead.req_prev_policy or '—'"/></div>
+            </div>
+            <p t-if="lead.req_disease_detail" class="o_it_tl_text mt-2"><b>Detalle de salud:</b> <t t-out="lead.req_disease_detail"/></p>
+            <h3 class="o_it_h3">Comprobante de domicilio</h3>
+            <t t-call="insurance_management.team_request_files">
+                <t t-set="files" t-value="lead.req_address_proof_ids"/><t t-set="rec" t-value="policy"/>
+                <t t-set="slug" t-value="'emisiones'"/><t t-set="editable" t-value="False"/>
+            </t>
+            <t t-if="lead.req_is_gmm">
+                <h3 class="o_it_h3">Póliza(s) anterior(es)</h3>
+                <t t-call="insurance_management.team_request_files">
+                    <t t-set="files" t-value="lead.req_prev_policy_ids"/><t t-set="rec" t-value="policy"/>
+                    <t t-set="slug" t-value="'emisiones'"/><t t-set="editable" t-value="False"/>
+                </t>
+                <h3 class="o_it_h3">Comprobantes de pago</h3>
+                <t t-call="insurance_management.team_request_files">
+                    <t t-set="files" t-value="lead.req_payment_proof_ids"/><t t-set="rec" t-value="policy"/>
+                    <t t-set="slug" t-value="'emisiones'"/><t t-set="editable" t-value="False"/>
+                </t>
+            </t>
+        </section>
+    </template>
+
     <template id="team_crm_lead" name="Equipo: prospecto">
         <t t-call="insurance_management.team_layout">
             <a href="/equipo/crm" class="o_it_back"><i class="fa fa-arrow-left"/> CRM</a>
@@ -929,6 +1070,10 @@
                 <button t-foreach="stages" t-as="st" type="submit" name="stage" t-att-value="st[0]"
                         t-attf-class="o_it_stage #{'o_it_stage_won' if st[1].is_won else ''} #{'o_it_stage_lost' if st[1] == lost_stage else ''} #{'current' if svc._stage_key(lead.stage_id) == svc._stage_key(st[1]) else ''}" t-out="st[1].name"/>
             </form>
+            <t t-if="lead.req_active">
+                <t t-set="disease_opts" t-value="lead._fields['req_has_disease'].selection"/>
+                <t t-call="insurance_management.team_request_form"/>
+            </t>
             <div class="o_it_two">
                 <section class="o_it_panel">
                     <h2 class="o_it_h2"><i class="fa fa-comments"/> Seguimiento</h2>

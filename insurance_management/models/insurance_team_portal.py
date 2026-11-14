@@ -90,6 +90,11 @@ class InsuranceTeamPortal(models.AbstractModel):
             return [("agent_id.user_id", "=", uid)]
         if block in ("renewal", "anniversary"):
             return []  # renovaciones y aniversarios los ve quien tenga el bloque
+        if block == "emission":
+            # Lo propio + las solicitudes nuevas que mandó un asesor sin acceso a Emisiones (bandeja común).
+            return ["|", ("team_user_id", "=", uid),
+                    "&", ("emission_stage", "=", "request"),
+                    "|", ("team_user_id", "=", False), ("team_user_id.ins_portal_emission", "=", False)]
         return [("team_user_id", "=", uid)]
 
     @api.model
@@ -424,6 +429,8 @@ class InsuranceTeamPortal(models.AbstractModel):
         if stage not in keys:
             raise UserError(_("Etapa no válida."))
         vals = {"emission_stage": stage}
+        if not policy.team_user_id.ins_portal_emission and self._user().ins_portal_emission:
+            vals["team_user_id"] = self._user().id  # quien la avanza se queda con ella
         if stage == "delivered" and post:
             if post.get("delivery_date"):
                 vals["delivery_date"] = post["delivery_date"]
@@ -776,6 +783,47 @@ class InsuranceTeamPortal(models.AbstractModel):
         if lost and self._stage_key(stage) == self._stage_key(lost) and post and post.get("reason"):
             vals["insurance_lost_note"] = post["reason"]
         lead.write(vals)
+        return lead
+
+    @api.model
+    def crm_request(self, lead_id, post, files):
+        """Expediente de solicitud que llena el asesor cuando el prospecto se gana."""
+        lead = self._record("crm", lead_id)
+        if not lead.req_active:
+            raise UserError(_("El expediente se llena cuando el prospecto está en Ganado."))
+        disease = post.get("has_disease") if post.get("has_disease") in ("no", "current", "past") else False
+        vals = {
+            "req_full_name": (post.get("full_name") or "").strip() or False,
+            "req_height": self._float(post.get("height")),
+            "req_weight": self._float(post.get("weight")),
+            "req_employer": (post.get("employer") or "").strip() or False,
+            "req_job_years": (post.get("job_years") or "").strip() or False,
+            "req_job_position": (post.get("job_position") or "").strip() or False,
+            "req_rfc": (post.get("rfc") or "").strip() or False,
+            "req_curp": (post.get("curp") or "").strip() or False,
+            "req_prev_policy": (post.get("prev_policy") or "").strip() or False,
+            "req_has_disease": disease,
+            "req_disease_detail": (post.get("disease_detail") or "").strip() or False,
+        }
+        if vals["req_height"] > 3:  # escribieron centímetros
+            vals["req_height"] = round(vals["req_height"] / 100.0, 2)
+        for key, field in (("address_files", "req_address_proof_ids"),
+                           ("prev_files", "req_prev_policy_ids"),
+                           ("payment_files", "req_payment_proof_ids")):
+            new = self._attachments(lead, files.get(key), for_message=False)
+            if new:
+                vals[field] = [(4, a.id) for a in new]
+        lead.write(vals)
+        return lead
+
+    @api.model
+    def crm_request_remove(self, lead_id, attachment_id):
+        lead = self._record("crm", lead_id)
+        att = self.env["ir.attachment"].sudo().browse(int(attachment_id)).exists()
+        for field in ("req_address_proof_ids", "req_prev_policy_ids", "req_payment_proof_ids"):
+            if att and att in lead[field]:
+                lead.write({field: [(3, att.id)]})
+                att.unlink()
         return lead
 
     @api.model

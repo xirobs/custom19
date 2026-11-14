@@ -28,3 +28,4 @@ from . import res_config_settings
 from . import insurance_team
 from . import insurance_team_portal
 from . import insurance_brand
+from . import insurance_request

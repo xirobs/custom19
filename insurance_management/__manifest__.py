@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 {
     "name": "Vive Seguro",
-    "version": "19.0.10.0.3",
+    "version": "19.0.11.2.0",
     "author": "Jhuliana Delgado",
     "maintainer": "Jhuliana Delgado",
     "website": "",
@@ -66,7 +66,9 @@ Ver static/description/index.html para la ficha completa.
         "views/res_partner_views.xml",
         "views/crm_lead_views.xml",
         "views/menus.xml",
+        "wizard/insurance_smnyl_import_views.xml",
         "views/insurance_team_views.xml",
+        "views/insurance_request_views.xml",
         "views/team_portal_templates.xml",
     ],
     "demo": [

@@ -294,6 +294,25 @@ class CrmLead(models.Model):
 
     insurance_lost_note = fields.Char(string="Motivo (perdido / publicidad)")
 
+    def _insurance_won_to_emission(self):
+        """Al caer en una etapa ganada, el prospecto de seguros pasa solo a Emisiones › Solicitud."""
+        for lead in self:
+            if (lead.is_insurance_opportunity and lead.type == "opportunity" and lead.stage_id.is_won
+                    and not lead.insurance_policy_id and lead.active):
+                lead.action_insurance_to_emission()
+
+    @api.model_create_multi
+    def create(self, vals_list):
+        leads = super().create(vals_list)
+        leads.filtered(lambda l: l.stage_id.is_won)._insurance_won_to_emission()
+        return leads
+
+    def write(self, vals):
+        res = super().write(vals)
+        if vals.get("stage_id"):
+            self._insurance_won_to_emission()
+        return res
+
     def action_insurance_to_emission(self):
         """Prospecto ganado → solicitud de emisión (póliza en borrador) para el equipo."""
         self.ensure_one()

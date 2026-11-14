@@ -1,0 +1,114 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Prospecto: expediente que se activa al ganarse -->
+    <record id="view_crm_lead_form_insurance_request" model="ir.ui.view">
+        <field name="name">crm.lead.form.insurance.request</field>
+        <field name="model">crm.lead</field>
+        <field name="inherit_id" ref="crm.crm_lead_view_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//notebook" position="inside">
+                <page string="Expediente para emisión" name="insurance_request" invisible="not req_active or not is_insurance_opportunity">
+                    <field name="req_active" invisible="1"/>
+                    <field name="req_complete" invisible="1"/>
+                    <field name="req_is_gmm" invisible="1"/>
+                    <div class="alert alert-warning" role="alert" invisible="req_complete">
+                        <b>Falta:</b> <field name="req_missing" class="d-inline"/>
+                    </div>
+                    <div class="alert alert-success" role="status" invisible="not req_complete">
+                        Expediente completo: Emisiones ya puede iniciar el trámite.
+                    </div>
+                    <group>
+                        <group string="Datos personales">
+                            <field name="req_full_name"/>
+                            <field name="req_height"/>
+                            <field name="req_weight"/>
+                            <field name="req_rfc"/>
+                            <field name="req_curp"/>
+                        </group>
+                        <group string="Trabajo">
+                            <field name="req_employer"/>
+                            <field name="req_job_position"/>
+                            <field name="req_job_years"/>
+                        </group>
+                        <group string="Comprobante de domicilio">
+                            <field name="req_address_proof_ids" widget="many2many_binary" nolabel="1" colspan="2"/>
+                        </group>
+                        <group string="Salud">
+                            <field name="req_has_disease" widget="radio"/>
+                            <field name="req_disease_detail" invisible="req_has_disease not in ('current', 'past')"/>
+                        </group>
+                        <group string="Gastos Médicos · póliza anterior" invisible="not req_is_gmm">
+                            <field name="req_prev_policy"/>
+                            <field name="req_prev_policy_ids" widget="many2many_binary"/>
+                            <field name="req_payment_proof_ids" widget="many2many_binary"/>
+                        </group>
+                    </group>
+                </page>
+            </xpath>
+        </field>
+    </record>
+
+    <!-- Póliza: el mismo expediente, visible para Emisiones -->
+    <record id="view_insurance_policy_form_request" model="ir.ui.view">
+        <field name="name">insurance.policy.form.request</field>
+        <field name="model">insurance.policy</field>
+        <field name="inherit_id" ref="view_insurance_policy_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//notebook" position="inside">
+                <page string="Expediente del cliente" name="insurance_request" invisible="not lead_id">
+                    <field name="req_complete" invisible="1"/>
+                    <field name="req_is_gmm" invisible="1"/>
+                    <div class="alert alert-warning" role="alert" invisible="req_complete">
+                        <b>Falta:</b> <field name="req_missing" class="d-inline"/>
+                    </div>
+                    <group>
+                        <group string="Datos personales">
+                            <field name="req_full_name"/>
+                            <field name="req_height"/>
+                            <field name="req_weight"/>
+                            <field name="req_rfc"/>
+                            <field name="req_curp"/>
+                        </group>
+                        <group string="Trabajo">
+                            <field name="req_employer"/>
+                            <field name="req_job_position"/>
+                            <field name="req_job_years"/>
+                        </group>
+                        <group string="Comprobante de domicilio">
+                            <field name="req_address_proof_ids" widget="many2many_binary" nolabel="1" colspan="2"/>
+                        </group>
+                        <group string="Salud">
+                            <field name="req_has_disease" widget="radio"/>
+                            <field name="req_disease_detail" invisible="req_has_disease not in ('current', 'past')"/>
+                        </group>
+                        <group string="Gastos Médicos · póliza anterior" invisible="not req_is_gmm">
+                            <field name="req_prev_policy"/>
+                            <field name="req_prev_policy_ids" widget="many2many_binary"/>
+                            <field name="req_payment_proof_ids" widget="many2many_binary"/>
+                        </group>
+                    </group>
+                </page>
+            </xpath>
+        </field>
+    </record>
+
+    <!-- Tablero de Emisiones: aviso de expediente en Solicitud / Documentos -->
+    <record id="view_insurance_policy_emission_kanban_request" model="ir.ui.view">
+        <field name="name">insurance.policy.emission.kanban.request</field>
+        <field name="model">insurance.policy</field>
+        <field name="inherit_id" ref="view_insurance_policy_emission_kanban"/>
+        <field name="arch" type="xml">
+            <xpath expr="//footer" position="before">
+                <field name="lead_id" invisible="1"/>
+                <field name="emission_stage" invisible="1"/>
+                <field name="req_complete" invisible="1"/>
+                <div class="small text-success fw-bold" invisible="not lead_id or emission_stage not in ('request', 'documents') or not req_complete">
+                    <i class="fa fa-folder-open-o"/> Expediente completo
+                </div>
+                <div class="small text-warning" invisible="not lead_id or emission_stage not in ('request', 'documents') or req_complete">
+                    <i class="fa fa-exclamation-circle"/> Falta: <field name="req_missing"/>
+                </div>
+            </xpath>
+        </field>
+    </record>
+</odoo>

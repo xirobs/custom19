@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_insurance_smnyl_import_form" model="ir.ui.view">
+        <field name="name">insurance.smnyl.import.form</field>
+        <field name="model">insurance.smnyl.import</field>
+        <field name="arch" type="xml">
+            <form string="Importar del portal Seguros Monterrey">
+                <field name="state" invisible="1"/>
+                <div invisible="state != 'draft'">
+                    <div class="alert alert-info" role="status">
+                        <p class="mb-1"><b>Recomendado · toda la cartera en un solo archivo</b></p>
+                        <ol class="mb-2">
+                            <li>Descarga el script <a href="/insurance_management/static/smnyl/descargar_cartera_smnyl.js" download="descargar_cartera_smnyl.js">descargar_cartera_smnyl.js</a> y ábrelo con un editor de texto.</li>
+                            <li>En el portal de agentes entra a <b>Consultas › Pólizas</b> (la lista), abre la consola del navegador, pega el código y pulsa Enter.</li>
+                            <li>Recorre todas las páginas y el detalle de cada póliza con tu sesión, y descarga <code>smnyl_cartera_AAAA-MM-DD.html</code>. Súbelo aquí.</li>
+                        </ol>
+                        <p class="mb-1">También acepta, sueltos: la lista exportada (<code>.xls</code>) y páginas de detalle guardadas una por una (<code>.html</code>).</p>
+                    </div>
+                    <group>
+                        <field name="attachment_ids" widget="many2many_binary" string="Archivos"/>
+                        <field name="insurance_company_id"/>
+                        <field name="agent_id"/>
+                        <field name="include_cancelled"/>
+                        <field name="attach_pages"/>
+                    </group>
+                </div>
+                <field name="result_html" invisible="state != 'done'" nolabel="1"/>
+                <footer>
+                    <button name="action_import" type="object" string="Importar" class="btn-primary" invisible="state != 'draft'"/>
+                    <button string="Cerrar" special="cancel" class="btn-secondary"/>
+                </footer>
+            </form>
+        </field>
+    </record>
+
+    <record id="action_insurance_smnyl_import" model="ir.actions.act_window">
+        <field name="name">Importar del portal Seguros Monterrey</field>
+        <field name="res_model">insurance.smnyl.import</field>
+        <field name="view_mode">form</field>
+        <field name="target">new</field>
+    </record>
+
+    <menuitem id="menu_insurance_smnyl_import" name="Importar del portal Seguros Monterrey"
+              parent="menu_insurance_policy_root" action="action_insurance_smnyl_import" sequence="95"/>
+</odoo>

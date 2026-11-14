@@ -386,3 +386,19 @@ $it-shadow: 0 1px 2px rgba(59, 47, 150, 0.06), 0 6px 20px rgba(59, 47, 150, 0.07
     font-family: $it-font; box-shadow: 0 10px 30px rgba(30, 27, 58, 0.3);
     &.show { opacity: 1; transform: translateX(-50%) translateY(0); }
 }
+
+// ---------- expediente de solicitud (ganado → emisión)
+.o_it_req {
+    .o_it_req_head { display: flex; align-items: center; justify-content: space-between; gap: 0.75rem; flex-wrap: wrap; margin-bottom: 0.35rem; }
+    .o_it_req_missing { background: #fff6e5; border-left: 4px solid #e8a33d; padding: 0.55rem 0.8rem; border-radius: 8px; font-size: 0.9rem; }
+    .o_it_req_files { list-style: none; padding: 0; margin: 0 0 0.5rem; display: flex; flex-wrap: wrap; gap: 0.4rem;
+        li { display: inline-flex; align-items: center; gap: 0.2rem; } }
+    .o_it_x { border: 0; background: transparent; color: #b3261e; width: 32px; height: 32px; border-radius: 50%; }
+    .o_it_chip_radio { display: inline-flex; align-items: center; gap: 0.4rem; padding: 0.5rem 0.9rem; border-radius: 999px;
+        border: 1px solid #d9d2ea; cursor: pointer; min-height: 44px; margin: 0 0.35rem 0.35rem 0;
+        &:has(input:checked) { background: $it-primary; color: #fff; border-color: $it-primary; } }
+    .o_it_upper { text-transform: uppercase; }
+    .o_it_facts .o_it_wide { grid-column: 1 / -1; }
+}
+.o_it_req_ok { color: #1e7a46; font-weight: 600; }
+.o_it_req_bad { color: #a35d00; }

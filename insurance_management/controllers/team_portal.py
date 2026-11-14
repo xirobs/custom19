@@ -213,6 +213,8 @@ class InsuranceTeamPortal(http.Controller):
             or (block == "claim" and attachment.res_model == "insurance.document"
                 and attachment.res_id in record.document_ids.ids)
             or attachment.id in record.message_ids.attachment_ids.ids
+            or (record._name in ("crm.lead", "insurance.policy") and attachment.id in (
+                record.req_address_proof_ids | record.req_prev_policy_ids | record.req_payment_proof_ids).ids)
         )
         if not allowed:
             raise request.not_found()
@@ -574,6 +576,16 @@ class InsuranceTeamPortal(http.Controller):
                 lead = svc._record("crm", lead_id)
                 nxt = svc.log_progress(self._post_with_tags(), lead=lead)
                 ok = _("Seguimiento guardado.") + (" " + _("Actividad agendada.") if nxt else "")
+            elif op == "solicitud":
+                files = {k: self._files(k) for k in ("address_files", "prev_files", "payment_files")}
+                lead = svc.crm_request(lead_id, post, files)
+                ok = _("Expediente guardado.") + (
+                    " " + _("¡Completo! Emisión ya puede iniciar.") if lead.req_complete
+                    else " " + _("Falta: %s") % lead.req_missing)
+                return self._back(url, ok=ok)
+            elif op == "quitar-archivo":
+                svc.crm_request_remove(lead_id, post.get("attachment_id"))
+                return self._back(url, ok=_("Archivo quitado."))
             elif op == "emision":
                 policy = svc.crm_to_emission(lead_id)
                 if request.env.user._ins_portal_can("emission"):
