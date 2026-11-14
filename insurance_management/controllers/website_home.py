@@ -77,11 +77,11 @@ class ViveSeguroSite(http.Controller):
         values.update(extra)
         return values
 
-    @http.route(["/vive-seguro"], type="http", auth="public", sitemap=True)
+    @http.route(["/vive-seguro"], type="http", auth="public", website=True, sitemap=True)
     def landing(self, enviado=None, **kw):
         return request.render("insurance_management.vs_landing", self._site_values(sent=bool(enviado)))
 
-    @http.route(["/vive-seguro/contacto"], type="http", auth="public", methods=["POST"], csrf=True)
+    @http.route(["/vive-seguro/contacto"], type="http", auth="public", website=True, methods=["POST"], csrf=True)
     def contact(self, **post):
         # campo trampa: los robots lo llenan, las personas no lo ven
         if post.get("sitio_web"):

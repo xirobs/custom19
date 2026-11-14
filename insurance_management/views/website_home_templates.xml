@@ -219,35 +219,41 @@
 
     <!-- ===================== Inicio de sesión con la marca ===================== -->
     <template id="vs_login_layout" name="Vive Seguro: inicio de sesión" inherit_id="web.login_layout" priority="40">
-        <xpath expr="//div[hasclass('container')][hasclass('py-5')]" position="replace">
-            <t t-set="body_classname" t-value="'o_vs_login_body'"/>
-            <div class="o_vs_login">
-                <aside class="o_vs_login_brand">
-                    <img class="o_vs_login_logo" src="/insurance_management/static/img/logo_h_light.png" alt="Respaldo Patrimonial · Asesores de Seguros"/>
-                    <div class="o_vs_login_copy">
-                        <span>Vive Seguro</span>
-                        <h1>Tu cartera, tus clientes y tu equipo en un solo lugar.</h1>
-                        <ul>
-                            <li><i class="fa fa-money"/> Cobranza con avisos por WhatsApp</li>
-                            <li><i class="fa fa-handshake-o"/> Prospectos y citas del día</li>
-                            <li><i class="fa fa-file-text-o"/> Emisiones, trámites y siniestros</li>
-                        </ul>
-                    </div>
-                    <small>© Respaldo Patrimonial · Asesores de Seguros</small>
-                </aside>
-                <main class="o_vs_login_main">
-                    <div t-attf-class="o_vs_login_card {{login_card_classes}} o_database_list">
-                        <img class="o_vs_login_mark" src="/insurance_management/static/img/logo_mark.png" alt=""/>
-                        <h2>Bienvenido</h2>
-                        <p class="o_vs_login_sub">Entra con tu correo y contraseña.</p>
-                        <t t-out="0"/>
-                        <div class="o_vs_login_foot" t-if="not disable_footer">
-                            <a href="/vive-seguro"><i class="fa fa-globe"/> Ir a la página principal</a>
-                            <t t-if="not disable_database_manager"> · <a href="/web/database/manager">Bases de datos</a></t>
+        <!-- Reemplaza el marco completo (con o sin el módulo Sitio web, que también cambia este marco). -->
+        <xpath expr="t[@t-call]" position="replace">
+            <t t-call="web.frontend_layout">
+                <t t-set="html_data" t-value="{'style': 'height: 100%;'}"/>
+                <t t-set="body_classname" t-value="'o_vs_login_body'"/>
+                <t t-set="no_header" t-value="True"/>
+                <t t-set="no_footer" t-value="True"/>
+                <div class="o_vs_login">
+                    <aside class="o_vs_login_brand">
+                        <img class="o_vs_login_logo" src="/insurance_management/static/img/logo_h_light.png" alt="Respaldo Patrimonial · Asesores de Seguros"/>
+                        <div class="o_vs_login_copy">
+                            <span>Vive Seguro</span>
+                            <h1>Tu cartera, tus clientes y tu equipo en un solo lugar.</h1>
+                            <ul>
+                                <li><i class="fa fa-money"/> Cobranza con avisos por WhatsApp</li>
+                                <li><i class="fa fa-handshake-o"/> Prospectos y citas del día</li>
+                                <li><i class="fa fa-file-text-o"/> Emisiones, trámites y siniestros</li>
+                            </ul>
                         </div>
-                    </div>
-                </main>
-            </div>
+                        <small>© Respaldo Patrimonial · Asesores de Seguros</small>
+                    </aside>
+                    <main class="o_vs_login_main">
+                        <div t-attf-class="o_vs_login_card {{login_card_classes}} o_database_list">
+                            <img class="o_vs_login_mark" src="/insurance_management/static/img/logo_mark.png" alt=""/>
+                            <h2>Bienvenido</h2>
+                            <p class="o_vs_login_sub">Entra con tu correo y contraseña.</p>
+                            <t t-out="0"/>
+                            <div class="o_vs_login_foot" t-if="not disable_footer">
+                                <a href="/vive-seguro"><i class="fa fa-globe"/> Ir a la página principal</a>
+                                <t t-if="not disable_database_manager"> · <a href="/web/database/manager">Bases de datos</a></t>
+                            </div>
+                        </div>
+                    </main>
+                </div>
+            </t>
         </xpath>
     </template>
 
