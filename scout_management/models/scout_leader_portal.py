@@ -142,6 +142,11 @@ class ResPartnerLeaderPortal(models.Model):
 
     def write(self, vals):
         res = super().write(vals)
+        if 'scout_leading_section_ids' in vals or 'scout_type' in vals:
+            # Solo los dirigentes tienen "Secciones a cargo"; a un scout se le limpian (si no, sale en otras listas)
+            youth = self.filtered(lambda p: p.is_scout and p.scout_type != 'leader' and p.scout_leading_section_ids)
+            if youth:
+                youth.write({'scout_leading_section_ids': [fields.Command.clear()]})
         if 'scout_leading_section_ids' in vals or 'scout_section_id' in vals:
             self.filtered(lambda p: p.is_scout and p.scout_type == 'leader' and p.user_ids)._scout_sync_leader_sections()
         if 'scout_position_id' in vals:

@@ -325,7 +325,9 @@ class CalendarEvent(models.Model):
         domain = [('is_scout', '=', True), ('scout_state', 'in', ('trial', 'active'))]
         if self.scout_scope == 'section' and self.scout_section_ids:
             sections = self.scout_section_ids
+            # "Secciones a cargo" solo cuenta para dirigentes: un scout de otra sección nunca entra a esta lista
             members = Partner.search(domain + ['|', ('scout_section_id', 'in', sections.ids),
+                                               '&', ('scout_type', '=', 'leader'),
                                                ('scout_leading_section_ids', 'in', sections.ids)])
             members |= sections.leader_ids.partner_id.filtered('is_scout')
             return members.sorted(lambda p: (p.scout_type == 'leader', p.scout_patrol_id.sequence or 0, p.name or ''))
