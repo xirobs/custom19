@@ -12,7 +12,7 @@
                         <ol class="mb-2">
                             <li>Descarga el script <a href="/insurance_management/static/smnyl/descargar_cartera_smnyl.js" download="descargar_cartera_smnyl.js">descargar_cartera_smnyl.js</a> y ábrelo con un editor de texto.</li>
                             <li>En el portal de agentes entra a <b>Consultas › Pólizas</b> (la lista), abre la consola del navegador, pega el código y pulsa Enter.</li>
-                            <li>Recorre todas las páginas y el detalle de cada póliza con tu sesión, y descarga <code>smnyl_cartera_AAAA-MM-DD.html</code>. Súbelo aquí.</li>
+                            <li>Recorre todas las páginas y el detalle de cada póliza con tu sesión, y descarga <code>vive_seguro_cartera_smnyl_AAAA-MM-DD.csv</code> (se abre en Excel). Súbelo aquí.</li>
                         </ol>
                         <p class="mb-1">También acepta, sueltos: la lista exportada (<code>.xls</code>) y páginas de detalle guardadas una por una (<code>.html</code>).</p>
                     </div>

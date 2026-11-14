@@ -149,12 +149,19 @@ class InsuranceSmnylImport(models.TransientModel):
     def action_import(self):
         self.ensure_one()
         if not self.attachment_ids:
-            raise UserError(_("Sube la lista de pólizas (.xls) y/o las páginas de detalle guardadas (.html)."))
+            raise UserError(_("Sube el archivo .csv de la cartera (o la lista .xls / páginas .html del portal)."))
         rows, details, ignored = {}, {}, []
         for att in self.attachment_ids:
             data = base64.b64decode(att.datas or b"")
             kind = smnyl.detect(data)
-            if kind == "bundle":
+            if kind == "csv":
+                for info in smnyl.parse_csv(data):
+                    details[info["number"]] = info
+                    rows[info["number"]] = {
+                        "number": info["number"], "contractor": info["contractor"],
+                        "insured": info.pop("_principal", ""), "product": info["plan"], "status": info["status"],
+                    }
+            elif kind == "bundle":
                 b_rows, b_details = smnyl.split_bundle(data)
                 for row in b_rows:
                     rows[row["number"]] = row

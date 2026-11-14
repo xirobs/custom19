@@ -96,6 +96,9 @@ def detect(data):
     """'list', 'detail' o None."""
     text = decode(data)
     low = text.lower()
+    first = norm(text.lstrip("\ufeff").split("\n", 1)[0])
+    if first.startswith('"poliza"') or first.startswith("poliza,"):
+        return "csv"
     if "smnyl-bundle" in low:
         return "bundle"
     if "gvpollist" in low:
@@ -216,3 +219,58 @@ def parse_detail(data):
         "email": one("email"),
         "phone": one("phone") or one("phone_office"),
     }
+
+
+CSV_COLUMNS = {
+    "poliza": "number", "estatus": "status", "tipo de seguro": "kind", "plan": "plan",
+    "suma asegurada": "insured_amount", "moneda": "currency", "fecha emision": "emission_date",
+    "forma de pago": "payment_form", "medio de cobro": "collection_channel", "banco": "bank",
+    "dia de cobro": "collection_day", "agente": "agent_name", "clave de agente": "agent_code",
+    "contratante": "contractor", "asegurado principal": "principal", "asegurados (* = principal)": "people",
+    "calle y numero": "street", "colonia": "colonia", "ciudad o municipio": "city", "estado": "state",
+    "codigo postal": "zip", "pais": "country", "correo electronico": "email",
+    "telefono particular": "phone", "telefono oficina": "phone_office",
+}
+PERSON_RE = re.compile(r"^\s*(\*?)\s*(.+?)\s*(?:\(([^)]*)\))?\s*$")
+
+
+def parse_csv(data):
+    """CSV que genera el script «descargar_cartera_smnyl» (una fila por póliza)."""
+    import csv
+    import io
+    text = decode(data).lstrip("\ufeff")
+    reader = csv.reader(io.StringIO(text))
+    header = [CSV_COLUMNS.get(norm(h), "") for h in next(reader, [])]
+    out = []
+    for values in reader:
+        row = {header[i]: (v or "").strip() for i, v in enumerate(values) if i < len(header) and header[i]}
+        number = row.get("number", "")
+        if not POLICY_RE.fullmatch(number):
+            continue
+        people = []
+        for chunk in (row.get("people") or "").split(";"):
+            m = PERSON_RE.match(chunk)
+            if m and m.group(2):
+                people.append({"name": m.group(2).strip(), "principal": bool(m.group(1)),
+                               "birth_date": parse_date(m.group(3) or "")})
+        if not people and row.get("principal"):
+            people.append({"name": row["principal"], "principal": True, "birth_date": False})
+        if people and not any(p["principal"] for p in people):
+            people[0]["principal"] = True
+        contractor = row.get("contractor", "")
+        if POLICY_RE.fullmatch(contractor):
+            contractor = ""
+        out.append({
+            "number": number, "kind": row.get("kind", ""), "plan": row.get("plan", ""),
+            "status": row.get("status", ""), "insured_amount": parse_amount(row.get("insured_amount")),
+            "currency": row.get("currency", ""), "emission_date": parse_date(row.get("emission_date")),
+            "payment_form": row.get("payment_form", ""), "collection_channel": row.get("collection_channel", ""),
+            "bank": row.get("bank", ""), "collection_day": int(parse_amount(row.get("collection_day")) or 0),
+            "agent_name": row.get("agent_name", ""), "agent_code": row.get("agent_code", ""),
+            "contractor": contractor, "people": people,
+            "street": row.get("street", ""), "colonia": row.get("colonia", ""), "city": row.get("city", ""),
+            "state": row.get("state", ""), "zip": row.get("zip", ""), "country": row.get("country", ""),
+            "email": row.get("email", ""), "phone": row.get("phone") or row.get("phone_office", ""),
+            "_principal": row.get("principal", ""),
+        })
+    return out
