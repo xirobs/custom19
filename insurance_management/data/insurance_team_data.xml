@@ -84,6 +84,10 @@
             <field name="name">A · Agendado</field>
             <field name="color">7</field>
         </record>
+        <record id="crm_tag_web" model="crm.tag">
+            <field name="name">Sitio web</field>
+            <field name="color">10</field>
+        </record>
 
         <!-- Etapas del CRM del equipo -->
         <record id="crm_stage_first_meeting" model="crm.stage">

@@ -402,3 +402,50 @@ $it-shadow: 0 1px 2px rgba(59, 47, 150, 0.06), 0 6px 20px rgba(59, 47, 150, 0.07
 }
 .o_it_req_ok { color: #1e7a46; font-weight: 600; }
 .o_it_req_bad { color: #a35d00; }
+
+// ---------- cobranza por ramo (RP)
+.o_it_crumbs { display: flex; flex-wrap: wrap; align-items: center; gap: .4rem; margin: 0 0 .75rem; font-size: .92rem;
+    a { color: $it-primary; text-decoration: none; font-weight: 600; }
+    .o_it_crumbs_alt { margin-left: auto; font-weight: 400; color: #5E5A78; } }
+.o_vs_tiles { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: .9rem; margin-top: .5rem; }
+.o_vs_tile { display: flex; align-items: center; gap: .9rem; padding: 1rem 1.1rem; border-radius: 16px; background: #fff;
+    border: 1px solid #E1DCF2; border-left: 6px solid var(--tile); color: #1E1B3A; text-decoration: none; min-height: 96px;
+    box-shadow: 0 2px 8px rgba(59, 47, 150, .06); transition: transform .12s, box-shadow .12s;
+    &:hover, &:focus { transform: translateY(-2px); box-shadow: 0 8px 20px rgba(59, 47, 150, .15); color: #1E1B3A; }
+    .o_vs_tile_icon { flex: 0 0 50px; height: 50px; border-radius: 14px; display: grid; place-items: center; background: var(--tile); color: #fff; font-size: 1.4rem; }
+    .o_vs_tile_text { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: .1rem;
+        b { font-size: 1.08rem; } small { color: #5E5A78; } }
+    .o_vs_tile_counts { display: flex; flex-wrap: wrap; gap: .35rem; margin-top: .3rem; font-size: .78rem;
+        span { background: #F3F0FB; color: #3B2F96; border-radius: 999px; padding: .1rem .55rem; } }
+    .o_vs_tile_go { color: #B9B2D8; } }
+.o_vs_red { background: #FDE7E7 !important; color: #B3261E !important; }
+.o_vs_yellow { background: #FFF4D6 !important; color: #8A5A00 !important; }
+.o_vs_dev { background: #EEE !important; color: #666 !important; }
+.o_vs_legend { display: flex; flex-wrap: wrap; align-items: center; gap: .35rem .9rem; font-size: .85rem; color: #5E5A78; margin: .4rem 0 .8rem; }
+.o_vs_dot { display: inline-block; width: 12px; height: 12px; border-radius: 50%; margin-right: .3rem; vertical-align: -1px; background: #1E1B3A;
+    &.o_vs_st_month { background: #E8B400; } &.o_vs_st_urgent { background: #D93025; }
+    &.o_vs_st_overdue { background: #7A0E0E; } &.o_vs_st_paid { background: #1E7A46; } }
+.o_vs_chip_overdue.active, .o_vs_chip_overdue:hover { background: #7A0E0E; color: #fff; border-color: #7A0E0E; }
+.o_vs_cols { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; align-items: start;
+    @media (max-width: 860px) { grid-template-columns: 1fr; } }
+.o_vs_col { background: #F7F5FC; border-radius: 16px; padding: .8rem; }
+.o_vs_col_head { padding: .2rem .3rem .7rem;
+    h2 { font-size: 1.05rem; margin: 0; color: #3B2F96; display: flex; align-items: center; gap: .45rem; }
+    small { color: #5E5A78; } }
+.o_vs_count { background: $it-primary; color: #fff; border-radius: 999px; font-size: .8rem; padding: .05rem .55rem; }
+.o_vs_card { background: #fff; border-radius: 12px; border-left: 6px solid #1E1B3A; padding: .7rem .85rem; margin-bottom: .6rem;
+    box-shadow: 0 1px 4px rgba(30, 27, 58, .06);
+    &.o_vs_st_month { border-left-color: #E8B400; background: #FFFCEE; }
+    &.o_vs_st_urgent { border-left-color: #D93025; background: #FFF3F2; }
+    &.o_vs_st_overdue { border-left-color: #7A0E0E; background: #FBE6E6; .o_vs_card_due span { color: #7A0E0E; font-weight: 700; } }
+    &.o_vs_st_paid { border-left-color: #1E7A46; background: #F0F9F3; opacity: .92; } }
+.o_vs_card_top { display: flex; justify-content: space-between; gap: .5rem; align-items: flex-start; b { font-size: 1rem; } }
+.o_vs_badge { font-size: .72rem; border-radius: 999px; padding: .12rem .55rem; white-space: nowrap; background: #ECEAF3; color: #1E1B3A;
+    &.o_vs_badge_month { background: #FFF0B8; color: #6B4E00; } &.o_vs_badge_urgent { background: #D93025; color: #fff; }
+    &.o_vs_badge_overdue { background: #7A0E0E; color: #fff; } &.o_vs_badge_paid { background: #1E7A46; color: #fff; } }
+.o_vs_card_meta { color: #5E5A78; font-size: .85rem; margin-top: .15rem; }
+.o_vs_card_due { display: flex; justify-content: space-between; gap: .5rem; flex-wrap: wrap; margin: .35rem 0 .1rem; font-size: .98rem; }
+.o_vs_card_notice { font-size: .82rem; color: #3B2F96; margin-top: .3rem; }
+.o_vs_need { background: #FFE2DE; color: #B3261E; border-radius: 999px; padding: .05rem .5rem; margin-left: .3rem; font-weight: 600; }
+.o_vs_missing { color: #B3261E; font-weight: 600; }
+.o_vs_card_actions { display: flex; flex-wrap: wrap; gap: .4rem; margin-top: .55rem; form { margin: 0; } .btn { min-height: 38px; } }

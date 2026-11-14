@@ -1,5 +1,5 @@
 /*
- * Vive Seguro · Descarga de cartera del portal de agentes Seguros Monterrey (SMNYL) · v5
+ * Vive Seguro · Descarga de cartera del portal de agentes Seguros Monterrey (SMNYL) · v8
  *
  * Desde «Consultas › Pólizas» (la lista), con TU sesión abierta, entra a cada póliza
  * («DetallePoliza.aspx», el formulario «Consulta de datos generales») y copia su contenido.
@@ -15,6 +15,9 @@
  */
 (async () => {
   const LIMITE = 3;            // 0 = todas
+  // Para bajar solo ciertas pólizas, escríbelas aquí entre comillas, separadas por comas. Vacío = todas.
+  const SOLO_ESTAS = [];
+  const REINTENTOS = 2;        // vueltas extra para las que salgan «sin detalle»
   const SOLO_VIGENTES = false; // true = omite anuladas / canceladas
   const PAUSA_MS = 700;
   const ESPERA_MAX_MS = 45000;
@@ -34,7 +37,7 @@
   document.body.appendChild(panel);
   let cancelado = false;
   const say = (html) => {
-    panel.innerHTML = "<b>Vive Seguro · descarga de cartera (v5)</b><br>" + html +
+    panel.innerHTML = "<b>Vive Seguro · descarga de cartera (v8)</b><br>" + html +
       '<br><a href="#" id="vs_stop" style="color:#ffd27a">Detener y descargar lo que lleva</a>';
     const stop = document.getElementById("vs_stop");
     if (stop) stop.onclick = (e) => { e.preventDefault(); cancelado = true; };
@@ -161,7 +164,14 @@
     while (Date.now() < fin) {
       if (cancelado || !win || win.closed) return null;
       const d = docDe();
-      try { if (d && d.readyState === "complete" && cond(d)) return d; } catch (e) { /* cargando */ }
+      // «interactive» basta: algunas pólizas tienen imágenes o recursos del portal que nunca terminan de cargar,
+      // y el formulario ya está completo aunque la página siga «cargando».
+      try {
+        if (d && d.readyState !== "loading" && cond(d)) {
+          if (d.readyState !== "complete") { await sleep(1200); try { win.stop(); } catch (e) { /* */ } }
+          if (docDe() === d) return d;
+        }
+      } catch (e) { /* cargando */ }
       await sleep(300);
     }
     return null;
@@ -179,29 +189,42 @@
     window.focus();
     return !!(await esperar((d) => filas(d).length > 0));
   }
-  async function auxIrAPagina(pg) {
+  async function auxIrAPagina(pg, desdeCero) {
     let d = docDe();
-    if (!d || !filas(d).length) {
+    if (desdeCero || !d || !filas(d).length || !d.__vs_pg) {
       const m = marcar(); win.location.href = LISTA_URL;
       d = await esperarNuevo(m, (x) => filas(x).length > 0);
+      if (!d) return null;
+      d.__vs_pg = 1;
     }
-    if (!d) return null;
-    if (d.__vs_pg === pg || (pg === 1 && !d.__vs_pg)) return d;
-    const target = paginas(d)[pg];
-    if (!target) return d;
-    const m = marcar();
-    postbackEn(d, target, "Page$" + pg);
-    d = await esperarNuevo(m, (x) => filas(x).length > 0);
-    if (d) d.__vs_pg = pg;
+    // avanza por el paginador hasta la página pedida (de ser necesario, en varios saltos «...»)
+    for (let saltos = 0; d && d.__vs_pg !== pg && saltos < 30; saltos++) {
+      const pags = paginas(d);
+      let destino = pags[pg] ? pg : null;
+      if (!destino) {
+        const cand = Object.keys(pags).map(Number);
+        destino = pg > d.__vs_pg ? Math.max(...cand.filter((n) => n < pg && n > d.__vs_pg))
+                                 : Math.min(...cand.filter((n) => n > pg && n < d.__vs_pg));
+        if (!isFinite(destino)) return d;
+      }
+      const m = marcar();
+      postbackEn(d, pags[destino], "Page$" + destino);
+      d = await esperarNuevo(m, (x) => filas(x).length > 0);
+      if (d) d.__vs_pg = destino;
+    }
     return d;
   }
-  async function detalleAux(numero, pg) {
-    let d = await auxIrAPagina(pg);
-    const fila = d && filas(d).find((r) => r.numero === numero);
+  async function detalleAux(numero, pg, desdeCero) {
+    let d = await auxIrAPagina(pg, desdeCero);
+    let fila = d && filas(d).find((r) => r.numero === numero);
+    if (!fila) {
+      d = await auxIrAPagina(pg, true);
+      fila = d && filas(d).find((r) => r.numero === numero);
+    }
     if (!fila) return null;
     let m = marcar();
     postbackEn(d, fila.target, fila.arg, fila.a);
-    const det = await esperarNuevo(m, (x) => esDetalleDe(x, numero));
+    const det = await esperarNuevo(m, (x) => esDetalleDe(x, numero), desdeCero ? ESPERA_MAX_MS * 2 : ESPERA_MAX_MS);
     const html = det ? extraer(det) : null;
     if (det) {
       // «Regresar» del propio portal → vuelve a la lista
@@ -209,7 +232,7 @@
       m = marcar();
       if (btn) btn.click(); else win.history.back();
       d = await esperarNuevo(m, (x) => filas(x).length > 0, 15000);
-      if (d) d.__vs_pg = filas(d).some((r) => r.numero === numero) ? pg : undefined;
+      if (d) d.__vs_pg = filas(d).some((r) => r.numero === numero) ? pg : undefined; // si no, se recarga
     }
     return html;
   }
@@ -219,29 +242,54 @@
   let metodo = "ventana", fallosRapido = 0; // en el portal real el método rápido responde error 500
   try {
     if (!gridOf(document)) throw new Error("Abre primero Consultas › Pólizas (la lista) y vuelve a pegar el código.");
-    // Fase 1: la lista completa (todas las páginas), en segundo plano
+    // Fase 1: la lista completa (todas las páginas). Se recorre en la ventana auxiliar, como si dieras clic
+    // en 1, 2, 3… al pie de la lista (en el portal real las peticiones en segundo plano dan error 500).
     const paginasDoc = { 1: document };
     const indice = [], vistos = new Set();
     let d = document, pagina = 1;
+    if (metodo === "ventana") {
+      if (!(await abrirAux())) throw new Error("Chrome bloqueó la ventana auxiliar: clic en el ícono de ventana bloqueada › «Permitir siempre» y vuelve a pegar el código.");
+      d = docDe();
+      d.__vs_pg = 1;
+    }
     while (d && !cancelado) {
+      let nuevas = 0;
       for (const r of filas(d)) {
         if (vistos.has(r.numero)) continue;
         vistos.add(r.numero);
+        nuevas++;
         lista.push(r.celdas);
         filaDe[r.numero] = r.celdas;
         if (SOLO_VIGENTES && /anulad|cancelad/i.test(r.celdas[4] || "")) continue;
         indice.push({ numero: r.numero, pagina });
       }
       say(`Leyendo la lista: página ${pagina} · ${lista.length} pólizas`);
+      if (!nuevas && pagina > 1) break;
       const pags = paginas(d);
       const sig = Object.keys(pags).map(Number).filter((n) => n > pagina).sort((a, b) => a - b)[0];
       if (!sig) break;
-      d = await postSinSeguir(d, pags[sig], "Page$" + sig);
-      if (!d || !filas(d).length) break;
+      if (metodo === "ventana") {
+        const m = marcar();
+        postbackEn(d, pags[sig], "Page$" + sig);
+        d = await esperarNuevo(m, (x) => filas(x).length > 0);
+        if (d) d.__vs_pg = sig;
+      } else {
+        d = await postSinSeguir(d, pags[sig], "Page$" + sig);
+        paginasDoc[sig] = d;
+      }
+      if (!d || !filas(d).length) {
+        console.warn("Vive Seguro: no pude abrir la página", sig, "de la lista");
+        break;
+      }
       pagina = sig;
-      paginasDoc[pagina] = d;
     }
-    const porHacer = LIMITE ? indice.slice(0, LIMITE) : indice;
+    const pedidas = new Set(SOLO_ESTAS.map((n) => String(n).trim().toUpperCase()).filter(Boolean));
+    const base = pedidas.size ? indice.filter((x) => pedidas.has(x.numero)) : indice;
+    if (pedidas.size) {
+      const faltan = [...pedidas].filter((n) => !base.some((x) => x.numero === n));
+      if (faltan.length) console.warn("Vive Seguro: no están en la lista del portal:", faltan.join(", "));
+    }
+    const porHacer = LIMITE && !pedidas.size ? base.slice(0, LIMITE) : base;
 
     // Fase 2: el formulario de cada póliza
     for (let i = 0; i < porHacer.length && !cancelado; i++) {
@@ -280,6 +328,26 @@
           x ? x.location.href + " · " + textoDe(x).slice(0, 300) : "");
       }
       await sleep(PAUSA_MS);
+    }
+
+    // Reintentos: las que salieron «sin detalle», empezando desde la lista recién cargada y con más espera
+    for (let vuelta = 1; vuelta <= REINTENTOS && errores.length && !cancelado && metodo === "ventana"; vuelta++) {
+      const pendientes = errores.splice(0);
+      for (let k = 0; k < pendientes.length && !cancelado; k++) {
+        const numero = pendientes[k];
+        const pg = (porHacer.find((x) => x.numero === numero) || {}).pagina || 1;
+        say(`Reintento ${vuelta}: ${k + 1} de ${pendientes.length} · ${numero}<br>Formularios listos: ${detalles.length}`);
+        let html = null;
+        try { html = await detalleAux(numero, pg, true); } catch (e) { console.warn("Vive Seguro: error en", numero, e); }
+        if (html && html.length) detalles.push({ numero, campos: html });
+        else {
+          errores.push(numero);
+          const x = docDe();
+          console.warn("Vive Seguro: reintento", vuelta, "sin formulario para", numero,
+            x ? x.location.href + " · " + textoDe(x).slice(0, 300) : "");
+        }
+        await sleep(PAUSA_MS * 2);
+      }
     }
   } catch (e) {
     console.warn("Vive Seguro:", e);

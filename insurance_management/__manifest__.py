@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 {
     "name": "Vive Seguro",
-    "version": "19.0.11.3.0",
+    "version": "19.0.12.1.0",
     "author": "Jhuliana Delgado",
     "maintainer": "Jhuliana Delgado",
     "website": "",
@@ -69,6 +69,9 @@ Ver static/description/index.html para la ficha completa.
         "wizard/insurance_smnyl_import_views.xml",
         "views/insurance_team_views.xml",
         "views/insurance_request_views.xml",
+        "data/insurance_collection_nodes.xml",
+        "views/insurance_collection_board_views.xml",
+        "views/website_home_templates.xml",
         "views/team_portal_templates.xml",
     ],
     "demo": [
@@ -77,6 +80,7 @@ Ver static/description/index.html para la ficha completa.
     "assets": {
         "web.assets_backend": [
             "insurance_management/static/src/scss/dashboard.scss",
+            "insurance_management/static/src/scss/collection_board.scss",
             "insurance_management/static/src/dashboard/insurance_dashboard.scss",
             "insurance_management/static/src/dashboard/insurance_dashboard.js",
             "insurance_management/static/src/dashboard/insurance_dashboard.xml",
@@ -86,6 +90,7 @@ Ver static/description/index.html para la ficha completa.
         ],
         "web.assets_frontend": [
             "insurance_management/static/src/team/team_portal.scss",
+            "insurance_management/static/src/site/vive_seguro_site.scss",
             "insurance_management/static/src/team/team_portal.js",
         ],
     },

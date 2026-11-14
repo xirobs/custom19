@@ -29,3 +29,4 @@ from . import insurance_team
 from . import insurance_team_portal
 from . import insurance_brand
 from . import insurance_request
+from . import insurance_collection_board

@@ -1,0 +1,267 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- ===================== Página pública: Respaldo Patrimonial · Vive Seguro ===================== -->
+    <template id="vs_landing" name="Vive Seguro: página pública">
+        <t t-call="web.frontend_layout">
+            <t t-set="no_header" t-value="True"/>
+            <t t-set="no_footer" t-value="True"/>
+            <t t-set="title" t-value="'Respaldo Patrimonial · Asesores de Seguros'"/>
+            <t t-set="body_classname" t-value="'o_vs_site_body'"/>
+            <div class="o_vs_site">
+                <!-- Encabezado -->
+                <header class="vs_nav">
+                    <div class="vs_wrap vs_nav_in">
+                        <a href="/vive-seguro" class="vs_brand" aria-label="Respaldo Patrimonial, inicio">
+                            <img src="/insurance_management/static/img/logo_h_light.png" alt="Respaldo Patrimonial · Asesores de Seguros"/>
+                        </a>
+                        <input type="checkbox" id="vs_menu" class="vs_menu_toggle" aria-label="Abrir menú"/>
+                        <label for="vs_menu" class="vs_menu_btn" aria-hidden="true"><i class="fa fa-bars"/></label>
+                        <nav class="vs_links" aria-label="Secciones">
+                            <a href="#seguros">Seguros</a>
+                            <a href="#por-que">Por qué nosotros</a>
+                            <a href="#como">Cómo trabajamos</a>
+                            <a href="#contacto">Contacto</a>
+                            <a href="/web/login" class="vs_btn vs_btn_ghost"><i class="fa fa-lock"/> Acceso asesores</a>
+                        </nav>
+                    </div>
+                </header>
+
+                <!-- Portada -->
+                <section class="vs_hero">
+                    <div class="vs_wrap vs_hero_in">
+                        <div class="vs_hero_text">
+                            <span class="vs_kicker">Asesores de seguros</span>
+                            <h1>Protege lo que más quieres,<br/><span>con alguien que te acompaña.</span></h1>
+                            <p>Gastos médicos, vida, ahorro y retiro. Te ayudamos a elegir el plan adecuado y te acompañamos
+                                en cada pago, renovación y siniestro, para que nunca te quedes sin protección.</p>
+                            <div class="vs_hero_cta">
+                                <a href="#contacto" class="vs_btn vs_btn_light">Quiero una cotización</a>
+                                <a t-if="wa_url" t-att-href="wa_url" target="_blank" rel="noopener" class="vs_btn vs_btn_wa"><i class="fa fa-whatsapp"/> Escríbenos</a>
+                            </div>
+                            <ul class="vs_hero_points">
+                                <li><i class="fa fa-check-circle"/> Asesoría sin costo</li>
+                                <li><i class="fa fa-check-circle"/> Seguimiento personalizado</li>
+                                <li><i class="fa fa-check-circle"/> Atención por WhatsApp</li>
+                            </ul>
+                        </div>
+                        <div class="vs_hero_art" aria-hidden="true">
+                            <div class="vs_art_mark"><img src="/insurance_management/static/img/logo_mark_light.png" alt=""/></div>
+                            <div class="vs_art_card vs_art_card_1">
+                                <i class="fa fa-heartbeat"/>
+                                <div><b>Gastos Médicos Mayores</b><small>Cobertura vigente</small></div>
+                                <span class="vs_ok"><i class="fa fa-check"/></span>
+                            </div>
+                            <div class="vs_art_card vs_art_card_2">
+                                <i class="fa fa-calendar-check-o"/>
+                                <div><b>Recordatorio de pago</b><small>Te avisamos antes de tu fecha</small></div>
+                            </div>
+                            <div class="vs_art_card vs_art_card_3">
+                                <i class="fa fa-shield"/>
+                                <div><b>Seguro de Vida</b><small>Tu familia protegida</small></div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="vs_hero_wave"/>
+                </section>
+
+                <!-- Seguros -->
+                <section id="seguros" class="vs_section">
+                    <div class="vs_wrap">
+                        <div class="vs_head">
+                            <span class="vs_kicker vs_kicker_dark">Nuestros seguros</span>
+                            <h2>Un plan para cada etapa de tu vida</h2>
+                            <p>Te explicamos cada opción con palabras claras y comparamos por ti.</p>
+                        </div>
+                        <div class="vs_grid vs_grid_3">
+                            <article class="vs_card">
+                                <span class="vs_icon" style="--c:#5B47CC"><i class="fa fa-heartbeat"/></span>
+                                <h3>Gastos Médicos Mayores</h3>
+                                <p>Hospital, cirugía y tratamientos sin descapitalizarte. Planes individuales y familiares, nacionales e internacionales.</p>
+                            </article>
+                            <article class="vs_card">
+                                <span class="vs_icon" style="--c:#3B2F96"><i class="fa fa-shield"/></span>
+                                <h3>Seguro de Vida</h3>
+                                <p>Respaldo económico para tu familia si llegas a faltar, con planes temporales y de por vida.</p>
+                            </article>
+                            <article class="vs_card">
+                                <span class="vs_icon" style="--c:#208CEF"><i class="fa fa-line-chart"/></span>
+                                <h3>Ahorro, inversión y retiro</h3>
+                                <p>Construye tu patrimonio con protección incluida y prepara un retiro tranquilo.</p>
+                            </article>
+                            <article class="vs_card">
+                                <span class="vs_icon" style="--c:#1AD3B1"><i class="fa fa-graduation-cap"/></span>
+                                <h3>Educación</h3>
+                                <p>Asegura la universidad de tus hijos pase lo que pase, con un ahorro garantizado.</p>
+                            </article>
+                            <article class="vs_card">
+                                <span class="vs_icon" style="--c:#8963CA"><i class="fa fa-medkit"/></span>
+                                <h3>Accidentes personales</h3>
+                                <p>Protección accesible ante accidentes, para ti o para tu equipo de trabajo.</p>
+                            </article>
+                            <article class="vs_card">
+                                <span class="vs_icon" style="--c:#E8A33D"><i class="fa fa-car"/></span>
+                                <h3>Autos, hogar y empresa</h3>
+                                <p>Cuida tu auto, tu casa y tu negocio con la cobertura que realmente necesitas.</p>
+                            </article>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Por qué -->
+                <section id="por-que" class="vs_section vs_section_soft">
+                    <div class="vs_wrap vs_split">
+                        <div>
+                            <span class="vs_kicker vs_kicker_dark">Por qué Respaldo Patrimonial</span>
+                            <h2>No solo vendemos un seguro: te acompañamos</h2>
+                            <p class="vs_lead">Tu póliza vale lo que vale el servicio que hay detrás. Por eso damos seguimiento a cada cliente
+                                desde la primera cita hasta el día en que más lo necesita.</p>
+                        </div>
+                        <div class="vs_grid vs_grid_2">
+                            <div class="vs_feature"><i class="fa fa-user-circle-o"/><div><b>Asesoría personalizada</b><p>Analizamos tu situación y te proponemos solo lo que te conviene.</p></div></div>
+                            <div class="vs_feature"><i class="fa fa-ambulance"/><div><b>Apoyo en siniestros</b><p>Te guiamos en el pago directo o reembolso, paso a paso.</p></div></div>
+                            <div class="vs_feature"><i class="fa fa-bell-o"/><div><b>Pagos y renovaciones a tiempo</b><p>Te recordamos tus fechas para que tu póliza nunca se cancele.</p></div></div>
+                            <div class="vs_feature"><i class="fa fa-whatsapp"/><div><b>Cerca de ti</b><p>Atención directa por WhatsApp, teléfono o en persona.</p></div></div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Cómo trabajamos -->
+                <section id="como" class="vs_section">
+                    <div class="vs_wrap">
+                        <div class="vs_head">
+                            <span class="vs_kicker vs_kicker_dark">Cómo trabajamos</span>
+                            <h2>Contratar tu seguro es fácil</h2>
+                        </div>
+                        <ol class="vs_steps">
+                            <li><span>1</span><b>Platícanos</b><p>Cuéntanos qué quieres proteger y tu presupuesto.</p></li>
+                            <li><span>2</span><b>Comparamos por ti</b><p>Te presentamos opciones claras, sin letras chiquitas.</p></li>
+                            <li><span>3</span><b>Emitimos tu póliza</b><p>Nos encargamos del trámite y de tus documentos.</p></li>
+                            <li><span>4</span><b>Te acompañamos</b><p>Pagos, renovaciones y siniestros: siempre con nosotros.</p></li>
+                        </ol>
+                    </div>
+                </section>
+
+                <!-- Contacto -->
+                <section id="contacto" class="vs_section vs_contact">
+                    <div class="vs_wrap vs_split">
+                        <div class="vs_contact_info">
+                            <span class="vs_kicker">Contacto</span>
+                            <h2>Recibe asesoría sin compromiso</h2>
+                            <p>Déjanos tus datos y un asesor te contactará en el horario que prefieras.</p>
+                            <ul>
+                                <li t-if="phone"><i class="fa fa-phone"/> <a t-att-href="'tel:%s' % phone" t-out="phone"/></li>
+                                <li t-if="company.email"><i class="fa fa-envelope-o"/> <a t-att-href="'mailto:%s' % company.email" t-out="company.email"/></li>
+                                <li t-if="company.city"><i class="fa fa-map-marker"/> <t t-out="', '.join(filter(None, [company.street, company.city, company.state_id.name]))"/></li>
+                            </ul>
+                            <a t-if="wa_url" t-att-href="wa_url" target="_blank" rel="noopener" class="vs_btn vs_btn_wa"><i class="fa fa-whatsapp"/> Escríbenos por WhatsApp</a>
+                        </div>
+                        <div class="vs_form_card">
+                            <div t-if="sent" class="vs_alert vs_alert_ok" role="status">
+                                <i class="fa fa-check-circle"/> ¡Gracias! Recibimos tus datos; un asesor te contactará muy pronto.
+                            </div>
+                            <div t-if="error" class="vs_alert vs_alert_bad" role="alert"><i class="fa fa-exclamation-circle"/> <t t-out="error"/></div>
+                            <form action="/vive-seguro/contacto" method="post" class="vs_form">
+                                <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
+                                <div class="vs_trap" aria-hidden="true"><label for="vs_site">Sitio web</label><input id="vs_site" name="sitio_web" tabindex="-1" autocomplete="off"/></div>
+                                <label for="vs_name">Nombre completo</label>
+                                <input id="vs_name" name="nombre" required="required" autocomplete="name" t-att-value="(form or {}).get('nombre')"/>
+                                <div class="vs_form_row">
+                                    <div>
+                                        <label for="vs_phone">Teléfono / WhatsApp</label>
+                                        <input id="vs_phone" name="telefono" type="tel" inputmode="tel" autocomplete="tel" t-att-value="(form or {}).get('telefono')"/>
+                                    </div>
+                                    <div>
+                                        <label for="vs_mail">Correo</label>
+                                        <input id="vs_mail" name="correo" type="email" autocomplete="email" t-att-value="(form or {}).get('correo')"/>
+                                    </div>
+                                </div>
+                                <div class="vs_form_row">
+                                    <div>
+                                        <label for="vs_int">Me interesa</label>
+                                        <select id="vs_int" name="interes">
+                                            <option t-foreach="interests" t-as="it" t-att-value="it[0]" t-att-selected="(form or {}).get('interes') == it[0] or None" t-out="it[1]"/>
+                                        </select>
+                                    </div>
+                                    <div>
+                                        <label for="vs_when">Horario para contactarte</label>
+                                        <select id="vs_when" name="horario">
+                                            <option>Mañana</option>
+                                            <option>Tarde</option>
+                                            <option>Noche</option>
+                                            <option>Cualquier horario</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                <label for="vs_msg">Mensaje (opcional)</label>
+                                <textarea id="vs_msg" name="mensaje" rows="3" placeholder="Cuéntanos qué te gustaría proteger" t-out="(form or {}).get('mensaje') or ''"/>
+                                <button type="submit" class="vs_btn vs_btn_primary">Quiero que me contacten</button>
+                                <p class="vs_fine">Usaremos tus datos solo para darte la asesoría que solicitas.</p>
+                            </form>
+                        </div>
+                    </div>
+                </section>
+
+                <footer class="vs_footer">
+                    <div class="vs_wrap vs_footer_in">
+                        <img src="/insurance_management/static/img/logo_h_light.png" alt="Respaldo Patrimonial"/>
+                        <div class="vs_footer_links">
+                            <a href="#seguros">Seguros</a>
+                            <a href="#contacto">Contacto</a>
+                            <a href="/web/login">Acceso asesores</a>
+                        </div>
+                        <small>© <t t-out="datetime.date.today().year"/> Respaldo Patrimonial · Asesores de Seguros</small>
+                    </div>
+                </footer>
+                <a t-if="wa_url" t-att-href="wa_url" target="_blank" rel="noopener" class="vs_wa_float" aria-label="Escríbenos por WhatsApp"><i class="fa fa-whatsapp"/></a>
+            </div>
+        </t>
+    </template>
+
+    <!-- ===================== Inicio de sesión con la marca ===================== -->
+    <template id="vs_login_layout" name="Vive Seguro: inicio de sesión" inherit_id="web.login_layout" priority="40">
+        <xpath expr="//div[hasclass('container')][hasclass('py-5')]" position="replace">
+            <t t-set="body_classname" t-value="'o_vs_login_body'"/>
+            <div class="o_vs_login">
+                <aside class="o_vs_login_brand">
+                    <img class="o_vs_login_logo" src="/insurance_management/static/img/logo_h_light.png" alt="Respaldo Patrimonial · Asesores de Seguros"/>
+                    <div class="o_vs_login_copy">
+                        <span>Vive Seguro</span>
+                        <h1>Tu cartera, tus clientes y tu equipo en un solo lugar.</h1>
+                        <ul>
+                            <li><i class="fa fa-money"/> Cobranza con avisos por WhatsApp</li>
+                            <li><i class="fa fa-handshake-o"/> Prospectos y citas del día</li>
+                            <li><i class="fa fa-file-text-o"/> Emisiones, trámites y siniestros</li>
+                        </ul>
+                    </div>
+                    <small>© Respaldo Patrimonial · Asesores de Seguros</small>
+                </aside>
+                <main class="o_vs_login_main">
+                    <div t-attf-class="o_vs_login_card {{login_card_classes}} o_database_list">
+                        <img class="o_vs_login_mark" src="/insurance_management/static/img/logo_mark.png" alt=""/>
+                        <h2>Bienvenido</h2>
+                        <p class="o_vs_login_sub">Entra con tu correo y contraseña.</p>
+                        <t t-out="0"/>
+                        <div class="o_vs_login_foot" t-if="not disable_footer">
+                            <a href="/vive-seguro"><i class="fa fa-globe"/> Ir a la página principal</a>
+                            <t t-if="not disable_database_manager"> · <a href="/web/database/manager">Bases de datos</a></t>
+                        </div>
+                    </div>
+                </main>
+            </div>
+        </xpath>
+    </template>
+
+    <!-- ===================== Ícono de la app (pestaña, celular, escritorio) ===================== -->
+    <template id="vs_layout_icons" name="Vive Seguro: íconos" inherit_id="web.layout" priority="40">
+        <xpath expr="//link[@rel='shortcut icon']" position="attributes">
+            <attribute name="t-att-href">x_icon or '/insurance_management/static/description/icon.png'</attribute>
+            <attribute name="type">image/png</attribute>
+        </xpath>
+        <xpath expr="//head" position="inside">
+            <link rel="apple-touch-icon" href="/insurance_management/static/description/icon.png"/>
+            <meta name="apple-mobile-web-app-title" content="Vive Seguro"/>
+            <meta name="application-name" content="Vive Seguro"/>
+            <meta name="theme-color" content="#5B47CC"/>
+        </xpath>
+    </template>
+</odoo>

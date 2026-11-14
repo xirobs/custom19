@@ -121,7 +121,7 @@
     <menuitem id="menu_insurance_collection_root" active="True"
               name="Cobranza"
               parent="menu_insurance_root"
-              sequence="40"/>
+              sequence="0"/>
 
     <menuitem id="menu_insurance_collection_board" active="True"
               name="Tablero de cobranza"

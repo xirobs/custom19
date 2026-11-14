@@ -254,12 +254,11 @@ class InsuranceTeamPortal(models.AbstractModel):
             cards["claim"] = {"count": len(claims), "hot": len(claims.filtered(lambda c: c.state == "documents")),
                               "hot_label": _("piden documentos")}
         if blocks["collection"]:
-            lines = self.env["insurance.installment"].sudo().search(
-                [("collection_status", "in", ["overdue", "due_soon"])]
-            )
-            cards["collection"] = {"count": len(lines),
-                                   "hot": len(lines.filtered(lambda l: l.collection_status == "overdue")),
-                                   "hot_label": _("vencidos")}
+            Policy = self.env["insurance.policy"].sudo()
+            pending = Policy.search(Policy._coll_domain() + [("coll_status", "in", ["overdue", "urgent", "month"])])
+            cards["collection"] = {"count": len(pending),
+                                   "hot": len(pending.filtered(lambda p: p.coll_status in ("overdue", "urgent"))),
+                                   "hot_label": _("urgentes o vencidas")}
         if blocks["crm"]:
             leads = self.env["crm.lead"].sudo().search(
                 self._mine_domain("crm") + [("stage_id", "in", self._crm_open_stage_ids()),
@@ -1182,3 +1181,71 @@ class InsuranceTeamPortal(models.AbstractModel):
         if block == "crm":
             return self.crm_move(record_id, column)
         raise UserError(_("Aquí no se puede arrastrar."))
+
+    # ------------------------------------------------------------------ cobranza por ramo (especificación RP)
+    @api.model
+    def coll_nav(self, node_id=None):
+        self._check("collection")
+        Node = self.env["insurance.collection.node"].sudo()
+        node = Node.browse(int(node_id)).exists() if node_id else Node
+        children = Node.search([("parent_id", "=", node.id or False)])
+        trail = []
+        cur = node
+        while cur:
+            trail.insert(0, cur)
+            cur = cur.parent_id
+        return node, children, trail
+
+    @api.model
+    def coll_policies(self, node, search=None, filtro=None):
+        self._check("collection")
+        Policy = self.env["insurance.policy"].sudo()
+        domain = Policy._coll_domain()
+        if node:
+            domain += [("coll_node_id", "in", node._leaf_ids())]
+        if search:
+            domain += ["|", "|", ("partner_id.name", "ilike", search), ("name", "ilike", search),
+                       ("partner_id.phone", "ilike", search)]
+        if filtro in ("overdue", "urgent", "month", "paid"):
+            domain += [("coll_status", "=", filtro)]
+        elif filtro == "aviso":
+            domain += [("coll_needs_notice", "=", True)]
+        return Policy.search(domain).coll_board()
+
+    def _coll_policy(self, policy_id):
+        self._check("collection")
+        policy = self.env["insurance.policy"].sudo().browse(int(policy_id)).exists()
+        if not policy or not policy.filtered_domain(policy._coll_domain()):
+            raise AccessError(_("Póliza no disponible en cobranza."))
+        return policy.with_user(self.env.user).sudo()
+
+    @api.model
+    def coll_whatsapp(self, policy_id):
+        policy = self._coll_policy(policy_id)
+        notice = policy.with_context(coll_user=self._user().id)._coll_prepare_notice()
+        notice.user_id = self._user()
+        return self.wa_link(policy.partner_id, notice.message)
+
+    @api.model
+    def coll_op(self, policy_id, op, post):
+        policy = self._coll_policy(policy_id)
+        if op == "enviado":
+            notices = policy._coll_current_notices() or policy._coll_prepare_notice()
+            notices.filtered(lambda n: n.state == "prepared").write(
+                {"state": "sent", "sent_at": fields.Datetime.now(), "user_id": self._user().id})
+            return _("Aviso marcado como enviado: %s") % policy.partner_id.name
+        if op == "pagado":
+            due = policy.coll_next_date
+            policy.action_coll_confirm_payment()
+            return _("Pago confirmado (%s). Próximo cobro: %s") % (
+                due.strftime("%d/%m/%Y") if due else "", policy.coll_next_date.strftime("%d/%m/%Y") if policy.coll_next_date else "—")
+        if op == "nota":
+            note = (post.get("note") or "").strip()
+            if note:
+                current = policy._coll_current_notices()[:1]
+                if current:
+                    current.note = ((current.note + "\n") if current.note else "") + note
+                policy.coll_note = ((policy.coll_note + "\n") if policy.coll_note else "") + "%s · %s: %s" % (
+                    fields.Date.context_today(self).strftime("%d/%m/%Y"), self._user().name, note)
+            return _("Observación guardada.")
+        raise UserError(_("Operación no válida."))

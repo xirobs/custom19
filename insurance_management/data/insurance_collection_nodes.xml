@@ -1,0 +1,342 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <data noupdate="1">
+        <record id="coll_gmm" model="insurance.collection.node">
+            <field name="name">Gastos Médicos</field>
+            <field name="sequence">1</field>
+            <field name="icon">fa-heartbeat</field>
+            <field name="color">#5B47CC</field>
+            <field name="note">Alpha Medical · Flex · Internacional</field>
+        </record>
+        <record id="coll_vt" model="insurance.collection.node">
+            <field name="name">Vida Tradicional</field>
+            <field name="sequence">2</field>
+            <field name="icon">fa-shield</field>
+            <field name="color">#3B2F96</field>
+            <field name="note">Ordinarios · Temporales · Dotales · Nuevo Plenitud</field>
+        </record>
+        <record id="coll_vu" model="insurance.collection.node">
+            <field name="name">Vida Universal</field>
+            <field name="sequence">3</field>
+            <field name="icon">fa-line-chart</field>
+            <field name="color">#208CEF</field>
+            <field name="note">Mío · Realiza · ImaginaSER</field>
+        </record>
+        <record id="coll_ap" model="insurance.collection.node">
+            <field name="name">Accidentes Personales</field>
+            <field name="sequence">4</field>
+            <field name="icon">fa-medkit</field>
+            <field name="color">#8963CA</field>
+            <field name="keywords">accidentes personales, accidentes</field>
+            <field name="in_development" eval="True"/>
+            <field name="note">En desarrollo</field>
+        </record>
+        <record id="coll_viajero" model="insurance.collection.node">
+            <field name="name">Viajero</field>
+            <field name="sequence">5</field>
+            <field name="icon">fa-plane</field>
+            <field name="color">#1AD3B1</field>
+            <field name="keywords">viajero, viaje, travel</field>
+            <field name="in_development" eval="True"/>
+            <field name="note">En desarrollo</field>
+        </record>
+        <record id="coll_autos" model="insurance.collection.node">
+            <field name="name">Autos</field>
+            <field name="sequence">6</field>
+            <field name="icon">fa-car</field>
+            <field name="color">#E8A33D</field>
+            <field name="keywords">autos, auto, automovil, vehiculo</field>
+            <field name="in_development" eval="True"/>
+            <field name="note">En desarrollo</field>
+        </record>
+        <record id="coll_danos" model="insurance.collection.node">
+            <field name="name">Daños</field>
+            <field name="sequence">7</field>
+            <field name="icon">fa-home</field>
+            <field name="color">#B3261E</field>
+            <field name="keywords">danos, hogar, empresarial, incendio</field>
+            <field name="in_development" eval="True"/>
+            <field name="note">En desarrollo</field>
+        </record>
+        <record id="coll_gmm_alpha" model="insurance.collection.node">
+            <field name="name">Alpha Medical</field>
+            <field name="parent_id" ref="coll_gmm"/>
+            <field name="sequence">1</field>
+            <field name="icon">fa-plus-square</field>
+            <field name="color">#5B47CC</field>
+            <field name="note">Práctico · Íntegro · Pleno</field>
+        </record>
+        <record id="coll_gmm_flex" model="insurance.collection.node">
+            <field name="name">Alpha Medical Flex</field>
+            <field name="parent_id" ref="coll_gmm"/>
+            <field name="sequence">2</field>
+            <field name="icon">fa-sliders</field>
+            <field name="color">#4B3FCF</field>
+            <field name="note">Flex A · Flex B</field>
+        </record>
+        <record id="coll_gmm_int" model="insurance.collection.node">
+            <field name="name">Alpha Medical Internacional</field>
+            <field name="parent_id" ref="coll_gmm"/>
+            <field name="sequence">3</field>
+            <field name="icon">fa-globe</field>
+            <field name="color">#208CEF</field>
+            <field name="keywords">internacional</field>
+            <field name="branch">medical</field>
+        </record>
+        <record id="coll_gmm_practico" model="insurance.collection.node">
+            <field name="name">Alpha Medical Práctico</field>
+            <field name="parent_id" ref="coll_gmm_alpha"/>
+            <field name="sequence">1</field>
+            <field name="icon">fa-check</field>
+            <field name="keywords">practico, practicos</field>
+            <field name="branch">medical</field>
+        </record>
+        <record id="coll_gmm_integro" model="insurance.collection.node">
+            <field name="name">Alpha Medical Íntegro</field>
+            <field name="parent_id" ref="coll_gmm_alpha"/>
+            <field name="sequence">2</field>
+            <field name="icon">fa-check</field>
+            <field name="keywords">integro, integros</field>
+            <field name="branch">medical</field>
+        </record>
+        <record id="coll_gmm_pleno" model="insurance.collection.node">
+            <field name="name">Alpha Medical Pleno</field>
+            <field name="parent_id" ref="coll_gmm_alpha"/>
+            <field name="sequence">3</field>
+            <field name="icon">fa-check</field>
+            <field name="keywords">pleno, plenos</field>
+            <field name="branch">medical</field>
+        </record>
+        <record id="coll_gmm_flexa" model="insurance.collection.node">
+            <field name="name">Flex A</field>
+            <field name="parent_id" ref="coll_gmm_flex"/>
+            <field name="sequence">1</field>
+            <field name="icon">fa-check</field>
+            <field name="keywords">flex a, flexa</field>
+            <field name="branch">medical</field>
+        </record>
+        <record id="coll_gmm_flexb" model="insurance.collection.node">
+            <field name="name">Flex B</field>
+            <field name="parent_id" ref="coll_gmm_flex"/>
+            <field name="sequence">2</field>
+            <field name="icon">fa-check</field>
+            <field name="keywords">flex b, flexb</field>
+            <field name="branch">medical</field>
+        </record>
+        <record id="coll_vt_orvi" model="insurance.collection.node">
+            <field name="name">Ordinarios de Vida</field>
+            <field name="parent_id" ref="coll_vt"/>
+            <field name="sequence">1</field>
+            <field name="icon">fa-shield</field>
+            <field name="color">#3B2F96</field>
+            <field name="note">ORVI 99 · 99-6 · 99-10 · 99-15 · 99-20</field>
+        </record>
+        <record id="coll_vt_temp" model="insurance.collection.node">
+            <field name="name">Temporales</field>
+            <field name="parent_id" ref="coll_vt"/>
+            <field name="sequence">2</field>
+            <field name="icon">fa-hourglass-half</field>
+            <field name="color">#5B47CC</field>
+            <field name="note">Star Temporal 1 a 20 · SE Adapta</field>
+        </record>
+        <record id="coll_vt_dotal" model="insurance.collection.node">
+            <field name="name">Dotales</field>
+            <field name="parent_id" ref="coll_vt"/>
+            <field name="sequence">3</field>
+            <field name="icon">fa-university</field>
+            <field name="color">#8963CA</field>
+            <field name="note">Plenitud · Vida Mujer · Segubeca · Star Dotal</field>
+        </record>
+        <record id="coll_vt_nplen" model="insurance.collection.node">
+            <field name="name">Nuevo Plenitud</field>
+            <field name="parent_id" ref="coll_vt"/>
+            <field name="sequence">4</field>
+            <field name="icon">fa-sun-o</field>
+            <field name="color">#1AD3B1</field>
+            <field name="keywords">nuevo plenitud</field>
+            <field name="branch">life</field>
+        </record>
+        <record id="coll_orvi99" model="insurance.collection.node">
+            <field name="name">ORVI 99 (pago vitalicio)</field>
+            <field name="parent_id" ref="coll_vt_orvi"/>
+            <field name="sequence">1</field>
+            <field name="icon">fa-check</field>
+            <field name="keywords">orvi 99, orvi</field>
+            <field name="branch">life</field>
+        </record>
+        <record id="coll_orvi6" model="insurance.collection.node">
+            <field name="name">ORVI 99-6</field>
+            <field name="parent_id" ref="coll_vt_orvi"/>
+            <field name="sequence">2</field>
+            <field name="icon">fa-check</field>
+            <field name="keywords">orvi 99 6</field>
+            <field name="branch">life</field>
+        </record>
+        <record id="coll_orvi10" model="insurance.collection.node">
+            <field name="name">ORVI 99-10</field>
+            <field name="parent_id" ref="coll_vt_orvi"/>
+            <field name="sequence">3</field>
+            <field name="icon">fa-check</field>
+            <field name="keywords">orvi 99 10</field>
+            <field name="branch">life</field>
+        </record>
+        <record id="coll_orvi15" model="insurance.collection.node">
+            <field name="name">ORVI 99-15</field>
+            <field name="parent_id" ref="coll_vt_orvi"/>
+            <field name="sequence">4</field>
+            <field name="icon">fa-check</field>
+            <field name="keywords">orvi 99 15</field>
+            <field name="branch">life</field>
+        </record>
+        <record id="coll_orvi20" model="insurance.collection.node">
+            <field name="name">ORVI 99-20</field>
+            <field name="parent_id" ref="coll_vt_orvi"/>
+            <field name="sequence">5</field>
+            <field name="icon">fa-check</field>
+            <field name="keywords">orvi 99 20</field>
+            <field name="branch">life</field>
+        </record>
+        <record id="coll_st1" model="insurance.collection.node">
+            <field name="name">Star Temporal 1</field>
+            <field name="parent_id" ref="coll_vt_temp"/>
+            <field name="sequence">1</field>
+            <field name="icon">fa-check</field>
+            <field name="keywords">star temporal 1, temporal 1</field>
+            <field name="branch">life</field>
+        </record>
+        <record id="coll_st5" model="insurance.collection.node">
+            <field name="name">Star Temporal 5</field>
+            <field name="parent_id" ref="coll_vt_temp"/>
+            <field name="sequence">2</field>
+            <field name="icon">fa-check</field>
+            <field name="keywords">star temporal 5, temporal 5</field>
+            <field name="branch">life</field>
+        </record>
+        <record id="coll_st10" model="insurance.collection.node">
+            <field name="name">Star Temporal 10</field>
+            <field name="parent_id" ref="coll_vt_temp"/>
+            <field name="sequence">3</field>
+            <field name="icon">fa-check</field>
+            <field name="keywords">star temporal 10, temporal 10</field>
+            <field name="branch">life</field>
+        </record>
+        <record id="coll_st15" model="insurance.collection.node">
+            <field name="name">Star Temporal 15</field>
+            <field name="parent_id" ref="coll_vt_temp"/>
+            <field name="sequence">4</field>
+            <field name="icon">fa-check</field>
+            <field name="keywords">star temporal 15, temporal 15</field>
+            <field name="branch">life</field>
+        </record>
+        <record id="coll_st20" model="insurance.collection.node">
+            <field name="name">Star Temporal 20</field>
+            <field name="parent_id" ref="coll_vt_temp"/>
+            <field name="sequence">5</field>
+            <field name="icon">fa-check</field>
+            <field name="keywords">star temporal 20, temporal 20</field>
+            <field name="branch">life</field>
+        </record>
+        <record id="coll_seadapta" model="insurance.collection.node">
+            <field name="name">SE Adapta</field>
+            <field name="parent_id" ref="coll_vt_temp"/>
+            <field name="sequence">6</field>
+            <field name="icon">fa-check</field>
+            <field name="keywords">se adapta, seadapta</field>
+            <field name="branch">life</field>
+        </record>
+        <record id="coll_plenitud" model="insurance.collection.node">
+            <field name="name">Plenitud</field>
+            <field name="parent_id" ref="coll_vt_dotal"/>
+            <field name="sequence">1</field>
+            <field name="icon">fa-check</field>
+            <field name="keywords">plenitud</field>
+            <field name="branch">life</field>
+        </record>
+        <record id="coll_vmujer" model="insurance.collection.node">
+            <field name="name">Vida Mujer</field>
+            <field name="parent_id" ref="coll_vt_dotal"/>
+            <field name="sequence">2</field>
+            <field name="icon">fa-check</field>
+            <field name="keywords">vida mujer</field>
+            <field name="branch">life</field>
+        </record>
+        <record id="coll_segubeca" model="insurance.collection.node">
+            <field name="name">Segubeca</field>
+            <field name="parent_id" ref="coll_vt_dotal"/>
+            <field name="sequence">3</field>
+            <field name="icon">fa-check</field>
+            <field name="keywords">segubeca</field>
+            <field name="branch">life</field>
+        </record>
+        <record id="coll_sd5" model="insurance.collection.node">
+            <field name="name">Star Dotal 5</field>
+            <field name="parent_id" ref="coll_vt_dotal"/>
+            <field name="sequence">4</field>
+            <field name="icon">fa-check</field>
+            <field name="keywords">star dotal 5, dotal 5</field>
+            <field name="branch">life</field>
+        </record>
+        <record id="coll_sd10" model="insurance.collection.node">
+            <field name="name">Star Dotal 10</field>
+            <field name="parent_id" ref="coll_vt_dotal"/>
+            <field name="sequence">5</field>
+            <field name="icon">fa-check</field>
+            <field name="keywords">star dotal 10, dotal 10</field>
+            <field name="branch">life</field>
+        </record>
+        <record id="coll_sd15" model="insurance.collection.node">
+            <field name="name">Star Dotal 15</field>
+            <field name="parent_id" ref="coll_vt_dotal"/>
+            <field name="sequence">6</field>
+            <field name="icon">fa-check</field>
+            <field name="keywords">star dotal 15, dotal 15</field>
+            <field name="branch">life</field>
+        </record>
+        <record id="coll_sd20" model="insurance.collection.node">
+            <field name="name">Star Dotal 20</field>
+            <field name="parent_id" ref="coll_vt_dotal"/>
+            <field name="sequence">7</field>
+            <field name="icon">fa-check</field>
+            <field name="keywords">star dotal 20, dotal 20</field>
+            <field name="branch">life</field>
+        </record>
+        <record id="coll_mio" model="insurance.collection.node">
+            <field name="name">Mío</field>
+            <field name="parent_id" ref="coll_vu"/>
+            <field name="sequence">1</field>
+            <field name="icon">fa-user</field>
+            <field name="color">#208CEF</field>
+            <field name="keywords">mio</field>
+            <field name="branch">life</field>
+        </record>
+        <record id="coll_realiza" model="insurance.collection.node">
+            <field name="name">Realiza</field>
+            <field name="parent_id" ref="coll_vu"/>
+            <field name="sequence">2</field>
+            <field name="icon">fa-rocket</field>
+            <field name="color">#4B3FCF</field>
+            <field name="keywords">realiza</field>
+            <field name="branch">life</field>
+        </record>
+        <record id="coll_imagina" model="insurance.collection.node">
+            <field name="name">ImaginaSER</field>
+            <field name="parent_id" ref="coll_vu"/>
+            <field name="sequence">3</field>
+            <field name="icon">fa-lightbulb-o</field>
+            <field name="color">#8963CA</field>
+            <field name="keywords">imagina ser, imaginaser</field>
+            <field name="branch">life</field>
+        </record>
+    </data>
+    <data noupdate="1">
+        <record id="ir_cron_collection_refresh" model="ir.cron">
+            <field name="name">Vive Seguro: actualizar colores de cobranza</field>
+            <field name="model_id" ref="model_insurance_policy"/>
+            <field name="state">code</field>
+            <field name="code">model._cron_collection_refresh()</field>
+            <field name="interval_number">1</field>
+            <field name="interval_type">days</field>
+            <field name="active" eval="True"/>
+        </record>
+    </data>
+</odoo>

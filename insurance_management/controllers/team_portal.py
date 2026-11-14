@@ -30,11 +30,11 @@ SLUGS = {
 }
 BLOCK_URL = {v: "/equipo/" + k for k, v in SLUGS.items()}
 NAV = [
+    ("collection", "Cobranza", "fa-money"),
     ("portfolio", "Mi cartera", "fa-briefcase"),
     ("emission", "Emisiones", "fa-file-text-o"),
     ("procedure", "Trámites", "fa-tasks"),
     ("claim", "Siniestros", "fa-medkit"),
-    ("collection", "Cobranza", "fa-money"),
     ("crm", "CRM", "fa-handshake-o"),
     ("renewal", "Renovación", "fa-refresh"),
     ("anniversary", "Aniversario", "fa-gift"),
@@ -442,8 +442,44 @@ class InsuranceTeamPortal(http.Controller):
             return self._back(url, error=_msg(e))
         return self._back(url, ok=_("Documento cargado."))
 
-    # ------------------------------------------------------------------ cobranza
-    @http.route(["/equipo/cobranza"], type="http", auth="user", website=True)
+    # ------------------------------------------------------------------ cobranza por ramo → categoría → producto
+    @http.route(["/equipo/cobranza", "/equipo/cobranza/r/<int:node_id>"], type="http", auth="user", website=True)
+    def team_coll_nodes(self, node_id=None, q=None, filtro=None, **kw):
+        if redirect := self._guard("collection"):
+            return redirect
+        svc = self._svc()
+        node, children, trail = svc.coll_nav(node_id)
+        values = {"node": node, "children": children, "trail": trail, "q": q or "", "filtro": filtro or "", "cols": None}
+        if node and not children or q or filtro:
+            values["cols"] = svc.coll_policies(node, q, filtro)
+            values["status_labels"] = dict(request.env["insurance.policy"]._fields["coll_status"].selection)
+            values["notice_labels"] = dict(request.env["insurance.policy"]._fields["coll_notice_state"].selection)
+            values["freq_labels"] = dict(request.env["insurance.policy"]._fields["premium_type"]._description_selection(request.env))
+            values["today"] = svc.today()
+        return self._render("insurance_management.team_coll_board", "collection", **values)
+
+    @http.route(["/equipo/cobranza/p/<int:policy_id>/whatsapp"], type="http", auth="user", website=True)
+    def team_coll_whatsapp(self, policy_id, back=None, **kw):
+        try:
+            url = self._svc().coll_whatsapp(policy_id)
+        except ERRORS as e:
+            return self._back(back or "/equipo/cobranza", error=_msg(e))
+        if not url:
+            return self._back(back or "/equipo/cobranza", error=_("El cliente no tiene teléfono (pendiente de captura)."))
+        return request.redirect(url, local=False)
+
+    @http.route(["/equipo/cobranza/p/<int:policy_id>/<string:op>"], type="http", auth="user", website=True,
+                methods=["POST"])
+    def team_coll_op(self, policy_id, op, back=None, **post):
+        back = back if (back or "").startswith("/equipo/") else "/equipo/cobranza"
+        try:
+            msg = self._svc().coll_op(policy_id, op, post)
+        except ERRORS as e:
+            return self._back(back, error=_msg(e))
+        return self._back(back, ok=msg)
+
+    # ------------------------------------------------------------------ cobranza por cuotas (vista anterior)
+    @http.route(["/equipo/cobranza/cuotas"], type="http", auth="user", website=True)
     def team_collection(self, vista="pending", q=None, **kw):
         if redirect := self._guard("collection"):
             return redirect
@@ -459,8 +495,8 @@ class InsuranceTeamPortal(http.Controller):
         try:
             line = self._svc().collection_pay(line_id, post)
         except ERRORS as e:
-            return self._back("/equipo/cobranza", error=_msg(e), vista=back_vista)
-        return self._back("/equipo/cobranza", ok=_("Pago registrado: %s") % line.name, vista=back_vista)
+            return self._back("/equipo/cobranza/cuotas", error=_msg(e), vista=back_vista)
+        return self._back("/equipo/cobranza/cuotas", ok=_("Pago registrado: %s") % line.name, vista=back_vista)
 
     @http.route(["/equipo/cobranza/<int:line_id>/correo"], type="http", auth="user", website=True,
                 methods=["POST"])
@@ -468,8 +504,8 @@ class InsuranceTeamPortal(http.Controller):
         try:
             self._svc().collection_email(line_id)
         except ERRORS as e:
-            return self._back("/equipo/cobranza", error=_msg(e), vista=back_vista)
-        return self._back("/equipo/cobranza", ok=_("Recordatorio enviado por correo."), vista=back_vista)
+            return self._back("/equipo/cobranza/cuotas", error=_msg(e), vista=back_vista)
+        return self._back("/equipo/cobranza/cuotas", ok=_("Recordatorio enviado por correo."), vista=back_vista)
 
     @http.route(["/equipo/cobranza/<int:line_id>/whatsapp"], type="http", auth="user", website=True)
     def team_collection_whatsapp(self, line_id, **kw):
@@ -477,10 +513,10 @@ class InsuranceTeamPortal(http.Controller):
         try:
             line = svc.collection_log_whatsapp(line_id)
         except ERRORS as e:
-            return self._back("/equipo/cobranza", error=_msg(e))
+            return self._back("/equipo/cobranza/cuotas", error=_msg(e))
         link = svc.wa_link(line.partner_id, svc.collection_reminder_text(line))
         if not link:
-            return self._back("/equipo/cobranza", error=_("El cliente no tiene teléfono."))
+            return self._back("/equipo/cobranza/cuotas", error=_("El cliente no tiene teléfono."))
         return request.redirect(link, local=False)
 
     # ------------------------------------------------------------------ renovaciones (GMM) y aniversarios (vida)

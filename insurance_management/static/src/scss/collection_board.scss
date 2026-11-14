@@ -1,0 +1,33 @@
+// Vive Seguro · Cobranza por ramo (plataforma)
+.o_vs_coll_tiles {
+    .o_kanban_record { border: 0; background: transparent; }
+    .o_vs_coll_tile_body {
+        display: flex; align-items: center; gap: 1rem; padding: 1.1rem 1.2rem; border-radius: 14px;
+        background: #fff; border: 1px solid #E1DCF2; border-left: 6px solid var(--tile); cursor: pointer;
+        box-shadow: 0 2px 8px rgba(59, 47, 150, .06); transition: transform .12s, box-shadow .12s; min-height: 108px;
+        &:hover { transform: translateY(-2px); box-shadow: 0 8px 20px rgba(59, 47, 150, .14); }
+    }
+    .o_vs_coll_tile_icon {
+        flex: 0 0 52px; height: 52px; border-radius: 14px; display: grid; place-items: center;
+        background: var(--tile); color: #fff; font-size: 1.5rem;
+    }
+    .o_vs_coll_tile_text { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: .15rem; }
+    .o_vs_coll_tile_name { font-size: 1.1rem; font-weight: 700; color: #1E1B3A; }
+    .o_vs_coll_tile_note { color: #5E5A78; font-size: .85rem; }
+    .o_vs_coll_tile_counts { display: flex; flex-wrap: wrap; gap: .4rem; margin-top: .35rem; font-size: .8rem;
+        span { background: #F3F0FB; color: #3B2F96; border-radius: 999px; padding: .1rem .55rem; } }
+    .o_vs_red { background: #FDE7E7 !important; color: #B3261E !important; }
+    .o_vs_yellow { background: #FFF4D6 !important; color: #8A5A00 !important; }
+    .o_vs_dev { background: #EEE !important; color: #666 !important; }
+    .o_vs_coll_tile_go { color: #B9B2D8; }
+}
+.o_vs_coll_board {
+    .o_kanban_group { min-width: 380px; }
+    .o_vs_coll_card { border-left: 6px solid #1E1B3A; padding: .65rem .8rem; height: 100%; }
+    .o_vs_coll_due { font-size: 1rem; font-weight: 600; margin: .3rem 0; }
+    .o_vs_st_month { border-left-color: #E8B400; background: #FFFBEA; }
+    .o_vs_st_urgent { border-left-color: #D93025; background: #FFF1F0; }
+    .o_vs_st_overdue { border-left-color: #7A0E0E; background: #FBE3E3; .o_vs_coll_due { color: #7A0E0E; } }
+    .o_vs_st_paid { border-left-color: #1E7A46; background: #EEF8F1; }
+    .o_vs_st_normal { border-left-color: #1E1B3A; }
+}

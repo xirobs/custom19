@@ -748,6 +748,134 @@
     </template>
 
     <!-- ===================== Cobranza ===================== -->
+    <template id="team_coll_board" name="Equipo: cobranza por ramo">
+        <t t-call="insurance_management.team_layout">
+            <t t-set="here" t-value="('/equipo/cobranza/r/%s' % node.id) if node else '/equipo/cobranza'"/>
+            <t t-call="insurance_management.team_block_title">
+                <t t-set="icon" t-value="'fa-money'"/>
+                <t t-set="title" t-value="node.name if node else 'Cobranza'"/>
+                <t t-set="hint" t-value="'Elige ramo, categoría y producto. Las más próximas a vencer van arriba; las pagadas, al final.'"/>
+            </t>
+            <nav class="o_it_crumbs" aria-label="Ruta">
+                <a href="/equipo/cobranza"><i class="fa fa-money"/> Cobranza</a>
+                <t t-foreach="trail" t-as="tr">
+                    <i class="fa fa-angle-right" aria-hidden="true"/>
+                    <a t-att-href="'/equipo/cobranza/r/%s' % tr.id" t-out="tr.name"/>
+                </t>
+                <a href="/equipo/cobranza/cuotas" class="o_it_crumbs_alt">Ver por cuotas</a>
+            </nav>
+            <form t-att-action="here" method="get" class="o_it_search" role="search">
+                <label class="visually-hidden" for="cb_q">Buscar</label>
+                <input id="cb_q" name="q" class="form-control" t-att-value="q" placeholder="Buscar cliente, póliza o teléfono"/>
+                <button class="btn o_it_btn_light" type="submit" aria-label="Buscar"><i class="fa fa-search"/></button>
+            </form>
+            <div class="o_it_chips">
+                <a t-att-href="here" t-attf-class="o_it_chip #{'active' if not filtro else ''}">Todas</a>
+                <a t-att-href="here + '?filtro=overdue'" t-attf-class="o_it_chip o_vs_chip_overdue #{'active' if filtro == 'overdue' else ''}">Vencidas</a>
+                <a t-att-href="here + '?filtro=urgent'" t-attf-class="o_it_chip o_it_chip_bad #{'active' if filtro == 'urgent' else ''}">Urgentes (≤ 5 días)</a>
+                <a t-att-href="here + '?filtro=month'" t-attf-class="o_it_chip o_it_chip_warn #{'active' if filtro == 'month' else ''}">Pago del mes</a>
+                <a t-att-href="here + '?filtro=paid'" t-attf-class="o_it_chip o_it_chip_ok #{'active' if filtro == 'paid' else ''}">Pagadas</a>
+                <a t-att-href="here + '?filtro=aviso'" t-attf-class="o_it_chip #{'active' if filtro == 'aviso' else ''}"><i class="fa fa-whatsapp"/> Falta avisar</a>
+            </div>
+
+            <!-- Botones de ramo / categoría / producto -->
+            <div t-if="children and not cols" class="o_vs_tiles">
+                <a t-foreach="children" t-as="ch" t-att-href="'/equipo/cobranza/r/%s' % ch.id"
+                   class="o_vs_tile" t-attf-style="--tile: #{ch.color or '#5B47CC'}">
+                    <span class="o_vs_tile_icon"><i t-attf-class="fa #{ch.icon or 'fa-folder-open'}"/></span>
+                    <span class="o_vs_tile_text">
+                        <b t-out="ch.name"/>
+                        <small t-if="ch.note" t-out="ch.note"/>
+                        <span class="o_vs_tile_counts">
+                            <span><t t-out="ch.policy_count"/> pólizas</span>
+                            <span t-if="ch.urgent_count" class="o_vs_red"><t t-out="ch.urgent_count"/> urgentes/vencidas</span>
+                            <span t-if="ch.month_count" class="o_vs_yellow"><t t-out="ch.month_count"/> del mes</span>
+                            <span t-if="ch.in_development" class="o_vs_dev">En desarrollo</span>
+                        </span>
+                    </span>
+                    <i class="fa fa-chevron-right o_vs_tile_go" aria-hidden="true"/>
+                </a>
+            </div>
+
+            <!-- Pantalla de cobranza: dos columnas -->
+            <t t-if="cols is not None and cols != False">
+                <div class="o_vs_legend">
+                    <span class="o_vs_dot o_vs_st_normal"/>Normal
+                    <span class="o_vs_dot o_vs_st_month"/>Pago del mes
+                    <span class="o_vs_dot o_vs_st_urgent"/>Urgente (≤ 5 días)
+                    <span class="o_vs_dot o_vs_st_overdue"/>Vencido
+                    <span class="o_vs_dot o_vs_st_paid"/>Pagado
+                </div>
+                <div class="o_vs_cols">
+                    <section t-foreach="[('direct', 'Pago directo', 'El cliente paga directamente'), ('domiciled', 'Pago domiciliado', 'Cargo automático a tarjeta o cuenta')]" t-as="col" class="o_vs_col">
+                        <t t-set="rows" t-value="cols.get(col[0], [])"/>
+                        <header class="o_vs_col_head">
+                            <h2><i t-attf-class="fa #{'fa-hand-o-right' if col[0] == 'direct' else 'fa-credit-card'}"/> <t t-out="col[1]"/> <span class="o_vs_count" t-out="len(rows)"/></h2>
+                            <small t-out="col[2]"/>
+                        </header>
+                        <p t-if="not rows" class="o_it_empty_line">Sin pólizas en esta columna.</p>
+                        <article t-foreach="rows" t-as="p" t-attf-class="o_vs_card o_vs_st_#{p.coll_status}">
+                            <div class="o_vs_card_top">
+                                <b t-out="p.partner_id.name"/>
+                                <span t-attf-class="o_vs_badge o_vs_badge_#{p.coll_status}" t-out="status_labels.get(p.coll_status)"/>
+                            </div>
+                            <div class="o_vs_card_meta">Póliza <t t-out="p.name"/> · <t t-out="p.coll_node_id.name or p.coll_product_text"/></div>
+                            <div class="o_vs_card_due">
+                                <span><i class="fa fa-calendar" aria-hidden="true"/> <t t-out="p.coll_next_date and p.coll_next_date.strftime('%d/%m/%Y') or 'Sin fecha'"/>
+                                    <small t-if="p.coll_next_date and p.coll_status != 'paid'">
+                                        <t t-set="dd" t-value="(p.coll_next_date - today).days"/>
+                                        (<t t-if="dd &lt; 0">hace <t t-out="-dd"/> días</t><t t-elif="dd == 0">hoy</t><t t-else="">en <t t-out="dd"/> días</t>)
+                                    </small>
+                                </span>
+                                <b t-out="money(p.coll_amount, p.currency_id) if p.coll_amount else 'Importe por capturar'"/>
+                            </div>
+                            <div class="o_vs_card_meta">
+                                <t t-out="freq_labels.get(p.premium_type)"/> · <t t-out="'Directo' if p.collection_channel == 'direct' else 'Domiciliado'"/>
+                                · <i class="fa fa-phone" aria-hidden="true"/>
+                                <t t-if="p.coll_phone"><t t-out="p.coll_phone"/></t>
+                                <span t-else="" class="o_vs_missing">Teléfono pendiente de captura</span>
+                            </div>
+                            <div class="o_vs_card_notice">
+                                <t t-set="last" t-value="p.coll_last_notice_id"/>
+                                <i class="fa fa-whatsapp" aria-hidden="true"/>
+                                Aviso: <b t-out="notice_labels.get(p.coll_notice_state)"/>
+                                <t t-if="last"> · último <t t-out="last.prepared_at and context_timestamp(last.prepared_at).strftime('%d/%m %H:%M')"/>
+                                    (<t t-out="dict(last._fields['kind'].selection).get(last.kind)"/>, <t t-out="last.user_id.name"/>)</t>
+                                <span t-if="p.coll_needs_notice" class="o_vs_need">Falta avisar</span>
+                            </div>
+                            <div class="o_vs_card_actions">
+                                <a t-if="p.coll_phone" t-att-href="'/equipo/cobranza/p/%s/whatsapp?back=%s' % (p.id, here)" target="_blank" class="btn btn-sm o_it_btn_wa"><i class="fa fa-whatsapp"/> WhatsApp</a>
+                                <form t-if="p.coll_notice_state not in ('sent', 'delivered') and p.coll_status != 'paid'" t-att-action="'/equipo/cobranza/p/%s/enviado' % p.id" method="post">
+                                    <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
+                                    <input type="hidden" name="back" t-att-value="here"/>
+                                    <button class="btn btn-sm o_it_btn_light" type="submit"><i class="fa fa-check"/> Aviso enviado</button>
+                                </form>
+                                <form t-if="p.coll_status != 'paid'" t-att-action="'/equipo/cobranza/p/%s/pagado' % p.id" method="post"
+                                      t-att-data-confirm="'¿Confirmar el pago del %s de %s?' % (p.coll_next_date and p.coll_next_date.strftime('%d/%m/%Y') or '', p.partner_id.name)">
+                                    <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
+                                    <input type="hidden" name="back" t-att-value="here"/>
+                                    <button class="btn btn-sm o_it_btn" type="submit"><i class="fa fa-money"/> Confirmar pago</button>
+                                </form>
+                                <details class="o_it_pay">
+                                    <summary class="btn btn-sm o_it_btn_light"><i class="fa fa-pencil"/> Observación</summary>
+                                    <form t-att-action="'/equipo/cobranza/p/%s/nota' % p.id" method="post" class="o_it_inline_form">
+                                        <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
+                                        <input type="hidden" name="back" t-att-value="here"/>
+                                        <div class="o_it_voice">
+                                            <textarea t-att-id="'cn_%s' % p.id" name="note" rows="2" class="form-control" placeholder="Ej. dice que paga el viernes"/>
+                                            <button type="button" class="o_it_mic" t-att-data-target="'cn_%s' % p.id" title="Dictar"><i class="fa fa-microphone"/></button>
+                                        </div>
+                                        <button class="btn o_it_btn" type="submit">Guardar</button>
+                                    </form>
+                                </details>
+                            </div>
+                        </article>
+                    </section>
+                </div>
+            </t>
+        </t>
+    </template>
+
     <template id="team_collection" name="Equipo: cobranza">
         <t t-call="insurance_management.team_layout">
             <t t-call="insurance_management.team_block_title">
@@ -756,12 +884,12 @@
                 <t t-set="hint" t-value="'Recibos por vencer y vencidos con su etapa de gracia, prórroga o amparo. Registra pagos y manda recordatorios.'"/>
             </t>
             <div class="o_it_chips">
-                <a href="/equipo/cobranza" t-attf-class="o_it_chip #{'active' if view == 'pending' else ''}">Pendientes</a>
-                <a href="/equipo/cobranza?vista=overdue" t-attf-class="o_it_chip o_it_chip_bad #{'active' if view == 'overdue' else ''}">Vencidos <b t-out="counts['overdue']"/></a>
-                <a href="/equipo/cobranza?vista=due_soon" t-attf-class="o_it_chip o_it_chip_warn #{'active' if view == 'due_soon' else ''}">Por vencer <b t-out="counts['due_soon']"/></a>
-                <a href="/equipo/cobranza?vista=paid" t-attf-class="o_it_chip o_it_chip_ok #{'active' if view == 'paid' else ''}">Pagados este mes <b t-out="counts['paid']"/></a>
+                <a href="/equipo/cobranza/cuotas" t-attf-class="o_it_chip #{'active' if view == 'pending' else ''}">Pendientes</a>
+                <a href="/equipo/cobranza/cuotas?vista=overdue" t-attf-class="o_it_chip o_it_chip_bad #{'active' if view == 'overdue' else ''}">Vencidos <b t-out="counts['overdue']"/></a>
+                <a href="/equipo/cobranza/cuotas?vista=due_soon" t-attf-class="o_it_chip o_it_chip_warn #{'active' if view == 'due_soon' else ''}">Por vencer <b t-out="counts['due_soon']"/></a>
+                <a href="/equipo/cobranza/cuotas?vista=paid" t-attf-class="o_it_chip o_it_chip_ok #{'active' if view == 'paid' else ''}">Pagados este mes <b t-out="counts['paid']"/></a>
             </div>
-            <form action="/equipo/cobranza" method="get" class="o_it_search" role="search">
+            <form action="/equipo/cobranza/cuotas" method="get" class="o_it_search" role="search">
                 <input type="hidden" name="vista" t-att-value="view"/>
                 <label class="visually-hidden" for="co_q">Buscar</label>
                 <input id="co_q" name="q" class="form-control" t-att-value="q" placeholder="Buscar cliente o póliza"/>

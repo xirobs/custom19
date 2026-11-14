@@ -1,0 +1,293 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- ===================== Botones: ramo → categoría → producto ===================== -->
+    <record id="view_collection_node_kanban" model="ir.ui.view">
+        <field name="name">insurance.collection.node.kanban</field>
+        <field name="model">insurance.collection.node</field>
+        <field name="arch" type="xml">
+            <kanban class="o_vs_coll_tiles" create="0" action="action_open" type="object" sample="0">
+                <field name="color"/>
+                <field name="icon"/>
+                <field name="child_ids"/>
+                <templates>
+                    <t t-name="card" class="o_vs_coll_tile p-0">
+                        <div class="o_vs_coll_tile_body" t-attf-style="--tile: #{record.color.raw_value or '#5B47CC'}">
+                            <div class="o_vs_coll_tile_icon"><i t-attf-class="fa #{record.icon.raw_value or 'fa-folder-open'}" title="Ramo"/></div>
+                            <div class="o_vs_coll_tile_text">
+                                <field name="name" class="o_vs_coll_tile_name"/>
+                                <field name="note" class="o_vs_coll_tile_note"/>
+                                <div class="o_vs_coll_tile_counts">
+                                    <span><field name="policy_count"/> pólizas</span>
+                                    <span class="o_vs_red" invisible="not urgent_count"><field name="urgent_count"/> urgentes/vencidas</span>
+                                    <span class="o_vs_yellow" invisible="not month_count"><field name="month_count"/> del mes</span>
+                                    <span class="o_vs_dev" invisible="not in_development">En desarrollo</span>
+                                </div>
+                            </div>
+                            <i class="fa fa-chevron-right o_vs_coll_tile_go" title="Abrir"/>
+                        </div>
+                    </t>
+                </templates>
+            </kanban>
+        </field>
+    </record>
+
+    <record id="view_collection_node_list" model="ir.ui.view">
+        <field name="name">insurance.collection.node.list</field>
+        <field name="model">insurance.collection.node</field>
+        <field name="arch" type="xml">
+            <list editable="bottom">
+                <field name="sequence" widget="handle"/>
+                <field name="name"/>
+                <field name="parent_id"/>
+                <field name="keywords"/>
+                <field name="branch"/>
+                <field name="icon" optional="hide"/>
+                <field name="color" widget="color" optional="hide"/>
+                <field name="in_development" optional="hide"/>
+                <field name="policy_count"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_collection_node_form" model="ir.ui.view">
+        <field name="name">insurance.collection.node.form</field>
+        <field name="model">insurance.collection.node</field>
+        <field name="arch" type="xml">
+            <form>
+                <sheet>
+                    <group>
+                        <group>
+                            <field name="name"/>
+                            <field name="parent_id"/>
+                            <field name="note"/>
+                            <field name="in_development"/>
+                        </group>
+                        <group>
+                            <field name="keywords" placeholder="flex a, flexa"/>
+                            <field name="branch"/>
+                            <field name="icon"/>
+                            <field name="color" widget="color"/>
+                        </group>
+                    </group>
+                    <p class="text-muted">Las palabras clave se buscan en el producto o plan de la póliza (por ejemplo «ORVI 99 10 UDIS»).
+                        Si varias coinciden, gana la más larga; así cada póliza aparece en un solo producto.</p>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="action_collection_ramos" model="ir.actions.act_window">
+        <field name="name">Cobranza</field>
+        <field name="res_model">insurance.collection.node</field>
+        <field name="view_mode">kanban,list,form</field>
+        <field name="domain">[("parent_id", "=", False)]</field>
+        <field name="view_ids" eval="[(5, 0, 0),
+            (0, 0, {'view_mode': 'kanban', 'view_id': ref('view_collection_node_kanban')}),
+            (0, 0, {'view_mode': 'list', 'view_id': ref('view_collection_node_list')})]"/>
+    </record>
+
+    <record id="action_collection_nodes_config" model="ir.actions.act_window">
+        <field name="name">Clasificación de productos (cobranza)</field>
+        <field name="res_model">insurance.collection.node</field>
+        <field name="view_mode">list,form</field>
+        <field name="view_id" ref="view_collection_node_list"/>
+    </record>
+
+    <!-- ===================== Pólizas en cobranza: dos columnas ===================== -->
+    <record id="view_policy_collection_kanban" model="ir.ui.view">
+        <field name="name">insurance.policy.collection.kanban</field>
+        <field name="model">insurance.policy</field>
+        <field name="priority">90</field>
+        <field name="arch" type="xml">
+            <kanban class="o_vs_coll_board" default_group_by="collection_channel" default_order="coll_rank, coll_next_date"
+                    create="0" group_create="0" group_delete="0" group_edit="0" records_draggable="0" quick_create="0">
+                <field name="coll_status"/>
+                <field name="coll_phone"/>
+                <field name="coll_notice_state"/>
+                <field name="currency_id"/>
+                <templates>
+                    <t t-name="card" class="p-0">
+                      <div t-attf-class="o_vs_coll_card o_vs_st_#{record.coll_status.raw_value}">
+                        <div class="d-flex justify-content-between align-items-start">
+                            <field name="partner_id" class="fw-bold"/>
+                            <field name="coll_status" widget="badge"
+                                   decoration-danger="coll_status in ('overdue', 'urgent')"
+                                   decoration-warning="coll_status == 'month'"
+                                   decoration-success="coll_status == 'paid'"/>
+                        </div>
+                        <div class="small text-muted"><field name="name"/> · <field name="coll_node_id"/></div>
+                        <div class="o_vs_coll_due">
+                            <i class="fa fa-calendar" title="Próximo pago"/> <field name="coll_next_date"/>
+                            <span class="ms-2"><field name="coll_amount" widget="monetary"/></span>
+                            <span class="ms-2 text-muted"><field name="premium_type"/></span>
+                        </div>
+                        <div class="small">
+                            <i class="fa fa-phone" title="Teléfono"/>
+                            <span invisible="not coll_phone"><field name="coll_phone"/></span>
+                            <span invisible="coll_phone" class="text-danger">Pendiente de captura</span>
+                            <span class="ms-2">Aviso: <field name="coll_notice_state"/></span>
+                        </div>
+                        <footer class="pt-2 gap-1 flex-wrap">
+                            <button name="action_coll_whatsapp" type="object" class="btn btn-sm btn-success" invisible="not coll_phone">
+                                <i class="fa fa-whatsapp"/> WhatsApp
+                            </button>
+                            <button name="action_coll_mark_sent" type="object" class="btn btn-sm btn-secondary"
+                                    invisible="coll_notice_state in ('sent', 'delivered') or coll_status == 'paid'">Marcar aviso enviado</button>
+                            <button name="action_coll_confirm_payment" type="object" class="btn btn-sm btn-primary"
+                                    invisible="coll_status == 'paid'" confirm="¿Confirmar el pago de este vencimiento?">Confirmar pago</button>
+                        </footer>
+                      </div>
+                    </t>
+                </templates>
+            </kanban>
+        </field>
+    </record>
+
+    <record id="view_policy_collection_list" model="ir.ui.view">
+        <field name="name">insurance.policy.collection.list</field>
+        <field name="model">insurance.policy</field>
+        <field name="priority">90</field>
+        <field name="arch" type="xml">
+            <list default_order="coll_rank, coll_next_date" create="0"
+                  decoration-danger="coll_status in ('overdue', 'urgent')" decoration-warning="coll_status == 'month'"
+                  decoration-success="coll_status == 'paid'">
+                <field name="partner_id" string="Cliente"/>
+                <field name="name" string="Póliza"/>
+                <field name="coll_node_id" string="Producto"/>
+                <field name="coll_next_date"/>
+                <field name="coll_amount"/>
+                <field name="currency_id" column_invisible="1"/>
+                <field name="premium_type" string="Frecuencia"/>
+                <field name="collection_channel" string="Forma de pago"/>
+                <field name="coll_phone"/>
+                <field name="coll_status" widget="badge"/>
+                <field name="coll_notice_state"/>
+                <button name="action_coll_whatsapp" type="object" icon="fa-whatsapp" title="WhatsApp"/>
+                <button name="action_coll_mark_sent" type="object" icon="fa-check" title="Marcar aviso enviado"/>
+                <button name="action_coll_confirm_payment" type="object" icon="fa-money" title="Confirmar pago"
+                        confirm="¿Confirmar el pago de este vencimiento?"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_policy_collection_search" model="ir.ui.view">
+        <field name="name">insurance.policy.collection.search</field>
+        <field name="model">insurance.policy</field>
+        <field name="inherit_id" ref="view_insurance_policy_search"/>
+        <field name="arch" type="xml">
+            <xpath expr="//search" position="inside">
+                <separator/>
+                <filter name="coll_overdue" string="Vencidas" domain="[('coll_status', '=', 'overdue')]"/>
+                <filter name="coll_urgent" string="Urgentes (5 días)" domain="[('coll_status', '=', 'urgent')]"/>
+                <filter name="coll_month" string="Pago del mes" domain="[('coll_status', '=', 'month')]"/>
+                <filter name="coll_paid" string="Pagadas" domain="[('coll_status', '=', 'paid')]"/>
+                <filter name="pending" string="Pendientes de pago" domain="[('coll_status', 'not in', ('paid', 'none'))]"/>
+                <filter name="coll_needs_notice" string="Falta avisar" domain="[('coll_needs_notice', '=', True)]"/>
+                <filter name="group_coll_status" string="Estado de cobranza" context="{'group_by': 'coll_status'}"/>
+                <filter name="group_coll_node" string="Producto (cobranza)" context="{'group_by': 'coll_node_id'}"/>
+            </xpath>
+        </field>
+    </record>
+
+    <!-- Ficha de la póliza: control interno de cobranza -->
+    <record id="view_insurance_policy_form_collection_board" model="ir.ui.view">
+        <field name="name">insurance.policy.form.collection.board</field>
+        <field name="model">insurance.policy</field>
+        <field name="inherit_id" ref="view_insurance_policy_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//notebook" position="inside">
+                <page string="Seguimiento de cobranza" name="collection_followup">
+                    <div class="d-flex gap-2 mb-3 flex-wrap">
+                        <button name="action_coll_whatsapp" type="object" class="btn btn-success" icon="fa-whatsapp" string="Aviso por WhatsApp"/>
+                        <button name="action_coll_mark_sent" type="object" class="btn btn-secondary" string="Marcar aviso enviado"/>
+                        <button name="action_coll_confirm_payment" type="object" class="btn btn-primary" string="Confirmar pago"
+                                confirm="¿Confirmar el pago de este vencimiento?" invisible="coll_status == 'paid'"/>
+                        <button name="action_coll_undo_payment" type="object" class="btn btn-link" string="Deshacer último pago"
+                                invisible="not coll_paid_on"/>
+                    </div>
+                    <group>
+                        <group>
+                            <field name="coll_node_id"/>
+                            <field name="coll_next_date"/>
+                            <field name="coll_amount"/>
+                            <field name="coll_status" widget="badge"/>
+                            <field name="coll_phone" placeholder="Pendiente de captura"/>
+                        </group>
+                        <group>
+                            <field name="coll_paid_on"/>
+                            <field name="coll_paid_for"/>
+                            <field name="coll_notice_state"/>
+                            <field name="coll_last_notice_id"/>
+                        </group>
+                    </group>
+                    <field name="coll_note" placeholder="Observaciones de cobranza…"/>
+                    <field name="coll_notice_ids">
+                        <list editable="bottom" create="0">
+                            <field name="prepared_at" string="Fecha y hora"/>
+                            <field name="due_date"/>
+                            <field name="kind"/>
+                            <field name="channel"/>
+                            <field name="user_id"/>
+                            <field name="state" widget="badge" decoration-info="state == 'prepared'"
+                                   decoration-success="state in ('sent', 'delivered')"/>
+                            <field name="sent_at"/>
+                            <field name="note"/>
+                            <button name="action_mark_sent" type="object" string="Enviado" invisible="state != 'prepared'"/>
+                            <button name="action_mark_delivered" type="object" string="Entregado" invisible="state == 'delivered'"/>
+                        </list>
+                    </field>
+                </page>
+            </xpath>
+        </field>
+    </record>
+
+    <record id="view_collection_notice_list" model="ir.ui.view">
+        <field name="name">insurance.collection.notice.list</field>
+        <field name="model">insurance.collection.notice</field>
+        <field name="arch" type="xml">
+            <list create="0">
+                <field name="prepared_at" string="Fecha y hora"/>
+                <field name="partner_id"/>
+                <field name="policy_id"/>
+                <field name="due_date"/>
+                <field name="kind"/>
+                <field name="channel"/>
+                <field name="user_id"/>
+                <field name="state" widget="badge" decoration-info="state == 'prepared'" decoration-success="state in ('sent', 'delivered')"/>
+                <field name="sent_at"/>
+                <field name="note"/>
+                <button name="action_mark_sent" type="object" string="Marcar enviado" invisible="state != 'prepared'"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="action_collection_notices" model="ir.actions.act_window">
+        <field name="name">Historial de avisos</field>
+        <field name="res_model">insurance.collection.notice</field>
+        <field name="view_mode">list,form</field>
+    </record>
+
+    <!-- Menú: Cobranza queda como primer botón -->
+    <menuitem id="menu_collection_ramos" name="Cobranza por ramo" parent="menu_insurance_collection_root"
+              action="action_collection_ramos" sequence="1"/>
+    <menuitem id="menu_collection_notices" name="Historial de avisos" parent="menu_insurance_collection_root"
+              action="action_collection_notices" sequence="30"/>
+    <menuitem id="menu_collection_nodes_config" name="Clasificación de productos" parent="menu_insurance_collection_root"
+              action="action_collection_nodes_config" sequence="90" groups="insurance_management.group_insurance_manager"/>
+
+    <!-- Ajustes -->
+    <record id="res_config_settings_view_form_collection_board" model="ir.ui.view">
+        <field name="name">res.config.settings.collection.board</field>
+        <field name="model">res.config.settings</field>
+        <field name="inherit_id" ref="res_config_settings_view_form_insurance"/>
+        <field name="arch" type="xml">
+            <xpath expr="//block[@name='insurance_notifications']" position="before">
+                <block title="Cobranza por WhatsApp" name="insurance_coll_whatsapp">
+                    <setting string="Aviso anticipado" help="Con cuántos días de anticipación aparece la póliza como «Falta avisar».">
+                        <field name="insurance_coll_notice_days" class="oe_inline"/> días antes del vencimiento
+                    </setting>
+                </block>
+            </xpath>
+        </field>
+    </record>
+</odoo>
