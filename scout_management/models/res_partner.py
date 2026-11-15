@@ -158,9 +158,17 @@ class ResPartner(models.Model):
 
     def _compute_scout_registration(self):
         cycle = self.env['scout.cycle']._get_current()
+        today = fields.Date.context_today(self)
         for partner in self:
-            reg = partner.sudo().scout_registration_ids.filtered(
-                lambda r: r.cycle_id == cycle and r.state != 'cancel')[:1]
+            regs = partner.sudo().scout_registration_ids.filtered(lambda r: r.state != 'cancel')
+            current = regs.filtered(lambda r: r.cycle_id == cycle)[:1]
+            # La renovación de oct-dic ya es del ciclo siguiente (la ficha se pasa a ese ciclo): también cuenta
+            upcoming = regs.filtered(lambda r: r.cycle_id != cycle and r.cycle_id.date_start
+                                     and r.cycle_id.date_start > today).sorted(lambda r: r.cycle_id.date_start)[:1]
+            if current and (current.payment_state in ('paid', 'exempt') or not upcoming):
+                reg = current
+            else:
+                reg = upcoming or current
             partner.scout_current_registration_id = reg
             partner.scout_registration_paid = reg.payment_state in ('paid', 'exempt') if reg else False
             if not reg:

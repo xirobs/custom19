@@ -5,6 +5,7 @@ Los jefes de sección son usuarios de portal (gratuitos). Cada método valida qu
 miembro o cargo pertenezca a las secciones del dirigente y luego trabaja con sudo, dejando en el historial
 quién hizo el movimiento. Secretaría, tesorería y jefatura siguen trabajando en Odoo con acceso completo.
 """
+import logging
 from datetime import date, datetime, time, timedelta
 
 from dateutil.relativedelta import relativedelta
@@ -13,6 +14,8 @@ import pytz
 
 from odoo import _, api, fields, models
 from odoo.exceptions import AccessError, UserError
+
+_logger = logging.getLogger(__name__)
 
 from .calendar_event import CATEGORY_HEX, DEFAULT_TZ
 from .scout_common import ACTIVITY_TYPES, quarter_bounds
@@ -29,6 +32,16 @@ LEADER_ITEM_TYPES = ('status', 'transition', 'previous', 'objective', 'activity'
 
 class ResUsers(models.Model):
     _inherit = 'res.users'
+
+    scout_entry_mode = fields.Selection([('ask', 'Preguntar al entrar'), ('portal', 'Portal de administración'),
+                                         ('backend', 'Sistema completo')], string='Al iniciar sesión',
+                                        default='ask', help='Solo para jefatura, secretaría y tesorería.')
+
+    def _scout_is_admin_staff(self):
+        self.ensure_one()
+        return not self.share and any(self.has_group(x) for x in (
+            'scout_management.group_scout_officer', 'scout_management.group_scout_treasurer',
+            'scout_management.group_scout_manager'))
 
     def _scout_leader_sections(self):
         """Secciones que atiende el usuario (vacío = no es dirigente)."""
@@ -1102,6 +1115,10 @@ class ScoutLeaderPortal(models.AbstractModel):
         for user in officers[:2]:
             reg.activity_schedule(activity_type_id=todo.id if todo else False,
                                   summary=_('Revisar ficha de nuevo ingreso'), user_id=user.id)
+        try:
+            reg._scout_notify_submitted()
+        except Exception:  # noqa: BLE001
+            _logger.exception('No se pudo avisar de la ficha %s', reg.name)
         return reg
 
     @api.model

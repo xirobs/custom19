@@ -238,4 +238,80 @@
             </t>
         </t>
     </template>
+
+    <record id="action_report_registration_receipt" model="ir.actions.report">
+        <field name="name">Recibo de registro</field>
+        <field name="model">scout.registration</field>
+        <field name="report_type">qweb-pdf</field>
+        <field name="report_name">scout_management.report_registration_receipt</field>
+        <field name="report_file">scout_management.report_registration_receipt</field>
+        <field name="print_report_name">'Recibo %s' % object.name</field>
+        <field name="paperformat_id" ref="paperformat_scout_portrait"/>
+        <field name="binding_model_id" ref="model_scout_registration"/>
+        <field name="binding_type">report</field>
+    </record>
+
+    <template id="report_registration_receipt">
+        <t t-call="web.html_container">
+            <t t-foreach="docs" t-as="doc">
+                <t t-call="web.basic_layout">
+                    <t t-call="scout_management.scout_report_styles"/>
+                    <t t-set="company" t-value="doc.company_id"/>
+                    <t t-set="money" t-value="lambda v: '$ {:,.2f}'.format(v or 0.0)"/>
+                    <t t-set="inv" t-value="doc.invoice_id"/>
+                    <t t-set="pays" t-value="inv._scout_abonos() if inv else []"/>
+                    <div class="page sc-doc">
+                        <t t-call="scout_management.scout_doc_header">
+                            <t t-set="title">RECIBO DE REGISTRO</t>
+                            <t t-set="subtitle" t-value="'FOLIO: %s · CICLO %s' % (doc.name, doc.cycle_id.name or '')"/>
+                        </t>
+                        <div class="sc-box">
+                            <div class="sc-title"><span class="sc-num">1</span>DATOS</div>
+                            <table class="sc-row">
+                                <tr>
+                                    <td class="sc-label">Miembro:</td><td class="sc-val" t-out="doc.member_id.name or ('%s %s' % (doc.first_name or '', doc.last_name or ''))"/>
+                                    <td class="sc-label">Sección:</td><td class="sc-val" t-out="doc.section_id.display_name or ''"/>
+                                </tr>
+                                <tr>
+                                    <td class="sc-label">Recibimos de:</td><td class="sc-val" t-out="(doc.guardian_id or doc.member_id).name or doc.guardian_name or ''"/>
+                                    <td class="sc-label">Tipo:</td><td class="sc-val" t-out="dict(doc._fields['kind'].selection).get(doc.kind, '')"/>
+                                </tr>
+                            </table>
+                        </div>
+                        <div class="sc-box">
+                            <div class="sc-title"><span class="sc-num">2</span>PAGO</div>
+                            <table class="sc-table">
+                                <tr><th>Fecha</th><th>Forma de pago</th><th>Referencia</th><th style="width: 20%; text-align: right;">Importe</th></tr>
+                                <tr t-foreach="pays" t-as="p">
+                                    <td t-out="p.date.strftime('%d/%m/%Y') if p.date else ''"/>
+                                    <td t-out="{'Cash': 'Efectivo', 'Bank': 'Banco'}.get(p.journal_id.name, p.journal_id.name)"/>
+                                    <td t-out="p.memo or ''"/>
+                                    <td style="text-align: right;" t-out="money(p.amount)"/>
+                                </tr>
+                                <tr t-if="not pays and doc.payment_state == 'exempt'"><td colspan="4">Exento de cuota</td></tr>
+                                <tr t-if="not pays and doc.payment_state == 'paid' and not inv"><td colspan="4">Pagado (registro histórico)</td></tr>
+                                <tr><td colspan="3" style="text-align: right;"><b>CUOTA DE REGISTRO</b></td>
+                                    <td style="text-align: right;"><b t-out="money(doc.registration_fee)"/></td></tr>
+                                <tr t-if="inv"><td colspan="3" style="text-align: right;">Pendiente</td>
+                                    <td style="text-align: right;" t-out="money(inv.amount_residual)"/></tr>
+                            </table>
+                            <div style="margin-top: 6px;">
+                                <span class="sc-opt"><span class="sc-chk">X</span><t t-out="'PAGADO' if doc.payment_state in ('paid', 'exempt') else 'PAGO PARCIAL'"/></span>
+                                <t t-if="doc.state == 'validated'"> · Ficha validada: ya forma parte de su sección.</t>
+                            </div>
+                        </div>
+                        <table class="sc-row" style="margin-top: 30px;">
+                            <tr>
+                                <td class="sc-sign" style="width: 45%;"><div style="height: 25px;"/><div class="line">TESORERÍA</div></td>
+                                <td style="width: 10%;"/>
+                                <td class="sc-sign" style="width: 45%;"><div style="height: 25px;"/><div class="line">JEFATURA DE GRUPO</div></td>
+                            </tr>
+                        </table>
+                        <t t-call="scout_management.scout_greca"><t t-set="greca_class" t-value="'sc-greca-foot'"/></t>
+                        <div class="sc-motto">⚜ SIEMPRE LISTOS PARA SERVIR ⚜</div>
+                    </div>
+                </t>
+            </t>
+        </t>
+    </template>
 </odoo>

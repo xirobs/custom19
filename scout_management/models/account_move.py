@@ -1,7 +1,11 @@
 # -*- coding: utf-8 -*-
+import logging
+
 from odoo.tools import float_compare
 from odoo import _, api, fields, models
 from odoo.exceptions import UserError
+
+_logger = logging.getLogger(__name__)
 
 APPROVAL_STATES = [
     ('none', 'No requiere'), ('to_approve', 'Por aprobar'), ('approved', 'Aprobado'), ('rejected', 'Rechazado'),
@@ -171,6 +175,17 @@ class AccountMoveScoutAbono(models.Model):
         self.message_post(body=_('Abono de %(a)s en %(j)s. Queda por pagar %(r)s.', a='$ {:,.2f}'.format(amount),
                                  j=journal.name, r='$ {:,.2f}'.format(self.amount_residual)))
         return self.amount_residual
+
+    def _invoice_paid_hook(self):
+        res = super()._invoice_paid_hook()
+        try:
+            regs = self.env['scout.registration'].sudo().search([('invoice_id', 'in', self.ids)])
+            if regs:
+                regs.invalidate_recordset(['payment_state'])
+                regs._scout_on_paid()
+        except Exception:  # noqa: BLE001
+            _logger.exception('No se pudo completar el registro pagado')
+        return res
 
     def _scout_abonos(self):
         """Pagos ya aplicados al cargo (fecha, cuenta, importe)."""

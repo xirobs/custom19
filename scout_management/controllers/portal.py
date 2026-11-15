@@ -457,6 +457,10 @@ def scout_save_registration(post, member, guardian=None):
     for user in officers[:2]:
         registration.activity_schedule(activity_type_id=todo.id if todo else False,
                                        summary=_('Revisar ficha enviada por la familia'), user_id=user.id)
+    try:
+        registration._scout_notify_submitted()
+    except Exception:  # noqa: BLE001 - el aviso nunca debe frenar el envío de la ficha
+        _logger.exception('No se pudo avisar de la ficha %s', registration.name)
     _logger.info('Ficha scout %s enviada por la familia (usuario %s)', registration.name, request.env.uid)
     return registration, None
 
@@ -553,6 +557,18 @@ class ScoutPublicRegistration(http.Controller):
 
 
 class ScoutReceiptController(http.Controller):
+
+    @http.route(['/scout/ficha/recibo/<int:reg_id>'], type='http', auth='public', website=True)
+    def scout_registration_receipt_pdf(self, reg_id, access_token=None, **kw):
+        """Recibo del registro (liga enviada por WhatsApp o correo)."""
+        reg = request.env['scout.registration'].sudo().browse(reg_id).exists()
+        if not reg or not access_token or not reg.access_token or not consteq(reg.access_token, access_token):
+            return request.not_found()
+        pdf, _type = request.env['ir.actions.report'].sudo()._render_qweb_pdf(
+            'scout_management.action_report_registration_receipt', reg.ids)
+        return request.make_response(pdf, headers=[
+            ('Content-Type', 'application/pdf'), ('Content-Length', len(pdf)),
+            ('Content-Disposition', 'inline; filename="Recibo %s.pdf"' % reg.name)])
 
     @http.route(['/scout/recibo/<int:sale_id>'], type='http', auth='public', website=True)
     def scout_receipt_pdf(self, sale_id, access_token=None, **kw):

@@ -1,4 +1,8 @@
 # -*- coding: utf-8 -*-
+import logging
+
+from markupsafe import Markup
+
 from odoo import api, fields, models, _
 from odoo.exceptions import UserError, ValidationError
 
@@ -12,6 +16,9 @@ MEMBER_SYNC_FIELDS = {
     'medical_service': 'scout_medical_service', 'medical_policy': 'scout_medical_policy',
     'blood_type': 'scout_blood_type', 'medical_conditions': 'scout_medical_conditions',
 }
+
+
+_logger = logging.getLogger(__name__)
 
 
 class ScoutRegistration(models.Model):
@@ -113,6 +120,8 @@ class ScoutRegistration(models.Model):
     signed_date = fields.Date(string='Fecha de firma', copy=False)
     source = fields.Selection([('backend', 'Captura interna'), ('portal', 'Portal'), ('import', 'Carga masiva')],
                               default='backend', readonly=True)
+    receipt_sent = fields.Boolean(string='Recibo enviado', copy=False,
+                                  help='Se envía solo al quedar pagado el registro.')
     manual_payment_state = fields.Selection([
         ('not_paid', 'Sin pagar'), ('partial', 'Pago parcial'), ('paid', 'Pagado'), ('exempt', 'Exento')],
         string='Pago (histórico)', help='Para fichas anteriores al sistema o cargadas en masa, sin cargo contable.')
@@ -528,7 +537,100 @@ class ScoutRegistration(models.Model):
             reg._scout_close_approval_activities(_('Validada'))
             member.sudo().message_post(body=_('Ficha de registro %(folio)s validada para el ciclo %(cycle)s.',
                                               folio=reg.name, cycle=reg.cycle_id.name))
+            if reg.payment_state in ('paid', 'exempt'):
+                reg._scout_on_paid()
         return True
+
+    # ------------------------------------------------------------------ flujo rápido (portal de administración)
+    def _scout_staff_partners(self):
+        users = self.env['res.users']
+        for xmlid in ('scout_management.group_scout_officer', 'scout_management.group_scout_treasurer',
+                      'scout_management.group_scout_manager'):
+            group = self.env.ref(xmlid, raise_if_not_found=False)
+            if group:
+                users |= group.sudo().all_user_ids
+        return users.filtered(lambda u: u.active and not u.share and u.id != 1).partner_id
+
+    def _scout_notify_submitted(self):
+        """La familia (o el jefe) envió la ficha: aviso a secretaría, tesorería y jefe de grupo."""
+        base = self.get_base_url().rstrip('/')
+        for reg in self.sudo():
+            partners = reg._scout_staff_partners()
+            if not partners:
+                continue
+            kind = dict(reg._fields['kind'].selection).get(reg.kind) or _('Registro')
+            name = ' '.join(filter(None, [reg.first_name, reg.last_name, reg.last_name2]))
+            pay = dict(reg._fields['payment_method'].selection).get(reg.payment_method) or _('sin elegir')
+            if reg.payment_method == 'transfer' and reg.declared_paid:
+                pay += _(' (avisó que ya pagó%s)', ' · ref. %s' % reg.payment_reference if reg.payment_reference else '')
+            body = Markup(_(
+                '<p><b>%(kind)s:</b> %(name)s · %(section)s · ciclo %(cycle)s</p>'
+                '<p>Cuota: <b>%(fee)s</b> · Pago: %(pay)s%(proof)s</p>'
+                '<p><a href="%(url)s">Validar y registrar el pago</a></p>')) % {
+                'kind': kind, 'name': name, 'section': reg.section_id.display_name or '-',
+                'cycle': reg.cycle_id.name or '-', 'fee': '$ {:,.2f}'.format(reg.registration_fee or 0.0),
+                'pay': pay, 'proof': _(' · trae comprobante') if reg.payment_proof else '',
+                'url': '%s/dirigentes/admin/registros' % base}
+            reg.message_notify(partner_ids=partners.ids, subject=_('Nueva ficha: %s', name), body=body,
+                               email_layout_xmlid='mail.mail_notification_light')
+
+    def scout_validate_and_pay(self, journal=None, amount=0.0, date=None, reference=None, validate=True):
+        """Un solo paso: valida la ficha (si toca), registra el pago en la caja o banco y, al quedar pagada,
+        se envía el recibo y el miembro queda activo en su sección."""
+        self.ensure_one()
+        reg = self
+        if reg.state == 'cancel':
+            raise UserError(_('La ficha está cancelada.'))
+        if validate and reg.state in ('draft', 'submitted', 'reviewed'):
+            reg.action_validate()
+        if not reg.invoice_id and reg.registration_fee and not reg.manual_payment_state:
+            reg.sudo()._create_registration_invoice()
+        if journal and amount and reg.invoice_id and reg.payment_state not in ('paid', 'exempt'):
+            reg.invoice_id.sudo().scout_register_abono(amount, journal, date, reference or reg.payment_reference)
+        reg.invalidate_recordset(['payment_state'])
+        if reg.payment_state in ('paid', 'exempt'):
+            reg._scout_on_paid()
+        return reg.payment_state
+
+    def _scout_on_paid(self):
+        """Registro pagado: recibo a la familia y, si la ficha ya está validada, el miembro queda activo."""
+        for reg in self.sudo():
+            if reg.payment_state not in ('paid', 'exempt'):
+                continue
+            member = reg.member_id
+            if reg.state == 'validated' and member and member.scout_state == 'trial':
+                member.with_context(scout_change_approved=True).write({'scout_state': 'active'})
+            for record in (reg, reg.invoice_id):
+                if record:
+                    record.activity_ids.filtered(lambda a: a.summary in (
+                        _('Cobrar registro en efectivo'), _('Conciliar transferencia de registro'),
+                        _('Conciliar pago de registro'))).action_feedback(feedback=_('Pagado'))
+            if not reg.receipt_sent and reg.registration_fee:
+                try:
+                    reg._scout_send_receipt()
+                except Exception:  # noqa: BLE001 - el recibo nunca debe frenar el pago
+                    _logger.exception('No se pudo enviar el recibo de la ficha %s', reg.name)
+
+    def _scout_receipt_url(self):
+        self.ensure_one()
+        self.sudo()._portal_ensure_token()
+        return '%s/scout/ficha/recibo/%s?access_token=%s' % (
+            self.get_base_url().rstrip('/'), self.id, self.sudo().access_token)
+
+    def _scout_send_receipt(self):
+        self.ensure_one()
+        pdf, _type = self.env['ir.actions.report'].sudo()._render_qweb_pdf(
+            'scout_management.action_report_registration_receipt', self.ids)
+        guardian = self.guardian_id or self.member_id.scout_guardian_id
+        name = 'Recibo %s.pdf' % self.name
+        body = _('Recibimos el pago del registro de %(name)s (ciclo %(cycle)s). Adjuntamos su recibo. '
+                 '¡Bienvenido(a) a %(section)s!', name=self.member_id.name or self.first_name,
+                 cycle=self.cycle_id.name, section=self.section_id.display_name or self.company_id.name)
+        partner_ids = [guardian.id] if guardian and guardian.email else []
+        self.message_post(body=body, subject=_('Recibo de registro %s', self.name), partner_ids=partner_ids,
+                          attachments=[(name, pdf)], subtype_xmlid='mail.mt_comment',
+                          message_type='comment')
+        self.receipt_sent = True
 
     @api.model
     def _scout_sale_journal_message(self, company):

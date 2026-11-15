@@ -122,6 +122,9 @@ class ScoutAdminPortal(http.Controller):
         env = request.env
         today = fields.Date.context_today(env.user)
         stats = {}
+        Reg = env['scout.registration'].sudo()
+        stats['regs_check'] = Reg.search_count([('state', 'in', ('submitted', 'reviewed'))])
+        stats['regs_pay'] = Reg.search_count([('state', '=', 'validated'), ('payment_state', 'in', ('not_paid', 'partial'))])
         if acc['secretary']:
             Meeting = env['scout.meeting']
             stats['actas_draft'] = Meeting.search_count([('state', '=', 'draft')])
@@ -1008,6 +1011,131 @@ class ScoutAdminPortal(http.Controller):
         except ERRORS as e:
             return self._back(url, error=self._err(e))
         return self._back(url, ok=_('Aprobado.') if op == 'aprobar' else _('Rechazado.'))
+
+    # ------------------------------------------------------------------ elegir a dónde entrar
+    @http.route(['/dirigentes/entrar'], type='http', auth='user', website=True, methods=['GET'])
+    def admin_entry(self, **kw):
+        user = request.env.user
+        if not user._scout_is_admin_staff():
+            return request.redirect('/dirigentes')
+        return self._render('scout_management.admin_entry', mode=user.scout_entry_mode or 'ask')
+
+    @http.route(['/dirigentes/entrar'], type='http', auth='user', website=True, methods=['POST'])
+    def admin_entry_go(self, dest='portal', remember=None, **kw):
+        user = request.env.user
+        if user._scout_is_admin_staff():
+            user.sudo().scout_entry_mode = dest if remember and dest in ('portal', 'backend') else 'ask'
+        return request.redirect('/odoo' if dest == 'backend' else BASE)
+
+    # ------------------------------------------------------------------ registros (fichas)
+    def _regs_guard(self):
+        acc = self._access()
+        if not acc or not (acc['secretary'] or acc['treasury'] or acc['manager']):
+            return None, request.redirect(BASE)
+        return acc, None
+
+    @staticmethod
+    def _regs_lists():
+        Reg = request.env['scout.registration'].sudo()
+        today = fields.Date.context_today(request.env.user)
+        to_check = Reg.search([('state', 'in', ('submitted', 'reviewed'))], order='create_date desc')
+        to_pay = Reg.search([('state', '=', 'validated'), ('payment_state', 'in', ('not_paid', 'partial'))],
+                            order='write_date desc')
+        done = Reg.search([('payment_state', 'in', ('paid', 'exempt')), ('state', '=', 'validated'),
+                           ('write_date', '>=', fields.Datetime.to_string(today - timedelta(days=15)))],
+                          order='write_date desc', limit=30)
+        return to_check, to_pay, done
+
+    @http.route([BASE + '/registros'], type='http', auth='user', website=True, methods=['GET'])
+    def admin_registrations(self, **kw):
+        acc, redirect = self._regs_guard()
+        if redirect:
+            return redirect
+        to_check, to_pay, done = self._regs_lists()
+        sections = request.env['scout.section'].sudo().search([('active', '=', True)])
+        return self._render('scout_management.admin_registrations', to_check=to_check, to_pay=to_pay, done=done,
+                            journals=self._journals(), sections=sections,
+                            today_str=fields.Date.to_string(fields.Date.context_today(request.env.user)))
+
+    @http.route([BASE + '/registros/<int:reg_id>/<string:op>'], type='http', auth='user', website=True,
+                methods=['POST'])
+    def admin_registration_do(self, reg_id, op, **post):
+        acc, redirect = self._regs_guard()
+        if redirect:
+            return redirect
+        url = BASE + '/registros'
+        reg = request.env['scout.registration'].browse(reg_id).exists()
+        if not reg:
+            return self._back(url, error=_('No encontré la ficha.'))
+        try:
+            if op in ('validar_pagar', 'pagar'):
+                if not (acc['treasury'] or acc['manager']):
+                    raise UserError(_('El pago lo registra tesorería o el jefe de grupo.'))
+                if op == 'validar_pagar' and not acc['manager']:
+                    raise UserError(_('La ficha la valida el jefe de grupo; tú puedes registrar solo el pago.'))
+                journal = request.env['account.journal'].sudo().browse(_int(post.get('journal_id'))).exists()
+                amount = _float(post.get('amount'))
+                if not journal or amount <= 0:
+                    raise UserError(_('Elige la cuenta y escribe el importe recibido.'))
+                target = reg if op == 'validar_pagar' else reg.sudo()
+                state = target.scout_validate_and_pay(journal, amount, _date(post.get('date')),
+                                                   (post.get('reference') or '').strip() or None,
+                                                   validate=(op == 'validar_pagar'))
+                msg = _('Listo: pago registrado, recibo enviado y %s ya está activo en su sección.',
+                        reg.member_id.name) if state in ('paid', 'exempt') and reg.state == 'validated' else \
+                    _('Pago registrado. Queda pendiente %s.', '$ {:,.2f}'.format(reg.invoice_id.amount_residual)) \
+                    if state == 'partial' else _('Pago registrado.')
+                return self._back(url, ok=msg)
+            if op == 'validar':
+                if not acc['manager']:
+                    raise UserError(_('La ficha la valida el jefe de grupo.'))
+                reg.scout_validate_and_pay(validate=True)
+                return self._back(url, ok=_('Ficha validada: %s ya aparece en su sección.', reg.member_id.name))
+            if op == 'recibo':
+                reg.sudo()._scout_send_receipt()
+                return self._back(url, ok=_('Recibo enviado de nuevo.'))
+        except ERRORS as e:
+            return self._back(url, error=self._err(e))
+        return request.redirect(url)
+
+    @http.route([BASE + '/registros/<int:reg_id>/comprobante'], type='http', auth='user', website=True)
+    def admin_registration_proof(self, reg_id, **kw):
+        acc, redirect = self._regs_guard()
+        if redirect:
+            return redirect
+        reg = request.env['scout.registration'].sudo().browse(reg_id).exists()
+        if not reg or not reg.payment_proof:
+            return request.redirect(BASE + '/registros')
+        content = base64.b64decode(reg.payment_proof)
+        name = reg.payment_proof_name or 'comprobante'
+        ctype = 'application/pdf' if name.lower().endswith('.pdf') else 'image/jpeg'
+        return request.make_response(content, headers=[('Content-Type', ctype), ('Content-Length', len(content)),
+                                                       ('Content-Disposition', 'inline; filename="%s"' % quote(name))])
+
+    @http.route([BASE + '/registros/<int:reg_id>/recibo.pdf'], type='http', auth='user', website=True)
+    def admin_registration_receipt(self, reg_id, **kw):
+        acc, redirect = self._regs_guard()
+        if redirect:
+            return redirect
+        reg = request.env['scout.registration'].sudo().browse(reg_id).exists()
+        if not reg:
+            return request.redirect(BASE + '/registros')
+        return self._pdf('scout_management.action_report_registration_receipt', reg, filename='Recibo %s.pdf' % reg.name)
+
+    # ------------------------------------------------------------------ miembros y programa por sección
+    @http.route([BASE + '/secciones'], type='http', auth='user', website=True)
+    def admin_sections(self, **kw):
+        acc, redirect = self._regs_guard()
+        if redirect:
+            return redirect
+        sections = request.env['scout.leader.portal']._sections()
+        Partner = request.env['res.partner'].sudo()
+        rows = []
+        for sec in sections:
+            members = Partner.search_count([('is_scout', '=', True), ('scout_state', 'in', ('trial', 'active')),
+                                            ('scout_section_id', '=', sec.id)])
+            rows.append({'section': sec, 'members': members})
+        return self._render('scout_management.admin_sections', rows=rows)
 
     @http.route([BASE + '/ficha/<int:reg_id>.pdf'], type='http', auth='user', website=True)
     def admin_registration_pdf(self, reg_id, **kw):

@@ -7,7 +7,10 @@
             <a t-if="acc.get('secretary')" t-att-href="admin_base + '/actas'" t-attf-class="#{'active' if tab == 'sec' else ''}"><i class="fa fa-file-text-o"/> Secretaría</a>
             <a t-if="acc.get('treasury')" t-att-href="admin_base + '/tesoreria'" t-attf-class="#{'active' if tab == 'tes' else ''}"><i class="fa fa-money"/> Tesorería</a>
             <a t-if="acc.get('store')" t-att-href="admin_base + '/tienda'" t-attf-class="#{'active' if tab == 'store' else ''}"><i class="fa fa-shopping-basket"/> Tienda</a>
+            <a t-att-href="admin_base + '/registros'" t-attf-class="#{'active' if tab == 'reg' else ''}"><i class="fa fa-id-card-o"/> Registros</a>
+            <a t-att-href="admin_base + '/secciones'" t-attf-class="#{'active' if tab == 'secs' else ''}"><i class="fa fa-users"/> Secciones</a>
             <a t-if="acc.get('manager')" t-att-href="admin_base + '/aprobaciones'" t-attf-class="#{'active' if tab == 'appr' else ''}"><i class="fa fa-check-square-o"/> Aprobaciones</a>
+            <a href="/odoo" class="ms-auto"><i class="fa fa-desktop"/> Sistema completo</a>
         </div>
     </template>
 
@@ -30,6 +33,11 @@
             <t t-call="scout_management.admin_tabs"/>
             <h5 class="o_sl_h">Administración del grupo</h5>
             <div class="o_sl_tiles">
+                <a class="o_sl_tile o_sl_tile_accent" t-att-href="admin_base + '/registros'"><i class="fa fa-id-card-o"/>
+                    <span>Registros (fichas)</span><small t-out="'%s por validar · %s por cobrar' % (stats.get('regs_check', 0), stats.get('regs_pay', 0))"/>
+                    <b t-if="stats.get('regs_check') or stats.get('regs_pay')" class="o_sl_badge" t-out="stats.get('regs_check', 0) + stats.get('regs_pay', 0)"/></a>
+                <a class="o_sl_tile" t-att-href="admin_base + '/secciones'"><i class="fa fa-users"/>
+                    <span>Secciones y miembros</span><small>Pase de lista, programa, adelantos y ligas de inscripción</small></a>
                 <a t-if="acc.get('manager')" class="o_sl_tile o_sl_tile_accent" t-att-href="admin_base + '/aprobaciones'"><i class="fa fa-check-square-o"/>
                     <span>Aprobaciones</span><small t-out="'%s pendientes' % stats.get('approvals', 0) if stats.get('approvals') else 'Nada pendiente'"/>
                     <b t-if="stats.get('approvals')" class="o_sl_badge" t-out="stats['approvals']"/></a>
@@ -1065,6 +1073,146 @@
                 <button t-if="debt.state != 'cancel'" name="op" value="cancelar" class="btn btn-sm btn-light"
                         data-ad-confirm="¿Cancelar esta deuda? Ya no contará como pendiente.">Cancelar deuda</button>
                 <button t-else="" name="op" value="reabrir" class="btn btn-sm btn-light">Reabrir</button>
+            </form>
+        </t>
+    </template>
+
+    <!-- Registros (fichas): validar, cobrar y recibo en un paso -->
+    <template id="admin_reg_card" name="Administración: tarjeta de ficha">
+        <div class="o_sl_box">
+            <div class="d-flex justify-content-between align-items-start gap-2">
+                <div class="min-w-0">
+                    <b t-out="r.member_id.name or ' '.join(filter(None, [r.first_name, r.last_name, r.last_name2]))"/>
+                    <div class="small text-muted">
+                        <t t-out="dict(r._fields['kind'].selection).get(r.kind, '')"/> · <t t-out="r.section_id.display_name or '-'"/> ·
+                        Ciclo <t t-out="r.cycle_id.name or '-'"/> · <t t-out="r.name"/>
+                    </div>
+                    <div class="small">Cuota <b t-out="fmt_money(r.registration_fee)"/>
+                        <t t-if="r.invoice_id"> · Pendiente <b t-out="fmt_money(r.invoice_id.amount_residual - r.invoice_id.scout_online_fee)"/></t>
+                        · Pago: <t t-out="dict(r._fields['payment_method'].selection).get(r.payment_method, 'sin elegir')"/>
+                        <t t-if="r.declared_paid"> · <span class="text-success">avisó que pagó<t t-if="r.payment_reference"> (ref. <t t-out="r.payment_reference"/>)</t><t t-if="r.payment_amount"> por <t t-out="fmt_money(r.payment_amount)"/></t></span></t>
+                    </div>
+                </div>
+                <span t-attf-class="badge #{'text-bg-success' if r.payment_state in ('paid', 'exempt') else ('text-bg-warning' if r.payment_state == 'partial' else 'text-bg-secondary')}"
+                      t-out="dict(r._fields['payment_state'].selection).get(r.payment_state, '')"/>
+            </div>
+            <div class="d-flex flex-wrap gap-2 mt-2 small">
+                <a t-att-href="'%s/ficha/%s.pdf' % (admin_base, r.id)" target="_blank" data-sl-pdf="1"><i class="fa fa-file-pdf-o"/> Ver ficha</a>
+                <a t-if="r.payment_proof" t-att-href="'%s/registros/%s/comprobante' % (admin_base, r.id)" target="_blank"><i class="fa fa-paperclip"/> Ver comprobante</a>
+                <a t-if="r.member_id and r.member_id.scout_section_id" t-att-href="'/dirigentes/%s/miembro/%s' % (r.member_id.scout_section_id.id, r.member_id.id)"><i class="fa fa-user"/> Ver miembro</a>
+            </div>
+            <t t-if="mode != 'done'">
+                <form t-if="acc.get('treasury') or acc.get('manager')" method="post" class="row g-2 mt-1"
+                      t-att-action="'%s/registros/%s/%s' % (admin_base, r.id, 'validar_pagar' if (mode == 'check' and acc.get('manager')) else 'pagar')">
+                    <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
+                    <t t-set="due" t-value="(r.invoice_id.amount_residual - r.invoice_id.scout_online_fee) if r.invoice_id else r.registration_fee"/>
+                    <div class="col-6 col-md-3"><label class="form-label small mb-0">Recibido</label>
+                        <input type="number" step="0.01" min="0.01" name="amount" class="form-control form-control-sm" t-att-value="'%.2f' % (r.payment_amount if r.declared_paid and r.payment_amount and r.payment_amount &lt;= due else due)"/></div>
+                    <div class="col-6 col-md-3"><label class="form-label small mb-0">Entra a</label>
+                        <select name="journal_id" class="form-select form-select-sm">
+                            <t t-foreach="journals" t-as="j">
+                                <option t-att-value="j.id" t-att-selected="(r.payment_method == 'cash' and j.type == 'cash') or (r.payment_method != 'cash' and j.type == 'bank' and j.name in ('Bank', 'Banco')) or None"
+                                        t-out="{'Cash': 'Efectivo', 'Bank': 'Banco'}.get(j.name, j.name)"/>
+                            </t>
+                        </select></div>
+                    <div class="col-6 col-md-3"><label class="form-label small mb-0">Fecha</label>
+                        <input type="date" name="date" class="form-control form-control-sm" t-att-value="r.payment_date and r.payment_date.isoformat() or today_str"/></div>
+                    <div class="col-6 col-md-3"><label class="form-label small mb-0">Referencia</label>
+                        <input type="text" name="reference" class="form-control form-control-sm" t-att-value="r.payment_reference or ''"/></div>
+                    <div class="col-12">
+                        <button type="submit" class="btn o_sl_btn w-100"><i class="fa fa-check"/>
+                            <t t-if="mode == 'check' and acc.get('manager')">Validar ficha y registrar pago</t>
+                            <t t-else="">Registrar pago</t></button>
+                    </div>
+                </form>
+                <form t-if="mode == 'check' and acc.get('manager')" method="post" class="mt-2" t-att-action="'%s/registros/%s/validar' % (admin_base, r.id)">
+                    <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
+                    <button type="submit" class="btn btn-sm o_sl_btn_outline w-100">Solo validar (el pago queda pendiente)</button>
+                </form>
+                <div t-if="mode == 'check' and not acc.get('manager')" class="small text-muted mt-1">La valida el jefe de grupo; tú puedes registrar el pago.</div>
+            </t>
+            <t t-else="">
+                <t t-set="rlink" t-value="r._scout_receipt_url()"/>
+                <t t-set="phone" t-value="''.join(c for c in (r.guardian_id.phone or r.guardian_phone or '') if c.isdigit())"/>
+                <div class="d-flex flex-wrap gap-2 mt-2">
+                    <a class="btn btn-sm o_sl_btn_outline" t-att-href="'%s/registros/%s/recibo.pdf' % (admin_base, r.id)" target="_blank" data-sl-pdf="1"><i class="fa fa-file-pdf-o"/> Recibo</a>
+                    <a t-if="phone" class="btn btn-sm o_sl_btn_outline" target="_blank"
+                       t-att-href="'https://wa.me/%s?text=%s' % (('52' + phone) if len(phone) == 10 else phone, url_quote('Recibo del registro de %s: %s' % (r.member_id.name, rlink)))"><i class="fa fa-whatsapp"/> Enviar recibo</a>
+                    <form method="post" t-att-action="'%s/registros/%s/recibo' % (admin_base, r.id)">
+                        <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
+                        <button class="btn btn-sm o_sl_btn_outline" type="submit"><i class="fa fa-envelope-o"/> Reenviar por correo</button>
+                    </form>
+                </div>
+            </t>
+        </div>
+    </template>
+
+    <template id="admin_registrations" name="Administración: registros">
+        <t t-call="scout_management.leader_layout">
+            <t t-set="tab" t-value="'reg'"/>
+            <t t-call="scout_management.admin_tabs"/>
+            <h5 class="o_sl_h">Registros</h5>
+            <p class="o_sl_hint">Cuando una familia envía la ficha llega el aviso aquí y por correo. Revisa la ficha y el comprobante,
+                registra el pago y listo: se envía el recibo y el miembro queda activo en su sección (pase de lista, adelantos y programa).</p>
+            <details class="o_sl_box">
+                <summary><b><i class="fa fa-link"/> Enviar liga de inscripción</b></summary>
+                <div class="small text-muted mb-2">Elige la sección: ahí está la liga para nuevos, renovaciones y reingresos, lista para WhatsApp.</div>
+                <div class="d-flex flex-wrap gap-2">
+                    <a t-foreach="sections.filtered(lambda s: not s.is_leadership)" t-as="sec" class="btn btn-sm o_sl_btn_outline" t-att-href="'/dirigentes/%s/liga' % sec.id" t-out="sec.name"/>
+                </div>
+            </details>
+            <h6 class="o_sl_sub">Por validar <span class="badge text-bg-secondary" t-out="len(to_check)"/></h6>
+            <div t-if="not to_check" class="text-muted small mb-2">No hay fichas nuevas.</div>
+            <t t-foreach="to_check" t-as="r"><t t-set="mode" t-value="'check'"/><t t-call="scout_management.admin_reg_card"/></t>
+            <h6 class="o_sl_sub">Validadas, por cobrar <span class="badge text-bg-secondary" t-out="len(to_pay)"/></h6>
+            <div t-if="not to_pay" class="text-muted small mb-2">Nada pendiente de cobro.</div>
+            <t t-foreach="to_pay" t-as="r"><t t-set="mode" t-value="'pay'"/><t t-call="scout_management.admin_reg_card"/></t>
+            <h6 class="o_sl_sub">Pagadas (últimos 15 días)</h6>
+            <div t-if="not done" class="text-muted small">Sin registros recientes.</div>
+            <t t-foreach="done" t-as="r"><t t-set="mode" t-value="'done'"/><t t-call="scout_management.admin_reg_card"/></t>
+        </t>
+    </template>
+
+    <template id="admin_sections" name="Administración: secciones">
+        <t t-call="scout_management.leader_layout">
+            <t t-set="tab" t-value="'secs'"/>
+            <t t-call="scout_management.admin_tabs"/>
+            <h5 class="o_sl_h">Secciones y miembros</h5>
+            <div t-if="not rows" class="o_sl_box text-muted">Tu usuario no tiene secciones asignadas.</div>
+            <div t-foreach="rows" t-as="row" class="o_sl_box">
+                <t t-set="sec" t-value="row['section']"/>
+                <div class="d-flex justify-content-between"><b t-out="sec.display_name"/><small class="text-muted"><t t-out="row['members']"/> miembros</small></div>
+                <div class="d-flex flex-wrap gap-2 mt-2">
+                    <a class="btn btn-sm o_sl_btn" t-att-href="'/dirigentes/%s' % sec.id"><i class="fa fa-check-square-o"/> Pase de lista</a>
+                    <a class="btn btn-sm o_sl_btn_outline" t-att-href="'/dirigentes/%s/miembros' % sec.id"><i class="fa fa-users"/> Miembros</a>
+                    <a class="btn btn-sm o_sl_btn_outline" t-att-href="'/dirigentes/%s/plan' % sec.id"><i class="fa fa-calendar"/> Programa</a>
+                    <a class="btn btn-sm o_sl_btn_outline" t-att-href="'/dirigentes/%s/adelantos' % sec.id"><i class="fa fa-star"/> Adelantos</a>
+                    <a class="btn btn-sm o_sl_btn_outline" t-att-href="'/dirigentes/%s/nuevo' % sec.id"><i class="fa fa-user-plus"/> Alta</a>
+                    <a class="btn btn-sm o_sl_btn_outline" t-att-href="'/dirigentes/%s/liga' % sec.id"><i class="fa fa-link"/> Liga de inscripción</a>
+                </div>
+            </div>
+        </t>
+    </template>
+
+    <template id="admin_entry" name="Administración: elegir a dónde entrar">
+        <t t-call="scout_management.leader_layout">
+            <h5 class="o_sl_h">¿A dónde quieres entrar?</h5>
+            <form method="post" action="/dirigentes/entrar" class="o_sl_box">
+                <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
+                <div class="d-grid gap-2">
+                    <button type="submit" name="dest" value="portal" class="btn o_sl_btn o_sl_btn_big">
+                        <i class="fa fa-mobile"/> Portal de administración
+                        <small class="d-block fw-normal">Registros y pagos, tesorería, tienda, secciones, programa y aprobaciones. Fácil desde el celular.</small>
+                    </button>
+                    <button type="submit" name="dest" value="backend" class="btn o_sl_btn_outline o_sl_btn_big">
+                        <i class="fa fa-desktop"/> Sistema completo
+                        <small class="d-block fw-normal">Todas las opciones, reportes y configuración.</small>
+                    </button>
+                </div>
+                <div class="form-check mt-3">
+                    <input class="form-check-input" type="checkbox" name="remember" value="1" id="entry_remember" t-att-checked="mode != 'ask' or None"/>
+                    <label class="form-check-label" for="entry_remember">Recordar mi elección (puedes cambiarla después en esta misma página: /dirigentes/entrar)</label>
+                </div>
             </form>
         </t>
     </template>

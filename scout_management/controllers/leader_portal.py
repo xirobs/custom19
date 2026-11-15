@@ -1375,4 +1375,11 @@ class ScoutLeaderHome(Home):
             user = request.env['res.users'].sudo().browse(uid)
             if user.share and user._scout_is_leader():
                 redirect = '/dirigentes'
+            elif user._scout_is_admin_staff():
+                # Jefatura, secretaría y tesorería eligen: portal de administración o sistema completo
+                mode = user.scout_entry_mode or 'ask'
+                if mode == 'portal':
+                    redirect = '/dirigentes/admin'
+                elif mode == 'ask':
+                    redirect = '/dirigentes/entrar'
         return super()._login_redirect(uid, redirect=redirect)
