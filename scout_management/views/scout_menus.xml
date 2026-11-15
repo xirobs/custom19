@@ -32,7 +32,7 @@
         <field name="url">/dirigentes/entrar</field>
         <field name="target">self</field>
     </record>
-    <menuitem id="menu_scout_admin_portal" name="Portal" parent="menu_scout_root" action="action_scout_admin_portal_url" sequence="1"/>
+    <menuitem id="menu_scout_admin_portal" name="Portal" parent="menu_scout_root" action="action_scout_admin_portal_url" sequence="99"/>
     <menuitem id="menu_scout_members" name="Miembros" parent="menu_scout_root" sequence="10"/>
     <menuitem id="menu_scout_member" name="Miembros" parent="menu_scout_members" action="action_scout_member" sequence="10"/>
     <menuitem id="menu_scout_registration" name="Fichas de registro" parent="menu_scout_members" action="action_scout_registration" sequence="20"/>
