@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 {
     "name": "CRM Extended",
-    "version": "19.0.3.33.0",
+    "version": "19.0.3.34.0",
     "author": "Jhuliana Delgado",
     "maintainer": "Jhuliana Delgado",
     "website": "",
@@ -38,6 +38,8 @@
         "views/creart_config_menus.xml",
         "views/creart_app_templates.xml",
         "views/creart_app_menus.xml",
+        "views/creart_strategy_views.xml",
+        "data/creart_strategy_data.xml",
     ],
     "assets": {
         "web.assets_backend": [

@@ -1,0 +1,207 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <data noupdate="1">
+
+        <!-- ===== Metas por cliente (suman $100,000) ===== -->
+        <record id="strategy_goal_upaep" model="creart.strategy.item">
+            <field name="name">UPAEP · Pedido institucional</field>
+            <field name="kind">goal</field><field name="week">s0</field><field name="client">upaep</field>
+            <field name="priority">1</field><field name="sequence">1</field>
+            <field name="amount_goal">30000</field><field name="date_deadline">2026-12-05</field>
+            <field name="description">&lt;p&gt;Figuras de graduación/institucionales, regalos y promocionales (~21 funkos-equivalentes). Anticipo 50%, descuento desde 10 piezas.&lt;/p&gt;</field>
+        </record>
+        <record id="strategy_goal_protecnologia" model="creart.strategy.item">
+            <field name="name">Protecnología · Piezas técnicas y promocionales</field>
+            <field name="kind">goal</field><field name="week">s0</field><field name="client">protecnologia</field>
+            <field name="priority">1</field><field name="sequence">2</field>
+            <field name="amount_goal">15000</field><field name="date_deadline">2026-12-05</field>
+            <field name="description">&lt;p&gt;Refacciones, prototipos, organizadores y promocionales de marca (~11 funkos-equivalentes). Buscar recurrencia.&lt;/p&gt;</field>
+        </record>
+        <record id="strategy_goal_corhos" model="creart.strategy.item">
+            <field name="name">Corhos Europea Aloha · Regalos de fin de año</field>
+            <field name="kind">goal</field><field name="week">s0</field><field name="client">corhos</field>
+            <field name="priority">1</field><field name="sequence">3</field>
+            <field name="amount_goal">15000</field><field name="date_deadline">2026-12-05</field>
+            <field name="description">&lt;p&gt;Figura de equipo, llaveros con nombre y adornos con logo (~11 funkos-equivalentes).&lt;/p&gt;</field>
+        </record>
+        <record id="strategy_goal_tapas" model="creart.strategy.item">
+            <field name="name">Tapas Bido · Proyecto propio (prototipo / preventa)</field>
+            <field name="kind">goal</field><field name="week">s0</field><field name="client">tapas</field>
+            <field name="sequence">4</field>
+            <field name="amount_goal">10000</field><field name="date_deadline">2026-12-13</field>
+            <field name="description">&lt;p&gt;Prototipo, lote piloto y preventa (~7 funkos-equivalentes). Máx. 10% del tiempo de producción hasta cerrar el mayoreo.&lt;/p&gt;</field>
+        </record>
+        <record id="strategy_goal_temporada" model="creart.strategy.item">
+            <field name="name">Venta de temporada · Funkos, regalo único, llaveros, joyería</field>
+            <field name="kind">goal</field><field name="week">s0</field><field name="client">temporada</field>
+            <field name="sequence">5</field>
+            <field name="amount_goal">30000</field><field name="date_deadline">2026-12-20</field>
+            <field name="description">&lt;p&gt;Post navideño, BNI, Banana Azul, contactos y redes (~21 funkos-equivalentes). Es el colchón si un cliente grande se retrasa.&lt;/p&gt;</field>
+        </record>
+
+        <!-- ===== Semana 1 · 16–22 nov ===== -->
+        <record id="strategy_a01" model="creart.strategy.item">
+            <field name="name">Confirmar costo real por producto y precios de mayoreo</field>
+            <field name="week">s1</field><field name="client">general</field><field name="priority">1</field>
+            <field name="date_deadline">2026-11-18</field>
+            <field name="description">&lt;p&gt;Costo de filamento, pintura, bases, empaque y tiempo por funko, llavero, adorno y joyería. Definir paquetes Básico / Plus / Premium y descuento por volumen (10+ piezas).&lt;/p&gt;</field>
+        </record>
+        <record id="strategy_a02" model="creart.strategy.item">
+            <field name="name">Crear los prospectos en Oportunidades 3D con valor esperado</field>
+            <field name="week">s1</field><field name="client">general</field>
+            <field name="date_deadline">2026-11-18</field>
+        </record>
+        <record id="strategy_a03" model="creart.strategy.item">
+            <field name="name">Definir trabajador, pago y primera asignación semanal</field>
+            <field name="week">s1</field><field name="client">produccion</field><field name="priority">1</field>
+            <field name="date_deadline">2026-11-20</field>
+            <field name="description">&lt;p&gt;Salario $6,000–8,000: fijo + variable por cumplimiento. Ej.: 6 funkos pintados/ensamblados, 20 llaveros, empaque.&lt;/p&gt;</field>
+        </record>
+        <record id="strategy_a04" model="creart.strategy.item">
+            <field name="name">Armar muestras: 2 funkos, 5 llaveros, 1 caja de regalo</field>
+            <field name="week">s1</field><field name="client">produccion</field><field name="priority">1</field>
+            <field name="date_deadline">2026-11-21</field>
+        </record>
+        <record id="strategy_a05" model="creart.strategy.item">
+            <field name="name">UPAEP: identificar contacto y uso (obsequio, graduación, reconocimientos)</field>
+            <field name="week">s1</field><field name="client">upaep</field><field name="priority">1</field>
+            <field name="date_deadline">2026-11-20</field>
+        </record>
+        <record id="strategy_a06" model="creart.strategy.item">
+            <field name="name">UPAEP: enviar propuesta de 3 paquetes</field>
+            <field name="week">s1</field><field name="client">upaep</field><field name="priority">1</field>
+            <field name="date_deadline">2026-11-22</field>
+            <field name="description">&lt;p&gt;Condiciones: anticipo 50%, pedido límite 5 dic, descuento desde 10 piezas, factura.&lt;/p&gt;</field>
+        </record>
+        <record id="strategy_a07" model="creart.strategy.item">
+            <field name="name">Protecnología: visita o llamada para conocer necesidades</field>
+            <field name="week">s1</field><field name="client">protecnologia</field><field name="priority">1</field>
+            <field name="date_deadline">2026-11-21</field>
+            <field name="description">&lt;p&gt;Refacciones, prototipos, piezas de exhibición, promocionales. Buscar recurrencia.&lt;/p&gt;</field>
+        </record>
+        <record id="strategy_a08" model="creart.strategy.item">
+            <field name="name">Corhos Europea Aloha: enviar propuesta de regalos corporativos / fin de año</field>
+            <field name="week">s1</field><field name="client">corhos</field><field name="priority">1</field>
+            <field name="date_deadline">2026-11-22</field>
+            <field name="description">&lt;p&gt;Figura de equipo, llaveros con nombre, adornos con logo; 3 rangos de precio.&lt;/p&gt;</field>
+        </record>
+        <record id="strategy_a09" model="creart.strategy.item">
+            <field name="name">Tapas Bido: definir en una página producto, precio, cliente y qué se vende en 2026</field>
+            <field name="week">s1</field><field name="client">tapas</field>
+            <field name="date_deadline">2026-11-22</field>
+        </record>
+        <record id="strategy_a10" model="creart.strategy.item">
+            <field name="name">Venta de temporada: publicar post navideño y mensajes a contactos</field>
+            <field name="week">s1</field><field name="client">temporada</field>
+            <field name="date_deadline">2026-11-22</field>
+            <field name="description">&lt;p&gt;Usar mensajes de invitación a taller/café y de saludo con muestras.&lt;/p&gt;</field>
+        </record>
+
+        <!-- ===== Semana 2 · 23–29 nov ===== -->
+        <record id="strategy_a11" model="creart.strategy.item">
+            <field name="name">UPAEP: entrega de muestra y seguimiento de propuesta</field>
+            <field name="week">s2</field><field name="client">upaep</field><field name="priority">1</field>
+            <field name="date_deadline">2026-11-27</field>
+            <field name="description">&lt;p&gt;Seguimiento cada 3 días con oferta con vencimiento.&lt;/p&gt;</field>
+        </record>
+        <record id="strategy_a12" model="creart.strategy.item">
+            <field name="name">Protecnología: cotización con ficha técnica y pieza de prueba</field>
+            <field name="week">s2</field><field name="client">protecnologia</field><field name="priority">1</field>
+            <field name="date_deadline">2026-11-27</field>
+        </record>
+        <record id="strategy_a13" model="creart.strategy.item">
+            <field name="name">Corhos Europea Aloha: entrega de muestra y cotización</field>
+            <field name="week">s2</field><field name="client">corhos</field><field name="priority">1</field>
+            <field name="date_deadline">2026-11-28</field>
+            <field name="description">&lt;p&gt;Cierre objetivo antes del 5 de diciembre.&lt;/p&gt;</field>
+        </record>
+        <record id="strategy_a14" model="creart.strategy.item">
+            <field name="name">Campaña Buen Fin / Black Friday: figuras personalizadas</field>
+            <field name="week">s2</field><field name="client">temporada</field><field name="priority">1</field>
+            <field name="date_deadline">2026-11-29</field>
+            <field name="description">&lt;p&gt;Oferta con vencimiento. Meta de la semana: llegar a $22,000 acumulados con anticipos.&lt;/p&gt;</field>
+        </record>
+        <record id="strategy_a15" model="creart.strategy.item">
+            <field name="name">Cobrar primeros anticipos (50%) y programar producción</field>
+            <field name="week">s2</field><field name="client">general</field><field name="priority">1</field>
+            <field name="date_deadline">2026-11-29</field>
+        </record>
+
+        <!-- ===== Semana 3 · 30 nov–6 dic ===== -->
+        <record id="strategy_a16" model="creart.strategy.item">
+            <field name="name">Cerrar al menos 2 pedidos grandes y cobrar anticipo</field>
+            <field name="week">s3</field><field name="client">general</field><field name="priority">1</field>
+            <field name="date_deadline">2026-12-05</field>
+            <field name="description">&lt;p&gt;Fecha límite de pedido para clientes grandes: 5 dic.&lt;/p&gt;</field>
+        </record>
+        <record id="strategy_a17" model="creart.strategy.item">
+            <field name="name">Producción en lote: imprimir por tandas y pintar en bloque</field>
+            <field name="week">s3</field><field name="client">produccion</field><field name="priority">1</field>
+            <field name="date_deadline">2026-12-06</field>
+            <field name="description">&lt;p&gt;Meta: 11–12 funkos-equivalentes por semana. Revisión lunes y jueves.&lt;/p&gt;</field>
+        </record>
+        <record id="strategy_a18" model="creart.strategy.item">
+            <field name="name">Tapas Bido: prototipo o lote piloto listo para mostrar</field>
+            <field name="week">s3</field><field name="client">tapas</field>
+            <field name="date_deadline">2026-12-06</field>
+            <field name="description">&lt;p&gt;Iniciar preventa si el prototipo está aprobado.&lt;/p&gt;</field>
+        </record>
+        <record id="strategy_a19" model="creart.strategy.item">
+            <field name="name">Revisión semanal: ¿acumulado ≥ $30,000? Si no, activar plan B</field>
+            <field name="week">s3</field><field name="client">general</field><field name="priority">1</field>
+            <field name="date_deadline">2026-12-04</field>
+            <field name="description">&lt;p&gt;Plan B: promoción 2×1 en llaveros, paquetes de regalo y más venta de temporada.&lt;/p&gt;</field>
+        </record>
+
+        <!-- ===== Semana 4 · 7–13 dic ===== -->
+        <record id="strategy_a20" model="creart.strategy.item">
+            <field name="name">Último corte de pedidos personalizados nuevos</field>
+            <field name="week">s4</field><field name="client">general</field><field name="priority">1</field>
+            <field name="date_deadline">2026-12-13</field>
+            <field name="description">&lt;p&gt;Después del 13 dic: solo terminar, empacar y entregar.&lt;/p&gt;</field>
+        </record>
+        <record id="strategy_a21" model="creart.strategy.item">
+            <field name="name">Producción de pedidos de UPAEP</field>
+            <field name="week">s4</field><field name="client">upaep</field><field name="priority">1</field>
+            <field name="date_deadline">2026-12-13</field>
+        </record>
+        <record id="strategy_a22" model="creart.strategy.item">
+            <field name="name">Producción de pedidos de Protecnología</field>
+            <field name="week">s4</field><field name="client">protecnologia</field><field name="priority">1</field>
+            <field name="date_deadline">2026-12-13</field>
+        </record>
+        <record id="strategy_a23" model="creart.strategy.item">
+            <field name="name">Producción de pedidos de Corhos Europea Aloha</field>
+            <field name="week">s4</field><field name="client">corhos</field><field name="priority">1</field>
+            <field name="date_deadline">2026-12-13</field>
+        </record>
+
+        <!-- ===== Semana 5 · 14–20 dic ===== -->
+        <record id="strategy_a24" model="creart.strategy.item">
+            <field name="name">Empaque, control de calidad y entrega a clientes grandes</field>
+            <field name="week">s5</field><field name="client">produccion</field><field name="priority">1</field>
+            <field name="date_deadline">2026-12-19</field>
+            <field name="description">&lt;p&gt;Cobro de saldos al entregar.&lt;/p&gt;</field>
+        </record>
+        <record id="strategy_a25" model="creart.strategy.item">
+            <field name="name">Venta de temporada: piezas listas, entregas y envíos</field>
+            <field name="week">s5</field><field name="client">temporada</field>
+            <field name="date_deadline">2026-12-20</field>
+            <field name="description">&lt;p&gt;Prioridad: entregar antes de Navidad.&lt;/p&gt;</field>
+        </record>
+
+        <!-- ===== Semana 6 · 21–31 dic ===== -->
+        <record id="strategy_a26" model="creart.strategy.item">
+            <field name="name">Venta de último momento con piezas listas</field>
+            <field name="week">s6</field><field name="client">temporada</field>
+            <field name="date_deadline">2026-12-24</field>
+        </record>
+        <record id="strategy_a27" model="creart.strategy.item">
+            <field name="name">Cobro de saldos y cierre del mes: comparar contra la meta de $100,000</field>
+            <field name="week">s6</field><field name="client">general</field><field name="priority">1</field>
+            <field name="date_deadline">2026-12-31</field>
+            <field name="description">&lt;p&gt;Registrar resultados y aprendizajes.&lt;/p&gt;</field>
+        </record>
+
+    </data>
+</odoo>

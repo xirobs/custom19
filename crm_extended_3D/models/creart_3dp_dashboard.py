@@ -52,6 +52,28 @@ class Creart3dpDashboard(models.TransientModel):
         string="Confianza del pronóstico", compute="_compute_creart_kpis",
     )
 
+    # Plan estratégico (modelo creart.strategy.item)
+    plan_goal = fields.Monetary(string="Meta del plan", compute="_compute_plan", currency_field="currency_id")
+    plan_sold = fields.Monetary(string="Vendido del plan", compute="_compute_plan", currency_field="currency_id")
+    plan_percent = fields.Integer(string="Avance de la meta (%)", compute="_compute_plan")
+    plan_actions_done = fields.Integer(string="Acciones hechas", compute="_compute_plan")
+    plan_actions_total = fields.Integer(string="Acciones totales", compute="_compute_plan")
+    plan_actions_overdue = fields.Integer(string="Acciones vencidas", compute="_compute_plan")
+
+    @api.depends_context("uid", "allowed_company_ids")
+    def _compute_plan(self):
+        summary = self.env["creart.strategy.item"].get_plan_summary()
+        for dash in self:
+            dash.plan_goal = summary["goal"]
+            dash.plan_sold = summary["sold"]
+            dash.plan_percent = summary["percent"]
+            dash.plan_actions_done = summary["actions_done"]
+            dash.plan_actions_total = summary["actions_total"]
+            dash.plan_actions_overdue = summary["actions_overdue"]
+
+    def action_open_strategy_plan(self):
+        return self.env["ir.actions.actions"]._for_xml_id("crm_extended_3D.action_creart_strategy")
+
     @api.depends_context("uid", "allowed_company_ids")
     def _compute_creart_kpis(self):
         for dash in self:
@@ -73,7 +95,7 @@ class Creart3dpDashboard(models.TransientModel):
 
     def _compute_display_name(self):
         for dash in self:
-            dash.display_name = _("Tablero CreArt 3DP")
+            dash.display_name = _("Resumen")
 
     def _get_leads(self):
         return self.env["crm.lead"].search([

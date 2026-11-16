@@ -1,0 +1,175 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<odoo>
+    <record id="view_creart_strategy_kanban" model="ir.ui.view">
+        <field name="name">creart.strategy.item.kanban</field>
+        <field name="model">creart.strategy.item</field>
+        <field name="arch" type="xml">
+            <kanban default_group_by="week" class="o_kanban_small_column" quick_create="false"
+                    group_create="false" group_delete="false" group_edit="false" records_draggable="true">
+                <field name="color"/>
+                <field name="kind"/>
+                <field name="state"/>
+                <field name="overdue"/>
+                <field name="currency_id"/>
+                <templates>
+                    <t t-name="card" class="flex-row">
+                        <main class="ps-2">
+                            <div class="d-flex justify-content-between align-items-start">
+                                <field name="name" class="fw-bold fs-5"/>
+                                <field name="priority" widget="priority"/>
+                            </div>
+                            <div class="mt-1">
+                                <field name="client" widget="badge" decoration-info="client != 'general'"/>
+                            </div>
+                            <t t-if="record.kind.raw_value == 'goal'">
+                                <div class="mt-2">
+                                    <field name="amount_done" widget="monetary"/> /
+                                    <field name="amount_goal" widget="monetary"/>
+                                </div>
+                                <field name="progress" widget="progressbar" class="mt-1"/>
+                            </t>
+                            <div class="d-flex justify-content-between align-items-center mt-2">
+                                <span t-if="record.date_deadline.raw_value"
+                                      t-attf-class="small #{record.overdue.raw_value ? 'text-danger fw-bold' : 'text-muted'}">
+                                    <i class="fa fa-clock-o me-1" title="Fecha límite"/><field name="date_deadline"/>
+                                </span>
+                                <field name="state" widget="badge" decoration-success="state == 'done'"
+                                       decoration-info="state == 'doing'"/>
+                            </div>
+                        </main>
+                    </t>
+                </templates>
+            </kanban>
+        </field>
+    </record>
+
+    <record id="view_creart_strategy_list" model="ir.ui.view">
+        <field name="name">creart.strategy.item.list</field>
+        <field name="model">creart.strategy.item</field>
+        <field name="arch" type="xml">
+            <list string="Plan estratégico" editable="bottom" decoration-danger="overdue"
+                  decoration-muted="state == 'done'">
+                <field name="sequence" widget="handle"/>
+                <field name="name"/>
+                <field name="kind" optional="hide"/>
+                <field name="week"/>
+                <field name="client"/>
+                <field name="date_deadline"/>
+                <field name="user_id" widget="many2one_avatar_user" optional="show"/>
+                <field name="currency_id" column_invisible="1"/>
+                <field name="overdue" column_invisible="1"/>
+                <field name="amount_goal" sum="Meta" optional="show"/>
+                <field name="amount_done" sum="Vendido" optional="show"/>
+                <field name="progress" widget="progressbar" optional="show"/>
+                <field name="priority" widget="priority"/>
+                <field name="state" widget="badge" decoration-success="state == 'done'"
+                       decoration-info="state == 'doing'"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_creart_strategy_form" model="ir.ui.view">
+        <field name="name">creart.strategy.item.form</field>
+        <field name="model">creart.strategy.item</field>
+        <field name="arch" type="xml">
+            <form string="Plan estratégico">
+                <header>
+                    <field name="state" widget="statusbar" options="{'clickable': '1'}"/>
+                </header>
+                <sheet>
+                    <div class="oe_title">
+                        <h1><field name="name" placeholder="Ej. Enviar propuesta a UPAEP"/></h1>
+                    </div>
+                    <group>
+                        <group>
+                            <field name="kind"/>
+                            <field name="week"/>
+                            <field name="client"/>
+                            <field name="date_deadline"/>
+                            <field name="priority" widget="priority"/>
+                        </group>
+                        <group>
+                            <field name="user_id"/>
+                            <field name="lead_id"/>
+                            <field name="currency_id" invisible="1"/>
+                            <field name="company_id" invisible="1"/>
+                            <field name="amount_goal" widget="monetary"/>
+                            <field name="amount_done" widget="monetary"/>
+                            <field name="progress" widget="progressbar" invisible="not amount_goal"/>
+                        </group>
+                    </group>
+                    <notebook>
+                        <page string="Detalle" name="detail">
+                            <field name="description" placeholder="Notas, acuerdos y resultados…"/>
+                        </page>
+                    </notebook>
+                </sheet>
+                <chatter/>
+            </form>
+        </field>
+    </record>
+
+    <record id="view_creart_strategy_search" model="ir.ui.view">
+        <field name="name">creart.strategy.item.search</field>
+        <field name="model">creart.strategy.item</field>
+        <field name="arch" type="xml">
+            <search string="Plan estratégico">
+                <field name="name"/>
+                <field name="client"/>
+                <field name="user_id"/>
+                <filter name="f_goal" string="Metas" domain="[('kind', '=', 'goal')]"/>
+                <filter name="f_action" string="Acciones" domain="[('kind', '=', 'action')]"/>
+                <separator/>
+                <filter name="f_open" string="Pendientes" domain="[('state', '!=', 'done')]"/>
+                <filter name="f_overdue" string="Vencidas" domain="[('kind', '=', 'action'), ('state', '!=', 'done'), ('date_deadline', '&lt;', context_today().strftime('%Y-%m-%d'))]"/>
+                <filter name="f_high" string="Prioridad alta" domain="[('priority', '=', '1')]"/>
+                <group>
+                    <filter name="g_week" string="Semana" context="{'group_by': 'week'}"/>
+                    <filter name="g_client" string="Cliente / canal" context="{'group_by': 'client'}"/>
+                    <filter name="g_state" string="Estado" context="{'group_by': 'state'}"/>
+                    <filter name="g_user" string="Responsable" context="{'group_by': 'user_id'}"/>
+                </group>
+            </search>
+        </field>
+    </record>
+
+    <record id="view_creart_strategy_pivot" model="ir.ui.view">
+        <field name="name">creart.strategy.item.pivot</field>
+        <field name="model">creart.strategy.item</field>
+        <field name="arch" type="xml">
+            <pivot string="Plan por cliente">
+                <field name="client" type="row"/>
+                <field name="state" type="col"/>
+                <field name="amount_goal" type="measure"/>
+                <field name="amount_done" type="measure"/>
+            </pivot>
+        </field>
+    </record>
+
+    <record id="view_creart_strategy_graph" model="ir.ui.view">
+        <field name="name">creart.strategy.item.graph</field>
+        <field name="model">creart.strategy.item</field>
+        <field name="arch" type="xml">
+            <graph string="Meta vs vendido" type="bar">
+                <field name="client"/>
+                <field name="amount_goal" type="measure"/>
+                <field name="amount_done" type="measure"/>
+            </graph>
+        </field>
+    </record>
+
+    <record id="action_creart_strategy" model="ir.actions.act_window">
+        <field name="name">Plan estratégico $100K</field>
+        <field name="res_model">creart.strategy.item</field>
+        <field name="view_mode">kanban,list,form,pivot,graph</field>
+        <field name="search_view_id" ref="view_creart_strategy_search"/>
+        <field name="context">{'search_default_f_open': 1}</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">Aún no hay acciones en el plan.</p>
+            <p>Crea acciones por semana y cliente, arrástralas entre semanas y marca su avance.</p>
+        </field>
+    </record>
+
+    <menuitem id="menu_creart_strategy" name="Plan estratégico"
+              parent="menu_creart_root" action="action_creart_strategy" sequence="6"/>
+</odoo>

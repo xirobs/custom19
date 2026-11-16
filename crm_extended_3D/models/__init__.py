@@ -19,3 +19,4 @@ from . import crm_lead_gantt
 from . import creart_kpi
 from . import res_users
 from . import creart_team_wizard
+from . import creart_strategy

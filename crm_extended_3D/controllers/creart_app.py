@@ -695,6 +695,42 @@ class CreartApp(http.Controller):
         )
 
     # ------------------------------------------------------------------
+    # Plan estratégico (vista simple para celular / tableta)
+    # ------------------------------------------------------------------
+    @http.route(f"{APP_URL}/plan", type="http", auth="user", sitemap=False)
+    def plan(self, **kw):
+        if (blocked := self._guard()):
+            return blocked
+        plan = request.env["creart.strategy.item"].sudo().get_plan_view(self._today())
+        return self._render("app_plan", "plan", plan=plan, today=self._today())
+
+    @http.route(f"{APP_URL}/plan/accion/<int:item_id>/estado", type="http", auth="user",
+                methods=["POST"], sitemap=False)
+    def plan_action_state(self, item_id, **post):
+        if (blocked := self._guard()):
+            return blocked
+        item = request.env["creart.strategy.item"].sudo().browse(item_id).exists()
+        if not item or item.kind != "action":
+            raise NotFound()
+        item.state = {"todo": "doing", "doing": "done", "done": "todo"}[item.state]
+        return request.redirect(f"{APP_URL}/plan?ok=plan#semana-{item.week}")
+
+    @http.route(f"{APP_URL}/plan/meta/<int:item_id>/vendido", type="http", auth="user",
+                methods=["POST"], sitemap=False)
+    def plan_goal_sold(self, item_id, **post):
+        if (blocked := self._guard()):
+            return blocked
+        item = request.env["creart.strategy.item"].sudo().browse(item_id).exists()
+        if not item or item.kind != "goal":
+            raise NotFound()
+        try:
+            amount = float((post.get("amount_done") or "0").replace(",", ""))
+        except ValueError:
+            return request.redirect(f"{APP_URL}/plan?ok=error_num")
+        item.amount_done = max(amount, 0)
+        return request.redirect(f"{APP_URL}/plan?ok=plan")
+
+    # ------------------------------------------------------------------
     # Instalar y PWA
     # ------------------------------------------------------------------
     @http.route(f"{APP_URL}/instalar", type="http", auth="user", sitemap=False)

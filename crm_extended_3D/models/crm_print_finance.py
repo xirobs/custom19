@@ -3,6 +3,7 @@
 import math
 
 from odoo import models, fields, api
+from odoo.tools.sql import table_exists
 
 class CrmLeadFinance(models.Model):
     """Agrega campos de costeo financiero al modelo `crm.lead`."""
@@ -11,6 +12,10 @@ class CrmLeadFinance(models.Model):
 
     def _get_default_cost_value(self, field_name):
         """Obtiene valor por defecto desde la configuracion global de costos."""
+        # En una instalación nueva, crm.lead se inicializa antes de que exista
+        # la tabla de configuración: sin tabla no hay valores que leer.
+        if not table_exists(self.env.cr, 'print_cost_config'):
+            return 0.0
         config = self.env['print.cost.config'].search([], limit=1)
         return getattr(config, field_name, 0.0) if config else 0.0
 

@@ -10,9 +10,9 @@
                     <header>
                         <button name="action_refresh_dashboard" type="object" string="Actualizar" class="btn-primary"/>
                         <button name="action_open_pipeline_graph" type="object" string="Ver gráfico del pipeline" class="btn-secondary"/>
+                        <button name="action_open_strategy_plan" type="object" string="Plan estratégico" class="btn-secondary"/>
                     </header>
                     <sheet>
-                        <div class="oe_title"><h1>Tablero CreArt 3DP</h1></div>
                         <group>
                             <group string="Ventas">
                                 <field name="currency_id" invisible="1"/>
@@ -41,6 +41,18 @@
                                 <field name="jobs_not_profitable"/>
                                 <field name="jobs_material_shortage"/>
                                 <field name="avg_margin_percent"/>
+                            </group>
+                        </group>
+                        <group string="Plan estratégico $100K · Nov–Dic">
+                            <group>
+                                <field name="plan_goal" widget="monetary"/>
+                                <field name="plan_sold" widget="monetary"/>
+                                <field name="plan_percent" widget="progressbar"/>
+                            </group>
+                            <group>
+                                <field name="plan_actions_done"/>
+                                <field name="plan_actions_total"/>
+                                <field name="plan_actions_overdue"/>
                             </group>
                         </group>
                         <div class="alert alert-info" role="status" invisible="kpi_confidence != 'baja'">

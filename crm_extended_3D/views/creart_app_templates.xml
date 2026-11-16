@@ -41,7 +41,7 @@
         <link rel="manifest" href="/creart/app/manifest.webmanifest"/>
         <link rel="icon" href="/crm_extended_3D/static/src/app/icon-192.png"/>
         <link rel="apple-touch-icon" href="/crm_extended_3D/static/src/app/icon-180.png"/>
-        <link rel="stylesheet" href="/crm_extended_3D/static/src/app/creart_app.css?v=3"/>
+        <link rel="stylesheet" href="/crm_extended_3D/static/src/app/creart_app.css?v=4"/>
         <script src="/crm_extended_3D/static/src/app/creart_app.js?v=3" defer="defer"></script>
     </head>
     <body class="app">
@@ -50,7 +50,7 @@
             'archivado': 'Trabajo archivado', 'restaurado': 'Trabajo restaurado', 'nota': 'Nota agregada',
             'paso': 'Paso actualizado', 'pasos': 'Pasos de producción creados', 'planificado': 'Planificación actualizada',
             'precio': 'Precio cotizado aplicado', 'accesorio': 'Accesorio agregado', 'accesorio_quitado': 'Accesorio quitado',
-            'replanificado': 'Cola replanificada', 'evento': 'Evento agregado al calendario',
+            'plan': 'Plan actualizado', 'replanificado': 'Cola replanificada', 'evento': 'Evento agregado al calendario',
             'error_plan': 'No se pudo planificar: revisa pasos y fechas', 'error_num': 'Revisa los números capturados'}"/>
         <aside class="side">
             <a class="side-brand" href="/creart/app">
@@ -63,6 +63,7 @@
                 <a href="/creart/app/trabajos" t-attf-class="#{active_tab in ('trabajos', 'nuevo') and 'on' or ''}"><t t-call="crm_extended_3D.app_icon"><t t-set="icon" t-value="'jobs'"/></t>Trabajos</a>
                 <a href="/creart/app/produccion" t-attf-class="#{active_tab == 'produccion' and 'on' or ''}"><t t-call="crm_extended_3D.app_icon"><t t-set="icon" t-value="'prod'"/></t>Producción</a>
                 <a href="/creart/app/agenda" t-attf-class="#{active_tab == 'agenda' and 'on' or ''}"><t t-call="crm_extended_3D.app_icon"><t t-set="icon" t-value="'cal'"/></t>Agenda</a>
+                <a href="/creart/app/plan" t-attf-class="#{active_tab == 'plan' and 'on' or ''}"><t t-call="crm_extended_3D.app_icon"><t t-set="icon" t-value="'board'"/></t>Plan $100K</a>
             </nav>
             <div class="side-foot">
                 <a href="/creart/app/instalar" t-attf-class="#{active_tab == 'instalar' and 'on' or ''}"><t t-call="crm_extended_3D.app_icon"><t t-set="icon" t-value="'download'"/></t>Instalar app</a>
@@ -81,6 +82,7 @@
                     <summary class="avatar" aria-label="Mi cuenta"><t t-out="user_initials"/></summary>
                     <div class="menu-pop">
                         <b t-out="app_user.name"/>
+                        <a href="/creart/app/plan">Plan $100K</a>
                         <a href="/creart/app/instalar">Instalar app</a>
                         <a t-if="is_internal" href="/odoo?odoo=1">Odoo completo</a>
                         <a href="/web/session/logout?redirect=/web/login">Cerrar sesión</a>
@@ -137,6 +139,7 @@
                     <a class="qbtn" href="/creart/app/trabajos/nuevo"><t t-call="crm_extended_3D.app_icon"><t t-set="icon" t-value="'plus'"/></t>Trabajo</a>
                     <a class="qbtn" href="/creart/app/agenda#nuevo-evento"><t t-call="crm_extended_3D.app_icon"><t t-set="icon" t-value="'cal'"/></t>Evento</a>
                     <a class="qbtn" href="/creart/app/produccion"><t t-call="crm_extended_3D.app_icon"><t t-set="icon" t-value="'prod'"/></t>Cola</a>
+                    <a class="qbtn" href="/creart/app/plan"><t t-call="crm_extended_3D.app_icon"><t t-set="icon" t-value="'board'"/></t>Plan</a>
                 </div>
             </section>
 
@@ -751,6 +754,104 @@
         </t>
     </template>
 
+    <!-- ===================== PLAN ESTRATÉGICO ===================== -->
+    <template id="app_plan_action" name="App CreArt: acción del plan">
+        <div t-attf-class="pl-act #{a.state} #{a.overdue and 'late' or ''}">
+            <form method="post" t-attf-action="/creart/app/plan/accion/#{a.id}/estado">
+                <input type="hidden" name="csrf_token" t-att-value="csrf"/>
+                <button type="submit" class="pl-check" t-att-aria-label="'Cambiar estado de ' + a.name">
+                    <t t-if="a.state == 'done'"><t t-call="crm_extended_3D.app_icon"><t t-set="icon" t-value="'check'"/></t></t>
+                    <t t-elif="a.state == 'doing'">…</t>
+                </button>
+            </form>
+            <div class="pl-act-main">
+                <b t-out="a.name"/>
+                <small>
+                    <t t-if="a.date_deadline">Para el <t t-out="short_date(a.date_deadline)"/></t>
+                    <t t-if="a.overdue"> · vencida</t>
+                    <t t-if="a.state == 'doing'"> · en curso</t>
+                </small>
+            </div>
+        </div>
+    </template>
+
+    <template id="app_plan" name="App CreArt: plan estratégico">
+        <t t-call="crm_extended_3D.app_layout">
+            <t t-set="title">Plan · CreArt 3DP</t>
+            <div class="page-head"><h1>Plan $100K</h1></div>
+
+            <!-- 1. Dónde voy -->
+            <section class="pl-hero">
+                <span>Vendido hasta hoy</span>
+                <b t-out="money(plan['sold'])"/>
+                <div class="bar big"><i t-attf-style="width: #{min(plan['percent'], 100)}%"/></div>
+                <p>de <t t-out="money(plan['goal'])"/> · <t t-out="plan['percent']"/>% · faltan <t t-out="plan['days_left']"/> días</p>
+            </section>
+
+            <!-- 2. Esta semana (lo único que importa hoy) -->
+            <t t-foreach="plan['weeks']" t-as="w">
+                <section class="card" t-if="w['current']" id="esta-semana">
+                    <div class="card-head"><h2>Esta semana</h2>
+                        <span class="pill"><t t-out="short_date(w['start'])"/> – <t t-out="short_date(w['end'])"/></span></div>
+                    <p class="pl-focus"><b t-out="w['focus']"/><br/>
+                        <small>Meta acumulada al cierre de la semana: <b t-out="money(w['target'])"/></small></p>
+                    <p class="notice" t-if="plan['behind'] and plan['sold'] &lt; w['target'] and today &gt; w['start']">
+                        Para ir al ritmo faltan <b t-out="money(plan['behind'])"/> acumulados.</p>
+                    <p class="empty" t-if="not w['actions']">Sin acciones esta semana.</p>
+                    <t t-foreach="w['actions']" t-as="a"><t t-call="crm_extended_3D.app_plan_action"/></t>
+                </section>
+            </t>
+            <p class="notice" t-if="plan['overdue']"><b t-out="len(plan['overdue'])"/> acción(es) vencida(s) en el plan.</p>
+
+            <!-- 3. Clientes -->
+            <section class="card">
+                <h2>Metas por cliente</h2>
+                <p class="empty small">Toca un cliente para registrar lo vendido.</p>
+                <details class="pl-client" t-foreach="plan['clients']" t-as="g">
+                    <summary>
+                        <span class="pl-c-name" t-out="g.name.split(' · ')[0]"/>
+                        <span class="pl-c-amt"><t t-out="money(g.amount_done)"/> / <t t-out="money(g.amount_goal)"/></span>
+                        <span class="bar"><i t-attf-style="width: #{min(round(g.progress), 100)}%"/></span>
+                    </summary>
+                    <p class="pl-why" t-out="plan['client_basis'].get(g.client, '')"/>
+                    <p class="empty small" t-if="g.date_deadline">Meta para el <t t-out="fmt_date(g.date_deadline)"/></p>
+                    <form class="pl-sold" method="post" t-attf-action="/creart/app/plan/meta/#{g.id}/vendido">
+                        <input type="hidden" name="csrf_token" t-att-value="csrf"/>
+                        <label>Vendido ($)
+                            <input name="amount_done" type="number" min="0" step="100" inputmode="decimal" t-att-value="int(g.amount_done)"/></label>
+                        <button class="btn inline" type="submit">Guardar</button>
+                    </form>
+                </details>
+            </section>
+
+            <!-- 4. Otras semanas, plegadas -->
+            <section class="card">
+                <h2>Todas las semanas</h2>
+                <details class="pl-week" t-foreach="plan['weeks']" t-as="w" t-att-open="'open' if w['current'] else None" t-attf-id="semana-#{w['key']}">
+                    <summary>
+                        <span><b>Semana <t t-out="w['key'][1:]"/></b> · <t t-out="short_date(w['start'])"/> – <t t-out="short_date(w['end'])"/></span>
+                        <span class="pill"><t t-out="w['done']"/>/<t t-out="w['total']"/></span>
+                    </summary>
+                    <p class="pl-focus"><b t-out="w['focus']"/> · meta acumulada <b t-out="money(w['target'])"/></p>
+                    <t t-foreach="w['actions']" t-as="a"><t t-call="crm_extended_3D.app_plan_action"/></t>
+                </details>
+            </section>
+
+            <!-- 5. En qué me baso -->
+            <section class="card">
+                <h2>¿En qué se basa este plan?</h2>
+                <details class="pl-week" t-foreach="plan['basis']" t-as="b">
+                    <summary>
+                        <span><b t-out="b[0]"/></span>
+                        <span t-attf-class="pill #{b[2] == 'supuesto' and 'hot' or ''}" t-out="b[2] == 'dato' and 'Dato tuyo' or 'Supuesto'"/>
+                    </summary>
+                    <p class="pl-why" t-out="b[1]"/>
+                </details>
+                <p class="empty small">"Supuesto" = estimación para planear; cámbiala cuando tengas cotizaciones y tiempos reales.</p>
+            </section>
+        </t>
+    </template>
+
     <template id="app_install" name="App CreArt: instalar">
         <t t-call="crm_extended_3D.app_layout">
             <t t-set="title">Instalar · CreArt 3DP</t>
@@ -773,7 +874,7 @@
         <meta charset="utf-8"/>
         <meta name="viewport" content="width=device-width, initial-scale=1"/>
         <title>Sin conexión · CreArt 3DP</title>
-        <link rel="stylesheet" href="/crm_extended_3D/static/src/app/creart_app.css?v=3"/>
+        <link rel="stylesheet" href="/crm_extended_3D/static/src/app/creart_app.css?v=4"/>
     </head>
     <body class="solo">
         <main class="page narrow">
@@ -785,7 +886,7 @@
 </html>
     </template>
 
-    <template id="app_service_worker" name="App CreArt: service worker">const CACHE = 'creart-app-v3';
+    <template id="app_service_worker" name="App CreArt: service worker">const CACHE = 'creart-app-v4';
 const OFFLINE = '/creart/app/sin-conexion';
 const SHELL = [
     OFFLINE,
