@@ -122,3 +122,45 @@ class TestCertificateManualUpload(_RssPortalCommon, TransactionCase):
         self.assertEqual(self.maria.certificate_attachment_id.raw, pdf)
         with self.assertRaises(UserError):
             self.jose.write({'certificate_upload': base64.b64encode(b'no es pdf'), 'certificate_upload_name': 'x.jpg'})
+
+
+@tagged('post_install', '-at_install', 'red_seguro_scout')
+class TestImportUpdateExisting(_RssPortalCommon, TransactionCase):
+
+    @classmethod
+    def setUpClass(cls):
+        super().setUpClass()
+        cls._setup_data()
+
+    def test_update_contact_data_without_creating(self):
+        from .test_group_portal import _xlsx
+        import base64
+        headers = ['Grupo', 'Primer Nombre', 'Segundo Nombre', 'Apellido paterno', 'Apellido materno',
+                   'Fecha de nacimiento', 'Sexo', 'Nombre completo del padre o tutor', 'Teléfono de emergencia',
+                   'Correo electrónico']
+        maria, jose = self.maria, self.jose
+        rows = [
+            # exacto
+            [self.g7.name, maria.first_name, maria.second_name or '', maria.last_name_father, maria.last_name_mother,
+             maria.birthdate.strftime('%d/%m/%Y'), 'Femenino', 'Laura López', 2221112233, 'laura@example.com'],
+            # con error de captura en el apellido y misma fecha
+            [self.g7.name, jose.first_name, jose.second_name or '', jose.last_name_father + 'z', jose.last_name_mother,
+             jose.birthdate.strftime('%d/%m/%Y'), 'Masculino', 'Pedro Cruz', 2224445566, ''],
+            # no existe
+            [self.g7.name, 'Nadie', '', 'Inexistente', 'Persona', '01/01/2012', 'Femenino', 'X', 2220000000, ''],
+        ]
+        before = self.env['rss.insured'].search_count([])
+        wiz = self.env['rss.import.wizard'].create({'file': base64.b64encode(_xlsx(rows, headers)),
+                                                    'filename': 'tutores.xlsx'})
+        wiz.action_load()
+        batch = self.env['rss.import.batch'].search([('filename', '=', 'tutores.xlsx')])
+        self.assertEqual(len(batch), 1)
+        batch.action_update_existing()
+        self.assertEqual(batch.state, 'updated')
+        self.assertEqual(batch.updated_count, 2)
+        self.assertEqual((maria.tutor_name, maria.tutor_phone, maria.tutor_email),
+                         ('Laura López', '2221112233', 'laura@example.com'))
+        self.assertEqual((jose.tutor_name, jose.tutor_phone), ('Pedro Cruz', '2224445566'))
+        self.assertEqual(self.env['rss.insured'].search_count([]), before, 'No crea a nadie')
+        missing = batch.line_ids.filtered(lambda l: l.first_name == 'Nadie')
+        self.assertIn('No está en la plataforma', missing.message)

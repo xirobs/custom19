@@ -154,6 +154,9 @@
             <form string="Carga de asegurados" class="o_rss" create="0">
                 <header>
                     <button name="action_validate" type="object" string="Revisar de nuevo" invisible="state != 'review'"/>
+                    <button name="action_update_existing" type="object" string="Actualizar los ya registrados"
+                            icon="fa-refresh" invisible="state != 'review'"
+                            confirm="Se pasan el tutor, teléfono de emergencia, correo, parentesco y CURP de esta lista a los asegurados que ya están en la plataforma (solo donde la lista trae dato). No se da de alta a nadie y la carga se cierra. ¿Continuar?"/>
                     <button name="action_save_draft" type="object" string="Guardar en preinscripción" class="btn-primary"
                             invisible="state != 'review' or not office_load"/>
                     <button name="action_request_payment" type="object" string="Calcular pago" class="btn-primary" invisible="state != 'review' or office_load"/>

@@ -28,3 +28,4 @@ from . import rss_certificate_missing
 from . import rss_service_charge
 from . import rss_mail_brand
 from . import rss_certificate_upload
+from . import rss_import_update
