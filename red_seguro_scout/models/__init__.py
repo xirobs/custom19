@@ -30,3 +30,4 @@ from . import rss_mail_brand
 from . import rss_certificate_upload
 from . import rss_import_update
 from . import rss_insured_tracking
+from . import rss_payment_alerts

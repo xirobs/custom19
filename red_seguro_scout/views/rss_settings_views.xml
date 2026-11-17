@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="res_config_settings_view_form_rss" model="ir.ui.view">
+        <field name="name">res.config.settings.view.form.inherit.red_seguro_scout</field>
+        <field name="model">res.config.settings</field>
+        <field name="inherit_id" ref="base.res_config_settings_view_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//form" position="inside">
+                <app data-string="Red Seguro Scout" string="Red Seguro Scout" name="red_seguro_scout"
+                     groups="red_seguro_scout.group_rss_manager">
+                    <block title="Avisos de pagos" id="rss_payment_alerts">
+                        <setting id="rss_payment_notify" string="Quién recibe los avisos"
+                                 help="Por cada recibo emitido, pago con Mercado Pago, comprobante de transferencia por validar o pago de prueba ignorado, llega un correo y una notificación de Odoo (campana y app del celular). Vacío: los administradores de Red Seguro Scout.">
+                            <field name="rss_payment_notify_partner_ids" widget="many2many_tags"
+                                   options="{'no_create': True}" placeholder="Administradores de Red Seguro Scout"/>
+                        </setting>
+                    </block>
+                </app>
+            </xpath>
+        </field>
+    </record>
+
+    <record id="action_rss_settings" model="ir.actions.act_window">
+        <field name="name">Ajustes</field>
+        <field name="res_model">res.config.settings</field>
+        <field name="view_mode">form</field>
+        <field name="context">{'module': 'red_seguro_scout', 'bin_size': False}</field>
+    </record>
+
+    <menuitem id="menu_rss_settings" name="Ajustes" parent="menu_rss_config" action="action_rss_settings"
+              sequence="1" groups="red_seguro_scout.group_rss_manager"/>
+</odoo>

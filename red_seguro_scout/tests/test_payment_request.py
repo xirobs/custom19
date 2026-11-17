@@ -157,3 +157,21 @@ class TestPaymentRequest(_RssPortalCommon, HttpCase):
         self.assertEqual(pay.state, 'draft')
         self.assertIn('PRUEBA', pay.message_ids[:1].body)
         self.assertEqual(self.maria.pay_status, 'unpaid')
+
+    def test_06_payment_alerts(self):
+        """Avisos a la administración: recibo emitido y comprobante por validar."""
+        boss = self.env['res.partner'].create({'name': 'Coordinación Red', 'email': 'coordinacion@example.com'})
+        settings = self.env['res.config.settings'].create({'rss_payment_notify_partner_ids': [(6, 0, boss.ids)]})
+        settings.execute()
+        self.assertEqual(self.env.company.rss_payment_notify_partner_ids, boss)
+        pay = self._request()
+        pay.action_send_payment_request()
+        pay._group_submit_transfer('0098', 'MBAN01', [('c.jpg', base64.b64encode(b'\xff\xd8\xff x'), 'image/jpeg')])
+        alert = pay.message_ids.filtered(lambda m: boss in m.partner_ids)
+        self.assertTrue(alert)
+        self.assertIn('por validar', alert[0].body)
+        pay.action_confirm()
+        alert = pay.message_ids.filtered(lambda m: boss in m.partner_ids and 'Recibo' in (m.body or ''))
+        self.assertTrue(alert, 'Aviso del recibo emitido')
+        self.assertIn('Personas cubiertas', alert[0].body)
+        self.assertIn('/odoo/rss.payment/%s' % pay.id, alert[0].body)
