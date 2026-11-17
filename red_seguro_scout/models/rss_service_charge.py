@@ -330,6 +330,8 @@ class PaymentTransactionRssService(models.Model):
             charge = self.env['rss.service.charge'].sudo().browse(int(match.group(1))).exists()
             if not charge:
                 continue
+            if tx._rss_is_test_payment(charge):
+                continue
             if tx.currency_id.compare_amounts(tx.amount, charge.amount) < 0:
                 charge.message_post(body=_('Pago de Mercado Pago %(ref)s por un importe menor (%(amt)s); '
                                            'revísalo.', ref=tx.reference, amt=tx.amount))

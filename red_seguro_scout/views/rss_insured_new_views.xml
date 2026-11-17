@@ -29,6 +29,8 @@
                        decoration-warning="pay_status == 'paid'" decoration-success="pay_status == 'remitted'"/>
                 <field name="paid_date" optional="show"/>
                 <field name="pay_reference" optional="show"/>
+                <field name="pay_method" optional="show"/>
+                <field name="pay_registered_by_id" optional="show" widget="many2one_avatar_user"/>
                 <field name="has_certificate" optional="show"/>
             </list>
         </field>

@@ -43,6 +43,8 @@ class _RssPortalCommon:
     @classmethod
     def _setup_data(cls):
         env = cls.env
+        # Las pruebas pagan con un proveedor en modo de prueba
+        env['ir.config_parameter'].sudo().set_param('red_seguro_scout.accept_test_payments', '1')
         cls.policy = env['rss.policy'].create({'name': 'Póliza grupos', 'premium_per_member': 100})
         cls.g7 = env['rss.scout.group'].create({'name': 'Grupo 7 Ethnos', 'number': 7, 'policy_id': cls.policy.id,
                                                 'city': 'Puebla'})

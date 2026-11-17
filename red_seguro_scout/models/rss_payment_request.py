@@ -230,6 +230,8 @@ class PaymentTransactionRssPayment(models.Model):
             pay = self.env['rss.payment'].sudo().browse(int(match.group(1))).exists()
             if not pay:
                 continue
+            if tx._rss_is_test_payment(pay):
+                continue
             if tx.currency_id.compare_amounts(tx.amount, pay.amount_expected) < 0:
                 pay.message_post(body=_('Pago de Mercado Pago %(ref)s por un importe menor al esperado (%(amt)s); '
                                         'revísalo manualmente.', ref=tx.reference, amt=tx.amount))

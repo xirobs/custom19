@@ -10,8 +10,26 @@ _logger = logging.getLogger(__name__)
 REFERENCE_RE = re.compile(r'^RSS-G\d+-(\d+)')
 
 
+TEST_PARAM = 'red_seguro_scout.accept_test_payments'
+
+
 class PaymentTransaction(models.Model):
     _inherit = 'payment.transaction'
+
+    def _rss_is_test_payment(self, record=None):
+        """Pago hecho con el proveedor en modo de prueba (sandbox): no entra dinero real, así que no se
+        registra (salvo que el parámetro red_seguro_scout.accept_test_payments lo permita)."""
+        self.ensure_one()
+        if self.provider_id.state != 'test':
+            return False
+        if self.env['ir.config_parameter'].sudo().get_param(TEST_PARAM):
+            return False
+        if record is not None:
+            record.message_post(body='Pago de PRUEBA %s (Mercado Pago en modo de prueba): no entró dinero real '
+                                     'y NO se registró. Pon Mercado Pago en modo «Activado» para cobrar.'
+                                     % self.reference)
+        _logger.warning('Red Seguro Scout: transacción de prueba %s ignorada', self.reference)
+        return True
 
     def _post_process(self):
         """Al confirmarse el pago, la carga se marca pagada y se crean los asegurados."""
@@ -26,6 +44,8 @@ class PaymentTransaction(models.Model):
                 continue
             batch = self.env['rss.import.batch'].sudo().browse(int(match.group(1))).exists()
             if not batch:
+                continue
+            if tx._rss_is_test_payment(batch):
                 continue
             if tx.currency_id.compare_amounts(tx.amount, batch.amount_mp_total) < 0:
                 batch.message_post(body='Pago de Mercado Pago %s por un importe menor al esperado (%s); '

@@ -139,3 +139,21 @@ class TestPaymentRequest(_RssPortalCommon, HttpCase):
         self.assertIn('012180001234567891', msg.body)
         self.assertIn(batch.reference, msg.body)
         self.assertIn('/mi-grupo/importar/%s' % batch.id, msg.body)
+
+    def test_05_sandbox_payment_is_not_registered(self):
+        """Un pago hecho con Mercado Pago en modo de prueba no registra el pago ni emite recibo."""
+        self.env['ir.config_parameter'].sudo().set_param('red_seguro_scout.accept_test_payments', False)
+        pay = self._request()
+        pay.action_send_payment_request()
+        provider = self.env['payment.provider'].create({'name': 'Sandbox', 'code': 'none', 'state': 'test'})
+        method = self.env['payment.method'].with_context(active_test=False).search([], limit=1)
+        tx = self.env['payment.transaction'].create({
+            'provider_id': provider.id, 'payment_method_id': method.id, 'reference': pay.request_reference,
+            'amount': pay.amount_mp_total, 'currency_id': pay.currency_id.id,
+            'partner_id': self.tesorero.partner_id.id,
+        })
+        tx._set_done()
+        tx._rss_close_payment_requests()
+        self.assertEqual(pay.state, 'draft')
+        self.assertIn('PRUEBA', pay.message_ids[:1].body)
+        self.assertEqual(self.maria.pay_status, 'unpaid')

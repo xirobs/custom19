@@ -22,6 +22,9 @@ class RssInsuredTracking(models.Model):
                                   index=True)
     paid_date = fields.Date('Fecha de pago', compute='_compute_pay_status', store=True)
     pay_reference = fields.Char('Recibo / folio de pago', compute='_compute_pay_status', store=True)
+    pay_method = fields.Char('Forma de pago', compute='_compute_pay_status', store=True)
+    pay_registered_by_id = fields.Many2one('res.users', string='Registró el pago', compute='_compute_pay_status',
+                                           store=True)
 
     @api.depends('captured_by_id', 'create_uid', 'create_date')
     def _compute_loaded_by(self):
@@ -30,6 +33,7 @@ class RssInsuredTracking(models.Model):
             rec.load_date = rec.create_date.date() if rec.create_date else False
 
     @api.depends('payment_ids.state', 'payment_ids.date', 'payment_ids.name',
+                 'payment_ids.payment_method', 'payment_ids.received_by', 'payment_ids.reference',
                  'import_batch_id.state', 'import_batch_id.office_load', 'import_batch_id.paid_date')
     def _compute_pay_status(self):
         for rec in self:
@@ -42,11 +46,18 @@ class RssInsuredTracking(models.Model):
                 rec.pay_status = 'remitted' if any(p.state == 'remitted' for p in pays) else 'paid'
                 rec.paid_date = last.date
                 rec.pay_reference = last.name
+                method = dict(last._fields['payment_method'].selection).get(last.payment_method, '')
+                rec.pay_method = ('%s · %s' % (method, last.reference)) if last.reference else method
+                rec.pay_registered_by_id = last.received_by or last.create_uid
             elif batch_paid:
                 rec.pay_status = 'paid'
                 rec.paid_date = batch.paid_date.date() if batch.paid_date else False
                 rec.pay_reference = batch.reference or batch.display_name
+                rec.pay_method = batch.payment_method or ''
+                rec.pay_registered_by_id = batch.write_uid
             else:
                 rec.pay_status = 'unpaid'
                 rec.paid_date = False
                 rec.pay_reference = False
+                rec.pay_method = False
+                rec.pay_registered_by_id = False
