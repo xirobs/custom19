@@ -1,0 +1,84 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Altas por asegurar: quién las cargó, cuándo y su pago -->
+    <record id="rss_insured_view_list_new" model="ir.ui.view">
+        <field name="name">rss.insured.list.new</field>
+        <field name="model">rss.insured</field>
+        <field name="priority">40</field>
+        <field name="arch" type="xml">
+            <list string="Altas por asegurar" class="o_rss" create="0" default_order="load_date desc, group_id"
+                  decoration-info="state == 'draft'" decoration-success="pay_status == 'remitted'">
+                <field name="group_id"/>
+                <field name="last_name_father"/>
+                <field name="last_name_mother"/>
+                <field name="first_name"/>
+                <field name="second_name" optional="show"/>
+                <field name="birthdate" optional="show"/>
+                <field name="age" optional="show"/>
+                <field name="sex" optional="show"/>
+                <field name="section" optional="show"/>
+                <field name="tutor_name" optional="hide"/>
+                <field name="tutor_phone" optional="hide"/>
+                <field name="loaded_by_id" widget="many2one_avatar_user"/>
+                <field name="capture_source" optional="show"/>
+                <field name="load_date"/>
+                <field name="date_start" optional="show"/>
+                <field name="state" widget="badge" decoration-success="state == 'active'"
+                       decoration-info="state == 'draft'" decoration-muted="state == 'inactive'"/>
+                <field name="pay_status" widget="badge" decoration-danger="pay_status == 'unpaid'"
+                       decoration-warning="pay_status == 'paid'" decoration-success="pay_status == 'remitted'"/>
+                <field name="paid_date" optional="show"/>
+                <field name="pay_reference" optional="show"/>
+                <field name="has_certificate" optional="show"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="rss_insured_view_search_new" model="ir.ui.view">
+        <field name="name">rss.insured.search.new</field>
+        <field name="model">rss.insured</field>
+        <field name="priority">40</field>
+        <field name="arch" type="xml">
+            <search string="Altas por asegurar">
+                <field name="name" string="Nombre"/>
+                <field name="group_id"/>
+                <field name="loaded_by_id"/>
+                <filter name="to_insure" string="Por asegurar (sin certificado)"
+                        domain="[('has_certificate', '=', False), ('state', 'in', ('draft', 'active'))]"/>
+                <separator/>
+                <filter name="unpaid" string="Sin pago" domain="[('pay_status', '=', 'unpaid')]"/>
+                <filter name="paid" string="Pagados, por remitir" domain="[('pay_status', '=', 'paid')]"/>
+                <filter name="remitted" string="Remitidos a la aseguradora" domain="[('pay_status', '=', 'remitted')]"/>
+                <separator/>
+                <filter name="draft" string="En preinscripción" domain="[('state', '=', 'draft')]"/>
+                <filter name="active" string="Asegurados" domain="[('state', '=', 'active')]"/>
+                <separator/>
+                <filter name="load_date" string="Fecha de carga" date="load_date"/>
+                <filter name="paid_date_f" string="Fecha de pago" date="paid_date"/>
+                <group>
+                    <filter name="by_group" string="Grupo" context="{'group_by': 'group_id'}"/>
+                    <filter name="by_loader" string="Cargado por" context="{'group_by': 'loaded_by_id'}"/>
+                    <filter name="by_load_date" string="Fecha de carga" context="{'group_by': 'load_date:day'}"/>
+                    <filter name="by_pay" string="Pago" context="{'group_by': 'pay_status'}"/>
+                </group>
+            </search>
+        </field>
+    </record>
+
+    <record id="action_rss_insured_new" model="ir.actions.act_window">
+        <field name="name">Altas por asegurar</field>
+        <field name="res_model">rss.insured</field>
+        <field name="view_mode">list,form</field>
+        <field name="view_ids" eval="[(5, 0, 0), (0, 0, {'view_mode': 'list', 'view_id': ref('rss_insured_view_list_new')})]"/>
+        <field name="search_view_id" ref="rss_insured_view_search_new"/>
+        <field name="context">{'search_default_to_insure': 1, 'search_default_by_group': 1}</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">No hay altas por asegurar</p>
+            <p>Aquí aparecen las personas registradas que aún no tienen certificado de la aseguradora,
+                con quién las cargó, cuándo y si su pago ya se recibió o se remitió.</p>
+        </field>
+    </record>
+
+    <menuitem id="menu_rss_insured_new" name="Altas por asegurar" parent="menu_rss_members"
+              action="action_rss_insured_new" sequence="15"/>
+</odoo>

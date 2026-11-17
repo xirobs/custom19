@@ -164,3 +164,29 @@ class TestImportUpdateExisting(_RssPortalCommon, TransactionCase):
         self.assertEqual(self.env['rss.insured'].search_count([]), before, 'No crea a nadie')
         missing = batch.line_ids.filtered(lambda l: l.first_name == 'Nadie')
         self.assertIn('No está en la plataforma', missing.message)
+
+
+@tagged('post_install', '-at_install', 'red_seguro_scout')
+class TestInsuredTracking(_RssPortalCommon, TransactionCase):
+
+    @classmethod
+    def setUpClass(cls):
+        super().setUpClass()
+        cls._setup_data()
+
+    def test_loaded_by_and_payment(self):
+        rec = self.maria
+        self.assertEqual(rec.loaded_by_id, rec.captured_by_id or rec.create_uid)
+        self.assertTrue(rec.load_date)
+        self.assertEqual(rec.pay_status, 'unpaid')
+        pay = self.env['rss.payment'].create({'group_id': self.g7.id, 'amount': 100, 'year': 2026,
+                                              'member_ids': [(6, 0, rec.ids)]})
+        self.assertEqual(rec.pay_status, 'unpaid', 'Un borrador no cuenta')
+        pay.action_confirm()
+        self.assertEqual(rec.pay_status, 'paid')
+        self.assertEqual(rec.pay_reference, pay.name)
+        self.assertTrue(rec.paid_date)
+        action = self.env.ref('red_seguro_scout.action_rss_insured_new')
+        self.assertIn('search_default_to_insure', action.context)
+        domain = [('has_certificate', '=', False), ('state', 'in', ('draft', 'active')), ('pay_status', '=', 'paid')]
+        self.assertIn(rec, self.env['rss.insured'].search(domain))
