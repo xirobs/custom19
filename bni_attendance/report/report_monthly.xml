@@ -1,0 +1,96 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <template id="report_bni_monthly">
+        <t t-call="web.html_container">
+            <t t-foreach="docs" t-as="doc">
+                <t t-set="data" t-value="doc.get_report_data()"/>
+                <t t-call="web.external_layout">
+                    <div class="page">
+                        <h3>Reporte de asistencia BNI</h3>
+                        <p>
+                            Periodo: <strong t-out="doc.date_from.strftime('%d/%m/%Y')"/> al
+                            <strong t-out="doc.date_to.strftime('%d/%m/%Y')"/> ·
+                            Modalidad: <strong t-out="dict(doc._fields['modality'].selection).get(doc.modality)"/> ·
+                            Sesiones cerradas: <strong t-out="len(data['events'])"/>
+                        </p>
+
+                        <table class="table table-sm table-bordered text-center mb-3">
+                            <thead>
+                                <tr><th>Registros miembro</th><th>A tiempo</th><th>Retardos</th><th>Sustitutos</th>
+                                    <th>Justificadas</th><th>Faltas</th><th>% Participación</th><th>% Puntualidad</th>
+                                    <th>Invitados</th><th>Altas</th><th>Bajas</th></tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td t-out="data['global']['total']"/><td t-out="data['global']['on_time']"/>
+                                    <td t-out="data['global']['late']"/><td t-out="data['global']['substitute']"/>
+                                    <td t-out="data['global']['excused']"/><td t-out="data['global']['absent']"/>
+                                    <td><strong><t t-out="data['global']['rate']"/>%</strong></td>
+                                    <td><t t-out="data['global']['punctuality']"/>%</td>
+                                    <td t-out="data['guest_count']"/><td t-out="data['join_count']"/><td t-out="data['leave_count']"/>
+                                </tr>
+                            </tbody>
+                        </table>
+
+                        <table class="table table-sm table-bordered" style="font-size: 11px;">
+                            <thead>
+                                <tr class="text-center">
+                                    <th class="text-start">Miembro</th>
+                                    <th class="text-start">Empresa</th>
+                                    <t t-foreach="data['events']" t-as="ev">
+                                        <th>
+                                            <span t-out="ev.event_date.strftime('%d/%m')"/><br/>
+                                            <small t-out="'V' if ev.modality == 'virtual' else 'P'"/>
+                                        </th>
+                                    </t>
+                                    <th>Ses.</th><th>A</th><th>R</th><th>S</th><th>J</th><th>F</th>
+                                    <th>% Part.</th><th>% Punt.</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr t-foreach="data['rows']" t-as="row">
+                                    <td t-out="row['member'].name"/>
+                                    <td t-out="row['member'].company_name or ''"/>
+                                    <t t-foreach="row['cells']" t-as="cell">
+                                        <td class="text-center" t-attf-style="#{'color:#1e8e3e;' if cell['state'] == 'on_time' else 'color:#c77700;font-weight:bold;' if cell['state'] == 'late' else 'color:#C8102E;font-weight:bold;' if cell['state'] == 'absent' else ''}">
+                                            <span t-out="cell['code']"/>
+                                            <t t-if="cell['time']"><br/><small t-out="cell['time']"/></t>
+                                        </td>
+                                    </t>
+                                    <td class="text-center" t-out="row['stats']['total']"/>
+                                    <td class="text-center" t-out="row['stats']['on_time']"/>
+                                    <td class="text-center" t-out="row['stats']['late']"/>
+                                    <td class="text-center" t-out="row['stats']['substitute']"/>
+                                    <td class="text-center" t-out="row['stats']['excused']"/>
+                                    <td class="text-center" t-out="row['stats']['absent']"/>
+                                    <td class="text-center"><strong><t t-out="row['stats']['rate']"/>%</strong></td>
+                                    <td class="text-center"><t t-out="row['stats']['punctuality']"/>%</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                        <t t-if="data['movements']">
+                            <h5 class="mt-3">Altas y bajas del periodo</h5>
+                            <table class="table table-sm table-striped" style="font-size: 11px;">
+                                <thead><tr><th>Fecha</th><th>Miembro</th><th>Empresa</th><th>Movimiento</th><th>Motivo</th><th>Información</th></tr></thead>
+                                <tbody>
+                                    <tr t-foreach="data['movements']" t-as="mv">
+                                        <td t-out="mv.date.strftime('%d/%m/%Y')"/>
+                                        <td t-out="mv.member_id.name"/>
+                                        <td t-out="mv.company_name or ''"/>
+                                        <td t-out="dict(mv._fields['movement_type'].selection).get(mv.movement_type)"/>
+                                        <td t-out="dict(mv._fields['leave_reason'].selection).get(mv.leave_reason) or ''"/>
+                                        <td t-out="mv.notes or ''"/>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </t>
+                        <p class="small text-muted">
+                            A = A tiempo · R = Retardo · S = Envió sustituto · J = Justificada · F = Falta · P/V = Presencial/Virtual.
+                            % Participación = (A + R + S) / (Sesiones − J). % Puntualidad = A / (A + R). Solo se consideran eventos cerrados.
+                        </p>
+                    </div>
+                </t>
+            </t>
+        </t>
+    </template>
+</odoo>

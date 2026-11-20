@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="action_report_bni_event" model="ir.actions.report">
+        <field name="name">Reporte de asistencia del evento</field>
+        <field name="model">bni.event</field>
+        <field name="report_type">qweb-pdf</field>
+        <field name="report_name">bni_attendance.report_bni_event</field>
+        <field name="report_file">bni_attendance.report_bni_event</field>
+        <field name="print_report_name">'Asistencia - %s - %s' % (object.name, object.event_date or '')</field>
+        <field name="binding_model_id" ref="model_bni_event"/>
+        <field name="binding_type">report</field>
+    </record>
+
+    <record id="action_report_bni_event_qr" model="ir.actions.report">
+        <field name="name">QR de registro del evento</field>
+        <field name="model">bni.event</field>
+        <field name="report_type">qweb-pdf</field>
+        <field name="report_name">bni_attendance.report_bni_event_qr</field>
+        <field name="report_file">bni_attendance.report_bni_event_qr</field>
+        <field name="print_report_name">'QR - %s' % object.name</field>
+        <field name="binding_model_id" ref="model_bni_event"/>
+        <field name="binding_type">report</field>
+    </record>
+
+    <record id="paperformat_bni_landscape" model="report.paperformat">
+        <field name="name">BNI Carta horizontal</field>
+        <field name="format">Letter</field>
+        <field name="orientation">Landscape</field>
+        <field name="margin_top">30</field>
+        <field name="margin_bottom">15</field>
+        <field name="margin_left">7</field>
+        <field name="margin_right">7</field>
+        <field name="header_spacing">25</field>
+        <field name="dpi">90</field>
+    </record>
+
+    <record id="action_report_bni_monthly" model="ir.actions.report">
+        <field name="name">Reporte de asistencia por periodo</field>
+        <field name="model">bni.attendance.report.wizard</field>
+        <field name="report_type">qweb-pdf</field>
+        <field name="report_name">bni_attendance.report_bni_monthly</field>
+        <field name="report_file">bni_attendance.report_bni_monthly</field>
+        <field name="print_report_name">'Asistencia BNI %s a %s' % (object.date_from, object.date_to)</field>
+        <field name="paperformat_id" ref="paperformat_bni_landscape"/>
+    </record>
+</odoo>

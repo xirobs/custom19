@@ -1,0 +1,13 @@
+id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink
+access_bni_member_user,bni.member user,model_bni_member,group_bni_user,1,1,0,0
+access_bni_member_manager,bni.member manager,model_bni_member,group_bni_manager,1,1,1,1
+access_bni_member_note_user,bni.member.note user,model_bni_member_note,group_bni_user,1,1,1,0
+access_bni_member_note_manager,bni.member.note manager,model_bni_member_note,group_bni_manager,1,1,1,1
+access_bni_event_user,bni.event user,model_bni_event,group_bni_user,1,1,0,0
+access_bni_event_manager,bni.event manager,model_bni_event,group_bni_manager,1,1,1,1
+access_bni_attendance_user,bni.attendance user,model_bni_attendance,group_bni_user,1,1,1,0
+access_bni_attendance_manager,bni.attendance manager,model_bni_attendance,group_bni_manager,1,1,1,1
+access_bni_attendance_report_wizard_user,bni.attendance.report.wizard user,model_bni_attendance_report_wizard,group_bni_user,1,1,1,1
+access_bni_member_movement_user,bni.member.movement user,model_bni_member_movement,group_bni_user,1,0,0,0
+access_bni_member_movement_manager,bni.member.movement manager,model_bni_member_movement,group_bni_manager,1,1,1,1
+access_bni_member_status_wizard_manager,bni.member.status.wizard manager,model_bni_member_status_wizard,group_bni_manager,1,1,1,1

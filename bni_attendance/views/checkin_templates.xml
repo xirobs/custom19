@@ -1,0 +1,260 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Layout autónomo (no depende de website) -->
+    <template id="checkin_layout" name="BNI Check-in Layout">
+        <html lang="es">
+            <head>
+                <meta charset="utf-8"/>
+                <meta name="viewport" content="width=device-width, initial-scale=1"/>
+                <meta name="robots" content="noindex, nofollow"/>
+                <meta t-if="refresh" http-equiv="refresh" t-att-content="refresh"/>
+                <title>Asistencia BNI</title>
+                <style>
+                    :root { --bni: #C8102E; --bni-dark: #8f0b21; --ok: #1e8e3e; --warn: #c77700; --muted: #6b6b6b; }
+                    * { box-sizing: border-box; }
+                    body { margin: 0; font-family: -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+                           background: #f4f4f6; color: #222; }
+                    .wrap { max-width: 480px; margin: 0 auto; padding: 20px 16px 40px; }
+                    .brand { background: var(--bni); color: #fff; padding: 18px 16px; text-align: center; }
+                    .brand h1 { margin: 0; font-size: 20px; letter-spacing: .5px; }
+                    .brand p { margin: 4px 0 0; opacity: .9; font-size: 14px; }
+                    .card { background: #fff; border-radius: 14px; padding: 20px; margin-top: 16px;
+                            box-shadow: 0 2px 10px rgba(0,0,0,.06); }
+                    .card h2 { margin: 0 0 8px; font-size: 18px; }
+                    .meta { color: var(--muted); font-size: 14px; margin: 2px 0; }
+                    .pill { display: inline-block; padding: 3px 10px; border-radius: 999px; font-size: 12px; font-weight: 600; }
+                    .pill.virtual { background: #e3f0ff; color: #1b5fb8; }
+                    .pill.in_person { background: #fde8eb; color: var(--bni-dark); }
+                    label { display: block; font-size: 14px; font-weight: 600; margin: 12px 0 6px; }
+                    input, select, textarea { width: 100%; padding: 12px; font-size: 16px; border: 1px solid #ccc;
+                                              border-radius: 10px; font-family: inherit; }
+                    textarea { min-height: 70px; }
+                    .btn { display: block; width: 100%; padding: 15px; margin-top: 16px; border: 0; border-radius: 12px;
+                           background: var(--bni); color: #fff; font-size: 17px; font-weight: 700; cursor: pointer;
+                           text-align: center; text-decoration: none; }
+                    .btn:active { background: var(--bni-dark); }
+                    .btn.secondary { background: #333; }
+                    .btn.ghost { background: transparent; color: var(--bni); border: 2px solid var(--bni); }
+                    details { margin-top: 4px; }
+                    summary { cursor: pointer; font-weight: 700; padding: 8px 0; font-size: 17px; }
+                    .big { font-size: 44px; font-weight: 800; margin: 6px 0; }
+                    .ok { color: var(--ok); } .warn { color: var(--warn); } .err { color: var(--bni); }
+                    .center { text-align: center; }
+                    .small { font-size: 13px; color: var(--muted); }
+                    .privacy { margin-top: 24px; font-size: 12px; color: var(--muted); text-align: center; }
+                </style>
+            </head>
+            <body>
+                <div class="brand">
+                    <h1>Control de Asistencia BNI</h1>
+                    <p t-if="event" t-out="event.name"/>
+                </div>
+                <div class="wrap">
+                    <t t-out="0"/>
+                    <p class="privacy">Tus datos se usan solo para el control de asistencia del capítulo.</p>
+                </div>
+            </body>
+        </html>
+    </template>
+
+    <!-- Página que abre el QR -->
+    <template id="checkin_event_page" name="BNI Check-in Evento">
+        <t t-call="bni_attendance.checkin_layout">
+            <div class="card">
+                <h2 t-out="event.name"/>
+                <span t-attf-class="pill #{event.modality}"
+                      t-out="'Virtual' if event.modality == 'virtual' else 'Presencial'"/>
+                <p class="meta">Hora de llegada: <strong t-out="limit_local"/></p>
+                <p class="meta" t-if="event.location and event.modality == 'in_person'" t-out="event.location"/>
+            </div>
+
+            <t t-if="event.state != 'open'">
+                <div class="card center">
+                    <h2 class="warn" t-if="event.state == 'draft'">El registro aún no está abierto</h2>
+                    <h2 class="err" t-else="">El registro de este evento ya cerró</h2>
+                    <p class="small">Si crees que es un error, avisa al equipo de membresía.</p>
+                </div>
+            </t>
+            <t t-else="">
+                <!-- Miembro -->
+                <div class="card">
+                    <t t-if="already">
+                        <h2 class="ok">¡Hola <t t-out="member.name"/>!</h2>
+                        <p>Tu asistencia ya quedó registrada a las <strong t-out="already_time"/>.</p>
+                        <form method="post" t-attf-action="/bni/e/#{event.access_token}/observation">
+                            <input type="hidden" name="csrf_token" t-att-value="csrf_token"/>
+                            <label>¿Quieres dejar una observación?</label>
+                            <textarea name="observation" maxlength="1000" required="required"/>
+                            <button type="submit" class="btn ghost">Guardar observación</button>
+                        </form>
+                    </t>
+                    <t t-elif="member">
+                        <h2>Hola <t t-out="member.name"/> 👋</h2>
+                        <form method="post" t-attf-action="/bni/e/#{event.access_token}/member">
+                            <input type="hidden" name="csrf_token" t-att-value="csrf_token"/>
+                            <input type="hidden" name="k" t-att-value="code"/>
+                            <input type="hidden" name="use_cookie" value="1"/>
+                            <label>Observación (opcional)</label>
+                            <textarea name="observation" maxlength="1000"/>
+                            <button type="submit" class="btn">Registrar mi asistencia</button>
+                        </form>
+                        <details>
+                            <summary class="small">¿No eres tú?</summary>
+                            <form method="post" t-attf-action="/bni/e/#{event.access_token}/member">
+                                <input type="hidden" name="csrf_token" t-att-value="csrf_token"/>
+                                <input type="hidden" name="k" t-att-value="code"/>
+                                <label>Código de miembro, correo o teléfono</label>
+                                <input name="identifier" required="required" autocomplete="off"/>
+                                <button type="submit" class="btn secondary">Registrar asistencia</button>
+                            </form>
+                        </details>
+                    </t>
+                    <t t-else="">
+                        <h2>Soy miembro</h2>
+                        <form method="post" t-attf-action="/bni/e/#{event.access_token}/member">
+                            <input type="hidden" name="csrf_token" t-att-value="csrf_token"/>
+                            <input type="hidden" name="k" t-att-value="code"/>
+                            <label>Código de miembro, correo o teléfono</label>
+                            <input name="identifier" required="required" autocomplete="off"/>
+                            <label>Observación (opcional)</label>
+                            <textarea name="observation" maxlength="1000"/>
+                            <button type="submit" class="btn">Registrar mi asistencia</button>
+                        </form>
+                        <p class="small">La próxima vez tu celular te recordará y solo tendrás que dar un clic.</p>
+                    </t>
+                </div>
+
+                <!-- Sustituto -->
+                <div class="card">
+                    <details>
+                        <summary>Vengo como sustituto(a)</summary>
+                        <form method="post" t-attf-action="/bni/e/#{event.access_token}/substitute">
+                            <input type="hidden" name="csrf_token" t-att-value="csrf_token"/>
+                            <input type="hidden" name="k" t-att-value="code"/>
+                            <label>¿A qué miembro sustituyes? *</label>
+                            <select name="member_id" required="required">
+                                <option value="">— Selecciona —</option>
+                                <t t-foreach="members" t-as="m">
+                                    <option t-att-value="m.id" t-out="m.name"/>
+                                </t>
+                            </select>
+                            <label>Tu nombre completo *</label>
+                            <input name="substitute_name" required="required"/>
+                            <label>Tu empresa</label>
+                            <input name="substitute_company"/>
+                            <button type="submit" class="btn ghost">Registrar como sustituto</button>
+                        </form>
+                    </details>
+                </div>
+
+                <!-- Invitado -->
+                <div class="card">
+                    <details>
+                        <summary>Soy invitado(a)</summary>
+                        <form method="post" t-attf-action="/bni/e/#{event.access_token}/guest">
+                            <input type="hidden" name="csrf_token" t-att-value="csrf_token"/>
+                            <input type="hidden" name="k" t-att-value="code"/>
+                            <label>Nombre completo *</label>
+                            <input name="name" required="required"/>
+                            <label>Empresa</label>
+                            <input name="company_name"/>
+                            <label>¿Quién te invitó?</label>
+                            <select name="invited_by_id">
+                                <option value="">— Selecciona —</option>
+                                <t t-foreach="members" t-as="m">
+                                    <option t-att-value="m.id" t-out="m.name"/>
+                                </t>
+                            </select>
+                            <button type="submit" class="btn ghost">Registrar como invitado</button>
+                        </form>
+                    </details>
+                </div>
+            </t>
+        </t>
+    </template>
+
+    <!-- Resultado -->
+    <template id="checkin_result" name="BNI Check-in Resultado">
+        <t t-call="bni_attendance.checkin_layout">
+            <div class="card center">
+                <t t-if="not is_new">
+                    <h2 class="ok">Ya estaba registrada tu asistencia</h2>
+                </t>
+                <t t-elif="line.state == 'late'">
+                    <h2 class="warn">Asistencia registrada con retardo</h2>
+                </t>
+                <t t-else="">
+                    <h2 class="ok">¡Asistencia registrada!</h2>
+                </t>
+                <p t-if="line.is_substitute">
+                    <strong t-out="line.substitute_name"/><br/>
+                    <span class="meta">Sustituto(a) de <t t-out="line.member_id.name"/></span>
+                </p>
+                <p t-else=""><strong t-out="line.name"/></p>
+                <div class="big" t-out="time_local"/>
+                <p class="meta">Hora de llegada registrada</p>
+                <p t-if="line.attendee_type == 'member' and not line.is_substitute and state_label">
+                    Estatus: <strong t-attf-class="#{'warn' if line.state == 'late' else 'ok'}" t-out="state_label"/>
+                    <t t-if="line.minutes_late"> (<t t-out="line.minutes_late"/> min)</t>
+                </p>
+                <p t-if="line.attendee_type == 'guest'">¡Bienvenido(a) a BNI! Gracias por acompañarnos.</p>
+                <a t-if="meeting_url" class="btn" t-att-href="meeting_url" target="_blank">Regresar a la reunión</a>
+            </div>
+            <div class="card" t-if="can_observe">
+                <form method="post" t-attf-action="/bni/e/#{event.access_token}/observation">
+                    <input type="hidden" name="csrf_token" t-att-value="csrf_token"/>
+                    <label>¿Quieres dejar una observación?</label>
+                    <textarea name="observation" maxlength="1000" required="required"/>
+                    <button type="submit" class="btn ghost">Guardar observación</button>
+                </form>
+            </div>
+        </t>
+    </template>
+
+    <!-- Mensajes / errores -->
+    <template id="checkin_message" name="BNI Check-in Mensaje">
+        <t t-call="bni_attendance.checkin_layout">
+            <div class="card center">
+                <h2 t-attf-class="#{'ok' if kind == 'success' else 'warn' if kind == 'warning' else 'err'}" t-out="title"/>
+                <p t-out="message"/>
+                <a t-if="event and code" class="btn ghost" t-attf-href="/bni/e/#{event.access_token}?k=#{code}">Volver</a>
+            </div>
+        </t>
+    </template>
+
+    <!-- Pantalla para proyectar el QR en la sesión -->
+    <template id="checkin_screen" name="BNI Pantalla QR">
+        <html lang="es">
+            <head>
+                <meta charset="utf-8"/>
+                <meta http-equiv="refresh" t-att-content="refresh"/>
+                <title>QR de asistencia BNI</title>
+                <style>
+                    body { margin: 0; font-family: -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+                           background: #fff; color: #222; text-align: center; }
+                    .bar { background: #C8102E; color: #fff; padding: 16px; }
+                    .bar h1 { margin: 0; font-size: 34px; }
+                    .bar p { margin: 4px 0 0; font-size: 20px; }
+                    img { width: min(70vh, 90vw); height: min(70vh, 90vw); margin-top: 12px; image-rendering: pixelated; }
+                    .stats { font-size: 22px; margin: 6px 0; }
+                    .hint { color: #666; font-size: 16px; }
+                </style>
+            </head>
+            <body>
+                <div class="bar">
+                    <h1>Escanea para registrar tu asistencia</h1>
+                    <p><t t-out="event.name"/> · Llegada: <t t-out="limit_local"/></p>
+                </div>
+                <t t-if="event.state == 'open'">
+                    <img t-att-src="'data:image/png;base64,%s' % qr" alt="QR de asistencia"/>
+                    <p class="stats">Miembros registrados: <strong t-out="event.present_count"/> de <t t-out="event.member_total"/>
+                        · Invitados: <strong t-out="event.guest_count"/></p>
+                    <p class="hint" t-if="event.qr_mode == 'dynamic'">El código cambia cada minuto. Escanéalo durante la sesión.</p>
+                </t>
+                <t t-else="">
+                    <p class="stats" style="margin-top: 80px;">El registro de este evento no está abierto.</p>
+                </t>
+            </body>
+        </html>
+    </template>
+</odoo>

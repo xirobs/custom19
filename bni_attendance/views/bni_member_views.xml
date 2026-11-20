@@ -1,0 +1,286 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- ===================== Miembro ===================== -->
+    <record id="bni_member_view_list" model="ir.ui.view">
+        <field name="name">bni.member.list</field>
+        <field name="model">bni.member</field>
+        <field name="arch" type="xml">
+            <list string="Miembros" decoration-muted="state == 'inactive'">
+                <field name="name"/>
+                <field name="company_name"/>
+                <field name="category" optional="show"/>
+                <field name="phone" optional="show"/>
+                <field name="member_code" optional="hide"/>
+                <field name="join_date" optional="show"/>
+                <field name="is_new" widget="boolean_toggle" readonly="1" optional="show"/>
+                <field name="renewal_date" optional="hide"/>
+                <field name="leave_date" optional="hide"/>
+                <field name="event_count" optional="show"/>
+                <field name="late_count" optional="show"/>
+                <field name="absent_count" optional="show"/>
+                <field name="attendance_rate" widget="progressbar"/>
+                <field name="punctuality_rate" widget="progressbar" optional="show"/>
+                <field name="state" widget="badge" decoration-success="state == 'active'" decoration-danger="state == 'inactive'"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="bni_member_view_form" model="ir.ui.view">
+        <field name="name">bni.member.form</field>
+        <field name="model">bni.member</field>
+        <field name="arch" type="xml">
+            <form string="Miembro BNI">
+                <header>
+                    <button name="action_open_leave_wizard" type="object" string="Dar de baja"
+                            invisible="state != 'active'" groups="bni_attendance.group_bni_manager"/>
+                    <button name="action_open_reentry_wizard" type="object" string="Reingreso" class="btn-primary"
+                            invisible="state != 'inactive'" groups="bni_attendance.group_bni_manager"/>
+                    <field name="state" widget="statusbar"/>
+                </header>
+                <sheet>
+                    <div class="oe_button_box" name="button_box">
+                        <button name="action_view_attendance" type="object" class="oe_stat_button" icon="fa-calendar-check-o">
+                            <field name="attendance_rate" widget="statinfo" string="% Participación"/>
+                        </button>
+                        <button name="action_view_attendance" type="object" class="oe_stat_button" icon="fa-clock-o">
+                            <field name="late_count" widget="statinfo" string="Retardos"/>
+                        </button>
+                        <button name="action_view_attendance" type="object" class="oe_stat_button" icon="fa-times-circle">
+                            <field name="absent_count" widget="statinfo" string="Faltas"/>
+                        </button>
+                    </div>
+                    <widget name="web_ribbon" title="Baja" bg_color="text-bg-danger" invisible="state != 'inactive'"/>
+                    <widget name="web_ribbon" title="Nuevo" bg_color="text-bg-success" invisible="not is_new"/>
+                    <field name="is_new" invisible="1"/>
+                    <field name="image_128" widget="image" class="oe_avatar"/>
+                    <div class="oe_title">
+                        <label for="name"/>
+                        <h1><field name="name" placeholder="Nombre del miembro"/></h1>
+                        <field name="company_name" placeholder="Empresa"/>
+                    </div>
+                    <group>
+                        <group string="Datos">
+                            <field name="category"/>
+                            <field name="phone" widget="phone"/>
+                            <field name="email" widget="email"/>
+                            <field name="member_code"/>
+                            <field name="partner_id"/>
+                            <field name="company_id" groups="base.group_multi_company"/>
+                        </group>
+                        <group string="Alta">
+                            <field name="join_date"/>
+                            <field name="sponsor_id"/>
+                            <field name="renewal_date"/>
+                        </group>
+                    </group>
+                    <notebook>
+                        <page string="Observaciones" name="observations">
+                            <field name="general_observation" placeholder="Observaciones generales del miembro..."/>
+                            <separator string="Bitácora (incluye las que registra el propio miembro)"/>
+                            <field name="note_ids">
+                                <list editable="top">
+                                    <field name="date"/>
+                                    <field name="note_type"/>
+                                    <field name="event_id" optional="show"/>
+                                    <field name="note"/>
+                                    <field name="user_id" optional="show"/>
+                                </list>
+                            </field>
+                        </page>
+                        <page string="Participación" name="stats">
+                            <group>
+                                <group string="Indicadores (eventos cerrados)">
+                                    <field name="event_count"/>
+                                    <field name="attended_count"/>
+                                    <field name="attendance_rate" widget="progressbar"/>
+                                    <field name="punctuality_rate" widget="progressbar"/>
+                                </group>
+                                <group string="Detalle">
+                                    <field name="on_time_count"/>
+                                    <field name="late_count"/>
+                                    <field name="substitute_count"/>
+                                    <field name="excused_count"/>
+                                    <field name="absent_count"/>
+                                </group>
+                            </group>
+                            <field name="attendance_ids" readonly="1">
+                                <list decoration-success="state == 'on_time'" decoration-warning="state == 'late'"
+                                      decoration-danger="state == 'absent'" decoration-info="state == 'substitute'"
+                                      decoration-muted="state in ('pending', 'excused')">
+                                    <field name="event_date"/>
+                                    <field name="event_id"/>
+                                    <field name="modality"/>
+                                    <field name="check_in_local"/>
+                                    <field name="minutes_late"/>
+                                    <field name="state" widget="badge"/>
+                                    <field name="substitute_name"/>
+                                    <field name="observation"/>
+                                </list>
+                            </field>
+                        </page>
+                        <page string="Alta y baja" name="membership">
+                            <group>
+                                <group string="Información de alta">
+                                    <field name="join_notes" nolabel="1" colspan="2"
+                                           placeholder="Cómo llegó, padrino, inducción, categoría reservada..."/>
+                                </group>
+                                <group string="Baja" invisible="state != 'inactive'">
+                                    <field name="leave_date"/>
+                                    <field name="leave_reason"/>
+                                    <field name="leave_notes"/>
+                                </group>
+                            </group>
+                            <separator string="Historial"/>
+                            <field name="movement_ids" readonly="1">
+                                <list>
+                                    <field name="date"/>
+                                    <field name="movement_type" widget="badge"
+                                           decoration-success="movement_type in ('join', 'reentry')"
+                                           decoration-danger="movement_type == 'leave'"/>
+                                    <field name="leave_reason"/>
+                                    <field name="notes"/>
+                                    <field name="user_id"/>
+                                </list>
+                            </field>
+                        </page>
+                    </notebook>
+                </sheet>
+                <chatter/>
+            </form>
+        </field>
+    </record>
+
+    <record id="bni_member_view_search" model="ir.ui.view">
+        <field name="name">bni.member.search</field>
+        <field name="model">bni.member</field>
+        <field name="arch" type="xml">
+            <search>
+                <field name="name" filter_domain="['|', '|', ('name', 'ilike', self), ('company_name', 'ilike', self), ('category', 'ilike', self)]"/>
+                <field name="phone"/>
+                <field name="member_code"/>
+                <filter name="filter_active" string="Activos" domain="[('state', '=', 'active')]"/>
+                <filter name="filter_new" string="Nuevos (90 días)"
+                        domain="[('state', '=', 'active'), ('join_date', '>=', (context_today() - relativedelta(days=90)).strftime('%Y-%m-%d'))]"/>
+                <filter name="filter_inactive" string="Bajas" domain="[('state', '=', 'inactive')]"/>
+                <separator/>
+                <filter name="filter_join_date" string="Fecha de alta" date="join_date"/>
+                <filter name="filter_leave_date" string="Fecha de baja" date="leave_date"/>
+                <group>
+                    <filter name="group_state" string="Estado" context="{'group_by': 'state'}"/>
+                    <filter name="group_leave_reason" string="Motivo de baja" context="{'group_by': 'leave_reason'}"/>
+                </group>
+            </search>
+        </field>
+    </record>
+
+    <record id="bni_member_action" model="ir.actions.act_window">
+        <field name="name">Miembros</field>
+        <field name="res_model">bni.member</field>
+        <field name="view_mode">list,form</field>
+        <field name="context">{'search_default_filter_active': 1}</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">Registra a los miembros del capítulo</p>
+            <p>Al crear un miembro se registra su alta. Las bajas y reingresos se hacen con los botones del miembro.</p>
+        </field>
+    </record>
+
+    <!-- ===================== Movimientos ===================== -->
+    <record id="bni_member_movement_view_list" model="ir.ui.view">
+        <field name="name">bni.member.movement.list</field>
+        <field name="model">bni.member.movement</field>
+        <field name="arch" type="xml">
+            <list string="Altas y bajas" create="0" edit="0">
+                <field name="date"/>
+                <field name="member_id"/>
+                <field name="company_name"/>
+                <field name="movement_type" widget="badge"
+                       decoration-success="movement_type in ('join', 'reentry')"
+                       decoration-danger="movement_type == 'leave'"/>
+                <field name="leave_reason"/>
+                <field name="notes"/>
+                <field name="user_id" optional="hide"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="bni_member_movement_view_search" model="ir.ui.view">
+        <field name="name">bni.member.movement.search</field>
+        <field name="model">bni.member.movement</field>
+        <field name="arch" type="xml">
+            <search>
+                <field name="member_id"/>
+                <filter name="filter_join" string="Altas y reingresos" domain="[('movement_type', 'in', ('join', 'reentry'))]"/>
+                <filter name="filter_leave" string="Bajas" domain="[('movement_type', '=', 'leave')]"/>
+                <filter name="filter_date" string="Fecha" date="date"/>
+                <group>
+                    <filter name="group_type" string="Movimiento" context="{'group_by': 'movement_type'}"/>
+                    <filter name="group_month" string="Mes" context="{'group_by': 'date:month'}"/>
+                </group>
+            </search>
+        </field>
+    </record>
+
+    <record id="bni_member_movement_action" model="ir.actions.act_window">
+        <field name="name">Altas y bajas</field>
+        <field name="res_model">bni.member.movement</field>
+        <field name="view_mode">list,pivot,graph</field>
+    </record>
+
+    <!-- ===================== Observación ===================== -->
+    <record id="bni_member_note_view_form" model="ir.ui.view">
+        <field name="name">bni.member.note.form</field>
+        <field name="model">bni.member.note</field>
+        <field name="arch" type="xml">
+            <form string="Observación">
+                <group>
+                    <group>
+                        <field name="member_id"/>
+                        <field name="event_id"/>
+                    </group>
+                    <group>
+                        <field name="date"/>
+                        <field name="note_type"/>
+                    </group>
+                </group>
+                <field name="note" placeholder="Escribe la observación..."/>
+            </form>
+        </field>
+    </record>
+
+    <record id="bni_member_note_view_list" model="ir.ui.view">
+        <field name="name">bni.member.note.list</field>
+        <field name="model">bni.member.note</field>
+        <field name="arch" type="xml">
+            <list string="Observaciones">
+                <field name="date"/>
+                <field name="member_id"/>
+                <field name="note_type"/>
+                <field name="event_id"/>
+                <field name="note"/>
+                <field name="user_id"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="bni_member_note_view_search" model="ir.ui.view">
+        <field name="name">bni.member.note.search</field>
+        <field name="model">bni.member.note</field>
+        <field name="arch" type="xml">
+            <search>
+                <field name="member_id"/>
+                <field name="note"/>
+                <filter name="filter_by_member" string="Registradas por el miembro" domain="[('note_type', '=', 'member')]"/>
+                <group>
+                    <filter name="group_member" string="Miembro" context="{'group_by': 'member_id'}"/>
+                    <filter name="group_type" string="Tipo" context="{'group_by': 'note_type'}"/>
+                </group>
+            </search>
+        </field>
+    </record>
+
+    <record id="bni_member_note_action" model="ir.actions.act_window">
+        <field name="name">Observaciones</field>
+        <field name="res_model">bni.member.note</field>
+        <field name="view_mode">list,form</field>
+    </record>
+</odoo>

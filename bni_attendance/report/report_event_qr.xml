@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <template id="report_bni_event_qr">
+        <t t-call="web.html_container">
+            <t t-foreach="docs" t-as="doc">
+                <t t-call="web.basic_layout">
+                    <div class="page text-center" style="padding-top: 40px;">
+                        <h1 style="color: #C8102E; font-size: 42px;">Registra tu asistencia</h1>
+                        <h2 t-out="doc.name"/>
+                        <p style="font-size: 20px;">
+                            <span t-out="'Virtual' if doc.modality == 'virtual' else 'Presencial'"/> ·
+                            Hora de llegada: <strong t-out="doc.checkin_limit_local"/>
+                        </p>
+                        <img t-if="doc.qr_image" t-att-src="image_data_uri(doc.qr_image)"
+                             style="width: 420px; height: 420px; margin: 20px auto;"/>
+                        <p style="font-size: 18px;">Escanea con la cámara de tu celular.<br/>
+                            Miembros · Invitados · Red Gourmet</p>
+                        <p style="font-size: 12px; color: #777;" t-out="doc.checkin_url"/>
+                    </div>
+                </t>
+            </t>
+        </t>
+    </template>
+</odoo>

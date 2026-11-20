@@ -1,0 +1,225 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="bni_event_view_list" model="ir.ui.view">
+        <field name="name">bni.event.list</field>
+        <field name="model">bni.event</field>
+        <field name="arch" type="xml">
+            <list string="Eventos" decoration-muted="state == 'closed'" decoration-success="state == 'open'">
+                <field name="event_date"/>
+                <field name="name"/>
+                <field name="modality" widget="badge" decoration-info="modality == 'virtual'"/>
+                <field name="checkin_limit"/>
+                <field name="on_time_count" optional="show"/>
+                <field name="late_count" optional="show"/>
+                <field name="substitute_count" optional="show"/>
+                <field name="absent_count" optional="show"/>
+                <field name="guest_count" optional="show"/>
+                <field name="attendance_rate" widget="progressbar"/>
+                <field name="state" widget="badge" decoration-success="state == 'open'"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="bni_event_view_form" model="ir.ui.view">
+        <field name="name">bni.event.form</field>
+        <field name="model">bni.event</field>
+        <field name="arch" type="xml">
+            <form string="Evento BNI">
+                <header>
+                    <button name="action_open" type="object" string="Abrir registro" class="btn-primary"
+                            invisible="state != 'draft'" groups="bni_attendance.group_bni_manager"/>
+                    <button name="action_open_screen" type="object" string="Mostrar QR en pantalla" icon="fa-television"
+                            class="btn-primary" invisible="state != 'open'"/>
+                    <button name="action_load_members" type="object" string="Actualizar lista de miembros"
+                            invisible="state == 'closed'"/>
+                    <button name="action_print_qr" type="object" string="Imprimir QR" icon="fa-qrcode"
+                            invisible="qr_mode != 'static'"/>
+                    <button name="action_close" type="object" string="Cerrar evento"
+                            invisible="state != 'open'" groups="bni_attendance.group_bni_manager"
+                            confirm="Ciérralo solo cuando termine la sesión: quien no registró quedará como Falta. ¿Cerrar el evento?"/>
+                    <button name="action_print_report" type="object" string="Reporte del evento" icon="fa-print"/>
+                    <button name="action_reopen" type="object" string="Reabrir"
+                            invisible="state != 'closed'" groups="bni_attendance.group_bni_manager"/>
+                    <button name="action_reset_draft" type="object" string="Volver a borrador"
+                            invisible="state != 'open'" groups="bni_attendance.group_bni_manager"/>
+                    <field name="state" widget="statusbar" statusbar_visible="draft,open,closed"/>
+                </header>
+                <sheet>
+                    <div class="oe_button_box" name="button_box">
+                        <div class="oe_stat_button">
+                            <div class="o_stat_info">
+                                <span class="o_stat_value text-success"><field name="on_time_count"/></span>
+                                <span class="o_stat_text">A tiempo</span>
+                            </div>
+                        </div>
+                        <div class="oe_stat_button">
+                            <div class="o_stat_info">
+                                <span class="o_stat_value text-warning"><field name="late_count"/></span>
+                                <span class="o_stat_text">Retardos</span>
+                            </div>
+                        </div>
+                        <div class="oe_stat_button">
+                            <div class="o_stat_info">
+                                <span class="o_stat_value text-info"><field name="substitute_count"/></span>
+                                <span class="o_stat_text">Sustitutos</span>
+                            </div>
+                        </div>
+                        <div class="oe_stat_button">
+                            <div class="o_stat_info">
+                                <span class="o_stat_value text-danger"><field name="absent_count"/></span>
+                                <span class="o_stat_text">Faltas</span>
+                            </div>
+                        </div>
+                        <div class="oe_stat_button">
+                            <div class="o_stat_info">
+                                <span class="o_stat_value"><field name="guest_count"/></span>
+                                <span class="o_stat_text">Invitados</span>
+                            </div>
+                        </div>
+                        <div class="oe_stat_button">
+                            <div class="o_stat_info">
+                                <span class="o_stat_value"><field name="attendance_rate"/>%</span>
+                                <span class="o_stat_text">Asistencia</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="oe_title">
+                        <label for="name"/>
+                        <h1><field name="name" placeholder="Ej. Sesión semanal Tribu Emprendimiento"/></h1>
+                    </div>
+                    <group>
+                        <group string="Configuración">
+                            <field name="modality" widget="radio" options="{'horizontal': true}" readonly="state == 'closed'"/>
+                            <field name="checkin_limit" readonly="state == 'closed'"/>
+                            <field name="qr_mode" readonly="state == 'closed'"/>
+                            <field name="tz"/>
+                        </group>
+                        <group string="Lugar">
+                            <field name="location" invisible="modality == 'virtual'"/>
+                            <field name="meeting_url" widget="url" invisible="modality != 'virtual'"/>
+                            <field name="event_date"/>
+                            <field name="pending_count" invisible="state != 'open'"/>
+                            <field name="company_id" groups="base.group_multi_company"/>
+                        </group>
+                    </group>
+                    <notebook>
+                        <page string="Lista de asistencia" name="members">
+                            <field name="member_line_ids" context="{'default_attendee_type': 'member'}"
+                                   readonly="state == 'closed'">
+                                <list editable="bottom"
+                                      decoration-success="state == 'on_time'" decoration-warning="state == 'late'"
+                                      decoration-danger="state == 'absent'" decoration-info="state == 'substitute'"
+                                      decoration-muted="state in ('pending', 'excused')">
+                                    <field name="attendee_type" column_invisible="True"/>
+                                    <field name="name" column_invisible="True"/>
+                                    <field name="member_id" required="1" options="{'no_create': True}"/>
+                                    <field name="company_name" readonly="1"/>
+                                    <field name="check_in"/>
+                                    <field name="minutes_late" optional="show"/>
+                                    <field name="state" widget="badge" readonly="1"/>
+                                    <field name="is_substitute" string="Sustituto" widget="boolean_toggle"/>
+                                    <field name="substitute_name" required="is_substitute" readonly="not is_substitute"/>
+                                    <field name="substitute_company" optional="show" readonly="not is_substitute"/>
+                                    <field name="checkin_method" optional="hide" readonly="1"/>
+                                    <field name="observation" optional="show"/>
+                                    <button name="action_check_in_now" type="object" icon="fa-sign-in" title="Registrar llegada ahora"
+                                            invisible="check_in or is_substitute"/>
+                                    <button name="action_mark_excused" type="object" icon="fa-medkit" title="Falta justificada"
+                                            invisible="check_in or is_substitute or state == 'excused'"/>
+                                    <button name="action_add_member_note" type="object" icon="fa-commenting-o" title="Observación en bitácora del miembro"/>
+                                </list>
+                            </field>
+                        </page>
+                        <page string="Invitados" name="guests">
+                            <field name="guest_line_ids" context="{'default_attendee_type': 'guest'}"
+                                   readonly="state == 'closed'">
+                                <list editable="bottom">
+                                    <field name="attendee_type" column_invisible="True"/>
+                                    <field name="name" string="Nombre del invitado"/>
+                                    <field name="company_name"/>
+                                    <field name="invited_by_id" options="{'no_create': True}"/>
+                                    <field name="check_in"/>
+                                    <field name="observation" optional="show"/>
+                                    <button name="action_check_in_now" type="object" icon="fa-sign-in" title="Registrar llegada ahora"
+                                            invisible="check_in"/>
+                                </list>
+                            </field>
+                        </page>
+                        <page string="QR / Registro" name="qr">
+                            <group>
+                                <group>
+                                    <field name="qr_mode" readonly="1"/>
+                                    <field name="checkin_url" widget="CopyClipboardChar" invisible="qr_mode != 'static'"/>
+                                    <button name="action_regenerate_token" type="object" string="Regenerar QR"
+                                            class="btn-link" groups="bni_attendance.group_bni_manager"
+                                            confirm="El QR actual dejará de funcionar. ¿Continuar?"/>
+                                </group>
+                                <group invisible="qr_mode != 'static'">
+                                    <field name="qr_image" widget="image" options="{'size': [220, 220]}" nolabel="1" colspan="2"/>
+                                </group>
+                            </group>
+                            <div class="text-muted" invisible="qr_mode != 'dynamic'">
+                                Con el registro abierto, pulsa <strong>Mostrar QR en pantalla</strong> y proyéctalo o compártelo
+                                en la videollamada. El QR cambia cada minuto: una foto o reenvío deja de funcionar a los pocos
+                                minutos, así solo registra quien está en la sesión. El registro sigue abierto aunque lleguen tarde,
+                                hasta que cierres el evento.
+                            </div>
+                            <div class="text-muted" invisible="qr_mode != 'static'">
+                                QR fijo para imprimir en la sala. No cambia, así que cualquiera que tenga una foto puede usarlo.
+                            </div>
+                        </page>
+                        <page string="Notas" name="notes">
+                            <field name="notes"/>
+                        </page>
+                    </notebook>
+                </sheet>
+                <chatter/>
+            </form>
+        </field>
+    </record>
+
+    <record id="bni_event_view_calendar" model="ir.ui.view">
+        <field name="name">bni.event.calendar</field>
+        <field name="model">bni.event</field>
+        <field name="arch" type="xml">
+            <calendar string="Eventos" date_start="checkin_limit" color="modality" mode="month" quick_create="0">
+                <field name="name"/>
+                <field name="modality"/>
+                <field name="state"/>
+            </calendar>
+        </field>
+    </record>
+
+    <record id="bni_event_view_search" model="ir.ui.view">
+        <field name="name">bni.event.search</field>
+        <field name="model">bni.event</field>
+        <field name="arch" type="xml">
+            <search>
+                <field name="name"/>
+                <filter name="filter_open" string="Registro abierto" domain="[('state', '=', 'open')]"/>
+                <filter name="filter_closed" string="Cerrados" domain="[('state', '=', 'closed')]"/>
+                <separator/>
+                <filter name="filter_in_person" string="Presencial" domain="[('modality', '=', 'in_person')]"/>
+                <filter name="filter_virtual" string="Virtual" domain="[('modality', '=', 'virtual')]"/>
+                <separator/>
+                <filter name="filter_date" string="Fecha" date="event_date"/>
+                <group>
+                    <filter name="group_modality" string="Modalidad" context="{'group_by': 'modality'}"/>
+                    <filter name="group_month" string="Mes" context="{'group_by': 'event_date:month'}"/>
+                    <filter name="group_state" string="Estado" context="{'group_by': 'state'}"/>
+                </group>
+            </search>
+        </field>
+    </record>
+
+    <record id="bni_event_action" model="ir.actions.act_window">
+        <field name="name">Eventos</field>
+        <field name="res_model">bni.event</field>
+        <field name="view_mode">list,form,calendar</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">Crea tu primera sesión BNI</p>
+            <p>Define nombre, fecha y hora de llegada y modalidad. Al abrir el registro se cargan los miembros activos
+               y puedes mostrar el QR en pantalla. Tip: duplica un evento para crear la sesión de la siguiente semana.</p>
+        </field>
+    </record>
+</odoo>

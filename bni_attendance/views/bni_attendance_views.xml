@@ -1,0 +1,127 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="bni_attendance_view_list" model="ir.ui.view">
+        <field name="name">bni.attendance.list</field>
+        <field name="model">bni.attendance</field>
+        <field name="arch" type="xml">
+            <list string="Asistencias" create="0"
+                  decoration-success="state == 'on_time'" decoration-warning="state == 'late'"
+                  decoration-danger="state == 'absent'" decoration-info="state == 'substitute'"
+                  decoration-muted="state in ('pending', 'excused')">
+                <field name="event_date"/>
+                <field name="event_id"/>
+                <field name="modality" optional="show"/>
+                <field name="attendee_type"/>
+                <field name="name"/>
+                <field name="company_name"/>
+                <field name="check_in_local" string="Hora de llegada"/>
+                <field name="minutes_late" optional="show" sum="Total"/>
+                <field name="state" widget="badge"/>
+                <field name="substitute_name" optional="show"/>
+                <field name="invited_by_id" optional="hide"/>
+                <field name="checkin_method" optional="hide"/>
+                <field name="observation" optional="show"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="bni_attendance_view_form" model="ir.ui.view">
+        <field name="name">bni.attendance.form</field>
+        <field name="model">bni.attendance</field>
+        <field name="arch" type="xml">
+            <form string="Asistencia">
+                <sheet>
+                    <group>
+                        <group>
+                            <field name="event_id"/>
+                            <field name="attendee_type"/>
+                            <field name="member_id" invisible="attendee_type != 'member'" required="attendee_type == 'member'"/>
+                            <field name="name"/>
+                            <field name="company_name"/>
+                            <field name="invited_by_id" invisible="attendee_type != 'guest'"/>
+                            <field name="is_substitute" invisible="attendee_type != 'member'"/>
+                            <field name="substitute_name" invisible="not is_substitute" required="is_substitute"/>
+                            <field name="substitute_company" invisible="not is_substitute"/>
+                        </group>
+                        <group>
+                            <field name="check_in"/>
+                            <field name="minutes_late"/>
+                            <field name="state" readonly="1"/>
+                            <field name="checkin_method" readonly="1"/>
+                        </group>
+                    </group>
+                    <field name="observation" placeholder="Observación..."/>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="bni_attendance_view_pivot" model="ir.ui.view">
+        <field name="name">bni.attendance.pivot</field>
+        <field name="model">bni.attendance</field>
+        <field name="arch" type="xml">
+            <pivot string="Análisis de asistencia" sample="1">
+                <field name="name" type="row"/>
+                <field name="event_date" interval="month" type="col"/>
+                <field name="state" type="col"/>
+            </pivot>
+        </field>
+    </record>
+
+    <record id="bni_attendance_view_graph" model="ir.ui.view">
+        <field name="name">bni.attendance.graph</field>
+        <field name="model">bni.attendance</field>
+        <field name="arch" type="xml">
+            <graph string="Asistencia" type="bar" stacked="1" sample="1">
+                <field name="event_date" interval="month"/>
+                <field name="state"/>
+            </graph>
+        </field>
+    </record>
+
+    <record id="bni_attendance_view_search" model="ir.ui.view">
+        <field name="name">bni.attendance.search</field>
+        <field name="model">bni.attendance</field>
+        <field name="arch" type="xml">
+            <search>
+                <field name="name"/>
+                <field name="member_id"/>
+                <field name="event_id"/>
+                <field name="company_name"/>
+                <filter name="filter_members" string="Miembros" domain="[('attendee_type', '=', 'member')]"/>
+                <filter name="filter_guests" string="Invitados" domain="[('attendee_type', '=', 'guest')]"/>
+                <separator/>
+                <filter name="filter_late" string="Retardos" domain="[('state', '=', 'late')]"/>
+                <filter name="filter_substitute" string="Sustitutos" domain="[('state', '=', 'substitute')]"/>
+                <filter name="filter_absent" string="Faltas" domain="[('state', '=', 'absent')]"/>
+                <separator/>
+                <filter name="filter_in_person" string="Presencial" domain="[('modality', '=', 'in_person')]"/>
+                <filter name="filter_virtual" string="Virtual" domain="[('modality', '=', 'virtual')]"/>
+                <separator/>
+                <filter name="filter_closed" string="Eventos cerrados" domain="[('event_id.state', '=', 'closed')]"/>
+                <filter name="filter_date" string="Fecha" date="event_date"/>
+                <group>
+                    <filter name="group_event" string="Evento" context="{'group_by': 'event_id'}"/>
+                    <filter name="group_member" string="Miembro" context="{'group_by': 'member_id'}"/>
+                    <filter name="group_type" string="Tipo" context="{'group_by': 'attendee_type'}"/>
+                    <filter name="group_state" string="Estatus" context="{'group_by': 'state'}"/>
+                    <filter name="group_month" string="Mes" context="{'group_by': 'event_date:month'}"/>
+                </group>
+            </search>
+        </field>
+    </record>
+
+    <record id="bni_attendance_action" model="ir.actions.act_window">
+        <field name="name">Registros de asistencia</field>
+        <field name="res_model">bni.attendance</field>
+        <field name="view_mode">list,pivot,graph,form</field>
+        <field name="context">{'search_default_filter_closed': 1}</field>
+    </record>
+
+    <record id="bni_attendance_analysis_action" model="ir.actions.act_window">
+        <field name="name">Análisis de asistencia</field>
+        <field name="res_model">bni.attendance</field>
+        <field name="view_mode">pivot,graph,list</field>
+        <field name="context">{'search_default_filter_closed': 1, 'search_default_filter_members': 1}</field>
+    </record>
+</odoo>

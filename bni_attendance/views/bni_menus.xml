@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <menuitem id="menu_bni_root" name="BNI" sequence="60" groups="group_bni_user"/>
+
+    <menuitem id="menu_bni_attendance" name="Asistencia" parent="menu_bni_root" sequence="10"/>
+    <menuitem id="menu_bni_event" name="Eventos" parent="menu_bni_attendance" action="bni_event_action" sequence="10"/>
+    <menuitem id="menu_bni_attendance_lines" name="Registros" parent="menu_bni_attendance" action="bni_attendance_action" sequence="20"/>
+
+    <menuitem id="menu_bni_members" name="Miembros" parent="menu_bni_root" sequence="20"/>
+    <menuitem id="menu_bni_member" name="Miembros" parent="menu_bni_members" action="bni_member_action" sequence="10"/>
+    <menuitem id="menu_bni_member_movement" name="Altas y bajas" parent="menu_bni_members" action="bni_member_movement_action" sequence="20"/>
+    <menuitem id="menu_bni_member_note" name="Observaciones" parent="menu_bni_members" action="bni_member_note_action" sequence="30"/>
+
+    <menuitem id="menu_bni_reports" name="Reportes" parent="menu_bni_root" sequence="30"/>
+    <menuitem id="menu_bni_report_period" name="Reporte por mes / periodo" parent="menu_bni_reports"
+              action="bni_attendance_report_wizard_action" sequence="10"/>
+    <menuitem id="menu_bni_analysis" name="Análisis" parent="menu_bni_reports"
+              action="bni_attendance_analysis_action" sequence="20"/>
+</odoo>

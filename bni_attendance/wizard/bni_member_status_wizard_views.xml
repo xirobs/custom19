@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="bni_member_status_wizard_view_form" model="ir.ui.view">
+        <field name="name">bni.member.status.wizard.form</field>
+        <field name="model">bni.member.status.wizard</field>
+        <field name="arch" type="xml">
+            <form string="Movimiento de membresía">
+                <group>
+                    <group>
+                        <field name="member_id" readonly="1"/>
+                        <field name="action" invisible="1"/>
+                        <field name="date"/>
+                        <field name="leave_reason" invisible="action != 'leave'" required="action == 'leave'"/>
+                    </group>
+                </group>
+                <field name="notes" placeholder="Información de la baja o del reingreso..."/>
+                <footer>
+                    <button name="action_confirm" type="object" string="Confirmar baja" class="btn-danger"
+                            invisible="action != 'leave'"/>
+                    <button name="action_confirm" type="object" string="Confirmar reingreso" class="btn-primary"
+                            invisible="action != 'reentry'"/>
+                    <button string="Cancelar" class="btn-secondary" special="cancel"/>
+                </footer>
+            </form>
+        </field>
+    </record>
+</odoo>

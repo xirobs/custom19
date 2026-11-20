@@ -1,0 +1,80 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <template id="report_bni_event">
+        <t t-call="web.html_container">
+            <t t-foreach="docs" t-as="doc">
+                <t t-call="web.external_layout">
+                    <div class="page">
+                        <h3 t-out="doc.name"/>
+                        <div class="row mb-3">
+                            <div class="col-5"><strong>Fecha y hora de llegada:</strong><br/><span t-out="doc.checkin_limit_local"/></div>
+                            <div class="col-3"><strong>Modalidad:</strong><br/>
+                                <span t-out="'Virtual' if doc.modality == 'virtual' else 'Presencial'"/></div>
+                            <div class="col-4"><strong>Estado:</strong><br/>
+                                <span t-out="dict(doc._fields['state'].selection).get(doc.state)"/></div>
+                        </div>
+
+                        <table class="table table-sm table-bordered text-center mb-4">
+                            <thead>
+                                <tr>
+                                    <th>Miembros</th><th>A tiempo</th><th>Retardos</th><th>Sustitutos</th>
+                                    <th>Justificadas</th><th>Faltas</th><th>Invitados</th><th>% Asistencia</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td t-out="doc.member_total"/><td t-out="doc.on_time_count"/><td t-out="doc.late_count"/>
+                                    <td t-out="doc.substitute_count"/><td t-out="doc.excused_count"/><td t-out="doc.absent_count"/>
+                                    <td t-out="doc.guest_count"/>
+                                    <td><strong><t t-out="doc.attendance_rate"/>%</strong></td>
+                                </tr>
+                            </tbody>
+                        </table>
+
+                        <h5>Lista de asistencia</h5>
+                        <table class="table table-sm table-striped">
+                            <thead>
+                                <tr><th>#</th><th>Miembro</th><th>Empresa</th><th class="text-center">Hora de llegada</th>
+                                    <th class="text-center">Retardo (min)</th><th>Estatus</th><th>Observación</th></tr>
+                            </thead>
+                            <tbody>
+                                <t t-foreach="doc.member_line_ids.sorted(lambda l: (not l.check_in, l.check_in_local or '', l.name or ''))" t-as="line">
+                                    <tr>
+                                        <td t-out="line_index + 1"/>
+                                        <td t-out="line.name"/>
+                                        <td t-out="line.company_name or ''"/>
+                                        <td class="text-center" t-out="line.check_in_local or '—'"/>
+                                        <td class="text-center" t-out="line.minutes_late or ''"/>
+                                        <td>
+                                            <span t-out="dict(line._fields['state'].selection).get(line.state)"/>
+                                            <t t-if="line.is_substitute">:
+                                                <t t-out="line.substitute_name"/>
+                                                <t t-if="line.substitute_company"> (<t t-out="line.substitute_company"/>)</t>
+                                            </t>
+                                        </td>
+                                        <td t-out="line.observation or ''"/>
+                                    </tr>
+                                </t>
+                            </tbody>
+                        </table>
+
+                        <t t-if="doc.guest_line_ids">
+                            <h5 class="mt-4">Invitados</h5>
+                            <table class="table table-sm table-striped">
+                                <thead><tr><th>Nombre</th><th>Empresa</th><th>Invitado por</th>
+                                    <th class="text-center">Hora de llegada</th></tr></thead>
+                                <tbody>
+                                    <tr t-foreach="doc.guest_line_ids" t-as="line">
+                                        <td t-out="line.name"/><td t-out="line.company_name or ''"/>
+                                        <td t-out="line.invited_by_id.name or ''"/>
+                                        <td class="text-center" t-out="line.check_in_local or '—'"/>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </t>
+                    </div>
+                </t>
+            </t>
+        </t>
+    </template>
+</odoo>

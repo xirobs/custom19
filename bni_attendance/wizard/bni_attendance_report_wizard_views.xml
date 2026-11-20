@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="bni_attendance_report_wizard_view_form" model="ir.ui.view">
+        <field name="name">bni.attendance.report.wizard.form</field>
+        <field name="model">bni.attendance.report.wizard</field>
+        <field name="arch" type="xml">
+            <form string="Reporte de asistencia por periodo">
+                <group>
+                    <group>
+                        <field name="date_from"/>
+                        <field name="date_to"/>
+                    </group>
+                    <group>
+                        <field name="modality"/>
+                        <field name="company_id" groups="base.group_multi_company"/>
+                    </group>
+                </group>
+                <field name="member_ids" widget="many2many_tags" placeholder="Todos los miembros"/>
+                <footer>
+                    <button name="action_print" type="object" string="Imprimir PDF" class="btn-primary"/>
+                    <button name="action_view_analysis" type="object" string="Ver análisis"/>
+                    <button string="Cancelar" class="btn-secondary" special="cancel"/>
+                </footer>
+            </form>
+        </field>
+    </record>
+
+    <record id="bni_attendance_report_wizard_action" model="ir.actions.act_window">
+        <field name="name">Reporte mensual / por periodo</field>
+        <field name="res_model">bni.attendance.report.wizard</field>
+        <field name="view_mode">form</field>
+        <field name="target">new</field>
+    </record>
+</odoo>
